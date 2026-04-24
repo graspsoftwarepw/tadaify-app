@@ -255,11 +255,19 @@
   <script>
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';
-    var imported = params.get('imported') === '1';
+    var socialsRaw = params.get('socials') || '';
+    var platformsRaw = params.get('platforms') || '';
 
-    // Propagate handle to back link
-    document.getElementById('back-link').href =
-      './onboarding-welcome.html?handle=' + encodeURIComponent(handle);
+    // Back link → onboarding-social.html (step 2) if user came through socials,
+    // else back to welcome (step 1).
+    var backHref;
+    if (socialsRaw || platformsRaw) {
+      backHref = './onboarding-social.html?handle=' + encodeURIComponent(handle);
+      if (platformsRaw) backHref += '&platforms=' + encodeURIComponent(platformsRaw);
+    } else {
+      backHref = './onboarding-welcome.html?handle=' + encodeURIComponent(handle);
+    }
+    document.getElementById('back-link').href = backHref;
 
     var selected = 'chopin';
     function select(el) {
@@ -271,7 +279,7 @@
     }
     function goNext() {
       var q = 'handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(selected);
-      if (imported) q += '&imported=1';
+      if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
       window.location.href = './onboarding-blocks.html?' + q;
     }
     window.select = select;

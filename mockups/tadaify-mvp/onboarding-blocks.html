@@ -114,10 +114,23 @@
 
       <div style="text-align:center; margin-top: 32px;">
         <h1>Add your first links</h1>
-        <p class="lead text-muted" style="margin-top:12px;">
+        <p class="lead text-muted" style="margin-top:12px;" id="blocks-subtitle">
           Your page needs at least one block to publish. You can add more anytime.
         </p>
       </div>
+      <script>
+        (function () {
+          var p = new URLSearchParams(window.location.search);
+          var raw = p.get('socials');
+          var map = {};
+          try { if (raw) map = JSON.parse(decodeURIComponent(raw)); } catch (e) {}
+          var count = Object.values(map).filter(function (h) { return (h || '').trim(); }).length;
+          if (count > 0) {
+            document.getElementById('blocks-subtitle').innerHTML =
+              'We\u2019ve already added <strong>' + count + ' "Follow me" block' + (count > 1 ? 's' : '') + '</strong> from your social handles. Add more — links, products, email capture — or skip.';
+          }
+        })();
+      </script>
 
       <div class="blocks-grid">
 
@@ -214,10 +227,16 @@
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; flex-wrap: wrap; gap: 12px;">
             <a href="#" id="back-link" class="text-sm text-muted">← back</a>
-            <button class="btn btn-primary btn-lg" id="continue-btn" disabled onclick="goNext()">
-              Continue →
-            </button>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <a href="#" id="skip-link" class="btn btn-ghost">Skip for now</a>
+              <button class="btn btn-primary btn-lg" id="continue-btn" disabled onclick="goNext()">
+                Continue →
+              </button>
+            </div>
           </div>
+          <p class="text-sm text-subtle" style="text-align:right; margin-top: 8px;">
+            Skip publishes your page with just the auto-added social blocks — you can add more anytime.
+          </p>
         </div>
 
       </div>
@@ -233,22 +252,58 @@
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';
     var tpl = params.get('tpl') || 'chopin';
-    var imported = params.get('imported') === '1';
+    var socialsRaw = params.get('socials') || '';
+    var socialsMap = {};
+    try {
+      if (socialsRaw) socialsMap = JSON.parse(decodeURIComponent(socialsRaw));
+    } catch (e) { socialsMap = {}; }
 
     document.getElementById('preview-url').textContent = handle;
 
-    // Propagate handle to back link
+    // Back link → onboarding-template.html, carrying handle + tpl + socials
     document.getElementById('back-link').href =
-      './onboarding-template.html?handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(tpl) + (imported ? '&imported=1' : '');
+      './onboarding-template.html?handle=' + encodeURIComponent(handle) +
+      '&tpl=' + encodeURIComponent(tpl) +
+      (socialsRaw ? '&socials=' + encodeURIComponent(socialsRaw) : '');
 
+    var PLATFORM_META = {
+      instagram: { label: 'Instagram', icon: '📷', url: 'instagram.com/' },
+      tiktok:    { label: 'TikTok',    icon: '🎵', url: 'tiktok.com/@' },
+      youtube:   { label: 'YouTube',   icon: '▶',  url: 'youtube.com/@' },
+      x:         { label: 'X',         icon: '𝕏',  url: 'x.com/' },
+      twitch:    { label: 'Twitch',    icon: '🎮', url: 'twitch.tv/' },
+      spotify:   { label: 'Spotify',   icon: '♫',  url: 'open.spotify.com/user/' },
+      linkedin:  { label: 'LinkedIn',  icon: 'in', url: 'linkedin.com/in/' },
+      pinterest: { label: 'Pinterest', icon: 'P',  url: 'pinterest.com/' },
+      threads:   { label: 'Threads',   icon: '@',  url: 'threads.net/@' }
+    };
+
+    // Seed blocks with the social handles entered on Step 2
     var blocks = [];
+    Object.keys(socialsMap).forEach(function(platform) {
+      var h = (socialsMap[platform] || '').trim();
+      if (!h || !PLATFORM_META[platform]) return;
+      var m = PLATFORM_META[platform];
+      blocks.push({
+        kind: 'social-' + platform,
+        label: 'Follow me on ' + m.label,
+        icon: m.icon,
+        url: m.url + h,
+        source: 'auto'
+      });
+    });
 
     function addBlock(kind, label, icon, locked, tier) {
       if (locked) {
         var ok = confirm('This is a ' + tier + ' tier feature. Add a placeholder block for now? You can swap it out after you upgrade.');
         if (!ok) return;
       }
-      blocks.push({ kind: kind, label: label, icon: icon });
+      blocks.push({ kind: kind, label: label, icon: icon, source: 'manual' });
+      renderBlocks();
+    }
+
+    function removeBlock(idx) {
+      blocks.splice(idx, 1);
       renderBlocks();
     }
 
@@ -258,14 +313,16 @@
         container.innerHTML = '<div class="empty-state">Tap a block on the right →</div>';
       } else {
         container.innerHTML = blocks.map(function(b, i) {
-          var title = b.kind === 'link' ? 'Latest workout plan'
-                    : b.kind === 'product' ? 'Fitness course — $49'
-                    : b.kind === 'community' ? 'VIP fitness community'
-                    : b.kind === 'email' ? 'Weekly newsletter ↗'
-                    : b.kind === 'header' ? 'My stuff'
-                    : 'IG · TikTok · YouTube';
+          var title = (b.label && b.source === 'auto') ? b.label
+                    : b.kind === 'link' ? 'My latest link'
+                    : b.kind === 'product' ? 'Digital product — $X'
+                    : b.kind === 'community' ? 'VIP community'
+                    : b.kind === 'email' ? 'Join my newsletter ↗'
+                    : b.kind === 'header' ? 'My links'
+                    : b.kind === 'social' ? 'IG · TikTok · YouTube'
+                    : b.label;
           return '<div class="phone-block">' +
-                 (imported && i < 3 ? '<span class="imported-badge">imported</span>' : '') +
+                 (b.source === 'auto' ? '<span class="imported-badge">auto-added</span>' : '') +
                  b.icon + ' ' + title + '</div>';
         }).join('');
       }
@@ -273,28 +330,31 @@
       document.getElementById('block-count').textContent = count;
       document.getElementById('count-pill').textContent = count + ' added';
       document.getElementById('count-pill').className = count > 0 ? 'count-pill ok' : 'count-pill';
-      document.getElementById('block-status').textContent = count === 0 ? 'needs 1 to publish' : (count === 1 ? 'ready to publish' : 'looking good');
+      document.getElementById('block-status').textContent =
+        count === 0 ? 'needs 1 to publish' :
+        count === 1 ? 'ready to publish' :
+        count + ' blocks · looking good';
       document.getElementById('continue-btn').disabled = count === 0;
     }
 
-    // If imported from IG, pre-populate 3 blocks
-    if (imported) {
-      blocks = [
-        { kind: 'link', label: 'Morning workout',          icon: '🔗' },
-        { kind: 'link', label: '10 high-protein meals',    icon: '🔗' },
-        { kind: 'link', label: 'Why I left corporate',     icon: '🔗' }
-      ];
-      document.getElementById('preview-bio').textContent = 'Fitness coach + content creator 💪';
-    }
     renderBlocks();
 
     function goNext() {
-      var q = 'handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(tpl) + '&blocks=' + blocks.length;
-      if (imported) q += '&imported=1';
+      var q = 'handle=' + encodeURIComponent(handle) +
+              '&tpl=' + encodeURIComponent(tpl) +
+              '&blocks=' + blocks.length;
+      if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
       window.location.href = './onboarding-tier.html?' + q;
     }
 
+    // Skip goes straight to tier with whatever blocks exist (can be just autos, or 0)
+    document.getElementById('skip-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      goNext();
+    });
+
     window.addBlock = addBlock;
+    window.removeBlock = removeBlock;
     window.goNext = goNext;
   </script>
 </body>
