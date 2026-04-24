@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<!--
+  Onboarding step 4/5 — add first blocks
+  Empty state if fresh; pre-populated if imported from IG.
+  Subtle Pro/Creator hints per F-UPSELL-003 (never blocking).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Add your first links — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    .blocks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+      margin-top: 40px;
+    }
+    @media (max-width: 900px) {
+      .blocks-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Phone preview */
+    .phone-col { position: sticky; top: 24px; }
+    .phone-screen-inner {
+      background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%);
+      padding: 24px 18px;
+      min-height: 480px;
+      border-radius: 20px;
+      color: #FFF;
+      text-align: center;
+    }
+    .phone-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F59E0B, #FDE68A);
+      margin: 0 auto 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: #1F2937; font-weight: 700; font-size: 28px;
+    }
+    .phone-name { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+    .phone-handle { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+    .phone-bio { font-size: 13px; margin-top: 8px; opacity: 0.9; line-height: 1.4; }
+
+    .phone-blocks { margin-top: 20px; }
+    .phone-block {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      text-align: center;
+      margin-bottom: 10px;
+      position: relative;
+      animation: entrance 400ms ease-out both;
+    }
+    .phone-block .imported-badge {
+      position: absolute;
+      top: -6px; right: 8px;
+      background: var(--brand-warm);
+      color: #1F2937;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+    }
+
+    .empty-state {
+      background: rgba(255,255,255,0.08);
+      border: 2px dashed rgba(255,255,255,0.3);
+      border-radius: 10px;
+      padding: 24px 14px;
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    .count-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      background: var(--bg-muted);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      margin-left: 8px;
+    }
+    .count-pill.ok { background: var(--success-bg); color: #065F46; }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <main class="onboarding-shell">
+    <div class="onboarding-shell-inner">
+
+      <!-- Progress bar -->
+      <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step active"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+      </div>
+      <p class="progress-label">Step 4 of 5 · Blocks</p>
+
+      <div style="text-align:center; margin-top: 32px;">
+        <h1>Add your first links</h1>
+        <p class="lead text-muted" style="margin-top:12px;" id="blocks-subtitle">
+          Your page needs at least one block to publish. You can add more anytime.
+        </p>
+      </div>
+      <script>
+        (function () {
+          var p = new URLSearchParams(window.location.search);
+          var raw = p.get('socials');
+          var map = {};
+          try { if (raw) map = JSON.parse(decodeURIComponent(raw)); } catch (e) {}
+          var count = Object.values(map).filter(function (h) { return (h || '').trim(); }).length;
+          if (count > 0) {
+            document.getElementById('blocks-subtitle').innerHTML =
+              'We\u2019ve already added <strong>' + count + ' "Follow me" block' + (count > 1 ? 's' : '') + '</strong> from your social handles. Add more — links, products, email capture — or skip.';
+          }
+        })();
+      </script>
+
+      <div class="blocks-grid">
+
+        <!-- LEFT: phone preview -->
+        <div class="phone-col">
+          <p class="text-sm text-subtle" style="text-align:center; margin-bottom:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;">
+            Live preview
+          </p>
+          <div class="phone">
+            <div class="phone-notch"></div>
+            <div class="phone-screen" style="padding: 0;">
+              <div class="phone-screen-inner">
+                <div class="phone-avatar">A</div>
+                <div class="phone-name">Alexandra Silva</div>
+                <div class="phone-handle">tadaify.com/<span id="preview-url">alexandra</span></div>
+                <div class="phone-bio" id="preview-bio">Fitness coach + content creator 💪</div>
+
+                <div class="phone-blocks" id="phone-blocks">
+                  <!-- populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-sm text-subtle" style="text-align:center; margin-top:16px;">
+            <span id="block-count">0</span> blocks · <span id="block-status">needs 1 to publish</span>
+          </p>
+        </div>
+
+        <!-- RIGHT: picker -->
+        <div>
+          <div class="onb-card">
+            <h3 style="margin-bottom: 20px;">
+              Add a block
+              <span class="count-pill" id="count-pill">0 added</span>
+            </h3>
+
+            <div class="block-picker">
+              <button class="block-opt" onclick="addBlock('link', 'Link', '🔗')">
+                <span class="icon">🔗</span>
+                <div class="meta">
+                  <div class="lbl">Link</div>
+                  <div class="sub">External URL — YouTube, blog, etc.</div>
+                </div>
+              </button>
+
+              <button class="block-opt" onclick="addBlock('product', 'Product', '💳', true, 'Creator')">
+                <span class="icon">💳</span>
+                <div class="meta">
+                  <div class="lbl">Product</div>
+                  <div class="sub">Sell a digital download</div>
+                  <div class="lock">💡 Creator tier ($5/mo)</div>
+                </div>
+              </button>
+
+              <button class="block-opt" onclick="addBlock('community', 'Community', '👥', true, 'Creator')">
+                <span class="icon">👥</span>
+                <div class="meta">
+                  <div class="lbl">Community</div>
+                  <div class="sub">Paid subscription community</div>
+                  <div class="lock">💡 Creator tier ($5/mo)</div>
+                </div>
+              </button>
+
+              <button class="block-opt" onclick="addBlock('email', 'Email capture', '✉️')">
+                <span class="icon">✉️</span>
+                <div class="meta">
+                  <div class="lbl">Email capture</div>
+                  <div class="sub">Free — grow your list</div>
+                </div>
+              </button>
+
+              <button class="block-opt" onclick="addBlock('header', 'Section', '📑')">
+                <span class="icon">📑</span>
+                <div class="meta">
+                  <div class="lbl">Section header</div>
+                  <div class="sub">Organize your blocks</div>
+                </div>
+              </button>
+
+              <button class="block-opt" onclick="addBlock('social', 'Social icons', '🌐')">
+                <span class="icon">🌐</span>
+                <div class="meta">
+                  <div class="lbl">Social icons</div>
+                  <div class="sub">IG / TikTok / YouTube row</div>
+                </div>
+              </button>
+            </div>
+
+            <p class="text-sm text-subtle" style="margin-top: 20px;">
+              💡 Selling products is a Creator tier feature ($5/mo). Start free and add later — we'll remind you.
+            </p>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; flex-wrap: wrap; gap: 12px;">
+            <a href="#" id="back-link" class="text-sm text-muted">← back</a>
+            <button class="btn btn-primary btn-lg" id="continue-btn" onclick="goNext()">
+              <span id="continue-label">Continue →</span>
+            </button>
+          </div>
+          <p class="text-sm text-subtle" style="text-align:right; margin-top: 8px;" id="continue-hint">
+            You can always add more blocks later from your dashboard.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div data-partial="footer"></div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'yourname';
+    var tpl = params.get('tpl') || 'chopin';
+    var socialsRaw = params.get('socials') || '';
+    var socialsMap = {};
+    try {
+      if (socialsRaw) socialsMap = JSON.parse(decodeURIComponent(socialsRaw));
+    } catch (e) { socialsMap = {}; }
+
+    document.getElementById('preview-url').textContent = handle;
+
+    // Back link → onboarding-template.html, carrying handle + tpl + socials
+    document.getElementById('back-link').href =
+      './onboarding-template.html?handle=' + encodeURIComponent(handle) +
+      '&tpl=' + encodeURIComponent(tpl) +
+      (socialsRaw ? '&socials=' + encodeURIComponent(socialsRaw) : '');
+
+    var PLATFORM_META = {
+      instagram: { label: 'Instagram', icon: '📷', url: 'instagram.com/' },
+      tiktok:    { label: 'TikTok',    icon: '🎵', url: 'tiktok.com/@' },
+      youtube:   { label: 'YouTube',   icon: '▶',  url: 'youtube.com/@' },
+      x:         { label: 'X',         icon: '𝕏',  url: 'x.com/' },
+      twitch:    { label: 'Twitch',    icon: '🎮', url: 'twitch.tv/' },
+      spotify:   { label: 'Spotify',   icon: '♫',  url: 'open.spotify.com/user/' },
+      linkedin:  { label: 'LinkedIn',  icon: 'in', url: 'linkedin.com/in/' },
+      pinterest: { label: 'Pinterest', icon: 'P',  url: 'pinterest.com/' },
+      threads:   { label: 'Threads',   icon: '@',  url: 'threads.net/@' }
+    };
+
+    // Seed blocks with the social handles entered on Step 2
+    var blocks = [];
+    Object.keys(socialsMap).forEach(function(platform) {
+      var h = (socialsMap[platform] || '').trim();
+      if (!h || !PLATFORM_META[platform]) return;
+      var m = PLATFORM_META[platform];
+      blocks.push({
+        kind: 'social-' + platform,
+        label: 'Follow me on ' + m.label,
+        icon: m.icon,
+        url: m.url + h,
+        source: 'auto'
+      });
+    });
+
+    function addBlock(kind, label, icon, locked, tier) {
+      if (locked) {
+        var ok = confirm('This is a ' + tier + ' tier feature. Add a placeholder block for now? You can swap it out after you upgrade.');
+        if (!ok) return;
+      }
+      blocks.push({ kind: kind, label: label, icon: icon, source: 'manual' });
+      renderBlocks();
+    }
+
+    function removeBlock(idx) {
+      blocks.splice(idx, 1);
+      renderBlocks();
+    }
+
+    function renderBlocks() {
+      var container = document.getElementById('phone-blocks');
+      if (blocks.length === 0) {
+        container.innerHTML = '<div class="empty-state">Tap a block on the right →</div>';
+      } else {
+        container.innerHTML = blocks.map(function(b, i) {
+          var title = (b.label && b.source === 'auto') ? b.label
+                    : b.kind === 'link' ? 'My latest link'
+                    : b.kind === 'product' ? 'Digital product — $X'
+                    : b.kind === 'community' ? 'VIP community'
+                    : b.kind === 'email' ? 'Join my newsletter ↗'
+                    : b.kind === 'header' ? 'My links'
+                    : b.kind === 'social' ? 'IG · TikTok · YouTube'
+                    : b.label;
+          return '<div class="phone-block">' +
+                 (b.source === 'auto' ? '<span class="imported-badge">auto-added</span>' : '') +
+                 b.icon + ' ' + title + '</div>';
+        }).join('');
+      }
+      var count = blocks.length;
+      document.getElementById('block-count').textContent = count;
+      document.getElementById('count-pill').textContent = count + ' added';
+      document.getElementById('count-pill').className = count > 0 ? 'count-pill ok' : 'count-pill';
+      document.getElementById('block-status').textContent =
+        count === 0 ? 'draft — add a block to publish' :
+        count === 1 ? 'ready to publish' :
+        count + ' blocks · looking good';
+
+      // Continue button copy + hint adapt to block count (never disabled)
+      var label = document.getElementById('continue-label');
+      var hint = document.getElementById('continue-hint');
+      if (count === 0) {
+        label.textContent = 'Skip & continue →';
+        hint.textContent = 'Your page will save as draft — add a block anytime from the dashboard to publish.';
+      } else {
+        label.textContent = 'Continue →';
+        hint.textContent = 'You can always add more blocks later from your dashboard.';
+      }
+    }
+
+    renderBlocks();
+
+    function goNext() {
+      var q = 'handle=' + encodeURIComponent(handle) +
+              '&tpl=' + encodeURIComponent(tpl) +
+              '&blocks=' + blocks.length;
+      if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
+      window.location.href = './onboarding-tier.html?' + q;
+    }
+
+    window.addBlock = addBlock;
+    window.removeBlock = removeBlock;
+    window.goNext = goNext;
+  </script>
+</body>
+</html>

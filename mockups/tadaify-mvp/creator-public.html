@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<!--
+  tadaify.com/alexandrasilva — PUBLIC CREATOR PAGE (buyer view)
+  UX improvements:
+    1. 2-column desktop (sticky identity left / block stack right) — vs traditional 1-col layouts
+    2. Blocks are tappable cards with rich content (price, strikethrough, images), not just outlined text buttons
+    3. Hero-product block visually distinguished with filled brand color (buyers always see THE offer)
+    4. Per-product CTAs go to dedicated landing pages (/p/<slug>) with full sales copy
+    5. "Powered by tadaify" footer ONLY on free-tier creator (this one IS free) — paid tiers have NONE
+    6. Page-load entrance animation on blocks (Motion v10 style) — the reveal matches the brand name
+    7. No tadaify nav bar on creator pages — the brand is Alexandra's, not ours
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Alexandra Silva — tadaify.com/alexandrasilva</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.15), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.10), transparent 60%),
+        var(--bg);
+    }
+    .creator-shell {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 64px;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+      align-items: start;
+    }
+    @media (max-width: 880px) {
+      .creator-shell { grid-template-columns: 1fr; gap: 32px; padding: 40px 20px 60px; }
+      .identity { position: static !important; text-align: center; }
+    }
+    .identity {
+      position: sticky;
+      top: 60px;
+    }
+    .avatar {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      margin-bottom: 20px;
+      border: 4px solid #FFF;
+      box-shadow: var(--shadow-lg);
+      display:flex; align-items:center; justify-content:center;
+      font-family: var(--font-display); font-weight: 600; font-size: 52px; color: #7C2D12;
+    }
+    .name { font-family: var(--font-display); font-size: 34px; font-weight: 600; line-height: 1.1; }
+    .bio { color: var(--fg-muted); margin: 12px 0; line-height: 1.6; }
+    .socials {
+      display: flex; gap: 10px; margin-top: 16px;
+    }
+    .social {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; text-decoration: none; color: var(--fg-muted);
+      transition: transform 140ms, border 140ms;
+    }
+    .social:hover { transform: translateY(-2px); border-color: var(--brand-primary); color: var(--brand-primary); }
+
+    .blocks { display: flex; flex-direction: column; gap: 14px; }
+
+    .cb {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px 22px;
+      text-decoration: none; color: inherit;
+      display: block;
+      box-shadow: var(--shadow-sm);
+      transition: transform 180ms ease, box-shadow 180ms ease, border 180ms ease;
+    }
+    .cb:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--brand-primary);
+    }
+    .cb-hero {
+      background: var(--brand-primary);
+      color: #FFF;
+      border-color: var(--brand-primary);
+      padding: 28px 24px;
+    }
+    .cb-hero:hover { background: var(--brand-primary-hover); border-color: var(--brand-primary-hover); color: #FFF; }
+    .cb-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .cb-title { font-weight: 600; font-size: 17px; line-height: 1.3; }
+    .cb-sub   { color: var(--fg-muted); font-size: 13px; margin-top: 4px; }
+    .cb-hero .cb-sub { color: rgba(255,255,255,0.85); }
+    .cb-price {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 24px;
+      color: var(--brand-warm);
+    }
+    .cb-hero .cb-price { color: #FDE68A; }
+    .cb-price .strike { text-decoration: line-through; color: var(--fg-subtle); font-size: 15px; margin-right: 8px; font-family: var(--font-sans); font-weight: 500; }
+    .cb-cta {
+      margin-top: 16px;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.2);
+      color: #FFF;
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-weight: 600; font-size: 14px;
+    }
+    .cb-free-pill {
+      background: var(--success-bg); color: #065F46;
+      padding: 4px 10px; border-radius: var(--radius-full);
+      font-size: 12px; font-weight: 700;
+    }
+    .cb-section-heading {
+      font-family: var(--font-display); font-style: italic;
+      color: var(--fg-muted); font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin: 12px 4px 2px;
+    }
+    .cb-affiliate {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+      text-decoration: none; color: inherit;
+    }
+    .cb-affiliate .thumb {
+      width: 54px; height: 54px; border-radius: 10px; flex-shrink: 0;
+      display:flex; align-items:center; justify-content:center;
+      font-size: 22px; font-weight: 600; color: #FFF;
+    }
+    .cb-affiliate .thumb.t1 { background: linear-gradient(135deg, #EF4444, #F59E0B); }
+    .cb-affiliate .thumb.t2 { background: linear-gradient(135deg, #111827, #4B5563); }
+    .cb-affiliate .body { flex: 1; }
+    .aff-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      color: var(--fg-muted); letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    .cb-podcast {
+      background: linear-gradient(135deg, #0F172A, #1E293B);
+      color: #FFF;
+      border-color: transparent;
+    }
+    .cb-podcast:hover { color: #FFF; }
+
+    .powered {
+      text-align: center;
+      margin-top: 36px;
+      padding: 12px;
+      color: var(--fg-subtle); font-size: 12px;
+    }
+    .powered a { color: var(--brand-primary); font-weight: 600; }
+    .powered .wordmark { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Mini top link back to mockup hub (editor UI suppressed on public creator page) -->
+  <div style="padding: 14px 20px; display:flex; justify-content: space-between; align-items: center; font-size: 13px;">
+    <a href="./index.html" class="text-muted">← back to mockup hub</a>
+    <span class="text-subtle mono">tadaify.com/alexandrasilva</span>
+  </div>
+
+  <div class="creator-shell">
+
+    <!-- LEFT: STICKY IDENTITY -->
+    <aside class="identity enter enter-1">
+      <div class="avatar">AS</div>
+      <h1 class="name">Alexandra Silva</h1>
+      <p class="bio">
+        Fitness coach + content creator 💪<br/>
+        Helping 50k+ women build strength without burning out.<br/>
+        Lisbon → worldwide.
+      </p>
+      <div class="socials">
+        <a href="#" class="social" title="Instagram">📸</a>
+        <a href="#" class="social" title="TikTok">🎵</a>
+        <a href="#" class="social" title="YouTube">📺</a>
+        <a href="#" class="social" title="Email">✉️</a>
+      </div>
+      <div class="pill pill-success" style="margin-top: 18px">✓ verified creator</div>
+    </aside>
+
+    <!-- RIGHT: BLOCK STACK -->
+    <section class="blocks">
+
+      <!-- HERO PRODUCT -->
+      <a href="./product-public.html" class="cb cb-hero enter enter-1">
+        <span class="pill pill-warm" style="margin-bottom:12px">🔥 50% OFF · ends Friday</span>
+        <div class="cb-row">
+          <div>
+            <div class="cb-title" style="font-size: 22px; font-family: var(--font-display)">Ultimate Fitness Course</div>
+            <div class="cb-sub">12 weeks · 60 video lessons · lifetime access · private Discord</div>
+          </div>
+          <div class="cb-price"><span class="strike">$197</span>$127</div>
+        </div>
+        <span class="cb-cta">Get it now →</span>
+      </a>
+
+      <!-- COACHING -->
+      <a href="./product-public.html?product=coaching" class="cb enter enter-2">
+        <div class="cb-row">
+          <div>
+            <div class="cb-title">1:1 Coaching Session</div>
+            <div class="cb-sub">60-minute zoom · program review · custom macro plan</div>
+          </div>
+          <div class="cb-price">$49</div>
+        </div>
+      </a>
+
+      <!-- LEAD MAGNET -->
+      <a href="#" class="cb enter enter-3">
+        <div class="cb-row">
+          <div>
+            <div class="cb-title">Free guide: 10 Morning Habits of High-Energy Women</div>
+            <div class="cb-sub">24-page PDF — we email it instantly</div>
+          </div>
+          <span class="cb-free-pill">FREE</span>
+        </div>
+      </a>
+
+      <!-- IG EMBED PREVIEW -->
+      <a href="#" class="cb enter enter-4">
+        <div class="cb-row">
+          <div>
+            <div class="cb-title">📸 Latest on Instagram</div>
+            <div class="cb-sub">@alexandrasilva_fit · 50k followers · see the last 6 posts</div>
+          </div>
+          <span class="cb-cta" style="background: rgba(99,102,241,0.12); color: var(--brand-primary);">Open →</span>
+        </div>
+      </a>
+
+      <!-- AFFILIATE SECTION -->
+      <div class="cb-section-heading enter enter-5">Things I use (affiliate)</div>
+
+      <a href="#" class="cb-affiliate enter enter-5">
+        <div class="thumb t1">P</div>
+        <div class="body">
+          <div style="font-weight:600; font-size:15px">Peloton Bike+</div>
+          <div class="text-muted" style="font-size:13px">My daily HIIT setup · <span class="aff-badge">ad</span></div>
+        </div>
+        <span class="text-muted">→</span>
+      </a>
+
+      <a href="#" class="cb-affiliate enter enter-6">
+        <div class="thumb t2">G</div>
+        <div class="body">
+          <div style="font-weight:600; font-size:15px">Gymshark — Alexandra's picks</div>
+          <div class="text-muted" style="font-size:13px">Leggings + sports bra I wear in all reels · <span class="aff-badge">ad</span></div>
+        </div>
+        <span class="text-muted">→</span>
+      </a>
+
+      <!-- PODCAST -->
+      <a href="#" class="cb cb-podcast enter enter-7">
+        <div class="cb-row">
+          <div>
+            <div class="cb-title" style="color:#FFF">🎙 My podcast: Strong Not Skinny</div>
+            <div class="cb-sub" style="color:rgba(255,255,255,0.75)">Weekly episodes on Spotify, Apple, YouTube</div>
+          </div>
+          <span class="cb-cta" style="background: rgba(255,255,255,0.18)">Listen →</span>
+        </div>
+      </a>
+
+      <!-- Powered-by ONLY because this is a free-tier creator (F-164 self-referral loop). Paid tiers remove it. -->
+      <div class="powered">
+        Powered by
+        <span class="wordmark">
+          <span class="wm-ta">ta</span><span class="wm-hyphen">-</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>
+        </span>
+        —
+        <a href="./landing.html">get yours free →</a>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script src="./shared/tokens.js"></script>
+</body>
+</html>

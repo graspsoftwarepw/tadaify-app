@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<!--
+  Onboarding step 3/5 — pick starter template
+  §11 Templates & Starters — Chopin default (Indigo Serif palette)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pick a template — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    /* Template preview styles (each card self-contained via CSS gradients + typography) */
+    .preview-chopin {
+      background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+      color: #FFF;
+    }
+    .preview-chopin .preview-name { font-family: 'Crimson Pro', serif; font-size: 22px; font-weight: 600; }
+    .preview-chopin .preview-bio  { opacity: 0.85; font-size: 11px; margin-top: 2px; }
+    .preview-chopin .preview-link {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .preview-neon {
+      background: #0B0F1E;
+      color: #FDE68A;
+      position: relative;
+    }
+    .preview-neon::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(250px 150px at 70% 30%, rgba(245,158,11,0.3), transparent);
+    }
+    .preview-neon > * { position: relative; z-index: 1; }
+    .preview-neon .preview-name { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+    .preview-neon .preview-bio  { color: rgba(255,255,255,0.6); font-size: 11px; margin-top: 2px; }
+    .preview-neon .preview-link {
+      margin-top: 14px;
+      background: #F59E0B;
+      color: #1F2937;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .preview-minimal {
+      background: #FFF;
+      color: #111827;
+      border-bottom: 1px solid var(--border);
+    }
+    .preview-minimal .preview-name { font-family: 'Crimson Pro', serif; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+    .preview-minimal .preview-bio  { color: var(--fg-muted); font-size: 11px; margin-top: 2px; }
+    .preview-minimal .preview-link {
+      margin-top: 14px;
+      background: transparent;
+      border: 1px solid #111827;
+      border-radius: 0;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #111827;
+    }
+
+    .preview-nightfall {
+      background: linear-gradient(180deg, #0B0F1E 0%, #4C1D95 100%);
+      color: #FFF;
+    }
+    .preview-nightfall .preview-name { font-family: 'Crimson Pro', serif; font-size: 22px; font-weight: 600; }
+    .preview-nightfall .preview-bio  { color: rgba(255,255,255,0.7); font-size: 11px; margin-top: 2px; }
+    .preview-nightfall .preview-link {
+      margin-top: 14px;
+      background: rgba(139,92,246,0.3);
+      border: 1px solid rgba(139,92,246,0.6);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 11px;
+    }
+
+    .preview-sunrise {
+      background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #FB923C 100%);
+      color: #1F2937;
+    }
+    .preview-sunrise .preview-name { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 700; }
+    .preview-sunrise .preview-bio  { font-size: 11px; margin-top: 2px; opacity: 0.75; }
+    .preview-sunrise .preview-link {
+      margin-top: 14px;
+      background: #1F2937;
+      color: #FFF;
+      border-radius: 20px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .preview-custom {
+      background: repeating-linear-gradient(
+        45deg,
+        var(--bg-muted),
+        var(--bg-muted) 8px,
+        var(--bg) 8px,
+        var(--bg) 16px
+      );
+      color: var(--fg-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .preview-inner {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <main class="onboarding-shell">
+    <div class="onboarding-shell-inner">
+
+      <!-- Progress bar -->
+      <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step active"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+      </div>
+      <p class="progress-label">Step 3 of 5 · Template</p>
+
+      <div style="text-align:center; margin-top: 40px;">
+        <h1>Pick a template that feels like you</h1>
+        <p class="lead text-muted" style="margin-top:12px;">
+          You can change it anytime. Just helps us start you off with good defaults.
+        </p>
+      </div>
+
+      <!-- Template grid -->
+      <div class="tpl-grid" style="margin-top: 48px;">
+
+        <div class="tpl-card selected" data-tpl="chopin" onclick="select(this)">
+          <div class="tpl-preview preview-chopin">
+            <div class="preview-inner">
+              <div class="preview-name">Alexandra</div>
+              <div class="preview-bio">Fitness coach + content creator</div>
+              <div class="preview-link">→ Latest workout plan</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <h4>Chopin <span class="pill pill-primary" style="font-size:10px;">Default</span></h4>
+            <p>Editorial · quiet confidence</p>
+          </div>
+        </div>
+
+        <div class="tpl-card" data-tpl="neon" onclick="select(this)">
+          <div class="tpl-preview preview-neon">
+            <div class="preview-inner">
+              <div class="preview-name">ALEXANDRA</div>
+              <div class="preview-bio">Fitness coach + creator</div>
+              <div class="preview-link">→ Latest workout plan</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <h4>Neon</h4>
+            <p>Bold · warm flex</p>
+          </div>
+        </div>
+
+        <div class="tpl-card" data-tpl="minimal" onclick="select(this)">
+          <div class="tpl-preview preview-minimal">
+            <div class="preview-inner">
+              <div class="preview-name">Alexandra</div>
+              <div class="preview-bio">Fitness coach</div>
+              <div class="preview-link">Latest workout plan →</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <h4>Minimal</h4>
+            <p>All white · type-driven</p>
+          </div>
+        </div>
+
+        <div class="tpl-card" data-tpl="nightfall" onclick="select(this)">
+          <div class="tpl-preview preview-nightfall">
+            <div class="preview-inner">
+              <div class="preview-name">Alexandra</div>
+              <div class="preview-bio">Fitness · content creator</div>
+              <div class="preview-link">→ Latest workout plan</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <h4>Nightfall</h4>
+            <p>Dark canvas · purple gradient</p>
+          </div>
+        </div>
+
+        <div class="tpl-card" data-tpl="sunrise" onclick="select(this)">
+          <div class="tpl-preview preview-sunrise">
+            <div class="preview-inner">
+              <div class="preview-name">Alexandra</div>
+              <div class="preview-bio">Fitness coach + creator</div>
+              <div class="preview-link">Latest workout plan</div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <h4>Sunrise</h4>
+            <p>Warm gradient · light</p>
+          </div>
+        </div>
+
+        <div class="tpl-card" data-tpl="custom" onclick="select(this)">
+          <div class="tpl-preview preview-custom">
+            <div class="preview-inner" style="align-items:center; justify-content:center;">
+              <div>Start blank<br/><span style="font-size:11px; font-family:var(--font-sans); opacity:0.7;">Build from scratch</span></div>
+            </div>
+          </div>
+          <div class="tpl-info">
+            <h4>Custom</h4>
+            <p>Blank slate · full control</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 48px; flex-wrap: wrap; gap: 16px;">
+        <a href="#" id="back-link" class="text-sm text-muted">← back</a>
+        <button class="btn btn-primary btn-lg" id="continue-btn" onclick="goNext()">
+          Continue with <span id="selected-name">Chopin</span> →
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <div data-partial="footer"></div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'yourname';
+    var socialsRaw = params.get('socials') || '';
+    var platformsRaw = params.get('platforms') || '';
+
+    // Back link → onboarding-social.html (step 2) if user came through socials,
+    // else back to welcome (step 1).
+    var backHref;
+    if (socialsRaw || platformsRaw) {
+      backHref = './onboarding-social.html?handle=' + encodeURIComponent(handle);
+      if (platformsRaw) backHref += '&platforms=' + encodeURIComponent(platformsRaw);
+    } else {
+      backHref = './onboarding-welcome.html?handle=' + encodeURIComponent(handle);
+    }
+    document.getElementById('back-link').href = backHref;
+
+    var selected = 'chopin';
+    function select(el) {
+      document.querySelectorAll('.tpl-card').forEach(function(c) { c.classList.remove('selected'); });
+      el.classList.add('selected');
+      selected = el.dataset.tpl;
+      var name = el.querySelector('h4').childNodes[0].textContent.trim();
+      document.getElementById('selected-name').textContent = name;
+    }
+    function goNext() {
+      var q = 'handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(selected);
+      if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
+      window.location.href = './onboarding-blocks.html?' + q;
+    }
+    window.select = select;
+    window.goNext = goNext;
+  </script>
+</body>
+</html>
