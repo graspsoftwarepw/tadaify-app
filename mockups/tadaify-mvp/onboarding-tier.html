@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<!--
+  Onboarding step 5/5 — contextual tier recommendation
+  F-UPSELL-002 engine output based on signals collected in social step.
+  Anti-pattern AP-030: Free tier stays default-selected (not Creator).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pick your plan — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    .tier-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 40px;
+    }
+    @media (max-width: 1000px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 580px)  { .tier-grid { grid-template-columns: 1fr; } }
+
+    .tier-card {
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      cursor: pointer;
+      transition: all 160ms ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .tier-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+    .tier-card.selected {
+      border-color: var(--brand-primary);
+      box-shadow: var(--shadow-brand);
+    }
+    .tier-card .ribbon {
+      position: absolute;
+      top: -12px; right: 16px;
+      background: var(--brand-warm);
+      color: #1F2937;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tier-card .price {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 600;
+      line-height: 1;
+      margin: 8px 0 4px;
+    }
+    .tier-card .price .per { font-size: 14px; font-family: var(--font-sans); color: var(--fg-muted); font-weight: 400; }
+    .tier-card ul {
+      list-style: none;
+      padding: 0; margin: 16px 0 0;
+      font-size: 13px;
+      color: var(--fg-muted);
+    }
+    .tier-card ul li { padding: 4px 0; padding-left: 20px; position: relative; }
+    .tier-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 700; }
+
+    .billing-toggle {
+      display: inline-flex;
+      background: var(--bg-muted);
+      border-radius: var(--radius-full);
+      padding: 4px;
+      gap: 4px;
+    }
+    .billing-toggle button {
+      background: transparent;
+      border: 0;
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .billing-toggle button.active {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .save-badge {
+      display: inline-block;
+      background: var(--success-bg);
+      color: #065F46;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .recommendation {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.1));
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      margin-top: 24px;
+      text-align: center;
+      font-size: 15px;
+      color: var(--fg);
+    }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <main class="onboarding-shell">
+    <div class="onboarding-shell-inner">
+
+      <!-- Progress bar -->
+      <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step active"><span class="progress-dot"></span></div>
+      </div>
+      <p class="progress-label">Step 5 of 5 · Your plan</p>
+
+      <div style="text-align:center; margin-top: 40px;">
+        <h1>Start free. Upgrade only if you want.</h1>
+        <p class="lead text-muted" style="margin-top:12px;">
+          Based on your audience size (<strong>50k IG followers</strong>), most creators at your scale pick Creator.
+        </p>
+      </div>
+
+      <div class="recommendation">
+        💡 Creator plan includes 1 custom domain free ($2/mo value), 180d analytics, 40 AI generations/month, and priority support — tap to explore.
+      </div>
+
+      <!-- Billing toggle -->
+      <div style="text-align:center; margin-top: 32px;">
+        <div class="billing-toggle">
+          <button class="active" onclick="setBilling(this, 'annual')">
+            Annual <span class="save-badge">save 2 months</span>
+          </button>
+          <button onclick="setBilling(this, 'monthly')">Monthly</button>
+        </div>
+      </div>
+
+      <!-- Tier cards -->
+      <div class="tier-grid">
+        <div class="tier-card selected" data-tier="free" onclick="selectTier(this)">
+          <h3>Free</h3>
+          <div class="price">$0</div>
+          <div class="text-sm text-muted">Forever · no credit card</div>
+          <ul>
+            <li>All core features</li>
+            <li>Unlimited blocks</li>
+            <li>30d analytics</li>
+            <li>10 AI generations/mo</li>
+            <li>tadaify.com/you subdomain</li>
+          </ul>
+        </div>
+
+        <div class="tier-card" data-tier="creator" onclick="selectTier(this)">
+          <div class="ribbon">💡 Suggested for you</div>
+          <h3>Creator</h3>
+          <div class="price">$5 <span class="per">/mo</span></div>
+          <div class="text-sm text-muted">Billed annually · $60/yr</div>
+          <ul>
+            <li>Everything in Free</li>
+            <li>1 custom domain free</li>
+            <li>180d analytics</li>
+            <li>40 AI generations/mo</li>
+            <li>Sell products + communities</li>
+            <li>Priority support</li>
+          </ul>
+        </div>
+
+        <div class="tier-card" data-tier="pro" onclick="selectTier(this)">
+          <h3>Pro</h3>
+          <div class="price">$15 <span class="per">/mo</span></div>
+          <div class="text-sm text-muted">Billed annually · $180/yr</div>
+          <ul>
+            <li>Everything in Creator</li>
+            <li>3 custom domains</li>
+            <li>Unlimited analytics</li>
+            <li>200 AI generations/mo</li>
+            <li>A/B testing</li>
+            <li>Advanced integrations</li>
+          </ul>
+        </div>
+
+        <div class="tier-card" data-tier="business" onclick="selectTier(this)">
+          <h3>Business</h3>
+          <div class="price">$49 <span class="per">/mo</span></div>
+          <div class="text-sm text-muted">Billed annually · $588/yr</div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>10 custom domains</li>
+            <li>Agency multi-client</li>
+            <li>Unlimited AI</li>
+            <li>White-label exports</li>
+            <li>Dedicated success manager</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex; gap:12px; margin-top: 40px; flex-wrap: wrap; justify-content: center;">
+        <button class="btn btn-primary btn-lg" id="primary-cta" onclick="goNext()">
+          Start free — you can upgrade anytime
+        </button>
+        <button class="btn btn-secondary btn-lg" id="upgrade-cta" onclick="goNextPaid()" style="display:none;">
+          Continue with <span id="tier-name">Creator</span> <span id="tier-price">$5/mo</span>
+        </button>
+      </div>
+
+      <p class="text-sm text-muted" style="text-align:center; margin-top: 20px;">
+        30-day money-back on any paid tier. No trials, no surprises.
+      </p>
+
+      <p style="text-align:center; margin-top: 24px;">
+        <a href="./onboarding-blocks.html" class="text-sm text-muted">← back</a>
+      </p>
+
+    </div>
+  </main>
+
+  <div data-partial="footer"></div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'yourname';
+
+    var billing = 'annual';
+    var tier = 'free';
+
+    function setBilling(btn, mode) {
+      billing = mode;
+      document.querySelectorAll('.billing-toggle button').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+    }
+
+    function selectTier(el) {
+      document.querySelectorAll('.tier-card').forEach(function(c){ c.classList.remove('selected'); });
+      el.classList.add('selected');
+      tier = el.dataset.tier;
+
+      var primary = document.getElementById('primary-cta');
+      var upgrade = document.getElementById('upgrade-cta');
+      if (tier === 'free') {
+        primary.style.display = '';
+        upgrade.style.display = 'none';
+      } else {
+        primary.style.display = 'none';
+        upgrade.style.display = '';
+        var prices = { creator: '$5/mo', pro: '$15/mo', business: '$49/mo' };
+        var names  = { creator: 'Creator', pro: 'Pro', business: 'Business' };
+        document.getElementById('tier-name').textContent = names[tier];
+        document.getElementById('tier-price').textContent = prices[tier];
+      }
+    }
+
+    function goNext() {
+      window.location.href = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=free';
+    }
+    function goNextPaid() {
+      // in real flow → payment step. For mockup, forward to complete.
+      alert('Mockup: payment step is out of scope for this iteration. Forwarding to success screen.');
+      window.location.href = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=' + tier;
+    }
+
+    window.setBilling = setBilling;
+    window.selectTier = selectTier;
+    window.goNext = goNext;
+    window.goNextPaid = goNextPaid;
+  </script>
+</body>
+</html>

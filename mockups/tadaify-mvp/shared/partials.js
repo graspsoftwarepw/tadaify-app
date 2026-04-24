@@ -3,6 +3,7 @@
    Renders nav + footer into pages that declare <div data-partial="nav"></div>
    and <div data-partial="footer"></div>. Keeps every page DRY.
    Must run BEFORE tokens.js so logo orbs get registered + animated.
+   Wordmark locked per DEC-WORDMARK-01 — no hyphen, ta / da! / ify color split.
    ========================================================================= */
 
 (function () {
@@ -14,7 +15,7 @@
         '<a href="./landing.html" class="nav-brand">' +
           '<span class="logo-mark" data-logo style="width:32px;height:32px"></span>' +
           '<span class="wordmark wordmark-sm">' +
-            '<span class="wm-ta">ta</span><span class="wm-hyphen">-</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>' +
+            '<span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>' +
           '</span>' +
         '</a>' +
         '<div class="nav-links">' +
@@ -35,7 +36,7 @@
         '<div class="flex items-center gap-4">' +
           '<span class="logo-mark" data-logo style="width:24px;height:24px"></span>' +
           '<span class="wordmark" style="font-size:18px">' +
-            '<span class="wm-ta">ta</span><span class="wm-hyphen">-</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>' +
+            '<span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>' +
           '</span>' +
           '<span class="text-subtle text-sm hide-mobile">— Turn your bio link into your best first impression.</span>' +
         '</div>' +

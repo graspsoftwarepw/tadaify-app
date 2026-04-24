@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!--
+  Onboarding step 2/5 — social import (IG / TikTok auto-import)
+  DEC-SYN-02 handle → auto-import. F-UPSELL-001 signal collection (follower count).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Connecting Instagram — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    .oauth-modal {
+      position: fixed; inset: 0;
+      background: rgba(17, 24, 39, 0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      opacity: 1;
+      transition: opacity 400ms ease;
+    }
+    .oauth-modal.hidden { opacity: 0; pointer-events: none; }
+    .oauth-modal-inner {
+      background: var(--bg-elevated);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+    }
+    .ig-logo {
+      width: 72px; height: 72px;
+      background: linear-gradient(45deg, #F58529, #DD2A7B, #8134AF, #515BD4);
+      border-radius: 18px;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--bg-sunken);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      animation: spin 800ms linear infinite;
+      margin: 20px auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .imported-card {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 20px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+    }
+    .imported-card .avatar {
+      width: 64px; height: 64px;
+      border-radius: var(--radius-full);
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #FFF; font-size: 24px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .imported-card .grow { flex: 1; min-width: 0; }
+    .imported-card h4 { margin-bottom: 4px; }
+    .editable-bio {
+      width: 100%;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--fg);
+      resize: vertical;
+    }
+    .thumb-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .thumb {
+      aspect-ratio: 1;
+      background: var(--bg-muted);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      font-size: 11px;
+      font-weight: 600;
+      color: #FFF;
+      overflow: hidden;
+      position: relative;
+    }
+    .thumb:nth-child(1) { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .thumb:nth-child(2) { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .thumb:nth-child(3) { background: linear-gradient(135deg, #10B981, #059669); }
+
+    .signal-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.08));
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-top: 20px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .signal-banner .icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .hidden-screen { display: none; }
+    .hidden-screen.show { display: block; animation: entrance 500ms ease-out both; }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <main class="onboarding-shell">
+    <div class="onboarding-shell-inner">
+
+      <!-- Progress bar -->
+      <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step active"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+      </div>
+      <p class="progress-label">Step 2 of 5 · Social import</p>
+
+      <!-- Loading state -->
+      <div id="loading-screen" style="text-align:center; margin-top:48px;">
+        <h1>Connecting to your Instagram…</h1>
+        <p class="lead text-muted" style="margin-top:12px;">We're fetching your content.</p>
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Result state -->
+      <div id="result-screen" class="hidden-screen">
+        <div class="onb-card onb-card-lg" style="margin-top: 32px;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+            <span style="font-size:36px;">🎉</span>
+            <h2 style="font-size:28px; margin:0;">Connected! We found:</h2>
+          </div>
+
+          <!-- Name -->
+          <div class="imported-card">
+            <div class="avatar">A</div>
+            <div class="grow">
+              <div class="text-sm text-subtle" style="font-weight:600; text-transform:uppercase; letter-spacing:0.08em;">Name</div>
+              <h4 style="font-size:20px;">Alexandra Silva</h4>
+              <p class="text-sm text-muted">From your Instagram profile</p>
+            </div>
+            <span class="pill pill-success">✓ Auto-filled</span>
+          </div>
+
+          <!-- Bio (editable) -->
+          <div class="imported-card">
+            <div class="avatar" style="background: var(--warm-gradient); color: #1F2937;">💬</div>
+            <div class="grow">
+              <div class="text-sm text-subtle" style="font-weight:600; text-transform:uppercase; letter-spacing:0.08em;">Bio</div>
+              <textarea class="editable-bio" rows="2">Fitness coach + content creator 💪</textarea>
+              <p class="text-sm text-muted" style="margin-top:4px;">Edit if you'd like — you can always change this.</p>
+            </div>
+          </div>
+
+          <!-- Recent content -->
+          <div class="imported-card" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+              <div class="avatar" style="background: var(--bg-dark); color: var(--brand-warm);">🎬</div>
+              <div class="grow">
+                <div class="text-sm text-subtle" style="font-weight:600; text-transform:uppercase; letter-spacing:0.08em;">Recent content</div>
+                <h4 style="font-size:18px;">3 posts found — we can turn these into blocks</h4>
+              </div>
+              <span class="pill pill-primary">+3 blocks</span>
+            </div>
+            <div class="thumb-row">
+              <div class="thumb">Morning workout</div>
+              <div class="thumb">10 high-protein meals</div>
+              <div class="thumb">Why I left corporate</div>
+            </div>
+          </div>
+
+          <!-- Signal banner (F-UPSELL-001) -->
+          <div class="signal-banner">
+            <span class="icon">📈</span>
+            <div>
+              We also noticed you have <strong>50k followers</strong> — we'll use that to recommend the right plan at the end.
+              <div class="text-sm text-muted" style="margin-top:4px;">We never share this. It's just used to pre-filter plan suggestions for you.</div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="display:flex; gap:12px; margin-top:28px; flex-wrap:wrap;">
+            <a href="./onboarding-template.html?imported=1" class="btn btn-primary btn-lg" style="flex:1;">Add these to my page →</a>
+            <a href="./onboarding-template.html" class="btn btn-secondary btn-lg">Skip — I'll add manually</a>
+          </div>
+
+          <p class="text-sm text-subtle" style="margin-top:16px; text-align:center;">
+            💡 You can always change or delete these blocks later.
+          </p>
+        </div>
+
+        <p style="text-align:center; margin-top: 24px;">
+          <a href="./onboarding-welcome.html" class="text-sm text-muted">← back</a>
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- OAuth simulation modal -->
+  <div class="oauth-modal" id="oauth-modal">
+    <div class="oauth-modal-inner">
+      <div class="ig-logo">📸</div>
+      <h3 style="margin-bottom:8px;">Continue to Instagram</h3>
+      <p class="text-muted" style="font-size:14px;">
+        <strong>tadaify</strong> would like to access:
+      </p>
+      <ul style="text-align:left; margin:16px auto; max-width:280px; font-size:14px; color:var(--fg-muted); line-height:2;">
+        <li>✓ Your public profile</li>
+        <li>✓ Your recent 9 posts</li>
+        <li>✓ Your follower count</li>
+      </ul>
+      <button class="btn btn-primary btn-lg" style="width:100%;" onclick="grantOAuth()">Allow</button>
+      <p class="text-sm text-subtle" style="margin-top:12px;">This is a mockup — no real OAuth happens.</p>
+    </div>
+  </div>
+
+  <div data-partial="footer"></div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    function grantOAuth() {
+      document.getElementById('oauth-modal').classList.add('hidden');
+      // simulate connection delay
+      setTimeout(function() {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('result-screen').classList.add('show');
+      }, 1500);
+    }
+
+    // If user lands here without clicking modal (e.g. deep link), still let it animate
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'yourname';
+    document.querySelectorAll('a[href^="./onboarding"], a[href^="./app"]').forEach(function(a) {
+      var url = new URL(a.href);
+      url.searchParams.set('handle', handle);
+      url.searchParams.set('imported', url.searchParams.get('imported') || '1');
+      a.href = url.pathname.split('/').pop() + '?' + url.searchParams.toString();
+    });
+  </script>
+</body>
+</html>
