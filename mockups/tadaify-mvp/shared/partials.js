@@ -21,8 +21,9 @@
         '<div class="nav-links">' +
           '<a href="./landing.html">Home</a>' +
           '<a href="./pricing.html">Pricing</a>' +
-          '<a href="./landing.html#templates">Templates</a>' +
-          '<a href="./landing.html#trust">Trust</a>' +
+          '<!-- TODO: replace with templates.html / trust.html when those mockups exist -->' +
+          '<a href="./index.html">Templates</a>' +
+          '<a href="./index.html">Trust</a>' +
           '<a href="./index.html">Hub</a>' +
           '<a href="./try.html" class="btn btn-ghost btn-sm">Try it free</a>' +
           '<a href="./register.html" class="btn btn-primary btn-sm">Claim your handle</a>' +
@@ -40,12 +41,13 @@
           '</span>' +
           '<span class="text-subtle text-sm hide-mobile">— Turn your bio link into your best first impression.</span>' +
         '</div>' +
+        '<!-- TODO: replace href="#" placeholders with real pages when they exist -->' +
         '<div class="flex items-center flex-wrap gap-2">' +
-          '<a href="#">Trust Center</a>' +
-          '<a href="#">Privacy</a>' +
-          '<a href="#">Terms</a>' +
-          '<a href="#">Jobs</a>' +
-          '<a href="#">Ask AI about tadaify ↗</a>' +
+          '<a href="./index.html">Trust Center</a>' +
+          '<a href="./index.html">Privacy</a>' +
+          '<a href="./index.html">Terms</a>' +
+          '<a href="./index.html">Jobs</a>' +
+          '<a href="./index.html">Ask AI about tadaify ↗</a>' +
         '</div>' +
       '</div>' +
     '</footer>';

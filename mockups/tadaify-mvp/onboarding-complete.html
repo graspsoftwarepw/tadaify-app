@@ -177,13 +177,14 @@
 
       <!-- Next steps -->
       <div class="next-steps">
-        <a href="./creator-public.html" class="step-card">
+        <a href="#" id="preview-link" class="step-card">
           <div class="step-icon">👀</div>
           <h4 style="font-size:18px; margin-bottom:8px;">Preview your page</h4>
           <p class="text-muted text-sm">See what visitors see — including the desktop and mobile layouts.</p>
         </a>
 
-        <a href="./app-dashboard.html" class="step-card">
+        <!-- TODO: replace with app-dashboard.html when dashboard mockup exists -->
+        <a href="#" id="editor-link" class="step-card">
           <div class="step-icon">⚙️</div>
           <h4 style="font-size:18px; margin-bottom:8px;">Customize further</h4>
           <p class="text-muted text-sm">Reorder blocks, change colors, add products — go to your dashboard.</p>
@@ -209,7 +210,8 @@
           💡 <strong>Set up your affiliate code in 2 minutes</strong> and earn 30% recurring on anyone you refer to tadaify.
         </div>
         <div style="display:flex; gap:8px;">
-          <a href="#" class="btn btn-primary btn-sm">Set up affiliate →</a>
+          <!-- TODO: replace with affiliate setup page when it exists -->
+          <a href="./index.html" class="btn btn-primary btn-sm">Set up affiliate →</a>
           <button class="close" onclick="document.getElementById('aff-tip').classList.add('closed')">✕</button>
         </div>
       </div>
@@ -229,6 +231,13 @@
     var handle = params.get('handle') || 'alexandra';
     document.getElementById('live-handle').textContent = handle;
     document.getElementById('phone-handle').textContent = handle;
+
+    // Wire next-steps links with handle
+    document.getElementById('preview-link').href =
+      './creator-public.html?handle=' + encodeURIComponent(handle);
+    // TODO: replace editor-link target with app-dashboard.html when that mockup exists
+    document.getElementById('editor-link').href =
+      './creator-public.html?handle=' + encodeURIComponent(handle);
 
     function copyUrl() {
       var url = 'https://tadaify.com/' + handle;

@@ -213,7 +213,7 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; flex-wrap: wrap; gap: 12px;">
-            <a href="./onboarding-template.html" class="text-sm text-muted">← back</a>
+            <a href="#" id="back-link" class="text-sm text-muted">← back</a>
             <button class="btn btn-primary btn-lg" id="continue-btn" disabled onclick="goNext()">
               Continue →
             </button>
@@ -236,6 +236,10 @@
     var imported = params.get('imported') === '1';
 
     document.getElementById('preview-url').textContent = handle;
+
+    // Propagate handle to back link
+    document.getElementById('back-link').href =
+      './onboarding-template.html?handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(tpl) + (imported ? '&imported=1' : '');
 
     var blocks = [];
 

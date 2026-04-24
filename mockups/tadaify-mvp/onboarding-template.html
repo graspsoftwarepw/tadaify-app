@@ -239,7 +239,7 @@
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 48px; flex-wrap: wrap; gap: 16px;">
-        <a href="./onboarding-welcome.html" class="text-sm text-muted">← back</a>
+        <a href="#" id="back-link" class="text-sm text-muted">← back</a>
         <button class="btn btn-primary btn-lg" id="continue-btn" onclick="goNext()">
           Continue with <span id="selected-name">Chopin</span> →
         </button>
@@ -256,6 +256,10 @@
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';
     var imported = params.get('imported') === '1';
+
+    // Propagate handle to back link
+    document.getElementById('back-link').href =
+      './onboarding-welcome.html?handle=' + encodeURIComponent(handle);
 
     var selected = 'chopin';
     function select(el) {

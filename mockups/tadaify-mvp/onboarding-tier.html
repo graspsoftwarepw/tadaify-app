@@ -225,7 +225,7 @@
       </p>
 
       <p style="text-align:center; margin-top: 24px;">
-        <a href="./onboarding-blocks.html" class="text-sm text-muted">← back</a>
+        <a href="#" id="back-link" class="text-sm text-muted">← back</a>
       </p>
 
     </div>
@@ -238,6 +238,16 @@
   <script>
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';
+    var tpl = params.get('tpl') || 'chopin';
+    var blocks = params.get('blocks') || '0';
+    var imported = params.get('imported') === '1';
+
+    // Propagate handle to back link
+    document.getElementById('back-link').href =
+      './onboarding-blocks.html?handle=' + encodeURIComponent(handle) +
+      '&tpl=' + encodeURIComponent(tpl) +
+      '&blocks=' + encodeURIComponent(blocks) +
+      (imported ? '&imported=1' : '');
 
     var billing = 'annual';
     var tier = 'free';

@@ -323,7 +323,8 @@
         <h3 style="font-size: 22px">Complete your purchase</h3>
         <p class="text-muted text-sm" style="margin-top:4px">You're buying from <strong>Alexandra Silva</strong> · Lisbon, Portugal</p>
 
-        <form onsubmit="event.preventDefault(); alert('Demo: would process Stripe payment for $' + document.getElementById('total').textContent);" style="margin-top: 20px">
+        <!-- TODO: replace with real Stripe checkout flow; on success route to creator-public.html?purchased=1 -->
+        <form onsubmit="event.preventDefault(); alert('Demo: payment accepted! Returning you to creator page.'); setTimeout(function(){ window.location.href = './creator-public.html?purchased=1'; }, 350);" style="margin-top: 20px">
           <div class="field">
             <label>Your name</label>
             <input class="input" type="text" placeholder="Jane Doe" required/>

@@ -255,7 +255,10 @@
     document.querySelectorAll('a[href^="./onboarding"], a[href^="./app"]').forEach(function(a) {
       var url = new URL(a.href);
       url.searchParams.set('handle', handle);
-      url.searchParams.set('imported', url.searchParams.get('imported') || '1');
+      // Only add imported=1 on forward links (to onboarding-template), not on back link (to onboarding-welcome)
+      if (url.pathname.indexOf('onboarding-welcome') === -1) {
+        url.searchParams.set('imported', url.searchParams.get('imported') || '1');
+      }
       a.href = url.pathname.split('/').pop() + '?' + url.searchParams.toString();
     });
   </script>
