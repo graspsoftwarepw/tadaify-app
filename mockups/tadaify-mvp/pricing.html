@@ -109,6 +109,53 @@
       background: var(--success-bg); color: #065F46;
       font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full);
     }
+
+    /* Price-lock banner */
+    .pricelock-banner {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      border: 1px solid rgba(99,102,241,0.4);
+      border-radius: 16px;
+      padding: 20px 28px;
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+      margin: 0 auto 32px;
+      max-width: 880px;
+    }
+    .pricelock-banner .lock-icon {
+      font-size: 32px; flex-shrink: 0;
+    }
+    .pricelock-banner .lock-body { flex: 1; min-width: 240px; }
+    .pricelock-banner .lock-title {
+      font-size: 17px; font-weight: 700;
+      color: #FDE68A;
+      margin: 0 0 4px;
+    }
+    .pricelock-banner .lock-desc {
+      font-size: 14px; color: rgba(249,250,251,0.80);
+      margin: 0;
+    }
+
+    /* Free tier custom domain add-on note */
+    .free-domain-note {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(245,158,11,0.10);
+      border: 1.5px dashed #F59E0B;
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .free-domain-note strong { color: #92400E; }
+
+    /* Locked-for-life pill badge */
+    .pill-locked {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(99,102,241,0.10);
+      border: 1px solid rgba(99,102,241,0.30);
+      color: #4338CA;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 9px; border-radius: var(--radius-full);
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -121,6 +168,15 @@
       Every paid feature is previewable on Free with a 🔒 Pro pill — no surprise paywalls mid-edit.
       Upgrade only after you've seen it work.
     </p>
+
+    <!-- Price-lock-for-life banner -->
+    <div class="pricelock-banner">
+      <span class="lock-icon">🔒</span>
+      <div class="lock-body">
+        <p class="lock-title">Price locked for life</p>
+        <p class="lock-desc">Subscribe today and pay this price forever — as long as your subscription stays active, we never raise it. New prices only affect new signups.</p>
+      </div>
+    </div>
 
     <div class="billing-toggle">
       <button class="active" data-bill="annual">Annual <span class="save-badge">Save 2 months</span></button>
@@ -145,7 +201,10 @@
           <li>Community support</li>
           <li>No "Powered by" footer — ever</li>
         </ul>
-        <a href="./register.html" class="btn btn-secondary">Start free</a>
+        <div class="free-domain-note">
+          🌐 <strong>Want your own domain?</strong> Add it for $2/mo — no plan upgrade needed. Free tier, your domain.
+        </div>
+        <a href="./register.html" class="btn btn-secondary" style="margin-top: 18px;">Start free</a>
       </div>
 
       <!-- CREATOR -->
@@ -153,7 +212,8 @@
         <span class="tier-badge pill pill-pro">⭐ Most popular</span>
         <h3>Creator</h3>
         <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="4" data-price-monthly="5">4</span><span class="cadence">/mo · billed annually</span></div>
-        <p class="tagline">Your domain, verified badge, 180d analytics, human support — the "I'm serious about this" tier.</p>
+        <span class="pill-locked">🔒 Locked for life</span>
+        <p class="tagline" style="margin-top:10px;">Your domain, verified badge, 180d analytics, human support — the "I'm serious about this" tier.</p>
         <ul>
           <li><strong>1 custom domain included</strong> (save $24/yr)</li>
           <li>180 days analytics history</li>
@@ -172,7 +232,8 @@
       <div class="tier">
         <h3>Pro</h3>
         <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="12" data-price-monthly="15">12</span><span class="cadence">/mo · billed annually</span></div>
-        <p class="tagline">Power features for creators treating this like a business.</p>
+        <span class="pill-locked">🔒 Locked for life</span>
+        <p class="tagline" style="margin-top:10px;">Power features for creators treating this like a business.</p>
         <ul>
           <li>Everything in Creator, plus:</li>
           <li>3 custom domains</li>
@@ -192,7 +253,8 @@
       <div class="tier">
         <h3>Business</h3>
         <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="40" data-price-monthly="49">40</span><span class="cadence">/mo · billed annually</span></div>
-        <p class="tagline">Teams, multi-brand, white-glove onboarding.</p>
+        <span class="pill-locked">🔒 Locked for life</span>
+        <p class="tagline" style="margin-top:10px;">Teams, multi-brand, white-glove onboarding.</p>
         <ul>
           <li>Everything in Pro, plus:</li>
           <li>10 custom domains</li>
@@ -377,6 +439,9 @@
       <h2>Start free. Upgrade anytime.</h2>
       <p style="margin-top:12px; font-size:17px;">
         Every paid feature is previewable on Free. Never pay for a button you haven't clicked yet.
+      </p>
+      <p style="margin-top: 10px; font-size: 15px; opacity: 0.85;">
+        🔒 Price locked for life — we never raise the price on active subscribers.
       </p>
       <div class="flex" style="justify-content:center; gap: 12px; margin-top: 28px; flex-wrap: wrap;">
         <a href="./register.html" class="btn btn-warm btn-lg">Claim your handle →</a>

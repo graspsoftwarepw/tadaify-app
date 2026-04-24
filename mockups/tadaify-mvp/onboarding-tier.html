@@ -108,6 +108,111 @@
       font-size: 15px;
       color: var(--fg);
     }
+
+    /* Price-lock-for-life banner */
+    .pricelock {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: linear-gradient(135deg, #0B0F1E 0%, #1F2937 100%);
+      color: #F9FAFB;
+      border-radius: 18px;
+      padding: 20px 24px;
+      margin-top: 20px;
+      box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .pricelock::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.25), transparent 55%),
+                  radial-gradient(circle at 90% 100%, rgba(245, 158, 11, 0.2), transparent 55%);
+      pointer-events: none;
+    }
+    .pricelock-icon {
+      font-size: 32px;
+      line-height: 1;
+      flex-shrink: 0;
+      padding-top: 2px;
+      filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4));
+      position: relative;
+      z-index: 1;
+    }
+    .pricelock-body { position: relative; z-index: 1; }
+    .pricelock-title {
+      font-family: var(--font-display, serif);
+      font-size: 19px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      color: #FDE68A;
+      letter-spacing: -0.01em;
+    }
+    .pricelock-text {
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0;
+      color: rgba(249, 250, 251, 0.88);
+    }
+    .pricelock-text strong { color: #FFF; font-weight: 600; }
+
+    @media (max-width: 580px) {
+      .pricelock { flex-direction: column; padding: 18px 18px; }
+      .pricelock-title { font-size: 17px; }
+      .pricelock-text { font-size: 13px; }
+    }
+
+    /* Lock-for-life badge on paid cards */
+    .lock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(245, 158, 11, 0.12);
+      color: #B45309;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-top: 8px;
+      width: fit-content;
+    }
+
+    /* Free-tier add-on box */
+    .addon {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px dashed rgba(245, 158, 11, 0.35);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--fg);
+      line-height: 1.45;
+    }
+    .addon-plus {
+      background: var(--warm-primary, #F59E0B);
+      color: #fff;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    .addon strong { color: var(--fg); font-weight: 700; }
+    .addon-sub {
+      color: var(--fg-muted);
+      font-size: 11px;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -141,6 +246,19 @@
         💡 Creator plan includes 1 custom domain free ($2/mo value), 180d analytics, 40 AI generations/month, and priority support — tap to explore.
       </div>
 
+      <!-- Price-lock-for-life guarantee — unique to tadaify -->
+      <div class="pricelock">
+        <div class="pricelock-icon" aria-hidden="true">🔒</div>
+        <div class="pricelock-body">
+          <h4 class="pricelock-title">Your price is locked for life.</h4>
+          <p class="pricelock-text">
+            Subscribe today at <strong>$5/mo</strong> → pay <strong>$5/mo</strong> in year 3, year 5, year 10.
+            As long as your subscription stays active, we <strong>never</strong> raise your price. Ever.
+            Only if you cancel and re-subscribe later do you pay the then-current price.
+          </p>
+        </div>
+      </div>
+
       <!-- Billing toggle -->
       <div style="text-align:center; margin-top: 32px;">
         <div class="billing-toggle">
@@ -164,6 +282,13 @@
             <li>10 AI generations/mo</li>
             <li>tadaify.com/you subdomain</li>
           </ul>
+          <div class="addon">
+            <span class="addon-plus">+</span>
+            <div>
+              <strong>$2/mo</strong> optional add-on
+              <div class="addon-sub">Want your own domain? Add 1 custom domain to Free for $2/mo. No upgrade required.</div>
+            </div>
+          </div>
         </div>
 
         <div class="tier-card" data-tier="creator" onclick="selectTier(this)">
@@ -171,6 +296,7 @@
           <h3>Creator</h3>
           <div class="price">$5 <span class="per">/mo</span></div>
           <div class="text-sm text-muted">Billed annually · $60/yr</div>
+          <span class="lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
           <ul>
             <li>Everything in Free</li>
             <li>1 custom domain free</li>
@@ -185,6 +311,7 @@
           <h3>Pro</h3>
           <div class="price">$15 <span class="per">/mo</span></div>
           <div class="text-sm text-muted">Billed annually · $180/yr</div>
+          <span class="lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
           <ul>
             <li>Everything in Creator</li>
             <li>3 custom domains</li>
@@ -199,6 +326,7 @@
           <h3>Business</h3>
           <div class="price">$49 <span class="per">/mo</span></div>
           <div class="text-sm text-muted">Billed annually · $588/yr</div>
+          <span class="lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
           <ul>
             <li>Everything in Pro</li>
             <li>10 custom domains</li>
@@ -221,7 +349,8 @@
       </div>
 
       <p class="text-sm text-muted" style="text-align:center; margin-top: 20px;">
-        30-day money-back on any paid tier. No trials, no surprises.
+        30-day money-back on any paid tier. No trials, no surprises.<br/>
+        🔒 <strong>Price locked for life</strong> — we never raise the price on active subscribers.
       </p>
 
       <p style="text-align:center; margin-top: 24px;">
