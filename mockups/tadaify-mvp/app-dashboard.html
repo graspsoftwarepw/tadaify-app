@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Authenticated creator dashboard (/app) — first-login + empty states
+  created_at: 2026-04-25
+  author: orchestrator
+  status: draft-for-review
+
+  Scope:
+  - Default route after login (tadaify.com/app)
+  - Two states driven by ?state=:
+      ?state=ready   — onboarding completed, blocks pre-populated (default)
+      ?state=empty   — user skipped onboarding, 0 blocks yet
+  - Preview-center layout (page as hero), thin left rail (not nested like Linktree)
+  - Zero setup-checklist gamification, zero upgrade modals, zero trial popups
+
+  Anti-patterns respected:
+    AP-001 no "Powered by tadaify"
+    AP-017 no trials / no trial modals
+    AP-028 no friction-loaded upsells
+    AP-030 Free default (not Creator)
+    AP-031 no sticky upgrade banner
+    AP-045 progressive disclosure (6 default block categories)
+
+  Competitive differentiation from Linktree dashboard (see
+  competitors/linktree/screens/lt-020-links-tab-main-list.png):
+  - Preview is the hero (Linktree buries it in a corner)
+  - Flat nav, not nested rails (Linktree has 2 rails: main + secondary)
+  - No "Your setup checklist 4 of 6" pressure widget
+  - No "Enhance" button with no meaning
+  - No mid-content "Connect your Instagram" nag banners
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Your tadaify page</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    /* ======================================================================
+       App shell
+       ====================================================================== */
+    body { background: #F8F9FC; }
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    /* ---- Top bar ---- */
+    .app-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: rgba(248, 249, 252, 0.85);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+    }
+    .app-topbar .brand {
+      display: flex; align-items: center; gap: 8px;
+      flex-shrink: 0;
+    }
+    .app-topbar .logo-mark { width: 32px; height: 32px; }
+    .app-topbar .wm { font-family: var(--font-serif); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+    .app-topbar .wm .ta  { color: var(--brand-primary, #6366F1); }
+    .app-topbar .wm .da  { color: var(--warm-primary, #F59E0B); }
+    .app-topbar .wm .ify { color: var(--fg, #111827); }
+
+    .handle-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px 6px 14px;
+      background: #fff;
+      border: 1px solid var(--border, #E5E7EB);
+      border-radius: 999px;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 13px;
+      color: var(--fg-muted, #6B7280);
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
+      margin-left: 8px;
+    }
+    .handle-pill:hover { background: #F3F4F6; color: var(--fg); border-color: #D1D5DB; }
+    .handle-pill .handle-strong { color: var(--fg); font-weight: 500; }
+    .handle-pill .copy-icon { font-size: 12px; opacity: 0.6; }
+
+    .topbar-spacer { flex: 1; }
+
+    .btn-view-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--fg, #111827);
+      color: #fff;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform .12s ease, box-shadow .15s ease;
+    }
+    .btn-view-live:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(17, 24, 39, 0.2); }
+    .btn-view-live .arrow { font-size: 14px; }
+
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand-primary, #6366F1), var(--warm-primary, #F59E0B));
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* On narrow viewports, hide the handle-pill text, show just icon */
+    @media (max-width: 600px) {
+      .handle-pill { padding: 6px 10px; font-size: 12px; }
+      .handle-pill .handle-prefix { display: none; }
+    }
+
+    /* ---- Welcome banner (conditional, dismissible) ---- */
+    .welcome-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 16px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, #EEF2FF 0%, #FEF3C7 100%);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 14px;
+      font-size: 14px;
+      color: var(--fg);
+      position: relative;
+      overflow: hidden;
+    }
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.08), transparent 60%);
+      pointer-events: none;
+    }
+    .welcome-banner.is-hidden { display: none; }
+    .welcome-emoji {
+      font-size: 26px;
+      flex-shrink: 0;
+      animation: tada 2.4s cubic-bezier(.2,.8,.2,1) 1;
+      transform-origin: 70% 80%;
+    }
+    @keyframes tada {
+      0% { transform: scale(0.8) rotate(-10deg); opacity: 0; }
+      20% { transform: scale(1.15) rotate(6deg); opacity: 1; }
+      40% { transform: scale(1) rotate(-4deg); }
+      60% { transform: scale(1.05) rotate(2deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
+    .welcome-text { flex: 1; min-width: 0; }
+    .welcome-text strong { font-weight: 700; }
+    .welcome-text .welcome-url { font-family: var(--font-mono, monospace); font-size: 13px; color: var(--brand-primary); }
+    .welcome-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--fg);
+      transition: background .15s ease;
+      flex-shrink: 0;
+    }
+    .welcome-btn:hover { background: #F3F4F6; }
+    .welcome-dismiss {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--fg-muted);
+      border: 0;
+      background: transparent;
+      flex-shrink: 0;
+    }
+    .welcome-dismiss:hover { background: rgba(0,0,0,0.05); color: var(--fg); }
+
+    @media (max-width: 600px) {
+      .welcome-banner { padding: 12px 14px; gap: 10px; font-size: 13px; }
+      .welcome-text .welcome-url { font-size: 12px; }
+      .welcome-btn { padding: 6px 10px; font-size: 11px; }
+    }
+
+    /* ---- Body grid ---- */
+    .app-body {
+      display: grid;
+      grid-template-columns: 68px 1fr;
+      gap: 16px;
+      padding: 8px 16px 24px;
+    }
+
+    /* Left rail — desktop only */
+    .app-rail {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 80px);
+    }
+    .rail-btn {
+      width: 52px;
+      height: 52px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .rail-btn:hover { background: #F3F4F6; color: var(--fg); }
+    .rail-btn.active {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--brand-primary);
+    }
+    .rail-btn svg { width: 22px; height: 22px; }
+    .rail-btn .tooltip {
+      position: absolute;
+      left: 60px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--fg, #111827);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease;
+      z-index: 30;
+    }
+    .rail-btn:hover .tooltip { opacity: 1; }
+    .rail-spacer { flex: 1; }
+
+    /* Main content */
+    .app-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+      min-width: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .app-body { grid-template-columns: 1fr; }
+      .app-rail { display: none; }
+      .app-main { grid-template-columns: 1fr; gap: 20px; }
+    }
+
+    /* ======================================================================
+       Preview panel
+       ====================================================================== */
+    .preview-panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .preview-head .label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--fg-subtle, #9CA3AF);
+      font-weight: 600;
+    }
+    .preview-head .device-toggle {
+      display: inline-flex;
+      background: #F3F4F6;
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .preview-head .device-toggle button {
+      border: 0;
+      background: transparent;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--fg-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .preview-head .device-toggle button.active {
+      background: #fff;
+      color: var(--fg);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 340px;
+      aspect-ratio: 9 / 19.5;
+      background: #0B0F1E;
+      border-radius: 40px;
+      padding: 10px;
+      box-shadow:
+        0 40px 60px -20px rgba(15, 23, 42, 0.25),
+        0 0 0 1px rgba(15, 23, 42, 0.15);
+      position: relative;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 24px;
+      background: #0B0F1E;
+      border-radius: 999px;
+      z-index: 2;
+    }
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 30px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 42px 18px 18px;
+      text-align: center;
+    }
+    .phone-avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F59E0B, #FDE68A);
+      color: #1F2937;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .phone-name {
+      font-family: var(--font-serif, serif);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .phone-handle {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-bottom: 4px;
+    }
+    .phone-bio {
+      font-size: 11px;
+      opacity: 0.85;
+      margin-bottom: 14px;
+      max-width: 200px;
+      line-height: 1.4;
+    }
+    .phone-blocks {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .phone-block {
+      background: rgba(255,255,255,0.16);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 10px;
+      padding: 10px 10px;
+      font-size: 11px;
+      text-align: center;
+      color: #fff;
+    }
+    .phone-block.empty {
+      background: rgba(255,255,255,0.05);
+      border-style: dashed;
+      border-color: rgba(255,255,255,0.3);
+      opacity: 0.85;
+    }
+
+    .preview-foot {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: #F3F4F6;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--fg-muted);
+    }
+    .stat-chip strong { color: var(--fg); font-weight: 700; }
+
+    /* ======================================================================
+       Editor panel (blocks list)
+       ====================================================================== */
+    .editor-panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .editor-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .add-block-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      background: linear-gradient(135deg, var(--brand-primary) 0%, #8B5CF6 100%);
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px -4px rgba(99, 102, 241, 0.5);
+      transition: transform .12s ease, box-shadow .15s ease;
+    }
+    .add-block-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -4px rgba(99, 102, 241, 0.6); }
+    .add-block-btn .plus { font-size: 16px; line-height: 1; }
+
+    .blocks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .block-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #FAFBFC;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+      cursor: grab;
+    }
+    .block-row:hover {
+      border-color: #D1D5DB;
+      box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06);
+    }
+    .block-row.dragging { opacity: 0.5; }
+    .block-handle {
+      color: #D1D5DB;
+      cursor: grab;
+      font-size: 16px;
+      line-height: 1;
+      user-select: none;
+    }
+    .block-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .block-info { flex: 1; min-width: 0; }
+    .block-label { font-weight: 600; font-size: 14px; color: var(--fg); }
+    .block-sub { font-size: 12px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .block-tags { display: inline-flex; gap: 6px; margin-left: 6px; align-items: center; }
+    .auto-tag {
+      background: rgba(245, 158, 11, 0.14);
+      color: #92400E;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .block-toggle {
+      position: relative;
+      width: 34px;
+      height: 20px;
+      background: #E5E7EB;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .15s ease;
+      flex-shrink: 0;
+    }
+    .block-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: left .15s ease;
+    }
+    .block-toggle.on { background: #10B981; }
+    .block-toggle.on::after { left: 16px; }
+    .block-menu {
+      color: #9CA3AF;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 16px;
+      line-height: 1;
+      user-select: none;
+    }
+    .block-menu:hover { color: var(--fg); }
+
+    /* ======================================================================
+       Empty state variant
+       ====================================================================== */
+    .empty-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 8px 12px 16px;
+    }
+    .empty-hero h2 {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 14px 0 6px;
+    }
+    .empty-hero p {
+      color: var(--fg-muted);
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 360px;
+      margin: 0 0 18px;
+    }
+    .quick-starts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+    .quick-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s ease, transform .15s ease, background .15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .quick-card:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-1px);
+      background: #FAFBFC;
+    }
+    .quick-card .qc-icon {
+      width: 40px; height: 40px;
+      border-radius: 11px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .quick-card .qc-label { font-size: 13px; font-weight: 600; color: var(--fg); }
+    .quick-card .qc-sub { font-size: 11px; color: var(--fg-muted); line-height: 1.3; }
+
+    @media (max-width: 480px) {
+      .quick-starts { grid-template-columns: 1fr; }
+    }
+
+    /* ======================================================================
+       Mobile bottom tab bar
+       ====================================================================== */
+    .mobile-tabs {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-top: 1px solid rgba(229, 231, 235, 0.6);
+      z-index: 35;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      justify-content: space-around;
+    }
+    .mobile-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 0;
+      color: var(--fg-subtle);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0;
+      background: transparent;
+    }
+    .mobile-tab svg { width: 22px; height: 22px; }
+    .mobile-tab.active { color: var(--brand-primary); }
+
+    @media (max-width: 1024px) {
+      .mobile-tabs { display: flex; }
+      .app-body { padding-bottom: 88px; }
+    }
+
+    /* ======================================================================
+       Floating view-live button (mobile only)
+       ====================================================================== */
+    .fab-view-live {
+      display: none;
+      position: fixed;
+      bottom: 96px;
+      right: 20px;
+      padding: 12px 18px;
+      background: var(--fg, #111827);
+      color: #fff;
+      border-radius: 999px;
+      box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.35);
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 30;
+      text-decoration: none;
+      gap: 6px;
+      align-items: center;
+    }
+    @media (max-width: 1024px) {
+      .fab-view-live { display: inline-flex; }
+      .app-topbar .btn-view-live { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- TOP BAR -->
+    <header class="app-topbar">
+      <a href="./index.html" class="brand">
+        <span class="logo-mark" data-logo></span>
+        <span class="wm">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </span>
+      </a>
+
+      <button class="handle-pill" id="handle-pill" title="Click to copy your page URL">
+        <span class="handle-prefix">tadaify.com/</span><span class="handle-strong" id="handle-value">alexandra</span>
+        <span class="copy-icon">⧉</span>
+      </button>
+
+      <span class="topbar-spacer"></span>
+
+      <a href="./creator-public.html" class="btn-view-live" target="_blank" rel="noopener">
+        View live <span class="arrow">↗</span>
+      </a>
+
+      <button class="avatar" aria-label="Account menu" id="account-avatar">A</button>
+    </header>
+
+    <!-- WELCOME BANNER (conditional — hidden in empty state) -->
+    <div class="welcome-banner" id="welcome-banner">
+      <span class="welcome-emoji">🎉</span>
+      <div class="welcome-text">
+        Your page is live at <span class="welcome-url" id="welcome-url">tadaify.com/alexandra</span> — share it anywhere.
+      </div>
+      <button class="welcome-btn" id="copy-link-btn">Copy link</button>
+      <button class="welcome-dismiss" id="dismiss-welcome" aria-label="Dismiss">×</button>
+    </div>
+
+    <div class="app-body">
+
+      <!-- LEFT RAIL (desktop only) -->
+      <nav class="app-rail" aria-label="Primary">
+        <button class="rail-btn active" title="Your page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="tooltip">Your page</span>
+        </button>
+        <button class="rail-btn" title="Design">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="2" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="22" y2="12"/></svg>
+          <span class="tooltip">Design</span>
+        </button>
+        <button class="rail-btn" title="Insights">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+          <span class="tooltip">Insights</span>
+        </button>
+        <button class="rail-btn" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="tooltip">Settings</span>
+        </button>
+        <span class="rail-spacer"></span>
+      </nav>
+
+      <!-- MAIN -->
+      <main class="app-main">
+
+        <!-- PREVIEW -->
+        <section class="preview-panel" aria-label="Page preview">
+          <div class="preview-head">
+            <span class="label">Live preview</span>
+            <div class="device-toggle" role="tablist">
+              <button class="active" data-device="mobile" aria-selected="true">📱 Mobile</button>
+              <button data-device="desktop">🖥 Desktop</button>
+            </div>
+          </div>
+          <div class="phone">
+            <span class="phone-notch"></span>
+            <div class="phone-screen">
+              <div class="phone-avatar" id="preview-initial">A</div>
+              <div class="phone-name" id="preview-name">Alexandra</div>
+              <div class="phone-handle">tadaify.com/<span id="preview-handle">alexandra</span></div>
+              <div class="phone-bio" id="preview-bio">Creator + educator 🪄</div>
+              <div class="phone-blocks" id="preview-blocks">
+                <!-- populated by JS -->
+              </div>
+            </div>
+          </div>
+          <div class="preview-foot">
+            <span class="stat-chip">👁 <strong>0</strong> views today</span>
+            <span class="stat-chip">↗ <strong>0</strong> clicks</span>
+            <span class="stat-chip">📅 <strong>Just published</strong></span>
+          </div>
+        </section>
+
+        <!-- EDITOR PANEL -->
+        <section class="editor-panel" aria-label="Blocks">
+
+          <!-- READY STATE — blocks populated -->
+          <div id="ready-state">
+            <div class="editor-head">
+              <h2 class="editor-title">Your blocks</h2>
+              <button class="add-block-btn">
+                <span class="plus">+</span> Add block
+              </button>
+            </div>
+            <div class="blocks-list" id="blocks-list">
+              <!-- populated by JS -->
+            </div>
+            <p style="margin-top: 18px; font-size: 12px; color: var(--fg-subtle); text-align: center;">
+              Drag ⋮⋮ to reorder. Toggle to show/hide. Click a block to edit.
+            </p>
+          </div>
+
+          <!-- EMPTY STATE — skipped onboarding -->
+          <div id="empty-state" style="display:none;">
+            <div class="empty-hero">
+              <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="url(#grad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <defs>
+                  <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#6366F1"/>
+                    <stop offset="100%" stop-color="#F59E0B"/>
+                  </linearGradient>
+                </defs>
+                <path d="M12 2v20"/>
+                <path d="M2 12h20"/>
+                <circle cx="12" cy="12" r="9"/>
+              </svg>
+              <h2>Your page is almost ready</h2>
+              <p>Add your first block to publish it to the world. Pick a quick-start below — you can always change it later.</p>
+            </div>
+            <div class="quick-starts">
+              <button class="quick-card" data-qc="link">
+                <span class="qc-icon" style="background: linear-gradient(135deg, #6366F1, #8B5CF6);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </span>
+                <span class="qc-label">Add a link</span>
+                <span class="qc-sub">YouTube, blog, anything</span>
+              </button>
+              <button class="quick-card" data-qc="social">
+                <span class="qc-icon" style="background: linear-gradient(135deg, #F59E0B, #EF4444);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg>
+                </span>
+                <span class="qc-label">Add socials</span>
+                <span class="qc-sub">IG, TikTok, YouTube…</span>
+              </button>
+              <button class="quick-card" data-qc="template">
+                <span class="qc-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                </span>
+                <span class="qc-label">Pick a template</span>
+                <span class="qc-sub">Start from a design</span>
+              </button>
+            </div>
+            <div style="margin-top: 18px; text-align: center; font-size: 12px; color: var(--fg-subtle);">
+              <strong style="color: var(--fg-muted);">Tip:</strong> Start minimal. Readers finish pages with ≤5 blocks 3× more often.
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+
+    </div>
+
+    <!-- MOBILE TAB BAR -->
+    <nav class="mobile-tabs" aria-label="Primary (mobile)">
+      <button class="mobile-tab active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Page
+      </button>
+      <button class="mobile-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+        Design
+      </button>
+      <button class="mobile-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/></svg>
+        Insights
+      </button>
+      <button class="mobile-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <a href="./creator-public.html" class="fab-view-live" target="_blank" rel="noopener">
+      View live ↗
+    </a>
+
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'alexandra';
+    var state = params.get('state') || 'ready'; // 'ready' | 'empty'
+
+    // Populate handle everywhere
+    document.getElementById('handle-value').textContent = handle;
+    document.getElementById('welcome-url').textContent = 'tadaify.com/' + handle;
+    document.getElementById('preview-handle').textContent = handle;
+    document.getElementById('preview-initial').textContent = handle[0].toUpperCase();
+    document.getElementById('preview-name').textContent = handle[0].toUpperCase() + handle.slice(1);
+
+    // Seed blocks depending on state
+    var SEED_BLOCKS = [
+      { id: 'b1', kind: 'instagram', label: 'Follow me on Instagram', url: 'instagram.com/' + handle, source: 'auto', on: true, color: 'linear-gradient(45deg,#F58529,#DD2A7B,#8134AF,#515BD4)' },
+      { id: 'b2', kind: 'tiktok',    label: 'Follow me on TikTok',    url: 'tiktok.com/@' + handle,    source: 'auto', on: true, color: '#000' },
+      { id: 'b3', kind: 'youtube',   label: 'Follow me on YouTube',   url: 'youtube.com/@' + handle,   source: 'auto', on: true, color: '#FF0000' }
+    ];
+
+    var blocks = (state === 'empty') ? [] : SEED_BLOCKS.slice();
+
+    function showState() {
+      var isEmpty = blocks.length === 0;
+      document.getElementById('ready-state').style.display = isEmpty ? 'none' : 'block';
+      document.getElementById('empty-state').style.display = isEmpty ? 'block' : 'none';
+      document.getElementById('welcome-banner').classList.toggle('is-hidden', isEmpty);
+      renderPreview();
+      renderBlocksList();
+    }
+
+    function renderPreview() {
+      var container = document.getElementById('preview-blocks');
+      if (blocks.length === 0) {
+        container.innerHTML =
+          '<div class="phone-block empty">✨ Your first block goes here</div>' +
+          '<div class="phone-block empty">✨ Then this one</div>' +
+          '<div class="phone-block empty">✨ And this one</div>';
+        return;
+      }
+      container.innerHTML = blocks.filter(function(b){ return b.on; }).map(function(b) {
+        return '<div class="phone-block">' + b.label + '</div>';
+      }).join('');
+    }
+
+    function renderBlocksList() {
+      var list = document.getElementById('blocks-list');
+      list.innerHTML = blocks.map(function(b) {
+        var iconSvg = iconFor(b.kind);
+        return '' +
+          '<div class="block-row" data-id="' + b.id + '">' +
+            '<span class="block-handle" aria-label="Drag to reorder">⋮⋮</span>' +
+            '<span class="block-icon" style="background: ' + b.color + ';">' + iconSvg + '</span>' +
+            '<div class="block-info">' +
+              '<div class="block-label">' + b.label +
+                (b.source === 'auto' ? ' <span class="auto-tag">auto</span>' : '') +
+              '</div>' +
+              '<div class="block-sub">' + b.url + '</div>' +
+            '</div>' +
+            '<span class="block-toggle ' + (b.on ? 'on' : '') + '" data-id="' + b.id + '" role="switch" aria-checked="' + b.on + '"></span>' +
+            '<span class="block-menu" aria-label="More options">⋯</span>' +
+          '</div>';
+      }).join('');
+
+      // Wire toggles
+      list.querySelectorAll('.block-toggle').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var id = el.dataset.id;
+          var b = blocks.find(function(x){ return x.id === id; });
+          if (b) { b.on = !b.on; el.classList.toggle('on', b.on); renderPreview(); }
+        });
+      });
+    }
+
+    function iconFor(kind) {
+      var icons = {
+        instagram: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',
+        tiktok:    '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg>',
+        youtube:   '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg>'
+      };
+      return icons[kind] || '🔗';
+    }
+
+    // Handle pill copy
+    document.getElementById('handle-pill').addEventListener('click', function() {
+      var url = 'https://tadaify.com/' + handle;
+      if (navigator.clipboard) navigator.clipboard.writeText(url);
+      var original = this.querySelector('.copy-icon').textContent;
+      this.querySelector('.copy-icon').textContent = '✓';
+      setTimeout(function(){ document.getElementById('handle-pill').querySelector('.copy-icon').textContent = '⧉'; }, 1400);
+    });
+
+    // Copy link button on welcome banner
+    document.getElementById('copy-link-btn').addEventListener('click', function() {
+      var url = 'https://tadaify.com/' + handle;
+      if (navigator.clipboard) navigator.clipboard.writeText(url);
+      this.textContent = 'Copied ✓';
+      setTimeout(function(){ document.getElementById('copy-link-btn').textContent = 'Copy link'; }, 1400);
+    });
+
+    // Dismiss welcome banner
+    document.getElementById('dismiss-welcome').addEventListener('click', function() {
+      document.getElementById('welcome-banner').classList.add('is-hidden');
+    });
+
+    showState();
+  </script>
+</body>
+</html>
