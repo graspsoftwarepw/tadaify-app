@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<!--
+  tadaify.com/alexandrasilva/p/ultimate-fitness-course — PRODUCT DETAIL + INLINE CHECKOUT
+  UX improvements:
+    1. Per-product landing page with full sales copy — buyer always sees the full value before the price
+    2. Inline Stripe-Elements checkout — buyer never leaves the creator's page
+    3. Upsell checkbox is OPT-IN, default unchecked (anti-sleaze stance vs Stan's sneaky pre-check)
+    4. Realistic reviews + IG embed build trust before the price confrontation
+    5. Order summary live-updates when upsell ticked ($127 → $174)
+    6. Secure-checkout footer shows Stripe + 30-day money-back (buyer comfort)
+    7. Back-to-page link preserves creator's brand identity, not tadaify's
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ultimate Fitness Course — Alexandra Silva</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    body { background: var(--bg); }
+    .back-bar {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px;
+    }
+    .back-bar a { color: var(--fg-muted); }
+
+    .hero-banner {
+      aspect-ratio: 21/9;
+      background:
+        linear-gradient(135deg, rgba(239,68,68,0.9), rgba(245,158,11,0.85)),
+        radial-gradient(600px 300px at 20% 80%, rgba(253,230,138,0.6), transparent);
+      display: flex; align-items: center; justify-content: center;
+      color: #FFF; text-align: center; padding: 40px 24px;
+    }
+    .hero-banner h1 {
+      color: #FFF; font-size: clamp(32px, 5vw, 56px);
+      text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .hero-banner p {
+      margin-top: 10px; font-size: 18px;
+      max-width: 560px; margin-left:auto; margin-right:auto;
+      color: rgba(255,255,255,0.95);
+    }
+
+    .product-shell {
+      max-width: 1100px; margin: -60px auto 0;
+      padding: 0 24px 80px;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 48px;
+      position: relative; z-index: 2;
+    }
+    @media (max-width: 920px) {
+      .product-shell { grid-template-columns: 1fr; gap: 32px; }
+      .checkout-col { position: static !important; }
+    }
+
+    .product-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .creator-strip {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-muted);
+      border-radius: 14px;
+      margin-bottom: 24px;
+    }
+    .creator-strip .ava {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B);
+      display:flex; align-items:center; justify-content:center;
+      font-family: var(--font-display); color: #7C2D12; font-weight: 600;
+    }
+
+    .product-title { font-size: 36px; margin-bottom: 8px; }
+    .product-price-row {
+      display: flex; align-items: baseline; gap: 12px; margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .product-price-row .main { font-family: var(--font-display); font-weight: 600; font-size: 36px; color: var(--brand-warm); }
+    .product-price-row .strike { font-size: 20px; color: var(--fg-subtle); text-decoration: line-through; }
+
+    .ig-embed {
+      display: flex; gap: 12px;
+      padding: 16px; border: 1px solid var(--border); border-radius: 14px;
+      margin: 20px 0;
+      background: linear-gradient(135deg, rgba(236,72,153,0.05), rgba(245,158,11,0.05));
+    }
+    .ig-embed .ava {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B);
+      flex-shrink: 0;
+      display:flex; align-items:center; justify-content:center;
+      font-family: var(--font-display); font-weight: 600; color: #7C2D12;
+    }
+    .ig-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+      margin-top: 10px;
+    }
+    .ig-tile { aspect-ratio: 1; border-radius: 6px; background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A); }
+    .ig-tile:nth-child(2) { background: linear-gradient(135deg, #8B5CF6, #EC4899); }
+    .ig-tile:nth-child(3) { background: linear-gradient(135deg, #10B981, #3B82F6); }
+    .ig-tile:nth-child(4) { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .ig-tile:nth-child(5) { background: linear-gradient(135deg, #6366F1, #06B6D4); }
+    .ig-tile:nth-child(6) { background: linear-gradient(135deg, #EC4899, #F59E0B); }
+
+    .outcomes {
+      list-style: none; padding: 0; margin: 16px 0;
+    }
+    .outcomes li {
+      padding: 10px 0;
+      display: flex; gap: 12px; align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+    }
+    .outcomes li::before {
+      content: "✓"; color: var(--success);
+      font-weight: 700; font-size: 18px; flex-shrink: 0;
+    }
+
+    .reviews {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 24px;
+    }
+    @media (max-width: 560px) { .reviews { grid-template-columns: 1fr; } }
+    .review {
+      padding: 16px;
+      background: var(--bg-muted);
+      border-radius: 12px;
+    }
+    .review .stars { color: #F59E0B; font-size: 14px; }
+    .review .txt   { margin: 6px 0 10px; font-size: 14px; line-height: 1.5; }
+    .review .who   { font-size: 12px; color: var(--fg-muted); font-weight: 600; }
+
+    /* Checkout column */
+    .checkout-col {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+    }
+    .checkout-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .upsell {
+      border: 2px dashed var(--brand-warm);
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(245,158,11,0.06);
+      margin: 20px 0;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .upsell input { margin-top: 4px; flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--brand-warm); }
+    .upsell .label { font-weight: 600; font-size: 15px; }
+    .upsell .sub   { color: var(--fg-muted); font-size: 13px; margin-top: 4px; }
+    .upsell .strike{ color: var(--fg-subtle); text-decoration: line-through; font-size: 12px; }
+    .upsell .tag   { background: var(--brand-warm); color: #FFF; padding: 2px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; margin-left: 6px;}
+
+    .field { margin-bottom: 14px; }
+    .cc-mock {
+      padding: 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--bg-muted);
+      font-family: var(--font-mono);
+      color: var(--fg-subtle);
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .summary-row {
+      display: flex; justify-content: space-between; padding: 8px 0;
+      font-size: 14px; color: var(--fg-muted);
+    }
+    .summary-row.total {
+      font-family: var(--font-display); font-size: 22px; font-weight: 600;
+      color: var(--fg); border-top: 1px solid var(--border); padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .secure {
+      text-align: center; color: var(--fg-subtle); font-size: 12px;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="back-bar">
+    <a href="./creator-public.html">← back to Alexandra's page</a>
+    <span class="mono text-subtle">tadaify.com/alexandrasilva/p/ultimate-fitness-course</span>
+  </div>
+
+  <!-- HERO BANNER -->
+  <div class="hero-banner">
+    <div>
+      <span class="pill pill-warm" style="background: rgba(255,255,255,0.22); color:#FFF; border:1px solid rgba(255,255,255,0.3); margin-bottom: 12px;">🔥 50% off · ends Friday 11:59pm UTC</span>
+      <h1>Ultimate Fitness Course</h1>
+      <p>Build strength without burning out. 12 weeks. Lifetime access.</p>
+    </div>
+  </div>
+
+  <div class="product-shell">
+
+    <!-- LEFT: SALES COPY -->
+    <div class="product-card">
+      <div class="creator-strip">
+        <div class="ava">AS</div>
+        <div>
+          <div style="font-weight: 600">Alexandra Silva</div>
+          <div class="text-muted text-sm">Fitness coach · <a href="./creator-public.html">tadaify.com/alexandrasilva</a></div>
+        </div>
+      </div>
+
+      <h2 class="product-title">12 weeks. 60 lessons. Lifetime access.</h2>
+      <div class="product-price-row">
+        <span class="main">$127</span>
+        <span class="strike">$197</span>
+        <span class="pill pill-warm">50% off</span>
+        <span class="text-muted text-sm">· pay once · no subscription</span>
+      </div>
+
+      <!-- IG EMBED -->
+      <div class="ig-embed">
+        <div class="ava">AS</div>
+        <div style="flex: 1">
+          <div class="flex items-center justify-between">
+            <div>
+              <div style="font-weight: 600">@alexandrasilva_fit</div>
+              <div class="text-muted text-sm">50.2k followers · 1,284 posts</div>
+            </div>
+            <span class="pill pill-primary">📸 Instagram</span>
+          </div>
+          <div class="ig-grid">
+            <div class="ig-tile"></div>
+            <div class="ig-tile"></div>
+            <div class="ig-tile"></div>
+            <div class="ig-tile"></div>
+            <div class="ig-tile"></div>
+            <div class="ig-tile"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALES COPY -->
+      <div style="margin-top: 20px; line-height: 1.75; color: var(--fg);">
+        <p>
+          I spent 8 years in fitness before I realised the industry sells one big lie:
+          <em>"no pain, no gain."</em> The women I coach are smart, successful, and completely burned out
+          from programs designed for 21-year-old men. I built this course for them. For you.
+        </p>
+        <p style="margin-top: 14px">
+          The <strong>Ultimate Fitness Course</strong> is 12 weeks of progressive strength training,
+          metabolic conditioning, and recovery protocols — the exact same system I use with my 1:1 clients
+          who pay $1,800/quarter. Every lesson is <strong>under 15 minutes</strong>. Every workout fits
+          in a tiny home gym or a hotel room.
+        </p>
+        <p style="margin-top: 14px">
+          You get <strong>60 video lessons</strong>, a <strong>private Discord community</strong> of 2,000+ women training
+          alongside you, a <strong>12-week PDF workbook</strong>, and <strong>lifetime access</strong> to every future update.
+          No recurring charge. No hidden upsells. One payment, forever yours.
+        </p>
+
+        <h3 style="margin: 24px 0 12px; font-size: 20px;">What you'll learn</h3>
+        <ul class="outcomes">
+          <li>Build measurable strength (avg +40% on compound lifts by week 12)</li>
+          <li>Master progressive overload without gym equipment</li>
+          <li>Eat for energy + recovery (includes a custom macro calculator)</li>
+          <li>Build a sustainable morning routine that survives travel + kids</li>
+          <li>Recover smarter: sleep, mobility, stress management</li>
+          <li>Plan the next 12 months of training after the course ends</li>
+        </ul>
+      </div>
+
+      <!-- REVIEWS -->
+      <h3 style="margin-top: 28px">What creators are saying</h3>
+      <div class="reviews">
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p class="txt">"I was skeptical — another fitness course, right? Wrong. Alexandra's program is the first one I actually finished. Down 8kg, up 40kg on deadlifts."</p>
+          <div class="who">— Marta, 34 · Kraków</div>
+        </div>
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p class="txt">"The Discord community is worth the $127 alone. 2k women who actually answer when you post at 6am panicking about form."</p>
+          <div class="who">— Priya, 29 · London</div>
+        </div>
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p class="txt">"I hate workouts over 30 minutes. Every lesson here is 10-15. I got more done in 12 weeks than 2 years of F45."</p>
+          <div class="who">— Jess, 41 · Melbourne</div>
+        </div>
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p class="txt">"Finally a fitness coach who doesn't peddle cortisol-fear BS. Evidence-based, kind delivery, works."</p>
+          <div class="who">— Dr. Sarah Chen · NYC</div>
+        </div>
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p class="txt">"Lifetime access = no anxiety about pausing for my wedding week. Came back 3 months later, continued where I left off."</p>
+          <div class="who">— Ana, 32 · Lisbon</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CHECKOUT -->
+    <div class="checkout-col">
+      <div class="checkout-card">
+        <h3 style="font-size: 22px">Complete your purchase</h3>
+        <p class="text-muted text-sm" style="margin-top:4px">You're buying from <strong>Alexandra Silva</strong> · Lisbon, Portugal</p>
+
+        <form onsubmit="event.preventDefault(); alert('Demo: would process Stripe payment for $' + document.getElementById('total').textContent);" style="margin-top: 20px">
+          <div class="field">
+            <label>Your name</label>
+            <input class="input" type="text" placeholder="Jane Doe" required/>
+          </div>
+          <div class="field">
+            <label>Email (receipt + course access)</label>
+            <input class="input" type="email" placeholder="you@example.com" required/>
+          </div>
+
+          <!-- UPSELL (OPT-IN, unchecked) -->
+          <div class="upsell">
+            <input type="checkbox" id="upsell"/>
+            <label for="upsell" style="flex: 1; cursor: pointer;">
+              <div class="label">Add: Digital Product Starter Kit <span class="tag">+$47</span></div>
+              <div class="sub"><span class="strike">$87</span> &nbsp;Templates + macro calculator + shopping list PDFs. Ships instantly with your course.</div>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Discount code</label>
+            <div class="flex gap-2">
+              <input class="input" type="text" placeholder="LAUNCH50" style="flex: 1"/>
+              <button type="button" class="btn btn-secondary btn-sm">Apply</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Card details</label>
+            <div class="cc-mock">
+              <span>1234 1234 1234 1234</span>
+              <span style="display: flex; gap: 6px; align-items: center;">
+                <span>MM/YY</span>
+                <span>CVC</span>
+              </span>
+            </div>
+            <p class="text-subtle text-sm" style="margin-top:6px">🔒 Stripe Elements renders here in production — nothing leaves Alexandra's page.</p>
+          </div>
+
+          <!-- SUMMARY -->
+          <div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 12px;">
+            <div class="summary-row"><span>Ultimate Fitness Course</span><span>$127.00</span></div>
+            <div class="summary-row" id="upsell-row" style="display:none"><span>Starter Kit</span><span>$47.00</span></div>
+            <div class="summary-row total"><span>Total</span><span>$<span id="total">127</span>.00</span></div>
+          </div>
+
+          <label class="flex items-center gap-2 text-sm" style="margin-top: 16px">
+            <input type="checkbox" required/>
+            I agree to the <a href="#">Terms</a> and understand access is instant after payment.
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-xl" style="width: 100%; margin-top: 20px;">
+            Purchase · $<span id="btn-total">127</span>
+          </button>
+
+          <p class="secure">🔒 Secure checkout powered by Stripe · 30-day money-back guarantee</p>
+        </form>
+      </div>
+
+      <!-- Subtle tadaify attribution (creator is free tier) -->
+      <p class="text-center text-subtle text-sm" style="margin-top: 20px">
+        Built with
+        <span class="wordmark" style="font-size: 13px">
+          <span class="wm-ta">ta</span><span class="wm-hyphen">-</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>
+        </span>
+        — <a href="./landing.html">get yours →</a>
+      </p>
+    </div>
+
+  </div>
+
+  <script src="./shared/tokens.js"></script>
+  <script>
+    // Upsell total update
+    var upsellChk = document.getElementById('upsell');
+    var totalEl   = document.getElementById('total');
+    var btnTotal  = document.getElementById('btn-total');
+    var upsellRow = document.getElementById('upsell-row');
+    upsellChk.addEventListener('change', function() {
+      var total = upsellChk.checked ? 174 : 127;
+      totalEl.textContent  = total;
+      btnTotal.textContent = total;
+      upsellRow.style.display = upsellChk.checked ? 'flex' : 'none';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1719 @@
+<!--
+  type: mockup
+  project: tadaify
+  title: tadaify.com landing — MVP clickable mockup v1
+  created_at: 2026-04-24
+  author: orchestrator
+  status: draft-for-review
+
+  Scope: FIRST in sequential mockup-review series. Landing page only.
+  Sibling mockups (pricing, templates, trust, /alexandrasilva, /login, /register, /try) = Phase 2+.
+  All nav hrefs are relative → may 404 until Phase 2 mockups ship. Intentional.
+
+  Brand lock: brand-lock.md (Indigo Serif palette + variant F wordmark + motion v10 + Crimson Pro/Inter).
+  Motion v10: tadaify-logo-motion-v10.html (light-theme flash = pure amber, NO white core, NO mix-blend-mode on light).
+  Anti-patterns respected:
+    AP-001 (NO "Powered by tadaify" anywhere),
+    AP-017 (no trials — 30-day money-back instead),
+    AP-023 (pricing public + in nav),
+    AP-031 (no upgrade banner; no popups),
+    AP-046 ("0% fees, every tier, forever" prominent in hero + table),
+    AP-048 (no celebrity showcase — mid-creator names).
+
+  UX improvements: see inline comments per section.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tadaify — Turn your bio link into your best first impression</title>
+  <meta name="description" content="The only link-in-bio where every feature is free. Pay only if you want your own domain — starting at $2/mo. 0% platform fees, every tier, forever." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Crimson+Pro:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      /* Indigo Serif palette — locked */
+      --primary:        #6366F1;
+      --primary-soft:   #8B5CF6;
+      --primary-lift:   #818CF8;
+      --warm:           #F59E0B;
+      --warm-soft:      #FDE68A;
+      --bg:             #F9FAFB;
+      --surface:        #FFFFFF;
+      --surface-alt:    #F3F4F6;
+      --fg:             #111827;
+      --fg-muted:       #6B7280;
+      --border:         #E5E7EB;
+      --border-strong:  #D1D5DB;
+      --success:        #10B981;
+      --danger:         #EF4444;
+      --hero-grad:      linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+      --warm-to-primary:linear-gradient(120deg, #F59E0B 0%, #8B5CF6 60%, #6366F1 100%);
+      --display:        "Crimson Pro", Georgia, "Times New Roman", serif;
+      --body:           "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
+      --mono:           ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --radius-sm:  8px;
+      --radius:     12px;
+      --radius-lg:  20px;
+      --radius-xl:  28px;
+      --shadow-sm:  0 1px 2px rgba(17,24,39,0.06);
+      --shadow:     0 4px 14px rgba(17,24,39,0.08);
+      --shadow-lg:  0 20px 45px rgba(99,102,241,0.18), 0 8px 20px rgba(17,24,39,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--body);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: transparent; color: inherit; }
+    img { max-width: 100%; display: block; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* ============================================================
+       WORDMARK — variant F: tada!ify
+       ============================================================ */
+    .wm {
+      font-family: var(--display);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: baseline;
+      white-space: nowrap;
+    }
+    .wm .ta  { color: var(--primary); }
+    .wm .sep { color: rgba(17,24,39,0.3); font-weight: 900; margin: 0 0.06em; }
+    .wm .da  { color: var(--warm); }
+    .wm .ify { color: var(--fg); }
+    .wm.on-dark .ta  { color: var(--primary-lift); }
+    .wm.on-dark .sep { color: rgba(255,255,255,0.4); }
+    .wm.on-dark .ify { color: #F9FAFB; }
+
+    /* ============================================================
+       BUTTONS
+       ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: var(--body);
+      font-weight: 600;
+      font-size: 15px;
+      line-height: 1;
+      padding: 12px 20px;
+      border-radius: 10px;
+      transition: transform .1s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4F46E5; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.35); }
+    .btn-warm { background: var(--warm); color: #1F1300; }
+    .btn-warm:hover { background: #D97706; color:#fff; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(245,158,11,0.4); }
+    .btn-ghost { color: var(--fg); background: transparent; padding: 10px 14px; }
+    .btn-ghost:hover { background: var(--surface-alt); }
+    .btn-lg { padding: 16px 26px; font-size: 16px; border-radius: 12px; }
+
+    /* ============================================================
+       TOP NAV — sticky
+       ============================================================ */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(249,250,251,0.85);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid rgba(229,231,235,0.6);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 68px; gap: 24px;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 12px; }
+    .nav-brand .wm { font-size: 22px; }
+    .logo-small { width: 44px; height: 44px; flex-shrink: 0; }
+    .nav-links { display: none; gap: 6px; }
+    .nav-links a {
+      padding: 8px 14px; border-radius: 8px; font-size: 14px; color: var(--fg-muted); font-weight: 500;
+    }
+    .nav-links a:hover { color: var(--fg); background: var(--surface-alt); }
+    .nav-cta { display: flex; align-items: center; gap: 8px; }
+    .nav-mobile-toggle { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 8px; }
+    .nav-mobile-toggle:hover { background: var(--surface-alt); }
+    .nav-mobile-toggle svg { width: 22px; height: 22px; color: var(--fg); }
+
+    @media (min-width: 1024px) {
+      .nav-links { display: flex; }
+      .nav-mobile-toggle { display: none; }
+    }
+
+    .nav-drawer {
+      display: none;
+      padding: 16px 24px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .nav-drawer.open { display: block; }
+    .nav-drawer a {
+      display: block; padding: 12px 0; font-size: 16px; border-bottom: 1px solid var(--border);
+    }
+    .nav-drawer a:last-child { border-bottom: none; }
+    @media (min-width: 1024px) { .nav-drawer { display: none !important; } }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .hero {
+      padding: 56px 0 72px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 85% 20%, rgba(245,158,11,0.14), transparent 60%),
+        radial-gradient(ellipse 50% 45% at 10% 90%, rgba(139,92,246,0.12), transparent 60%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    @media (min-width: 1024px) {
+      .hero { padding: 88px 0 96px; }
+      .hero-inner { grid-template-columns: 1.1fr 1fr; gap: 56px; }
+    }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary);
+      background: rgba(99,102,241,0.08);
+      padding: 6px 12px; border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warm); }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 40px;
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      margin: 0 0 18px;
+      color: var(--fg);
+    }
+    .hero h1 em {
+      font-style: italic;
+      background: var(--hero-grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    @media (min-width: 640px) { .hero h1 { font-size: 52px; } }
+    @media (min-width: 1024px) { .hero h1 { font-size: 64px; line-height: 1.02; } }
+
+    .hero-sub {
+      font-size: 18px; line-height: 1.55;
+      color: var(--fg-muted);
+      margin: 0 0 28px;
+      max-width: 560px;
+    }
+    .hero-sub strong { color: var(--fg); font-weight: 600; }
+
+    /* Handle-claim form */
+    .claim-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 560px;
+    }
+    .claim-row {
+      display: flex;
+      align-items: stretch;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .claim-row:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.15), var(--shadow);
+    }
+    .claim-prefix {
+      display: flex; align-items: center;
+      padding: 0 12px 0 18px;
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--fg-muted);
+      background: var(--surface-alt);
+      border-right: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .claim-input {
+      flex: 1;
+      border: none; outline: none;
+      padding: 16px 14px;
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--fg);
+      background: transparent;
+      min-width: 0;
+    }
+    .claim-btn {
+      border: none;
+      background: var(--warm);
+      color: #1F1300;
+      font-family: var(--body);
+      font-weight: 600;
+      font-size: 15px;
+      padding: 0 22px;
+      white-space: nowrap;
+      transition: background .15s ease;
+    }
+    .claim-btn:hover { background: #D97706; color:#fff; }
+    .claim-btn .arrow { display: inline-block; transition: transform .15s ease; margin-left: 6px; }
+    .claim-btn:hover .arrow { transform: translateX(3px); }
+
+    @media (max-width: 520px) {
+      .claim-row { flex-direction: column; }
+      .claim-prefix { border-right: none; border-bottom: 1px solid var(--border); padding: 10px 18px; }
+      .claim-btn { padding: 14px; }
+    }
+
+    .claim-status {
+      font-size: 13px;
+      display: flex; align-items: center; gap: 6px;
+      min-height: 20px;
+      color: var(--fg-muted);
+    }
+    .claim-status.ok    { color: var(--success); }
+    .claim-status.err   { color: var(--danger); }
+    .claim-status .ico { font-weight: 700; }
+
+    /* Live wordmark preview — the "magic" */
+    .wm-preview-wrap {
+      background: var(--surface);
+      border: 1px dashed var(--border-strong);
+      border-radius: 14px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 96px;
+    }
+    .wm-preview-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-muted);
+    }
+    .wm-preview {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 30px;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: baseline;
+      transition: opacity .2s ease;
+    }
+    .wm-preview.muted .ta,
+    .wm-preview.muted .sep,
+    .wm-preview.muted .da,
+    .wm-preview.muted .ify,
+    .wm-preview.muted .slash,
+    .wm-preview.muted .handle {
+      opacity: 0.35;
+    }
+    .wm-preview .slash { color: var(--fg-muted); margin: 0 0.05em; font-weight: 500; }
+    .wm-preview .handle {
+      color: var(--fg);
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 500;
+      margin-left: 2px;
+      word-break: break-all;
+    }
+    @media (min-width: 640px) { .wm-preview { font-size: 34px; } .wm-preview .handle { font-size: 26px; } }
+
+    .trust-micro {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--fg-muted);
+      margin-top: 4px; flex-wrap: wrap;
+    }
+    .trust-micro .sep-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-muted); opacity: 0.5; }
+
+    /* Hero right column */
+    .hero-right {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo-hero-wrap {
+      width: 280px; height: 280px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    @media (min-width: 640px) { .logo-hero-wrap { width: 320px; height: 320px; } }
+
+    .hero-badges {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .badge {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+      animation: float 5s ease-in-out infinite;
+    }
+    .badge .emj { margin-right: 4px; }
+    .badge-1 { top: 4%;  left: -8%;  animation-delay: 0s; }
+    .badge-2 { top: 52%; right: -10%; animation-delay: 1.3s; }
+    .badge-3 { bottom: 4%; left: 2%;  animation-delay: 2.6s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .preview-card {
+      width: 100%;
+      max-width: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: var(--shadow-lg);
+      animation: cardIn 1s ease-out both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0)  scale(1); }
+    }
+    .preview-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #8B5CF6 100%);
+      margin: 0 auto 10px;
+      box-shadow: 0 6px 14px rgba(245,158,11,0.25);
+    }
+    .preview-handle { text-align: center; font-weight: 600; font-size: 14px; color: var(--fg); display: flex; justify-content: center; align-items: baseline; gap: 0; flex-wrap: wrap; }
+    .preview-handle .wm { font-size: 18px; }
+    .preview-sub   { text-align: center; font-size: 12px; color: var(--fg-muted); margin-bottom: 14px; margin-top: 2px; }
+    .preview-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg);
+    }
+    .preview-link .ico {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: var(--primary);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .preview-link .ico.warm { background: var(--warm); color: #1F1300; }
+    .preview-link .ico.purple { background: var(--primary-soft); }
+    .preview-link .price { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--fg-muted); }
+
+    /* ============================================================
+       SOCIAL PROOF STRIP
+       ============================================================ */
+    .proof {
+      padding: 28px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .proof-inner {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      text-align: center;
+    }
+    .proof-text { font-size: 13px; color: var(--fg-muted); }
+    .proof-avatars { display: flex; align-items: center; }
+    .proof-av {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid var(--surface);
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      margin-left: -6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }
+    .proof-av:nth-child(1) { background: linear-gradient(135deg, #F59E0B, #D97706); margin-left: 0; }
+    .proof-av:nth-child(2) { background: linear-gradient(135deg, #6366F1, #4F46E5); }
+    .proof-av:nth-child(3) { background: linear-gradient(135deg, #8B5CF6, #6366F1); }
+    .proof-av:nth-child(4) { background: linear-gradient(135deg, #10B981, #059669); }
+    .proof-av:nth-child(5) { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+    .proof-av:nth-child(6) { background: linear-gradient(135deg, #818CF8, #6366F1); }
+
+    /* ============================================================
+       SECTION BASE
+       ============================================================ */
+    section.block { padding: 80px 0; }
+    @media (min-width: 1024px) { section.block { padding: 104px 0; } }
+    section.alt { background: var(--surface); }
+
+    .section-head {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 48px;
+    }
+    .section-head h2 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 36px;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin: 0 0 14px;
+    }
+    @media (min-width: 1024px) { .section-head h2 { font-size: 46px; } }
+    .section-head h2 em { font-style: italic; color: var(--primary); }
+    .section-head h2 em.warm { color: var(--warm); }
+    .section-head p {
+      font-size: 17px;
+      color: var(--fg-muted);
+      margin: 0;
+    }
+
+    /* ============================================================
+       CREATOR SHOWCASE
+       ============================================================ */
+    .creators {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 640px) { .creators { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .creators { grid-template-columns: repeat(5, 1fr); gap: 14px; } }
+
+    .creator-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 16px;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .creator-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary-lift);
+    }
+    .creator-av {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 18px rgba(17,24,39,0.12);
+    }
+    .creator-av.c1 { background: radial-gradient(circle at 35% 30%, #FDE68A 0%, #F59E0B 45%, #92400E 100%); }
+    .creator-av.c2 { background: radial-gradient(circle at 35% 30%, #818CF8 0%, #6366F1 50%, #1E1B4B 100%); }
+    .creator-av.c3 { background: radial-gradient(circle at 35% 30%, #FCA5A5 0%, #EC4899 45%, #831843 100%); }
+    .creator-av.c4 { background: radial-gradient(circle at 35% 30%, #6EE7B7 0%, #10B981 45%, #064E3B 100%); }
+    .creator-av.c5 { background: radial-gradient(circle at 35% 30%, #FBCFE8 0%, #F472B6 45%, #701A75 100%); }
+    .creator-name { font-family: var(--display); font-weight: 700; font-size: 18px; margin: 0 0 4px; }
+    .creator-niche {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--fg-muted); font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .creator-handle {
+      font-family: var(--mono); font-size: 12px; color: var(--primary);
+      margin-bottom: 12px; word-break: break-all;
+    }
+    .creator-card .go {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      transition: transform .15s ease, color .15s ease;
+    }
+    .creator-card:hover .go { transform: translateX(4px); color: var(--primary); }
+
+    /* ============================================================
+       COMPARISON TABLE
+       ============================================================ */
+    .compare-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    .compare-table th, .compare-table td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-table thead th {
+      background: var(--surface-alt);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      color: var(--fg);
+    }
+    .compare-table thead th:nth-child(2) { color: var(--fg-muted); }
+    .compare-table thead th:nth-child(3) { color: var(--primary); }
+    .compare-table tbody tr:last-child td { border-bottom: none; }
+    .compare-table tbody tr:hover { background: rgba(99,102,241,0.02); }
+    .compare-table td.feat { font-weight: 500; color: var(--fg); }
+    .compare-table td.lt { color: var(--fg-muted); }
+    .compare-table td.td-us {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .compare-table td.td-us .free-pill {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(16,185,129,0.12);
+      color: var(--success);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .check { color: var(--success); font-weight: 700; }
+
+    .compare-foot {
+      padding: 16px 20px;
+      background: linear-gradient(90deg, rgba(99,102,241,0.06), rgba(245,158,11,0.06));
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .compare-foot strong { color: var(--primary); }
+
+    @media (max-width: 640px) {
+      .compare-table th, .compare-table td { padding: 10px 12px; font-size: 13px; }
+    }
+
+    /* ============================================================
+       3-FEATURE BAND
+       ============================================================ */
+    .feats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 768px)  { .feats { grid-template-columns: repeat(3, 1fr); } }
+
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .feat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+    .feat-ico {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+    .feat-ico.p { background: var(--hero-grad); }
+    .feat-ico.w { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .feat-ico.c { background: linear-gradient(135deg, #10B981, #059669); }
+    .feat-ico svg { width: 24px; height: 24px; }
+    .feat-card h3 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 22px;
+      margin: 0 0 8px;
+      letter-spacing: -0.005em;
+    }
+    .feat-card p { margin: 0; font-size: 15px; color: var(--fg-muted); line-height: 1.6; }
+
+    /* ============================================================
+       WHY SWITCH — wedges
+       ============================================================ */
+    .wedges {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 768px)  { .wedges { grid-template-columns: repeat(3, 1fr); } }
+    .wedge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+    }
+    .wedge-num {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 48px;
+      line-height: 1;
+      color: var(--primary);
+      opacity: 0.18;
+      margin-bottom: 14px;
+    }
+    .wedge h3 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 20px;
+      margin: 0 0 10px;
+    }
+    .wedge p { margin: 0 0 14px; font-size: 14px; color: var(--fg-muted); line-height: 1.6; }
+    .wedge-compare {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      flex-wrap: wrap;
+    }
+    .wedge-compare .bad { color: var(--fg-muted); text-decoration: line-through; }
+    .wedge-compare .arr { color: var(--fg-muted); }
+    .wedge-compare .good { color: var(--primary); font-weight: 600; }
+
+    /* ============================================================
+       UPSELL PHILOSOPHY
+       ============================================================ */
+    .philosophy {
+      max-width: 720px; margin: 0 auto;
+      text-align: center;
+      padding: 36px 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+    .philosophy h3 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 26px;
+      margin: 0 0 10px;
+    }
+    .philosophy h3 em { font-style: italic; color: var(--warm); }
+    .philosophy p { margin: 0 0 16px; color: var(--fg-muted); font-size: 15px; }
+    .philosophy a {
+      color: var(--primary); font-weight: 600; font-size: 14px;
+      border-bottom: 1px dashed var(--primary-lift);
+    }
+    .philosophy a:hover { border-bottom-style: solid; }
+    .tip-pill {
+      display: inline-flex;align-items: center;gap: 4px;
+      padding: 2px 8px;background: rgba(245,158,11,0.14);border-radius: 999px;
+      font-weight: 600;color: #92400E; font-size: 14px;
+    }
+
+    /* ============================================================
+       FAQ
+       ============================================================ */
+    .faq-list { max-width: 780px; margin: 0 auto; }
+    details.faq {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color .15s ease;
+    }
+    details.faq[open] { border-color: var(--primary-lift); box-shadow: var(--shadow-sm); }
+    details.faq summary {
+      list-style: none;
+      padding: 18px 22px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    details.faq summary::-webkit-details-marker { display: none; }
+    details.faq summary .plus {
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--surface-alt);
+      color: var(--fg);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      transition: transform .2s ease, background .15s ease, color .15s ease;
+    }
+    details.faq[open] summary .plus { background: var(--primary); color: #fff; transform: rotate(45deg); }
+    details.faq .faq-body {
+      padding: 0 22px 20px;
+      color: var(--fg-muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    details.faq .faq-body a { color: var(--primary); font-weight: 600; }
+    details.faq .faq-body strong { color: var(--fg); }
+
+    /* ============================================================
+       FINAL CTA BAND
+       ============================================================ */
+    .final-cta {
+      position: relative;
+      padding: 80px 0;
+      background: var(--warm-to-primary);
+      color: #fff;
+      overflow: hidden;
+    }
+    .final-cta::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 120%, rgba(255,255,255,0.22), transparent 70%);
+      pointer-events: none;
+    }
+    .final-cta .inner {
+      position: relative;
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .final-cta h2 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 44px;
+      line-height: 1.05;
+      margin: 0 0 14px;
+      letter-spacing: -0.015em;
+    }
+    @media (min-width: 1024px) { .final-cta h2 { font-size: 56px; } }
+    .final-cta p { font-size: 17px; opacity: 0.92; margin: 0 0 28px; }
+    .final-cta .claim-form { margin: 0 auto; }
+    .final-cta .claim-row { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.08); }
+    .final-cta .claim-row:focus-within { border-color: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,0.25); }
+    .final-cta .claim-prefix {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.85);
+      border-right-color: rgba(255,255,255,0.2);
+    }
+    .final-cta .claim-input { color: #fff; }
+    .final-cta .claim-input::placeholder { color: rgba(255,255,255,0.6); }
+    .final-cta .claim-btn { background: #fff; color: var(--primary); }
+    .final-cta .claim-btn:hover { background: #F9FAFB; color: #4F46E5; }
+    .final-cta .claim-status { color: rgba(255,255,255,0.9); }
+    .final-cta .claim-status.ok  { color: #D1FAE5; }
+    .final-cta .claim-status.err { color: #FEE2E2; }
+    .final-cta .wm-preview-wrap {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.35);
+    }
+    .final-cta .wm-preview-label { color: rgba(255,255,255,0.75); }
+    .final-cta .wm-preview .ta  { color: #fff; }
+    .final-cta .wm-preview .sep { color: rgba(255,255,255,0.5); }
+    .final-cta .wm-preview .da  { color: var(--warm-soft); }
+    .final-cta .wm-preview .ify { color: #fff; }
+    .final-cta .wm-preview .slash { color: rgba(255,255,255,0.6); }
+    .final-cta .wm-preview .handle { color: #fff; }
+    .final-cta .tiny { font-size: 13px; opacity: 0.88; margin-top: 18px; }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      background: #0B0F1E;
+      color: #E5E7EB;
+      padding: 64px 0 36px;
+    }
+    footer a { color: #E5E7EB; }
+    footer a:hover { color: #fff; }
+    .foot-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    @media (min-width: 640px) { .foot-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .foot-grid { grid-template-columns: repeat(4, 1fr); } }
+    .foot-col h4 {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+      margin: 0 0 14px;
+      font-weight: 700;
+    }
+    .foot-col ul { list-style: none; padding: 0; margin: 0; }
+    .foot-col li { margin-bottom: 10px; font-size: 14px; }
+
+    .ask-ai {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      padding: 22px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #9CA3AF;
+      font-size: 13px;
+    }
+    .ask-ai .label { font-weight: 600; color: #E5E7EB; }
+    .ask-ai .ai-links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ask-ai .ai-links a {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background .15s ease;
+    }
+    .ask-ai .ai-links a:hover { background: rgba(255,255,255,0.12); }
+
+    .foot-bottom {
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center;
+      padding-top: 22px;
+      font-size: 12px;
+      color: #6B7280;
+    }
+    .foot-bottom .wm { font-size: 14px; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .badge, .preview-card { animation: none; }
+      * { transition: none !important; }
+    }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       TOP NAV — sticky
+       UX #7: NO "Powered by tadaify" anywhere (AP-001 respected on our own marketing).
+       ============================================================ -->
+  <nav class="nav" aria-label="Primary">
+    <div class="container nav-inner">
+      <a class="nav-brand" href="./landing.html" aria-label="tadaify home">
+        <svg class="logo-small" viewBox="0 0 120 120" role="img" aria-label="tadaify logo">
+          <defs>
+            <linearGradient id="stageN-nav" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#7C78FF"/>
+              <stop offset="58%"  stop-color="#5B56E8"/>
+              <stop offset="100%" stop-color="#4F46E5"/>
+            </linearGradient>
+            <radialGradient id="stageHL-nav" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.36)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </radialGradient>
+            <linearGradient id="warmN-nav" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#FFD36A"/>
+              <stop offset="58%"  stop-color="#F59E0B"/>
+              <stop offset="100%" stop-color="#D97706"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="40" fill="url(#stageN-nav)"/>
+          <circle cx="60" cy="60" r="40" fill="url(#stageHL-nav)"/>
+          <circle cx="60" cy="60" r="40" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="3.5"/>
+          <circle id="orb-nav" cx="60" cy="60" r="20" fill="url(#warmN-nav)"/>
+        </svg>
+        <span class="wm" aria-hidden="true">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </span>
+        <span class="sr-only">tadaify</span>
+      </a>
+
+      <div class="nav-links" role="navigation">
+        <a href="./pricing.html">Pricing</a>
+        <a href="./templates.html">Templates</a>
+        <a href="./trust.html">Trust</a>
+        <a href="./docs.html">Docs</a>
+      </div>
+
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="./login.html">Login</a>
+        <a class="btn btn-warm" href="#hero-claim">Claim your handle</a>
+        <button class="nav-mobile-toggle" aria-label="Open menu" id="menuBtn">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="nav-drawer" id="navDrawer">
+      <a href="./pricing.html">Pricing</a>
+      <a href="./templates.html">Templates</a>
+      <a href="./trust.html">Trust</a>
+      <a href="./docs.html">Docs</a>
+      <a href="./login.html">Login</a>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       HERO
+       UX #1: editorial wordmark (variant F) instead of flat logo
+       UX #2: Crimson Pro serif display, not lime-green startup vibe
+       UX #3: live wordmark preview in claim form — creator sees brand materialize in real-time
+       UX #4: "No credit card. No trial." trust microcopy
+       ============================================================ -->
+  <header class="hero" id="hero-claim">
+    <div class="container hero-inner">
+
+      <div>
+        <span class="eyebrow"><span class="dot"></span>0% platform fees &middot; every tier &middot; forever</span>
+
+        <h1>Turn your bio link into your <em>best first impression</em>.</h1>
+
+        <p class="hero-sub">
+          The only link-in-bio where <strong>every feature is free</strong>. Pay only if you want your own domain &mdash; starting at <strong>$2/mo</strong>. No seller fees. No upsell modals. No &ldquo;Powered by&rdquo; on your page, ever.
+        </p>
+
+        <form class="claim-form" id="heroClaim" autocomplete="off" aria-label="Claim your handle">
+          <div class="claim-row">
+            <span class="claim-prefix">tadaify.com/</span>
+            <input
+              type="text"
+              class="claim-input"
+              id="heroInput"
+              placeholder="yourname"
+              spellcheck="false"
+              autocapitalize="off"
+              aria-label="Your handle"
+              maxlength="30"
+            />
+            <button type="submit" class="claim-btn">
+              Claim your handle <span class="arrow">&rarr;</span>
+            </button>
+          </div>
+
+          <div class="claim-status" id="heroStatus">
+            <span class="ico">&#9679;</span> 3&ndash;30 characters: lowercase letters, numbers, hyphens.
+          </div>
+
+          <div class="wm-preview-wrap" aria-live="polite">
+            <span class="wm-preview-label">Your public page</span>
+            <span class="wm-preview muted" id="heroPreview">
+              <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span><span class="slash">/</span><span class="handle" id="heroPreviewHandle">yourname</span>
+            </span>
+          </div>
+
+          <p class="trust-micro">
+            <strong style="color:var(--fg);font-weight:600">No credit card.</strong>
+            <span class="sep-dot"></span>
+            <strong style="color:var(--fg);font-weight:600">No trial.</strong>
+            <span class="sep-dot"></span>
+            <span>Everything free. Upgrade when it helps you.</span>
+          </p>
+        </form>
+      </div>
+
+      <div class="hero-right">
+        <div class="logo-hero-wrap" aria-hidden="true">
+          <!-- MOTION v10 — full 320px animated logo with 4-edge flash spotlights -->
+          <svg id="logoHero" viewBox="0 0 120 120" width="100%" height="100%" role="img" aria-label="tadaify animated logo">
+            <defs>
+              <linearGradient id="stageL-h" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="#7C78FF"/>
+                <stop offset="58%"  stop-color="#5B56E8"/>
+                <stop offset="100%" stop-color="#4F46E5"/>
+              </linearGradient>
+              <radialGradient id="stageHL-h" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(255,255,255,0.36)"/>
+                <stop offset="60%"  stop-color="rgba(255,255,255,0.10)"/>
+                <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+              </radialGradient>
+              <radialGradient id="stageBounce-h" cx="72%" cy="78%" r="28%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(255,255,255,0.12)"/>
+                <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+              </radialGradient>
+              <filter id="stageGlow-h" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="rgba(79,70,229,0.30)" flood-opacity="1"/>
+              </filter>
+              <linearGradient id="warmL-h" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="#FFD36A"/>
+                <stop offset="58%"  stop-color="#F59E0B"/>
+                <stop offset="100%" stop-color="#D97706"/>
+              </linearGradient>
+              <radialGradient id="warmHL-h" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(255,255,255,0.42)"/>
+                <stop offset="55%"  stop-color="rgba(255,255,255,0.12)"/>
+                <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+              </radialGradient>
+              <filter id="warmGlow-h" x="-25%" y="-25%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="rgba(245,158,11,0.32)" flood-opacity="1"/>
+              </filter>
+              <!-- Light-theme flashes: pure amber, NO white core (per v10 light-theme fix) -->
+              <radialGradient id="flashE-h" cx="85%" cy="50%" r="60%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(252,211,77,1)"/>
+                <stop offset="22%"  stop-color="rgba(245,158,11,0.85)"/>
+                <stop offset="55%"  stop-color="rgba(217,119,6,0.35)"/>
+                <stop offset="100%" stop-color="rgba(180,83,9,0)"/>
+              </radialGradient>
+              <radialGradient id="flashS-h" cx="50%" cy="85%" r="60%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(252,211,77,1)"/>
+                <stop offset="22%"  stop-color="rgba(245,158,11,0.85)"/>
+                <stop offset="55%"  stop-color="rgba(217,119,6,0.35)"/>
+                <stop offset="100%" stop-color="rgba(180,83,9,0)"/>
+              </radialGradient>
+              <radialGradient id="flashW-h" cx="15%" cy="50%" r="60%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(252,211,77,1)"/>
+                <stop offset="22%"  stop-color="rgba(245,158,11,0.85)"/>
+                <stop offset="55%"  stop-color="rgba(217,119,6,0.35)"/>
+                <stop offset="100%" stop-color="rgba(180,83,9,0)"/>
+              </radialGradient>
+              <radialGradient id="flashN-h" cx="50%" cy="15%" r="60%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(252,211,77,1)"/>
+                <stop offset="22%"  stop-color="rgba(245,158,11,0.85)"/>
+                <stop offset="55%"  stop-color="rgba(217,119,6,0.35)"/>
+                <stop offset="100%" stop-color="rgba(180,83,9,0)"/>
+              </radialGradient>
+            </defs>
+
+            <g id="flashes-hero">
+              <ellipse id="flash-hero-E" cx="115" cy="60" rx="45" ry="38" fill="url(#flashE-h)" opacity="0"/>
+              <ellipse id="flash-hero-S" cx="60"  cy="115" rx="38" ry="45" fill="url(#flashS-h)" opacity="0"/>
+              <ellipse id="flash-hero-W" cx="5"   cy="60"  rx="45" ry="38" fill="url(#flashW-h)" opacity="0"/>
+              <ellipse id="flash-hero-N" cx="60"  cy="5"   rx="38" ry="45" fill="url(#flashN-h)" opacity="0"/>
+            </g>
+
+            <g filter="url(#stageGlow-h)">
+              <circle cx="60" cy="60" r="40" fill="url(#stageL-h)"/>
+              <circle cx="60" cy="60" r="40" fill="url(#stageHL-h)"/>
+              <circle cx="60" cy="60" r="40" fill="url(#stageBounce-h)"/>
+              <circle cx="60" cy="60" r="40" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="3.5"/>
+            </g>
+
+            <g id="warmGroupHero" filter="url(#warmGlow-h)">
+              <circle id="orb-hero-base"  cx="60" cy="60" r="20" fill="url(#warmL-h)"/>
+              <circle id="orb-hero-light" cx="60" cy="60" r="20" fill="url(#warmHL-h)"/>
+            </g>
+          </svg>
+
+          <div class="hero-badges">
+            <span class="badge badge-1"><span class="emj">&#9889;</span>1-tap checkout</span>
+            <span class="badge badge-2"><span class="emj">&#127775;</span>0% fees</span>
+            <span class="badge badge-3"><span class="emj">&#127760;</span>domain $2</span>
+          </div>
+        </div>
+
+        <div class="preview-card" role="img" aria-label="Example creator page">
+          <div class="preview-avatar"></div>
+          <div class="preview-handle">
+            <span class="wm" aria-hidden="true">
+              <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+            </span>
+            <span style="font-family:var(--mono);font-size:13px;color:var(--fg-muted)">/alexandrasilva</span>
+          </div>
+          <div class="preview-sub">Fitness coach &middot; Lisbon</div>
+          <div class="preview-link">
+            <span class="ico">F</span>
+            <span>12-week fitness plan</span>
+            <span class="price">$29</span>
+          </div>
+          <div class="preview-link">
+            <span class="ico warm">M</span>
+            <span>Monthly mobility calls</span>
+            <span class="price">$12/mo</span>
+          </div>
+          <div class="preview-link">
+            <span class="ico purple">N</span>
+            <span>Free newsletter</span>
+            <span class="price">Join</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ============================================================
+       SOCIAL PROOF STRIP
+       UX #10: concrete number with specific month count
+       ============================================================ -->
+  <section class="proof">
+    <div class="container proof-inner">
+      <div class="proof-avatars" aria-hidden="true">
+        <span class="proof-av"></span>
+        <span class="proof-av"></span>
+        <span class="proof-av"></span>
+        <span class="proof-av"></span>
+        <span class="proof-av"></span>
+        <span class="proof-av"></span>
+      </div>
+      <p class="proof-text">
+        Join thousands of creators building something that looks like them.
+        <strong style="color:var(--fg)">14,283</strong> new pages created this month.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       REAL CREATOR SHOWCASE
+       UX #5: real clickable creator pages, not generic thumbnails
+       AP-048 respected: mid-creator names only, no celebrity fakes
+       ============================================================ -->
+  <section class="block alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>Real creators, <em>real pages.</em></h2>
+        <p>Click any to see the real thing &mdash; no mockups, no fake previews.</p>
+      </div>
+
+      <div class="creators">
+        <a class="creator-card" href="./alexandrasilva.html">
+          <div class="creator-av c1" aria-hidden="true"></div>
+          <h3 class="creator-name">Alexandra Silva</h3>
+          <div class="creator-niche">Fitness coach &middot; 50k IG</div>
+          <div class="creator-handle">tadaify.com/alexandrasilva</div>
+          <span class="go">See page &rarr;</span>
+        </a>
+
+        <a class="creator-card" href="./kubabar.html">
+          <div class="creator-av c2" aria-hidden="true"></div>
+          <h3 class="creator-name">Kuba Bar</h3>
+          <div class="creator-niche">Music producer &middot; 80k Spotify</div>
+          <div class="creator-handle">tadaify.com/kubabar</div>
+          <span class="go">See page &rarr;</span>
+        </a>
+
+        <a class="creator-card" href="./martawolska.html">
+          <div class="creator-av c3" aria-hidden="true"></div>
+          <h3 class="creator-name">Marta Wolska</h3>
+          <div class="creator-niche">Newsletter &middot; 15k subs</div>
+          <div class="creator-handle">tadaify.com/martawolska</div>
+          <span class="go">See page &rarr;</span>
+        </a>
+
+        <a class="creator-card" href="./neondj.html">
+          <div class="creator-av c4" aria-hidden="true"></div>
+          <h3 class="creator-name">Neon DJ</h3>
+          <div class="creator-niche">Live streamer &middot; 120k Twitch</div>
+          <div class="creator-handle">tadaify.com/neondj</div>
+          <span class="go">See page &rarr;</span>
+        </a>
+
+        <a class="creator-card" href="./chipmunkguy.html">
+          <div class="creator-av c5" aria-hidden="true"></div>
+          <h3 class="creator-name">Chipmunk Guy</h3>
+          <div class="creator-niche">TikTok niche &middot; 200k</div>
+          <div class="creator-handle">tadaify.com/chipmunkguy</div>
+          <span class="go">See page &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WHAT'S ON FREE TABLE
+       AP-046: "0% fees" prominent; AP-023: pricing in nav
+       ============================================================ -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <h2>Everything you need on <em>Free.</em></h2>
+        <p>Pay only when you want a custom domain ($2/mo) or when you&rsquo;re ready to grow.</p>
+      </div>
+
+      <div class="compare-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col">On Free — included</th>
+              <th scope="col">tadaify Free &middot; $0</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="feat">Custom themes</td>                         <td class="lt">All themes, all styles</td> <td class="td-us"><span class="check">&check;</span> <span class="free-pill">Free</span></td></tr>
+            <tr><td class="feat">Analytics (geo &middot; device &middot; referrer)</td>   <td class="lt">365-day history included</td> <td class="td-us"><span class="check">&check;</span> <span class="free-pill">Free</span></td></tr>
+            <tr><td class="feat">Link scheduling</td>                       <td class="lt">Publish by date &amp; time</td> <td class="td-us"><span class="check">&check;</span> <span class="free-pill">Free</span></td></tr>
+            <tr><td class="feat">Email capture</td>                         <td class="lt">Collect &amp; export subscribers</td> <td class="td-us"><span class="check">&check;</span> <span class="free-pill">Free</span></td></tr>
+            <tr><td class="feat">QR code</td>                                <td class="lt">Download SVG or PNG</td> <td class="td-us"><span class="check">&check;</span> <span class="free-pill">Free</span></td></tr>
+            <tr><td class="feat">Custom animations</td>                     <td class="lt">30+ entrance effects</td> <td class="td-us"><span class="check">&check;</span> 30+ <span class="free-pill">Free</span></td></tr>
+            <tr><td class="feat">No platform watermark</td>                <td class="lt">No &ldquo;Powered by&rdquo; &mdash; ever</td> <td class="td-us"><span class="check">&check;</span> Always &mdash; we never had one</td></tr>
+            <tr><td class="feat">Commerce (sell products)</td>              <td class="lt">Upgrade to Creator for 0% fees</td> <td class="td-us"><strong>0% fee</strong> &middot; Creator $5/mo</td></tr>
+          </tbody>
+        </table>
+        <div class="compare-foot">
+          Only paying for <strong>your own domain?</strong> $2/mo. Need more audience tools? <strong>Creator $5/mo</strong>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       3-FEATURE BAND
+       ============================================================ -->
+  <section class="block alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>Three things we do <em class="warm">better.</em></h2>
+        <p>Not 47 features. Three that matter more than the rest.</p>
+      </div>
+
+      <div class="feats">
+        <div class="feat-card">
+          <div class="feat-ico p">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/><circle cx="18" cy="18" r="3"/></svg>
+          </div>
+          <h3>Inline checkout</h3>
+          <p>Buyers stay on your page &mdash; no redirects to Stripe. 1-tap Apple&nbsp;Pay and Google&nbsp;Pay. Higher conversion, every time.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico w">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+          </div>
+          <h3>Custom domain at $2</h3>
+          <p>The most affordable custom domain in the category. Your name, your address, zero per-domain markup.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-ico c">
+            <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 4 4 5-7"/></svg>
+          </div>
+          <h3>Analytics that mean something</h3>
+          <p>Real-time. Geo down to city level. Bot-filtered. All free &mdash; 90 days on Free, 365 days on Pro.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WHY CREATORS CHOOSE TADAIFY — wedges
+       ============================================================ -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <h2>Why creators <em>choose tadaify</em></h2>
+        <p>Three things that take 30 seconds to see.</p>
+      </div>
+
+      <div class="wedges">
+        <div class="wedge">
+          <div class="wedge-num">01</div>
+          <h3>Your URL, <em style="font-style:italic;font-family:var(--display)">your brand</em></h3>
+          <p>tadaify.com/yourname is your creator real estate. Clean. Memorable. Yours. Want your own domain? Add it for $2/mo.</p>
+          <div class="wedge-compare">
+            <span class="bad">yourname.someplatform.com</span>
+            <span class="arr">&rarr;</span>
+            <span class="good">tadaify.com/yourname</span>
+          </div>
+        </div>
+
+        <div class="wedge">
+          <div class="wedge-num">02</div>
+          <h3>Every feature free</h3>
+          <p>Custom themes, analytics, scheduling, email capture &mdash; all included from day one. Pay only when you want a custom domain ($2/mo).</p>
+          <div class="wedge-compare">
+            <span class="bad">locked behind upgrade</span>
+            <span class="arr">&rarr;</span>
+            <span class="good">$0 forever</span>
+          </div>
+        </div>
+
+        <div class="wedge">
+          <div class="wedge-num">03</div>
+          <h3>Inline commerce</h3>
+          <p>Sell directly on your page. Buyers stay with you, no redirects. <strong style="color:var(--fg)">0% platform fees</strong> on paid tiers.</p>
+          <div class="wedge-compare">
+            <span class="bad">platform takes a cut</span>
+            <span class="arr">&rarr;</span>
+            <span class="good">0% &mdash; forever</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SUBTLE UPSELL PHILOSOPHY
+       UX #9: explicit anti-aggression statement
+       AP-031 respected: no banners, no popups, no modals
+       ============================================================ -->
+  <section class="block alt">
+    <div class="container">
+      <div class="philosophy">
+        <h3>We don&rsquo;t show upgrade popups. <em>Ever.</em></h3>
+        <p>
+          When Creator ($5) or Pro ($15) would help you, you&rsquo;ll see a small
+          <span class="tip-pill">&#128161; tip</span>
+          &mdash; dismissible, non-blocking, never interrupts your flow. No black banners, no mid-edit modals, no dark patterns.
+        </p>
+        <a href="./trust.html#no-popups">Read our subtle-upsell philosophy &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FAQ — native <details>
+       ============================================================ -->
+  <section class="block">
+    <div class="container">
+      <div class="section-head">
+        <h2>Questions? <em>Answered.</em></h2>
+        <p>The six things creators ask before switching.</p>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq">
+          <summary>Can I migrate my existing bio-link page? <span class="plus" aria-hidden="true">+</span></summary>
+          <div class="faq-body">
+            Yes. Paste your existing bio-link URL on signup &mdash; we auto-import your links in 30 seconds. Custom themes, scheduled links, email-capture blocks all come across. No manual copying.
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>Do you charge seller fees? <span class="plus" aria-hidden="true">+</span></summary>
+          <div class="faq-body">
+            <strong>0% on every paid tier.</strong> Forever. Bound by our Price Lock on tadaify.com/trust. Free tier has no commerce &mdash; upgrade to Creator ($5/mo) to sell. We take nothing &mdash; only Stripe&rsquo;s processing fee applies (~2.9% + 30&cent;).
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>What about the data I put in? <span class="plus" aria-hidden="true">+</span></summary>
+          <div class="faq-body">
+            Your data. Export anytime as JSON or CSV. Delete your account &mdash; everything goes, including payment history, analytics, and email subscribers. GDPR Article 20 (portability) + Article 17 (erasure) compliant. We never sell creator data.
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>What&rsquo;s the catch? <span class="plus" aria-hidden="true">+</span></summary>
+          <div class="faq-body">
+            No catch. Every product feature is on Free. You pay <strong>only</strong> if you want a custom domain ($2/mo add-on), or if you want Creator ($5) which bundles the domain with priority support and longer analytics retention, or Pro ($15) for team seats + custom code + email automations, or Business ($49) for agency sub-accounts and white-label.
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>Do you have AI features? <span class="plus" aria-hidden="true">+</span></summary>
+          <div class="faq-body">
+            Yes &mdash; three at MVP: product descriptions, page-copy suggestions, and product thumbnails. Free tier: 20 generations/month. Creator: 40/mo. Pro: 200/mo. Business: unlimited. Every AI edit shows a diff before applying &mdash; you approve, we never overwrite your voice silently.
+          </div>
+        </details>
+
+        <details class="faq">
+          <summary>How fast can I launch? <span class="plus" aria-hidden="true">+</span></summary>
+          <div class="faq-body">
+            30 seconds to claim your handle. You can build your whole page in <a href="./try.html">guest mode</a> without even signing up &mdash; only create an account when you&rsquo;re ready to publish. Most creators go live in under 5 minutes.
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FINAL CTA BAND
+       ============================================================ -->
+  <section class="final-cta">
+    <div class="container inner">
+      <h2>Ready to claim your handle?</h2>
+      <p>Free forever. No credit card. No tricks.</p>
+
+      <form class="claim-form" id="finalClaim" autocomplete="off" aria-label="Claim your handle (final CTA)">
+        <div class="claim-row">
+          <span class="claim-prefix">tadaify.com/</span>
+          <input
+            type="text"
+            class="claim-input"
+            id="finalInput"
+            placeholder="yourname"
+            spellcheck="false"
+            autocapitalize="off"
+            aria-label="Your handle"
+            maxlength="30"
+          />
+          <button type="submit" class="claim-btn">
+            Claim it <span class="arrow">&rarr;</span>
+          </button>
+        </div>
+        <div class="claim-status" id="finalStatus">
+          <span class="ico">&#9679;</span> 3&ndash;30 characters: lowercase letters, numbers, hyphens.
+        </div>
+        <div class="wm-preview-wrap" aria-live="polite">
+          <span class="wm-preview-label">Your public page</span>
+          <span class="wm-preview muted" id="finalPreview">
+            <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span><span class="slash">/</span><span class="handle" id="finalPreviewHandle">yourname</span>
+          </span>
+        </div>
+      </form>
+
+      <p class="tiny"><strong>14,283</strong> creators joined this month.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ZERO "Powered by tadaify" — we respect AP-001 even on our own marketing.
+       Minimal 4-column layout.
+       ============================================================ -->
+  <footer>
+    <div class="container">
+      <div class="foot-grid">
+        <div class="foot-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="./pricing.html">Pricing</a></li>
+            <li><a href="./templates.html">Templates</a></li>
+            <li><a href="./trust.html">Trust</a></li>
+            <li><a href="./roadmap.html">Roadmap</a></li>
+            <li><a href="./status.html">Status</a></li>
+            <li><a href="./changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <h4>Creators</h4>
+          <ul>
+            <li><a href="./directory.html">Creator Directory</a></li>
+            <li><a href="./help.html">Help Center</a></li>
+            <li><a href="./migrate.html">Migrate your page</a></li>
+            <li><a href="./help.html#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <h4>Developers</h4>
+          <ul>
+            <li><a href="./docs.html">API reference</a></li>
+            <li><a href="./docs.html#webhooks">Webhooks</a></li>
+            <li><a href="./docs.html#oauth">OAuth</a></li>
+            <li><a href="./docs.html#changelog">API changelog</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="./blog.html">Blog</a></li>
+            <li><a href="./manifesto.html">Manifesto</a></li>
+            <li><a href="./contact.html">Contact</a></li>
+            <li><a href="./legal/privacy.html">Privacy</a></li>
+            <li><a href="./legal/terms.html">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ask-ai">
+        <span class="label">Ask AI about tadaify:</span>
+        <div class="ai-links">
+          <a href="https://chat.openai.com/?q=What%20is%20tadaify.com%3F" target="_blank" rel="noopener">ChatGPT</a>
+          <a href="https://claude.ai/new?q=What%20is%20tadaify.com%3F" target="_blank" rel="noopener">Claude</a>
+          <a href="https://gemini.google.com/app?q=What%20is%20tadaify.com%3F" target="_blank" rel="noopener">Gemini</a>
+          <a href="https://www.perplexity.ai/?q=What%20is%20tadaify.com%3F" target="_blank" rel="noopener">Perplexity</a>
+          <a href="https://x.com/i/grok?text=What%20is%20tadaify.com%3F" target="_blank" rel="noopener">Grok</a>
+        </div>
+      </div>
+
+      <div class="foot-bottom">
+        <span class="wm on-dark">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </span>
+        <span>&copy; 2026 tadaify. Made by creators, for creators.</span>
+        <span><a href="./legal/privacy.html">Privacy</a> &middot; <a href="./legal/terms.html">Terms</a> &middot; <a href="./legal/cookies.html">Cookies</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       JS: (1) mobile-nav (2) handle-claim live preview + availability
+       (3) motion v10 orbit engine
+       ============================================================ -->
+  <script>
+  (function () {
+    'use strict';
+
+    /* (1) Mobile nav ----------------------------------------- */
+    var menuBtn = document.getElementById('menuBtn');
+    var drawer = document.getElementById('navDrawer');
+    if (menuBtn && drawer) {
+      menuBtn.addEventListener('click', function () { drawer.classList.toggle('open'); });
+      drawer.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () { drawer.classList.remove('open'); });
+      });
+    }
+
+    /* (2) Handle-claim: live preview + simulated availability -- */
+    var HANDLE_RE = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
+    var RESERVED  = ['app','admin','login','register','try','pricing','templates','trust','faq','docs','api','assets','vs','for','blog','help','status','about','contact','preview','developers','mail','www','root'];
+    var TAKEN     = ['admin','kuba','marta','alex','test','example','tadaify','john','jane','creator','support'];
+    var DEBOUNCE_MS = 300;
+
+    function classify(raw) {
+      if (!raw) return { state: 'idle', msg: '3\u201330 characters: lowercase letters, numbers, hyphens.' };
+      if (raw.length < 3) return { state: 'err',  msg: 'Too short \u2014 at least 3 characters.' };
+      if (raw.length > 30) return { state: 'err', msg: 'Too long \u2014 30 characters max.' };
+      if (raw.indexOf('--') !== -1) return { state: 'err', msg: 'Hmm \u2014 no double hyphens.' };
+      if (!HANDLE_RE.test(raw)) return { state: 'err', msg: 'Only lowercase letters, numbers, hyphens. No start/end dash.' };
+      if (RESERVED.indexOf(raw) !== -1) return { state: 'err', msg: 'That\u2019s reserved for us. Try another.' };
+      if (TAKEN.indexOf(raw) !== -1)    return { state: 'err', msg: 'Taken \u2014 someone beat you to it.' };
+      return { state: 'ok', msg: 'Available! Tap claim to reserve tadaify.com/' + raw };
+    }
+
+    function setStatus(el, state, msg) {
+      if (!el) return;
+      el.classList.remove('ok', 'err');
+      if (state === 'ok' || state === 'err') el.classList.add(state);
+      var icon = state === 'ok' ? '\u2713' : state === 'err' ? '\u2715' : '\u25CF';
+      el.innerHTML = '<span class="ico">' + icon + '</span> ' + msg;
+    }
+
+    function wire(inputId, statusId, previewId, handleSpanId) {
+      var input       = document.getElementById(inputId);
+      var status      = document.getElementById(statusId);
+      var preview     = document.getElementById(previewId);
+      var handleSpan  = document.getElementById(handleSpanId);
+      if (!input) return;
+
+      var debounceTimer = null;
+
+      function update() {
+        var raw = input.value.toLowerCase().trim();
+        if (input.value !== raw) input.value = raw;
+
+        if (handleSpan) handleSpan.textContent = raw || 'yourname';
+        if (preview) {
+          if (raw.length === 0) preview.classList.add('muted');
+          else preview.classList.remove('muted');
+        }
+
+        clearTimeout(debounceTimer);
+        if (raw.length === 0) {
+          setStatus(status, 'idle', '3\u201330 characters: lowercase letters, numbers, hyphens.');
+          return;
+        }
+        var imm = classify(raw);
+        if (imm.state === 'err') { setStatus(status, 'err', imm.msg); return; }
+
+        setStatus(status, 'idle', 'Checking availability\u2026');
+        debounceTimer = setTimeout(function () {
+          var res = classify(raw);
+          setStatus(status, res.state, res.msg);
+        }, DEBOUNCE_MS);
+      }
+
+      input.addEventListener('input', update);
+
+      var form = input.closest('form');
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var raw = input.value.toLowerCase().trim();
+          var res = classify(raw);
+          if (res.state !== 'ok') {
+            setStatus(status, 'err', res.msg || 'Pick a valid handle first.');
+            input.focus();
+            return;
+          }
+          setStatus(status, 'ok', 'Reserved! (demo) \u2014 in production, we\u2019d take you to signup.');
+        });
+      }
+    }
+
+    wire('heroInput',  'heroStatus',  'heroPreview',  'heroPreviewHandle');
+    wire('finalInput', 'finalStatus', 'finalPreview', 'finalPreviewHandle');
+
+    /* (3) Motion v10 — orbit engine (constants verbatim from v10 source) --- */
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var ORBIT_R   = 18.4;
+    var CX        = 60;
+    var CY        = 60;
+    var GLIDE_IN  = 900;
+    var ORBIT_DUR = 5600;
+    var GLIDE_OUT = 900;
+    var REST      = 800;
+    var CYCLE     = GLIDE_IN + ORBIT_DUR + GLIDE_OUT + REST;
+    var SWAY_AMP  = 0.55;
+    var SWAY_FREQ = 4;
+    var FLASH_WINDOW = 0.55;
+    var FLASH_DECAY  = 1.6;
+
+    var CARDINALS = { E: 0, S: Math.PI / 2, W: Math.PI, N: 3 * Math.PI / 2 };
+
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function easeIn(t)  { return Math.pow(t, 3); }
+    function clamp(t)   { return Math.max(0, Math.min(1, t)); }
+    function setPos(el, x, y) { if (!el) return; el.setAttribute('cx', x.toFixed(3)); el.setAttribute('cy', y.toFixed(3)); }
+    function setOp(el, o)      { if (!el) return; el.setAttribute('opacity', Math.max(0, Math.min(1, o)).toFixed(3)); }
+    function angDist(a, b) { var d = Math.abs(a - b); return Math.min(d, 2 * Math.PI - d); }
+    function flashOpacity(angle, cardinal) {
+      if (angle === null) return 0;
+      var d = angDist(angle, cardinal);
+      if (d >= FLASH_WINDOW) return 0;
+      var t = d / FLASH_WINDOW;
+      return Math.pow(1 - t, FLASH_DECAY);
+    }
+    function getPos(t) {
+      if (t < GLIDE_IN) {
+        var p = easeOut(clamp(t / GLIDE_IN));
+        return { x: CX + ORBIT_R * p, y: CY, angle: null };
+      } else if (t < GLIDE_IN + ORBIT_DUR) {
+        var el = t - GLIDE_IN;
+        var angle = 2 * Math.PI * (el / ORBIT_DUR);
+        var sway = SWAY_AMP * Math.sin(SWAY_FREQ * angle);
+        var r = ORBIT_R + sway;
+        return { x: CX + r * Math.cos(angle), y: CY + r * Math.sin(angle), angle: angle };
+      } else if (t < GLIDE_IN + ORBIT_DUR + GLIDE_OUT) {
+        var el2 = t - GLIDE_IN - ORBIT_DUR;
+        var p2  = easeIn(clamp(el2 / GLIDE_OUT));
+        return { x: CX + ORBIT_R * (1 - p2), y: CY, angle: null };
+      } else {
+        return { x: CX, y: CY, angle: null };
+      }
+    }
+
+    var instances = [
+      {
+        orbs: [document.getElementById('orb-hero-base'), document.getElementById('orb-hero-light')],
+        flashes: {
+          E: document.getElementById('flash-hero-E'),
+          S: document.getElementById('flash-hero-S'),
+          W: document.getElementById('flash-hero-W'),
+          N: document.getElementById('flash-hero-N')
+        }
+      },
+      /* tiny nav logo — orbit only, no flashes (too noisy at 44px) */
+      {
+        orbs: [document.getElementById('orb-nav')],
+        flashes: null
+      }
+    ];
+
+    var startTime = null;
+    function frame(now) {
+      if (!startTime) startTime = now;
+      var t = (now - startTime) % CYCLE;
+      var pos = getPos(t);
+
+      instances.forEach(function (inst) {
+        inst.orbs.forEach(function (el) { setPos(el, pos.x, pos.y); });
+        if (inst.flashes) {
+          ['E','S','W','N'].forEach(function (dir) {
+            setOp(inst.flashes[dir], flashOpacity(pos.angle, CARDINALS[dir]));
+          });
+        }
+      });
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
+  </script>
+
+</body>
+</html>

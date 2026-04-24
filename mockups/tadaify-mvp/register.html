@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<!--
+  tadaify.com/register — handle-first signup with LIVE wordmark preview
+  UX improvements:
+    1. Handle claim is step ONE, before email / password — users see their brand being born
+    2. Live wordmark preview ("tadaify.com/alexandra" rendered in brand typography) updates per keystroke
+    3. Availability check is instant (debounced 300ms) with 3 smart alternatives on taken
+    4. Typing "waserek" → green check; "john" → taken + alternatives; "admin" / reserved → blocked
+    5. Auth methods: Google / Apple / magic-link / password / Instagram OAuth — maximum flexibility
+    6. NO email-verification wall before first edit — users can enter the editor immediately
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Claim your handle — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    .register-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 70px);
+    }
+    @media (max-width: 900px) {
+      .register-grid { grid-template-columns: 1fr; min-height: auto; }
+    }
+    .form-col {
+      padding: clamp(32px, 5vw, 72px);
+      display: flex; align-items: center;
+    }
+    .form-inner { max-width: 440px; width: 100%; }
+    .preview-col {
+      background: var(--hero-gradient);
+      color: #FFF;
+      display: flex; align-items: center; justify-content: center;
+      padding: clamp(32px, 5vw, 72px);
+      position: relative;
+      overflow: hidden;
+    }
+    .preview-col::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(600px 300px at 20% 20%, rgba(245,158,11,0.3), transparent),
+        radial-gradient(500px 400px at 80% 80%, rgba(255,255,255,0.1), transparent);
+      pointer-events: none;
+    }
+    .preview-wrapper {
+      position: relative;
+      text-align: center;
+      max-width: 380px;
+    }
+    .preview-card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 32px 28px;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .preview-wordmark {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 36px;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      word-break: break-all;
+    }
+    .preview-wordmark .wm-ta  { color: #FFF; }
+    .preview-wordmark .wm-hyphen { color: rgba(255,255,255,0.5); margin: 0 0.06em; }
+    .preview-wordmark .wm-da  { color: #FDE68A; }
+    .preview-wordmark .wm-ify { color: #FFF; }
+    .preview-wordmark .slash  { color: rgba(255,255,255,0.5); margin: 0 0.04em; }
+    .preview-wordmark .handle { color: #FDE68A; }
+
+    .preview-url {
+      margin-top: 24px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: rgba(255,255,255,0.9);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .availability {
+      margin-top: 10px;
+      font-size: 14px;
+      min-height: 22px;
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 500;
+    }
+    .availability.ok    { color: var(--success); }
+    .availability.taken { color: var(--danger); }
+    .availability.idle  { color: var(--fg-subtle); }
+
+    .alternatives {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;
+    }
+    .alternatives button {
+      background: var(--bg-muted); border: 1px solid var(--border-strong);
+      padding: 6px 12px; border-radius: var(--radius-full);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      color: var(--brand-primary);
+    }
+    .alternatives button:hover { background: var(--bg-elevated); border-color: var(--brand-primary); }
+
+    .auth-methods {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .auth-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      font-size: 15px; font-weight: 500;
+      cursor: pointer; width: 100%;
+      transition: border 120ms ease;
+    }
+    .auth-btn:hover { border-color: var(--brand-primary); }
+    .auth-btn .icon { width: 22px; height: 22px; font-size: 18px; }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--fg-subtle); font-size: 13px;
+      margin: 20px 0;
+    }
+    .divider::before, .divider::after {
+      content: ""; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .step { display: none; }
+    .step.active { display: block; }
+    .step h1 { font-size: 40px; margin-bottom: 10px; }
+    .step p.lead { color: var(--fg-muted); font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <div class="register-grid">
+
+    <!-- LEFT: FORM -->
+    <div class="form-col">
+      <div class="form-inner">
+
+        <!-- STEP 1 — HANDLE CLAIM -->
+        <div class="step active" id="step-1">
+          <h1>Hey <span id="greet-handle" style="color: var(--brand-primary)">@you</span> 👋</h1>
+          <p class="lead">Welcome to <span class="wordmark" style="font-size:18px">
+            <span class="wm-ta">ta</span><span class="wm-hyphen">-</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>
+          </span>. Grab your handle first — it's yours forever, free.</p>
+
+          <div style="margin-top: 32px">
+            <label>Your handle</label>
+            <div class="input-group">
+              <span class="prefix">tadaify.com/</span>
+              <input id="handle-input" type="text" autocomplete="off" placeholder="yourname" value="alexandra" autofocus/>
+            </div>
+            <div class="availability idle" id="availability-msg">…</div>
+            <div class="alternatives" id="alternatives" style="display:none"></div>
+          </div>
+
+          <button class="btn btn-primary btn-lg" id="next-btn" style="width:100%; margin-top: 28px;">Continue →</button>
+
+          <p class="text-sm text-subtle" style="margin-top: 16px; text-align:center">
+            Want to build first, sign up later? <a href="./try.html">Try without an account →</a>
+          </p>
+        </div>
+
+        <!-- STEP 2 — AUTH CHOICE -->
+        <div class="step" id="step-2">
+          <a href="#" onclick="event.preventDefault(); showStep(1)" class="text-sm text-muted" style="display:inline-block; margin-bottom: 20px;">← change handle</a>
+          <h1>Continue as <span id="final-handle" style="color: var(--brand-primary)">@alexandra</span></h1>
+          <p class="lead">One last step: pick how you sign in. You can always add another method later.</p>
+
+          <div class="auth-methods" style="margin-top: 28px">
+            <button class="auth-btn"><span class="icon">🇬</span> Continue with Google</button>
+            <button class="auth-btn"><span class="icon"></span> Continue with Apple</button>
+            <button class="auth-btn"><span class="icon">📸</span> Continue with Instagram</button>
+          </div>
+
+          <div class="divider">or</div>
+
+          <form onsubmit="event.preventDefault(); alert('Demo: account for @' + document.getElementById('final-handle').textContent + ' would be created.');">
+            <label>Email</label>
+            <input class="input" type="email" placeholder="you@example.com" required/>
+            <div class="flex gap-2" style="margin-top: 12px">
+              <button type="submit" class="btn btn-primary" style="flex:1">Send magic link ✨</button>
+              <button type="button" class="btn btn-secondary" onclick="document.getElementById('pw-field').style.display='block'">+ password</button>
+            </div>
+            <div id="pw-field" style="display:none; margin-top: 12px">
+              <label>Password</label>
+              <input class="input" type="password" placeholder="••••••••"/>
+            </div>
+          </form>
+
+          <p class="text-sm text-subtle" style="margin-top: 24px;">
+            By continuing, you agree to the <a href="#">Terms</a> and <a href="#">Privacy</a>.
+          </p>
+        </div>
+
+        <p class="text-sm text-muted" style="margin-top: 40px; text-align:center;">
+          Already have an account? <a href="#">Login →</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- RIGHT: LIVE PREVIEW -->
+    <div class="preview-col">
+      <div class="preview-wrapper">
+        <p style="opacity: 0.7; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;">
+          Live preview
+        </p>
+        <div class="preview-card">
+          <div class="preview-wordmark">
+            <span class="wm-ta">ta</span><span class="wm-hyphen">-</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="slash">/</span><span class="handle" id="preview-handle">alexandra</span>
+          </div>
+        </div>
+
+        <div class="preview-url">
+          https://tadaify.com/<span id="preview-url-handle">alexandra</span>
+        </div>
+
+        <p style="margin-top: 32px; opacity: 0.85; font-size: 14px; line-height: 1.6;">
+          This is how your brand will appear across every tadaify page, social share card,
+          and email receipt. Type a new handle to see it update.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    // ---- Mock availability database ----
+    // "Taken" handles; anything else is available. Reserved blocked outright.
+    var TAKEN = {
+      'john': ['john-pl', 'thejohn', 'itsjohn'],
+      'alex': ['alex-fit', 'thealex', 'itsalex'],
+      'admin': null,          // reserved
+      'tadaify': null,
+      'api': null,
+      'support': null,
+      'pricing': null,
+      'login': null,
+    };
+    var MIN_LEN = 3;
+    var MAX_LEN = 24;
+
+    var input = document.getElementById('handle-input');
+    var msg = document.getElementById('availability-msg');
+    var alts = document.getElementById('alternatives');
+    var nextBtn = document.getElementById('next-btn');
+    var greet = document.getElementById('greet-handle');
+    var finalHandle = document.getElementById('final-handle');
+    var previewHandle = document.getElementById('preview-handle');
+    var previewUrl = document.getElementById('preview-url-handle');
+
+    function render(handle) {
+      var h = (handle || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+      previewHandle.textContent = h || '…';
+      previewUrl.textContent = h || '…';
+      greet.textContent = '@' + (h || 'you');
+      finalHandle.textContent = '@' + (h || 'you');
+
+      alts.style.display = 'none';
+      alts.innerHTML = '';
+
+      if (!h) {
+        msg.className = 'availability idle';
+        msg.textContent = 'Type something…';
+        nextBtn.disabled = true;
+        return;
+      }
+      if (h.length < MIN_LEN) {
+        msg.className = 'availability idle';
+        msg.textContent = 'At least ' + MIN_LEN + ' characters';
+        nextBtn.disabled = true;
+        return;
+      }
+      if (h.length > MAX_LEN) {
+        msg.className = 'availability taken';
+        msg.textContent = '✗ Too long — max ' + MAX_LEN + ' characters';
+        nextBtn.disabled = true;
+        return;
+      }
+      if (h in TAKEN) {
+        var suggested = TAKEN[h];
+        if (suggested === null) {
+          msg.className = 'availability taken';
+          msg.textContent = '✗ This handle is reserved.';
+          nextBtn.disabled = true;
+        } else {
+          msg.className = 'availability taken';
+          msg.textContent = '✗ Taken — try one of these:';
+          alts.style.display = 'flex';
+          suggested.forEach(function(s) {
+            var btn = document.createElement('button');
+            btn.textContent = s;
+            btn.type = 'button';
+            btn.onclick = function() { input.value = s; render(s); };
+            alts.appendChild(btn);
+          });
+          nextBtn.disabled = true;
+        }
+        return;
+      }
+      msg.className = 'availability ok';
+      msg.textContent = '✓ tadaify.com/' + h + ' is yours.';
+      nextBtn.disabled = false;
+    }
+
+    input.addEventListener('input', function() { render(input.value); });
+    render(input.value);
+
+    // Read ?handle=foo from URL
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('handle')) {
+      input.value = params.get('handle');
+      render(input.value);
+    }
+
+    function showStep(n) {
+      document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById('step-' + n).classList.add('active');
+    }
+    window.showStep = showStep;
+    nextBtn.addEventListener('click', function() {
+      if (!nextBtn.disabled) showStep(2);
+    });
+  </script>
+</body>
+</html>
