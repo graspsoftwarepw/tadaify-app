@@ -180,38 +180,42 @@
       width: fit-content;
     }
 
-    /* Free-tier add-on box */
-    .addon {
+    /* Universal $2 add-on — one row under the whole grid */
+    .addon-universal {
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      margin-top: 16px;
-      padding: 12px;
-      background: rgba(245, 158, 11, 0.06);
-      border: 1px dashed rgba(245, 158, 11, 0.35);
-      border-radius: 10px;
-      font-size: 12px;
-      color: var(--fg);
-      line-height: 1.45;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      margin: 20px auto 0;
+      max-width: 680px;
+      padding: 14px 20px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 14px;
+      text-align: left;
     }
+    .addon-universal p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--fg);
+    }
+    .addon-universal strong { font-weight: 700; }
     .addon-plus {
       background: var(--warm-primary, #F59E0B);
       color: #fff;
-      width: 22px; height: 22px;
+      width: 26px; height: 26px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       flex-shrink: 0;
-      font-size: 14px;
+      font-size: 16px;
     }
-    .addon strong { color: var(--fg); font-weight: 700; }
-    .addon-sub {
-      color: var(--fg-muted);
-      font-size: 11px;
-      margin-top: 2px;
-      line-height: 1.4;
+    @media (max-width: 580px) {
+      .addon-universal { padding: 12px 14px; }
+      .addon-universal p { font-size: 13px; }
     }
   </style>
 </head>
@@ -282,13 +286,6 @@
             <li>10 AI generations/mo</li>
             <li>tadaify.com/you subdomain</li>
           </ul>
-          <div class="addon">
-            <span class="addon-plus">+</span>
-            <div>
-              <strong>$2/mo</strong> optional add-on
-              <div class="addon-sub">Want your own domain? Add 1 custom domain to Free for $2/mo. No upgrade required.</div>
-            </div>
-          </div>
         </div>
 
         <div class="tier-card" data-tier="creator" onclick="selectTier(this)">
@@ -299,7 +296,7 @@
           <span class="lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
           <ul>
             <li>Everything in Free</li>
-            <li>1 custom domain free</li>
+            <li>1 custom domain included</li>
             <li>180d analytics</li>
             <li>40 AI generations/mo</li>
             <li>Sell products + communities</li>
@@ -314,7 +311,7 @@
           <span class="lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
           <ul>
             <li>Everything in Creator</li>
-            <li>3 custom domains</li>
+            <li>1 custom domain included</li>
             <li>Unlimited analytics</li>
             <li>200 AI generations/mo</li>
             <li>A/B testing</li>
@@ -329,13 +326,21 @@
           <span class="lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
           <ul>
             <li>Everything in Pro</li>
-            <li>10 custom domains</li>
+            <li>10 custom domains (agency)</li>
             <li>Agency multi-client</li>
             <li>Unlimited AI</li>
             <li>White-label exports</li>
             <li>Dedicated success manager</li>
           </ul>
         </div>
+      </div>
+
+      <!-- Universal add-on: applies to every plan, not just Free -->
+      <div class="addon-universal">
+        <span class="addon-plus">+</span>
+        <p>
+          Need extra domains? Add <strong>$2/mo per custom domain</strong> to any plan — Free included. No upgrade needed.
+        </p>
       </div>
 
       <!-- Actions -->
