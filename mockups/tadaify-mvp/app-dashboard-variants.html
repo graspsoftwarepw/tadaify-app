@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Dashboard variants — 10 layouts for selection
+  created_at: 2026-04-25
+  author: orchestrator
+  status: draft-for-review
+
+  Purpose: Visual exploration of 10 substantively-different dashboard layouts for
+  the authenticated creator view at tadaify.com/app. User will pick one or mix
+  elements.
+
+  Shared brand assumptions:
+    - Wordmark: ta / da! / ify (three spans, NO hyphen)
+    - Palette: Indigo Serif (6366F1 primary, F59E0B warm)
+    - Fonts: Crimson Pro display, Inter sans
+    - Motion v10 logo via <span class="logo-mark" data-logo></span>
+    - Sample user: handle=alexandra, bio="Creator + educator 🪄",
+      3 auto blocks: Instagram / TikTok / YouTube
+
+  Anti-patterns respected (shared across all 10):
+    AP-001 no "Powered by tadaify"
+    AP-017 no trials
+    AP-028 no friction upsells
+    AP-031 no sticky upgrade banners
+    AP-045 progressive disclosure — 6 block categories, never 30
+    No "setup X of Y" gamification. No vague "Enhance" button.
+    No mid-content nag banners.
+
+  CSS scoping: every variant's styles live under .v1 / .v2 / ... wrappers so
+  variants don't leak into each other. Only tokens + top-bar styles are global.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard variants — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    /* ==============================================================
+       GLOBAL — top control bar + rationale strip + stage
+       ============================================================== */
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+    }
+
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    .explorer-bar {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+    .explorer-bar .brand { display: flex; align-items: center; gap: 10px; }
+    .explorer-bar .brand .logo-mark { width: 28px; height: 28px; }
+    .explorer-bar .brand .wm { font-size: 20px; }
+    .explorer-bar h1 {
+      font-family: var(--font-sans);
+      font-size: 13px; font-weight: 500; color: var(--fg-muted);
+      letter-spacing: 0.02em; text-transform: uppercase;
+      margin-left: 6px;
+    }
+    .explorer-bar .spacer { flex: 1; min-width: 8px; }
+    .explorer-bar label {
+      font-size: 13px; color: var(--fg-muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .explorer-bar select {
+      font-family: var(--font-sans);
+      padding: 8px 14px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 14px; font-weight: 500;
+      min-width: 260px;
+      cursor: pointer;
+    }
+    .explorer-bar select:focus-visible {
+      outline: 2px solid var(--brand-primary); outline-offset: 1px;
+    }
+
+    .rationale {
+      padding: 14px 20px;
+      background: linear-gradient(180deg, rgba(99,102,241,0.06), rgba(99,102,241,0));
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--fg);
+    }
+    .rationale .rat-title {
+      font-family: var(--font-display);
+      font-size: 18px; font-weight: 600;
+      margin-right: 10px; color: var(--brand-primary);
+    }
+    .rationale .rat-row {
+      display: flex; flex-wrap: wrap; gap: 8px 18px;
+      max-width: 1400px; margin: 0 auto;
+    }
+    .rationale .rat-meta {
+      display: inline-flex; gap: 6px; align-items: baseline;
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .rationale .rat-meta b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+
+    .stage {
+      padding: 0;
+      max-width: 100%;
+    }
+    .variant {
+      display: none;
+      min-height: calc(100vh - 160px);
+    }
+    .variant.is-active { display: block; }
+
+    /* Shared micro-components used across variants --------------- */
+    .social-ig  { background: linear-gradient(135deg,#833AB4 0%,#C13584 40%,#E1306C 70%,#F77737 100%); }
+    .social-tt  { background: #000; }
+    .social-yt  { background: #FF0000; }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .chip.live    { background: var(--success-bg); color: #065F46; }
+    .chip.draft   { background: var(--warning-bg); color: #92400E; }
+    .chip.hidden  { background: var(--bg-sunken); color: var(--fg-muted); }
+    .chip.sched   { background: var(--info-bg); color: #1E40AF; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .15s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all .15s ease;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: transparent; color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-sm      { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+
+    /* Phone preview shell — reused in 7/10 variants */
+    .phone-shell {
+      width: 260px; height: 520px;
+      border-radius: 34px;
+      background: #0b0f1e;
+      padding: 10px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.18), 0 0 0 1px rgba(0,0,0,0.04);
+      flex-shrink: 0;
+    }
+    .phone-inner {
+      width: 100%; height: 100%;
+      background: linear-gradient(180deg, #fff 0%, #F8F9FC 100%);
+      border-radius: 26px;
+      padding: 18px 14px;
+      overflow: hidden;
+      display: flex; flex-direction: column; gap: 12px;
+      align-items: center;
+    }
+    .phone-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); color: #fff; font-size: 22px; font-weight: 600;
+    }
+    .phone-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .phone-bio  { font-size: 12px; color: var(--fg-muted); text-align: center; }
+    .phone-handle { font-size: 11px; color: var(--brand-primary); font-weight: 500; }
+    .phone-blocks { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .phone-block {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 13px; font-weight: 500;
+    }
+    .phone-block .pb-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: #fff; font-size: 13px;
+    }
+
+    /* Tooltip utility — shown on hover for unfamiliar elements */
+    [data-tip] {
+      position: relative;
+    }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 8px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 6px 10px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .15s ease, transform .15s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after {
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+
+    /* ==============================================================
+       V1 — CLASSIC SIDEBAR (Linktree/Notion baseline, refined)
+       ============================================================== */
+    .v1 { --v1-sidebar-w: 236px; }
+    .v1 .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 100%;
+    }
+    @media (min-width: 1024px) {
+      .v1 .layout {
+        grid-template-columns: var(--v1-sidebar-w) 1fr 340px;
+      }
+    }
+    .v1 aside.side {
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      padding: 18px 12px;
+      display: none;
+    }
+    @media (min-width: 1024px) {
+      .v1 aside.side { display: block; }
+    }
+    .v1 .side-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px 16px; border-bottom: 1px solid var(--border); margin-bottom: 12px;
+    }
+    .v1 .side-user .av {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 13px;
+    }
+    .v1 .side-user .uname { font-weight: 600; font-size: 13px; }
+    .v1 .side-user .uhandle { font-size: 11px; color: var(--fg-muted); }
+    .v1 .nav-group { padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .v1 .nav-group:last-child { border-bottom: 0; }
+    .v1 .nav-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--fg-subtle); padding: 8px 10px 4px;
+    }
+    .v1 .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg);
+      text-align: left;
+    }
+    .v1 .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-muted); }
+    .v1 .nav-item:hover { background: var(--bg-muted); }
+    .v1 .nav-item.active { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+    .v1 .nav-item.active svg { color: var(--brand-primary); }
+    .v1 .nav-sub {
+      padding: 6px 10px 6px 36px; font-size: 12px; color: var(--fg-muted);
+      border-radius: 6px; display: block;
+    }
+    .v1 .nav-sub:hover { color: var(--fg); background: var(--bg-muted); }
+
+    .v1 main.content {
+      padding: 24px 20px 40px;
+      min-width: 0;
+    }
+    .v1 .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+    }
+    .v1 .page-head h2 { font-size: 28px; }
+    .v1 .page-head .sub { color: var(--fg-muted); font-size: 14px; margin-top: 4px; }
+
+    .v1 .blocks { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+    .v1 .block {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px 16px;
+      transition: all .15s ease;
+    }
+    .v1 .block:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .v1 .block .grip {
+      width: 20px; color: var(--fg-subtle); cursor: grab;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .v1 .block .ic {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0;
+    }
+    .v1 .block .meta { flex: 1; min-width: 0; }
+    .v1 .block .meta .title { font-weight: 600; font-size: 14px; }
+    .v1 .block .meta .sub { font-size: 12px; color: var(--fg-muted); }
+    .v1 .block .tools { display: flex; gap: 2px; }
+
+    .v1 .add-block {
+      margin-top: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px;
+      border: 2px dashed var(--border-strong);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--fg-muted); font-weight: 500;
+    }
+    .v1 .add-block:hover {
+      border-color: var(--brand-primary); color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+
+    .v1 aside.preview {
+      display: none; border-left: 1px solid var(--border);
+      background: var(--bg);
+      padding: 24px 20px;
+    }
+    @media (min-width: 1024px) {
+      .v1 aside.preview { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    }
+    .v1 aside.preview h3 {
+      font-family: var(--font-sans); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-subtle);
+      font-weight: 600; align-self: stretch;
+    }
+
+    /* Mobile: bottom tab bar replaces sidebar */
+    .v1 .mobile-tabs {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+    @media (min-width: 1024px) {
+      .v1 .mobile-tabs { display: none; }
+    }
+    .v1 .mobile-tabs button {
+      background: transparent; border: 0; padding: 6px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 10px; color: var(--fg-muted);
+    }
+    .v1 .mobile-tabs button.active { color: var(--brand-primary); }
+    .v1 .mobile-tabs svg { width: 20px; height: 20px; }
+
+    /* ==============================================================
+       V2 — TOP TABS (Vercel / Stripe)
+       ============================================================== */
+    .v2 .tabbar {
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      display: flex; align-items: center; gap: 16px;
+      overflow-x: auto;
+    }
+    .v2 .tabbar .tab {
+      background: transparent; border: 0;
+      padding: 16px 4px;
+      font-size: 14px; font-weight: 500; color: var(--fg-muted);
+      border-bottom: 2px solid transparent;
+      flex-shrink: 0;
+    }
+    .v2 .tabbar .tab:hover { color: var(--fg); }
+    .v2 .tabbar .tab.active { color: var(--fg); border-bottom-color: var(--brand-primary); }
+    .v2 .tabbar .tab .count {
+      display: inline-block; margin-left: 6px;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 11px; font-weight: 600;
+    }
+    .v2 .tabbar .tab.active .count {
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+    }
+
+    .v2 .workspace {
+      max-width: 1200px; margin: 0 auto; padding: 28px 20px 80px;
+      display: grid; gap: 24px;
+      grid-template-columns: 1fr;
+    }
+    .v2 .header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .v2 .header-row h2 { font-size: 32px; }
+
+    .v2 .datagrid {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden;
+    }
+    .v2 .datagrid table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .v2 .datagrid th {
+      text-align: left; padding: 12px 16px;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      font-weight: 600; color: var(--fg-muted);
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .v2 .datagrid td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .v2 .datagrid tr:last-child td { border-bottom: 0; }
+    .v2 .datagrid tr:hover td { background: var(--bg-muted); }
+    .v2 .cell-block {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .v2 .cell-block .ic {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+
+    .v2 .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 340px; max-width: 100vw;
+      background: var(--bg-elevated); border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      transform: translateX(100%); transition: transform .25s ease;
+      z-index: 30;
+      padding: 20px; overflow-y: auto;
+    }
+    .v2 .drawer.open { transform: translateX(0); }
+    .v2 .drawer-toggle {
+      position: fixed; right: 16px; bottom: 24px;
+      z-index: 35;
+      background: var(--fg); color: #fff;
+      border: 0; border-radius: 999px;
+      padding: 12px 18px; font-weight: 500; font-size: 14px;
+      box-shadow: var(--shadow-lg);
+      display: inline-flex; gap: 8px; align-items: center;
+    }
+
+    /* ==============================================================
+       V3 — FIGMA CANVAS (pane / canvas / inspector)
+       ============================================================== */
+    .v3 { background: #F4F5F9; }
+    .v3 .canvas-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      height: calc(100vh - 160px);
+      min-height: 640px;
+    }
+    @media (min-width: 1024px) {
+      .v3 .canvas-layout { grid-template-columns: 220px 1fr 300px; }
+    }
+    .v3 .pages {
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      padding: 14px 12px;
+      display: none;
+    }
+    @media (min-width: 1024px) { .v3 .pages { display: block; } }
+    .v3 .pages h4 {
+      font-family: var(--font-sans); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); font-weight: 600; padding: 4px 6px;
+    }
+    .v3 .page-thumb {
+      display: flex; gap: 10px; align-items: center;
+      padding: 8px; border-radius: 10px; margin-top: 4px;
+      cursor: pointer;
+    }
+    .v3 .page-thumb:hover { background: var(--bg-muted); }
+    .v3 .page-thumb.active { background: rgba(99,102,241,0.10); }
+    .v3 .page-thumb .mini {
+      width: 36px; height: 60px; border-radius: 5px;
+      background: var(--hero-gradient);
+      flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
+    }
+    .v3 .page-thumb .ptxt .tt { font-size: 13px; font-weight: 600; }
+    .v3 .page-thumb .ptxt .ts { font-size: 11px; color: var(--fg-muted); }
+
+    .v3 .canvas {
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; overflow: auto;
+      position: relative;
+    }
+    .v3 .canvas::before {
+      content: ""; position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(17,24,39,0.08) 1px, transparent 1px);
+      background-size: 18px 18px;
+      pointer-events: none; opacity: 0.6;
+    }
+    .v3 .canvas-phone {
+      position: relative; z-index: 1;
+      width: 300px; height: 600px;
+      background: #0b0f1e; border-radius: 40px; padding: 12px;
+      box-shadow: 0 30px 80px rgba(17,24,39,0.2);
+    }
+    .v3 .canvas-phone .phone-inner {
+      border-radius: 30px;
+    }
+    .v3 .canvas-phone .phone-block {
+      border: 2px solid transparent; cursor: pointer;
+      transition: all .15s ease;
+    }
+    .v3 .canvas-phone .phone-block.selected {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+    }
+
+    .v3 .inspector {
+      background: var(--bg-elevated);
+      border-left: 1px solid var(--border);
+      padding: 16px; overflow-y: auto;
+      display: none;
+    }
+    @media (min-width: 1024px) { .v3 .inspector { display: block; } }
+    .v3 .inspector h4 {
+      font-family: var(--font-sans); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); font-weight: 600; margin-top: 18px;
+    }
+    .v3 .inspector h4:first-child { margin-top: 0; }
+    .v3 .inspector label {
+      display: block; font-size: 12px; color: var(--fg-muted); margin-top: 10px;
+    }
+    .v3 .inspector input, .v3 .inspector select {
+      width: 100%; padding: 7px 10px; border: 1px solid var(--border-strong);
+      border-radius: 8px; font-size: 13px; margin-top: 4px;
+      background: var(--bg-elevated);
+    }
+    .v3 .swatch-row { display: flex; gap: 6px; margin-top: 6px; }
+    .v3 .swatch {
+      width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .v3 .swatch.on { border-color: var(--fg); }
+
+    /* ==============================================================
+       V4 — NOTION-STYLE SINGLE COLUMN + SLASH COMMANDS
+       ============================================================== */
+    .v4 { background: var(--bg-elevated); }
+    .v4 .doc {
+      max-width: 760px; margin: 0 auto;
+      padding: 60px 24px 140px;
+      font-size: 16px;
+    }
+    .v4 .doc .cover {
+      height: 140px;
+      background: var(--hero-gradient);
+      border-radius: 14px; margin-bottom: -40px;
+      position: relative;
+    }
+    .v4 .doc .cover-avatar {
+      position: absolute; left: 24px; bottom: -30px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--warm-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-size: 34px; font-weight: 600;
+      border: 4px solid var(--bg-elevated);
+    }
+    .v4 .doc h1 {
+      font-size: 44px; margin: 60px 0 4px; font-weight: 600;
+    }
+    .v4 .doc .handle-row {
+      color: var(--fg-muted); font-size: 14px; margin-bottom: 24px;
+    }
+    .v4 .doc .bio {
+      font-size: 18px; color: var(--fg); line-height: 1.5;
+      padding: 6px 0; border-left: 3px solid var(--brand-warm); padding-left: 14px;
+      margin: 20px 0 40px;
+      font-style: italic; font-family: var(--font-display);
+    }
+    .v4 .doc h3 {
+      font-family: var(--font-sans); font-size: 15px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--fg-muted); margin: 20px 0 10px;
+    }
+    .v4 .doc .doc-block {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; margin: 4px 0;
+      border-radius: 8px;
+      cursor: grab;
+    }
+    .v4 .doc .doc-block:hover {
+      background: var(--bg-muted);
+    }
+    .v4 .doc .doc-block .grip {
+      color: var(--fg-subtle); opacity: 0;
+      width: 14px; font-size: 18px; line-height: 1;
+    }
+    .v4 .doc .doc-block:hover .grip { opacity: 1; }
+    .v4 .doc .doc-block .ic {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0;
+    }
+    .v4 .doc .doc-block .tt { flex: 1; font-weight: 500; }
+    .v4 .doc .doc-block .sb { font-size: 13px; color: var(--fg-muted); }
+    .v4 .slash-hint {
+      margin-top: 8px; padding: 10px 14px; border-radius: 8px;
+      color: var(--fg-subtle); font-style: italic;
+      cursor: text;
+    }
+    .v4 .slash-hint:hover { background: var(--bg-muted); color: var(--fg-muted); }
+    .v4 .slash-hint kbd {
+      font-family: var(--font-mono); font-size: 12px;
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      color: var(--fg); font-style: normal;
+      margin: 0 3px;
+    }
+    .v4 .floating-preview {
+      position: fixed; right: 24px; bottom: 24px;
+      z-index: 20;
+      width: 220px; height: 440px;
+      border-radius: 28px; background: #0b0f1e; padding: 8px;
+      box-shadow: var(--shadow-xl);
+      transform-origin: bottom right;
+      transition: transform .25s ease, opacity .25s ease;
+    }
+    .v4 .floating-preview .phone-inner {
+      border-radius: 22px; padding: 14px 10px; gap: 8px;
+    }
+    .v4 .floating-preview .phone-avatar { width: 40px; height: 40px; font-size: 16px; }
+    .v4 .floating-preview .phone-name { font-size: 14px; }
+    .v4 .floating-preview .phone-bio { font-size: 10px; }
+    .v4 .floating-preview.collapsed {
+      transform: scale(0.18); opacity: 0.9;
+      border-radius: 14px;
+    }
+    .v4 .preview-toggle {
+      position: fixed; right: 24px; top: calc(160px + 20px);
+      z-index: 25;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 500;
+      box-shadow: var(--shadow);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    /* ==============================================================
+       V5 — LINEAR / CMD-K FIRST
+       ============================================================== */
+    .v5 { background: #0B0F1E; color: #E5E7EB; }
+    .v5 .linear-chrome {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .v5 .breadcrumbs {
+      font-size: 13px; color: #9CA3AF; display: flex; align-items: center; gap: 8px;
+    }
+    .v5 .breadcrumbs .sep { color: #4B5563; }
+    .v5 .breadcrumbs b { color: #F9FAFB; font-weight: 500; }
+    .v5 .cmd-hint {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 7px 14px; border-radius: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #9CA3AF; font-size: 13px;
+      cursor: pointer;
+    }
+    .v5 .cmd-hint kbd {
+      font-family: var(--font-mono); font-size: 11px;
+      padding: 2px 6px; border-radius: 4px;
+      background: rgba(255,255,255,0.08); color: #F9FAFB;
+    }
+    .v5 .linear-stage {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+      padding: 40px 24px 60px;
+      align-items: start;
+    }
+    @media (min-width: 1024px) {
+      .v5 .linear-stage { grid-template-columns: 1fr 320px; max-width: 1100px; margin: 0 auto; }
+    }
+    .v5 .preview-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 32px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .v5 .preview-card .phone-shell { box-shadow: 0 40px 100px rgba(99,102,241,0.25); }
+    .v5 .stats h3 { color: #F9FAFB; }
+    .v5 .stat-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .v5 .stat-row .l { color: #9CA3AF; font-size: 13px; }
+    .v5 .stat-row .v { font-family: var(--font-display); font-size: 24px; font-weight: 600; color: #F9FAFB; }
+    .v5 .cmd-modal {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(5, 8, 18, 0.6);
+      backdrop-filter: blur(6px);
+      display: none; align-items: flex-start; justify-content: center;
+      padding-top: 15vh;
+    }
+    .v5 .cmd-modal.open { display: flex; }
+    .v5 .cmd-box {
+      width: min(560px, 90vw);
+      background: #111827; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    }
+    .v5 .cmd-input {
+      width: 100%; background: transparent; border: 0;
+      color: #F9FAFB; font-size: 16px; padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      outline: none;
+    }
+    .v5 .cmd-list { max-height: 360px; overflow-y: auto; padding: 8px; }
+    .v5 .cmd-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 8px;
+      font-size: 14px; color: #E5E7EB;
+    }
+    .v5 .cmd-item:hover, .v5 .cmd-item[data-sel="1"] { background: rgba(99,102,241,0.18); }
+    .v5 .cmd-item .cm-shortcut {
+      margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: #6B7280;
+    }
+
+    /* ==============================================================
+       V6 — KANBAN BOARD (Trello-style)
+       ============================================================== */
+    .v6 { background: #F0F3FA; }
+    .v6 .kan-head {
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+    .v6 .kan-head h2 { font-size: 22px; }
+    .v6 .kan-preview-strip {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.14);
+      padding: 6px 10px 6px 6px; border-radius: 999px;
+    }
+    .v6 .kan-preview-strip .dot-live { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+    .v6 .kan-preview-strip .h { font-size: 13px; font-weight: 500; }
+    .v6 .board {
+      padding: 18px;
+      display: grid; grid-template-columns: 1fr; gap: 14px;
+      overflow-x: auto;
+    }
+    @media (min-width: 900px) {
+      .v6 .board { grid-template-columns: repeat(4, minmax(260px, 1fr)); }
+    }
+    .v6 .col {
+      background: #E9EDF5; border-radius: 14px; padding: 12px;
+    }
+    .v6 .col-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; padding: 0 4px;
+    }
+    .v6 .col-head .name { font-weight: 600; font-size: 13px; }
+    .v6 .col-head .count {
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(17,24,39,0.06); font-size: 11px; font-weight: 600;
+    }
+    .v6 .col .cards { display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+    .v6 .card {
+      background: var(--bg-elevated); border-radius: 10px;
+      padding: 10px 12px; box-shadow: var(--shadow-sm);
+      display: flex; gap: 10px; align-items: center;
+      cursor: grab;
+    }
+    .v6 .card .ic {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      flex-shrink: 0;
+    }
+    .v6 .card .ct { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; }
+    .v6 .card .cs { font-size: 11px; color: var(--fg-muted); }
+    .v6 .col.live .dot  { background: var(--success); }
+    .v6 .col.draft .dot { background: var(--warning); }
+    .v6 .col.hid .dot   { background: var(--fg-subtle); }
+    .v6 .col.sch .dot   { background: var(--info); }
+    .v6 .col .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .v6 .col .add {
+      width: 100%; background: transparent; border: 0;
+      padding: 8px; font-size: 12px; color: var(--fg-muted); text-align: left;
+      border-radius: 6px;
+    }
+    .v6 .col .add:hover { background: rgba(255,255,255,0.6); color: var(--fg); }
+
+    /* ==============================================================
+       V7 — EDIT/PREVIEW TOGGLE (Framer-style)
+       ============================================================== */
+    .v7 .toggle-head {
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+    .v7 .mode-toggle {
+      display: inline-flex;
+      background: var(--bg-muted);
+      border-radius: 999px; padding: 4px;
+      font-size: 14px; font-weight: 500;
+    }
+    .v7 .mode-toggle button {
+      background: transparent; border: 0;
+      padding: 8px 22px; border-radius: 999px;
+      color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all .2s ease;
+    }
+    .v7 .mode-toggle button.on {
+      background: var(--bg-elevated); color: var(--fg);
+      box-shadow: var(--shadow-sm);
+    }
+    .v7 .v7-stage {
+      padding: 28px 20px 80px;
+      max-width: 900px; margin: 0 auto;
+    }
+    .v7 .edit-mode .edit-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .v7 .edit-mode .edit-card h3 { font-size: 20px; margin-bottom: 10px; }
+    .v7 .edit-mode .edit-card .inp {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      font-size: 14px; background: var(--bg-elevated);
+    }
+    .v7 .edit-mode .edit-card .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+
+    .v7 .preview-mode {
+      display: flex; justify-content: center; padding: 20px 0;
+      background: var(--bg-dark);
+      min-height: 600px;
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .v7 .preview-mode::before {
+      content: "Preview mode — tap blocks to select";
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: rgba(255,255,255,0.6);
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .v7 .preview-mode .phone-shell {
+      width: 300px; height: 600px;
+      margin-top: 30px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+    }
+
+    .v7.is-preview .edit-mode { display: none; }
+    .v7.is-edit .preview-mode { display: none; }
+
+    /* ==============================================================
+       V8 — MOBILE-FIRST BOTTOM SHEET (Apple Maps / Uber)
+       ============================================================== */
+    .v8 { background: var(--bg-dark); }
+    .v8 .v8-stage {
+      position: relative;
+      min-height: calc(100vh - 160px);
+      overflow: hidden;
+    }
+    .v8 .backdrop-phone {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) translateY(-80px);
+      width: 320px; height: 640px;
+      border-radius: 40px;
+      background: #111827; padding: 14px;
+      box-shadow: 0 50px 120px rgba(99,102,241,0.35);
+    }
+    @media (max-width: 900px) {
+      .v8 .backdrop-phone {
+        transform: translate(-50%, -50%) translateY(-140px) scale(0.85);
+      }
+    }
+    .v8 .backdrop-phone .phone-inner {
+      border-radius: 30px;
+    }
+    .v8 .sheet {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: var(--bg-elevated);
+      border-radius: 24px 24px 0 0;
+      padding: 10px 20px 24px;
+      box-shadow: 0 -20px 50px rgba(0,0,0,0.3);
+      height: 260px;
+      transition: height .25s ease;
+      overflow: hidden;
+    }
+    .v8 .sheet.expanded { height: 82%; }
+    .v8 .sheet .handle {
+      width: 44px; height: 5px; border-radius: 999px;
+      background: var(--border-strong); margin: 4px auto 14px;
+      cursor: ns-resize;
+    }
+    .v8 .sheet .sheet-title {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .v8 .sheet .sheet-title h3 { font-size: 20px; }
+    .v8 .sheet .sheet-title .small { font-size: 12px; color: var(--fg-muted); }
+    .v8 .sheet .sheet-search {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-muted); border-radius: 10px;
+      padding: 9px 12px; margin-bottom: 12px;
+      font-size: 14px; color: var(--fg-muted);
+    }
+    .v8 .sheet .sheet-blocks { display: flex; flex-direction: column; gap: 8px; }
+    .v8 .sheet .sblock {
+      display: flex; gap: 12px; align-items: center;
+      padding: 10px; background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    .v8 .sheet .sblock .ic {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+
+    /* ==============================================================
+       V9 — EDITORIAL MAGAZINE
+       ============================================================== */
+    .v9 { background: #FAF7F2; }
+    .v9 .mag {
+      max-width: 1100px; margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+    .v9 .mag-masthead {
+      border-top: 3px solid var(--fg);
+      border-bottom: 1px solid var(--fg);
+      padding: 10px 0;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--font-display);
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .v9 .mag-hero {
+      display: grid; grid-template-columns: 1fr; gap: 40px;
+      padding: 48px 0 40px;
+      border-bottom: 1px solid rgba(17,24,39,0.15);
+    }
+    @media (min-width: 900px) {
+      .v9 .mag-hero { grid-template-columns: 1fr 300px; }
+    }
+    .v9 .mag-kicker {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--brand-warm-dark); font-weight: 600;
+    }
+    .v9 .mag-hero h1 {
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 500;
+      line-height: 1; margin-top: 8px;
+    }
+    .v9 .mag-hero .dek {
+      font-family: var(--font-display);
+      font-size: 20px; font-style: italic; color: var(--fg-muted);
+      margin-top: 14px; max-width: 52ch;
+    }
+    .v9 .mag-byline {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--fg-muted); margin-top: 24px;
+      border-top: 1px solid rgba(17,24,39,0.15); padding-top: 14px;
+    }
+    .v9 .mag-phone-wrap {
+      display: flex; justify-content: center;
+    }
+    .v9 .mag-articles {
+      display: grid; grid-template-columns: 1fr; gap: 32px;
+      padding: 40px 0;
+    }
+    @media (min-width: 700px) {
+      .v9 .mag-articles { grid-template-columns: repeat(3, 1fr); }
+    }
+    .v9 .article {
+      border-top: 2px solid var(--fg);
+      padding-top: 14px;
+    }
+    .v9 .article .kicker { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--brand-primary); }
+    .v9 .article h3 { font-size: 22px; margin: 6px 0; }
+    .v9 .article p { font-size: 14px; color: var(--fg-muted); line-height: 1.5; }
+    .v9 .mag-toolbar {
+      position: sticky; bottom: 20px; z-index: 5;
+      background: var(--fg); color: #fff;
+      border-radius: 14px; padding: 10px 16px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      box-shadow: var(--shadow-lg);
+      max-width: 640px; margin: 24px auto 0;
+    }
+    .v9 .mag-toolbar .mbtn {
+      background: rgba(255,255,255,0.08); color: #fff;
+      border: 0; padding: 6px 12px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+    }
+    .v9 .mag-toolbar .mbtn:hover { background: rgba(255,255,255,0.16); }
+
+    /* ==============================================================
+       V10 — BENTO GRID
+       ============================================================== */
+    .v10 .bento-head {
+      padding: 22px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+    }
+    .v10 .bento-head h2 { font-size: 30px; }
+    .v10 .bento-head .sub { color: var(--fg-muted); font-size: 13px; }
+    .v10 .bento {
+      padding: 0 24px 60px;
+      display: grid; gap: 16px;
+      grid-template-columns: 1fr;
+      grid-auto-rows: minmax(140px, auto);
+    }
+    @media (min-width: 720px) {
+      .v10 .bento { grid-template-columns: repeat(4, 1fr); }
+    }
+    .v10 .tile {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 18px;
+      display: flex; flex-direction: column; gap: 10px;
+      position: relative;
+    }
+    .v10 .tile:hover { border-color: var(--border-strong); }
+    .v10 .tile h4 {
+      font-family: var(--font-sans); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-muted); font-weight: 600;
+    }
+    .v10 .tile .big {
+      font-family: var(--font-display); font-size: 36px; font-weight: 600;
+      line-height: 1;
+    }
+    .v10 .tile .grip {
+      position: absolute; top: 10px; right: 10px; opacity: 0;
+      color: var(--fg-subtle);
+    }
+    .v10 .tile:hover .grip { opacity: 1; cursor: grab; }
+
+    .v10 .tile.tile-preview {
+      grid-column: span 1; grid-row: span 3;
+      background: var(--bg-dark); color: #E5E7EB;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 24px;
+    }
+    @media (min-width: 720px) {
+      .v10 .tile.tile-preview { grid-column: span 2; grid-row: span 3; }
+    }
+    .v10 .tile.tile-preview h4 { color: rgba(255,255,255,0.6); }
+    .v10 .tile.tile-preview .phone-shell { width: 240px; height: 480px; }
+    .v10 .tile.tile-blocks {
+      grid-column: span 1; grid-row: span 2;
+    }
+    @media (min-width: 720px) {
+      .v10 .tile.tile-blocks { grid-column: span 2; grid-row: span 2; }
+    }
+    .v10 .tile.tile-blocks .mini-block {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: 10px;
+      background: var(--bg-muted);
+    }
+    .v10 .tile.tile-blocks .mini-block .ic {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .v10 .tile.tile-actions .action {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; font-size: 14px;
+    }
+    .v10 .tile.tile-actions .action .num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+    }
+    .v10 .tile.tile-domain {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(245,158,11,0.08) 100%);
+    }
+    .v10 .sparkline {
+      height: 48px; display: flex; align-items: flex-end; gap: 3px;
+    }
+    .v10 .sparkline span {
+      flex: 1; background: var(--brand-primary); border-radius: 2px;
+      opacity: 0.7;
+    }
+
+    /* ==============================================================
+       Small utilities
+       ============================================================== */
+    .kbd {
+      font-family: var(--font-mono); font-size: 11px;
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      color: var(--fg);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ======================================================================
+     TOP CONTROL BAR
+====================================================================== -->
+<div class="explorer-bar">
+  <div class="brand">
+    <span class="logo-mark" data-logo></span>
+    <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+  </div>
+  <h1>Dashboard variant explorer</h1>
+  <span class="spacer"></span>
+  <label for="variant-select">
+    Show variant
+    <select id="variant-select" aria-label="Choose dashboard variant to preview">
+      <option value="v1">V1 — Classic sidebar (Linktree/Notion, refined)</option>
+      <option value="v2">V2 — Top tabs (Vercel / Stripe)</option>
+      <option value="v3">V3 — Figma canvas (live-editable preview)</option>
+      <option value="v4">V4 — Notion doc + slash commands</option>
+      <option value="v5">V5 — Linear / cmd-K first</option>
+      <option value="v6">V6 — Kanban board (Trello)</option>
+      <option value="v7">V7 — Edit/Preview toggle (Framer)</option>
+      <option value="v8">V8 — Bottom sheet over preview (Apple Maps)</option>
+      <option value="v9">V9 — Editorial magazine</option>
+      <option value="v10">V10 — Bento grid (iOS widgets)</option>
+    </select>
+  </label>
+</div>
+
+<!-- Rationale strip -->
+<div class="rationale" id="rationale">
+  <div class="rat-row">
+    <span class="rat-title" id="rat-title">V1 — Classic sidebar</span>
+    <span id="rat-body">Left nav, main content, right preview. The safe, familiar baseline — differentiated from Linktree by Crimson Pro typography, breathing room, and a two-pane "edit + live preview" setup users can trust on day one.</span>
+  </div>
+  <div class="rat-row" style="margin-top:8px">
+    <span class="rat-meta"><b>Inspired by</b> <span id="rat-insp">Notion, Linktree, Stripe</span></span>
+    <span class="rat-meta"><b>Best for</b> <span id="rat-best">Mainstream creators, first-time SaaS users</span></span>
+    <span class="rat-meta"><b>Trade-off</b> <span id="rat-tr">Most similar to Linktree — less visual differentiation</span></span>
+  </div>
+</div>
+
+<!-- ======================================================================
+     STAGE — all 10 variants, show/hide switched by select
+====================================================================== -->
+<div class="stage">
+
+  <!-- =================================================================
+       V1 — CLASSIC SIDEBAR
+       ================================================================= -->
+  <section class="variant v1 is-active" data-variant="v1">
+    <div class="layout">
+
+      <!-- Sidebar -->
+      <aside class="side">
+        <div class="side-user">
+          <div class="av">A</div>
+          <div>
+            <div class="uname">Alexandra</div>
+            <div class="uhandle">tadaify.com/alexandra</div>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            My page
+          </button>
+          <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3 12h18"/></svg>
+            Design
+          </button>
+          <a class="nav-sub">· Theme &amp; colours</a>
+          <a class="nav-sub">· Fonts</a>
+          <a class="nav-sub">· Background</a>
+          <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+            Insights
+          </button>
+          <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+            Shop
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-label">Account</div>
+          <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            Settings
+          </button>
+          <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            Help &amp; docs
+          </button>
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h2>My page</h2>
+            <div class="sub">3 blocks · Live · Updated 2 minutes ago</div>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="btn btn-ghost btn-sm">Share</button>
+            <button class="btn btn-primary btn-sm">+ Add block</button>
+          </div>
+        </div>
+
+        <section class="blocks" aria-label="Page blocks">
+          <div class="block">
+            <span class="grip">⋮⋮</span>
+            <span class="ic social-ig">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.4.3 1.1.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.4.2-1.1.3-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.4-.3-1.1-.4-2.3C2.2 15.6 2.2 15.3 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 1-1.5s.9-.8 1.5-1c.4-.2 1.1-.3 2.3-.4 1.2-.1 1.6-.1 4.8-.1zm0 1.9c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2 .3-.5.2-.9.4-1.2.8-.3.3-.6.7-.8 1.2-.1.3-.3.9-.3 2-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.7.3 2 .2.5.4.9.8 1.2.3.3.7.6 1.2.8.3.1.9.3 2 .3 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2-.3.5-.2.9-.4 1.2-.8.3-.3.6-.7.8-1.2.1-.3.3-.9.3-2 .1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.7-.3-2-.2-.5-.4-.9-.8-1.2-.3-.3-.7-.6-1.2-.8-.3-.1-.9-.3-2-.3C15.5 4.1 15.1 4.1 12 4.1zm0 3.1a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6zm0 7.9a3.1 3.1 0 1 0 0-6.2 3.1 3.1 0 0 0 0 6.2zm6.1-8a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0z"/></svg>
+            </span>
+            <div class="meta">
+              <div class="title">Follow me on Instagram</div>
+              <div class="sub">@alexandra · Auto-added from onboarding</div>
+            </div>
+            <div class="tools">
+              <span class="chip live">Live</span>
+              <button class="iconbtn" data-tip="Edit block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+              <button class="iconbtn" data-tip="Hide from public page"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+
+          <div class="block">
+            <span class="grip">⋮⋮</span>
+            <span class="ic social-tt">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.3 6.7a5 5 0 0 1-3.6-3.1 5 5 0 0 1-.1-1V2h-3.4v13.6a2.4 2.4 0 1 1-2.4-2.4c.2 0 .5 0 .7.1V9.8a6 6 0 0 0-.7-.1 6 6 0 1 0 5.9 6V8.3a8.3 8.3 0 0 0 4.8 1.5V6.4c-.4 0-.8 0-1.2-.1z"/></svg>
+            </span>
+            <div class="meta">
+              <div class="title">Follow me on TikTok</div>
+              <div class="sub">@alexandra · Auto-added from onboarding</div>
+            </div>
+            <div class="tools">
+              <span class="chip live">Live</span>
+              <button class="iconbtn" data-tip="Edit block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+              <button class="iconbtn" data-tip="Hide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+
+          <div class="block">
+            <span class="grip">⋮⋮</span>
+            <span class="ic social-yt">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+            </span>
+            <div class="meta">
+              <div class="title">Follow me on YouTube</div>
+              <div class="sub">@alexandra · Auto-added from onboarding</div>
+            </div>
+            <div class="tools">
+              <span class="chip live">Live</span>
+              <button class="iconbtn" data-tip="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+              <button class="iconbtn" data-tip="Hide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+
+          <button class="add-block">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add a block
+          </button>
+        </section>
+      </main>
+
+      <!-- Right preview -->
+      <aside class="preview">
+        <h3>Live preview</h3>
+        <div class="phone-shell">
+          <div class="phone-inner">
+            <div class="phone-avatar">A</div>
+            <div class="phone-name">Alexandra</div>
+            <div class="phone-bio">Creator + educator 🪄</div>
+            <div class="phone-handle">tadaify.com/alexandra</div>
+            <div class="phone-blocks">
+              <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+              <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+              <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm">Open in new tab ↗</button>
+      </aside>
+    </div>
+
+    <!-- Mobile bottom tabs -->
+    <div class="mobile-tabs">
+      <button class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Page</button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Design</button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/></svg>Stats</button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>More</button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V2 — TOP TABS
+       ================================================================= -->
+  <section class="variant v2" data-variant="v2">
+    <div class="tabbar" role="tablist">
+      <button class="tab active" role="tab">Overview</button>
+      <button class="tab" role="tab">Content <span class="count">3</span></button>
+      <button class="tab" role="tab">Design</button>
+      <button class="tab" role="tab">Insights</button>
+      <button class="tab" role="tab">Shop <span class="count">0</span></button>
+      <button class="tab" role="tab">Settings</button>
+    </div>
+
+    <div class="workspace">
+      <div class="header-row">
+        <div>
+          <h2>Overview</h2>
+          <div style="color:var(--fg-muted); font-size:14px; margin-top:4px">Live at tadaify.com/alexandra · 142 visits in the last 7 days</div>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button class="btn btn-ghost btn-sm">Copy link</button>
+          <button class="btn btn-primary btn-sm">+ Add block</button>
+        </div>
+      </div>
+
+      <!-- 3-up stat cards -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+        <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:14px; padding:18px;">
+          <div style="font-size:12px; color:var(--fg-muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600">Visits · 7d</div>
+          <div style="font-family:var(--font-display); font-size:32px; font-weight:600; margin-top:6px">142</div>
+          <div style="font-size:12px; color:var(--success)">↑ 28% vs prev week</div>
+        </div>
+        <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:14px; padding:18px;">
+          <div style="font-size:12px; color:var(--fg-muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600">Clicks · 7d</div>
+          <div style="font-family:var(--font-display); font-size:32px; font-weight:600; margin-top:6px">87</div>
+          <div style="font-size:12px; color:var(--success)">↑ 12% vs prev week</div>
+        </div>
+        <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:14px; padding:18px;">
+          <div style="font-size:12px; color:var(--fg-muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600">Click-through</div>
+          <div style="font-family:var(--font-display); font-size:32px; font-weight:600; margin-top:6px">61%</div>
+          <div style="font-size:12px; color:var(--fg-muted)">Healthy (benchmark 40–70%)</div>
+        </div>
+      </div>
+
+      <!-- Blocks table -->
+      <div class="datagrid">
+        <table>
+          <thead>
+            <tr>
+              <th>Block</th>
+              <th>Status</th>
+              <th>Clicks · 7d</th>
+              <th>Last edited</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="cell-block"><span class="ic social-ig" style="font-size:10px">IG</span>Follow me on Instagram</div></td>
+              <td><span class="chip live">Live</span></td>
+              <td>41</td>
+              <td>2 min ago</td>
+              <td style="text-align:right">
+                <button class="iconbtn" data-tip="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="cell-block"><span class="ic social-tt" style="font-size:10px">TT</span>Follow me on TikTok</div></td>
+              <td><span class="chip live">Live</span></td>
+              <td>32</td>
+              <td>2 min ago</td>
+              <td style="text-align:right">
+                <button class="iconbtn" data-tip="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="cell-block"><span class="ic social-yt" style="font-size:10px">YT</span>Follow me on YouTube</div></td>
+              <td><span class="chip live">Live</span></td>
+              <td>14</td>
+              <td>2 min ago</td>
+              <td style="text-align:right">
+                <button class="iconbtn" data-tip="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <button class="drawer-toggle" onclick="document.getElementById('v2-drawer').classList.toggle('open')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+      Preview
+    </button>
+    <aside class="drawer" id="v2-drawer" aria-label="Live preview drawer">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+        <h3 style="font-size:16px">Live preview</h3>
+        <button class="iconbtn" onclick="document.getElementById('v2-drawer').classList.remove('open')" data-tip="Close">✕</button>
+      </div>
+      <div style="display:flex; justify-content:center">
+        <div class="phone-shell">
+          <div class="phone-inner">
+            <div class="phone-avatar">A</div>
+            <div class="phone-name">Alexandra</div>
+            <div class="phone-bio">Creator + educator 🪄</div>
+            <div class="phone-handle">tadaify.com/alexandra</div>
+            <div class="phone-blocks">
+              <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+              <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+              <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- =================================================================
+       V3 — FIGMA CANVAS
+       ================================================================= -->
+  <section class="variant v3" data-variant="v3">
+    <div class="canvas-layout">
+      <!-- Pages pane -->
+      <div class="pages">
+        <h4>Pages</h4>
+        <div class="page-thumb active">
+          <div class="mini"></div>
+          <div class="ptxt">
+            <div class="tt">alexandra</div>
+            <div class="ts">Live · 3 blocks</div>
+          </div>
+        </div>
+        <div class="page-thumb">
+          <div class="mini" style="background: var(--warm-gradient)"></div>
+          <div class="ptxt">
+            <div class="tt">alexandra-shop</div>
+            <div class="ts">Draft</div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:14px; width:100%; justify-content:center">+ New page</button>
+
+        <h4 style="margin-top:24px">Layers</h4>
+        <div style="font-size:12px; padding:6px 8px; color:var(--fg-muted)">· Header</div>
+        <div style="font-size:12px; padding:6px 8px; color:var(--fg-muted)">· Bio</div>
+        <div style="font-size:12px; padding:6px 8px; background:rgba(99,102,241,0.10); color:var(--brand-primary); border-radius:6px; font-weight:500">› Blocks (3)</div>
+        <div style="font-size:12px; padding:4px 8px 4px 24px; color:var(--fg-muted)">· Instagram</div>
+        <div style="font-size:12px; padding:4px 8px 4px 24px; background:rgba(99,102,241,0.10); color:var(--brand-primary); border-radius:6px; font-weight:500">· TikTok (selected)</div>
+        <div style="font-size:12px; padding:4px 8px 4px 24px; color:var(--fg-muted)">· YouTube</div>
+      </div>
+
+      <!-- Canvas -->
+      <div class="canvas">
+        <div class="canvas-phone">
+          <div class="phone-inner">
+            <div class="phone-avatar">A</div>
+            <div class="phone-name">Alexandra</div>
+            <div class="phone-bio">Creator + educator 🪄</div>
+            <div class="phone-handle">tadaify.com/alexandra</div>
+            <div class="phone-blocks">
+              <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+              <div class="phone-block selected"><span class="pb-icon social-tt">TT</span>TikTok</div>
+              <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspector -->
+      <div class="inspector" aria-label="Properties of selected block">
+        <h4>Block · TikTok</h4>
+        <label>Label text
+          <input value="Follow me on TikTok" />
+        </label>
+        <label>URL
+          <input value="https://tiktok.com/@alexandra" />
+        </label>
+
+        <h4>Style</h4>
+        <label>Background
+          <div class="swatch-row">
+            <span class="swatch on" style="background:#fff; border-color:var(--border-strong)"></span>
+            <span class="swatch" style="background:var(--brand-primary)"></span>
+            <span class="swatch" style="background:var(--brand-warm)"></span>
+            <span class="swatch" style="background:#111"></span>
+          </div>
+        </label>
+        <label>Radius
+          <select><option>Rounded (14px)</option><option>Square</option><option>Pill</option></select>
+        </label>
+
+        <h4>Behavior</h4>
+        <label style="display:flex; align-items:center; justify-content:space-between">
+          <span>Open in new tab</span>
+          <input type="checkbox" checked />
+        </label>
+        <label style="display:flex; align-items:center; justify-content:space-between">
+          <span>Track clicks</span>
+          <input type="checkbox" checked />
+        </label>
+
+        <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center; margin-top:16px">Save changes</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V4 — NOTION-STYLE DOC
+       ================================================================= -->
+  <section class="variant v4" data-variant="v4">
+    <div class="doc">
+      <div class="cover">
+        <div class="cover-avatar">A</div>
+      </div>
+      <h1>Alexandra</h1>
+      <div class="handle-row">tadaify.com/<b style="color:var(--brand-primary)">alexandra</b> · <span class="chip live" style="vertical-align:middle">Live</span></div>
+
+      <div class="bio">Creator + educator 🪄</div>
+
+      <h3>Blocks</h3>
+      <div class="doc-block">
+        <span class="grip">⋮⋮</span>
+        <span class="ic social-ig">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.4.3 1.1.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.4.2-1.1.3-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.4-.3-1.1-.4-2.3C2.2 15.6 2.2 15.3 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 1-1.5s.9-.8 1.5-1c.4-.2 1.1-.3 2.3-.4 1.2-.1 1.6-.1 4.8-.1zm0 3.4A6.4 6.4 0 1 0 12 18.4 6.4 6.4 0 0 0 12 5.6zm0 10.6A4.2 4.2 0 1 1 16.2 12 4.2 4.2 0 0 1 12 16.2zm6.6-10.8a1.5 1.5 0 1 1-1.5 1.5 1.5 1.5 0 0 1 1.5-1.5z"/></svg>
+        </span>
+        <span class="tt">Follow me on Instagram</span>
+        <span class="sb">@alexandra</span>
+      </div>
+      <div class="doc-block">
+        <span class="grip">⋮⋮</span>
+        <span class="ic social-tt">TT</span>
+        <span class="tt">Follow me on TikTok</span>
+        <span class="sb">@alexandra</span>
+      </div>
+      <div class="doc-block">
+        <span class="grip">⋮⋮</span>
+        <span class="ic social-yt">YT</span>
+        <span class="tt">Follow me on YouTube</span>
+        <span class="sb">@alexandra</span>
+      </div>
+
+      <div class="slash-hint">
+        Press <kbd>/</kbd> to add a block — link, video, product, email signup, heading, image, or collection.
+      </div>
+
+      <p style="margin-top:30px; color:var(--fg-subtle); font-size:12px; text-align:center">
+        Your page auto-saves. Preview (bottom-right) stays in sync.
+      </p>
+    </div>
+
+    <button class="preview-toggle" onclick="
+      var el = document.querySelector('.v4 .floating-preview');
+      if (el) el.classList.toggle('collapsed');
+    " data-tip="Collapse or expand the preview">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+      Preview
+    </button>
+
+    <div class="floating-preview">
+      <div class="phone-inner">
+        <div class="phone-avatar">A</div>
+        <div class="phone-name">Alexandra</div>
+        <div class="phone-bio">Creator + educator 🪄</div>
+        <div class="phone-handle">tadaify.com/alexandra</div>
+        <div class="phone-blocks">
+          <div class="phone-block" style="padding:7px 9px; font-size:11px"><span class="pb-icon social-ig" style="width:22px; height:22px; font-size:10px">IG</span>Instagram</div>
+          <div class="phone-block" style="padding:7px 9px; font-size:11px"><span class="pb-icon social-tt" style="width:22px; height:22px; font-size:10px">TT</span>TikTok</div>
+          <div class="phone-block" style="padding:7px 9px; font-size:11px"><span class="pb-icon social-yt" style="width:22px; height:22px; font-size:10px">YT</span>YouTube</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V5 — LINEAR / CMD-K
+       ================================================================= -->
+  <section class="variant v5" data-variant="v5">
+    <div class="linear-chrome">
+      <div class="breadcrumbs">
+        <span>Pages</span>
+        <span class="sep">/</span>
+        <b>alexandra</b>
+      </div>
+      <button class="cmd-hint" onclick="document.getElementById('v5-cmdk').classList.add('open')">
+        Do anything… <kbd>⌘</kbd><kbd>K</kbd>
+      </button>
+    </div>
+
+    <div class="linear-stage">
+      <div class="preview-card">
+        <div style="color:#9CA3AF; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; font-weight:600; align-self:flex-start">Your page</div>
+        <div class="phone-shell">
+          <div class="phone-inner">
+            <div class="phone-avatar">A</div>
+            <div class="phone-name">Alexandra</div>
+            <div class="phone-bio">Creator + educator 🪄</div>
+            <div class="phone-handle">tadaify.com/alexandra</div>
+            <div class="phone-blocks">
+              <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+              <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+              <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+            </div>
+          </div>
+        </div>
+        <div style="color:#9CA3AF; font-size:12px; text-align:center; line-height:1.5">
+          Press <kbd style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#F9FAFB; padding:2px 5px; border-radius:3px; font-family:var(--font-mono); font-size:10px">⌘K</kbd>
+          to add, edit, or rearrange blocks. Every action is a command.
+        </div>
+      </div>
+
+      <div class="stats">
+        <h3 style="font-size:18px; margin-bottom:8px">This week</h3>
+        <div class="stat-row"><span class="l">Visits</span><span class="v">142</span></div>
+        <div class="stat-row"><span class="l">Clicks</span><span class="v">87</span></div>
+        <div class="stat-row"><span class="l">CTR</span><span class="v">61%</span></div>
+        <div class="stat-row"><span class="l">Top block</span><span class="v" style="font-size:16px">Instagram</span></div>
+
+        <h3 style="font-size:18px; margin: 24px 0 8px">Shortcuts</h3>
+        <div style="color:#9CA3AF; font-size:13px; line-height:2">
+          <div><kbd style="background:rgba(255,255,255,0.08); color:#F9FAFB; padding:2px 6px; border-radius:3px; font-family:var(--font-mono); font-size:11px">N</kbd> new block</div>
+          <div><kbd style="background:rgba(255,255,255,0.08); color:#F9FAFB; padding:2px 6px; border-radius:3px; font-family:var(--font-mono); font-size:11px">D</kbd> edit design</div>
+          <div><kbd style="background:rgba(255,255,255,0.08); color:#F9FAFB; padding:2px 6px; border-radius:3px; font-family:var(--font-mono); font-size:11px">S</kbd> insights</div>
+          <div><kbd style="background:rgba(255,255,255,0.08); color:#F9FAFB; padding:2px 6px; border-radius:3px; font-family:var(--font-mono); font-size:11px">?</kbd> help</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-modal" id="v5-cmdk" onclick="if(event.target===this) this.classList.remove('open')">
+      <div class="cmd-box">
+        <input class="cmd-input" placeholder="Type a command or search…" autofocus />
+        <div class="cmd-list">
+          <div class="cmd-item" data-sel="1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add block → Link
+            <span class="cm-shortcut">N L</span>
+          </div>
+          <div class="cmd-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+            Add block → Product
+            <span class="cm-shortcut">N P</span>
+          </div>
+          <div class="cmd-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            Edit bio
+            <span class="cm-shortcut">E B</span>
+          </div>
+          <div class="cmd-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+            Change theme
+            <span class="cm-shortcut">D T</span>
+          </div>
+          <div class="cmd-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><path d="M3 3v18h18"/></svg>
+            View insights
+            <span class="cm-shortcut">S</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V6 — KANBAN BOARD
+       ================================================================= -->
+  <section class="variant v6" data-variant="v6">
+    <div class="kan-head">
+      <h2>Your blocks</h2>
+      <span style="color:var(--fg-muted); font-size:14px">Drag between columns to publish, hide, or schedule.</span>
+      <div class="kan-preview-strip">
+        <span class="dot-live"></span>
+        <span class="h">tadaify.com/alexandra · Live</span>
+        <button class="btn btn-sm btn-ghost" style="margin-left:4px">View</button>
+      </div>
+    </div>
+
+    <div class="board">
+      <!-- Drafts -->
+      <div class="col draft">
+        <div class="col-head">
+          <span class="name"><span class="dot"></span>Drafts</span>
+          <span class="count">1</span>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <span class="ic" style="background: linear-gradient(135deg,#10B981,#059669)">✉</span>
+            <div style="min-width:0; flex:1">
+              <div class="ct">Email signup</div>
+              <div class="cs">No headline yet</div>
+            </div>
+          </div>
+          <button class="add">+ New block</button>
+        </div>
+      </div>
+
+      <!-- Live -->
+      <div class="col live">
+        <div class="col-head">
+          <span class="name"><span class="dot"></span>Live</span>
+          <span class="count">3</span>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <span class="ic social-ig">IG</span>
+            <div><div class="ct">Instagram</div><div class="cs">41 clicks · 7d</div></div>
+          </div>
+          <div class="card">
+            <span class="ic social-tt">TT</span>
+            <div><div class="ct">TikTok</div><div class="cs">32 clicks · 7d</div></div>
+          </div>
+          <div class="card">
+            <span class="ic social-yt">YT</span>
+            <div><div class="ct">YouTube</div><div class="cs">14 clicks · 7d</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden -->
+      <div class="col hid">
+        <div class="col-head">
+          <span class="name"><span class="dot"></span>Hidden</span>
+          <span class="count">0</span>
+        </div>
+        <div class="cards">
+          <div style="color:var(--fg-subtle); font-size:12px; padding:10px; text-align:center">Drag a block here to hide from your public page without deleting it.</div>
+        </div>
+      </div>
+
+      <!-- Scheduled -->
+      <div class="col sch">
+        <div class="col-head">
+          <span class="name"><span class="dot"></span>Scheduled</span>
+          <span class="count">1</span>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <span class="ic" style="background: var(--info)">🎟</span>
+            <div><div class="ct">Workshop — May 3</div><div class="cs">Auto-publish 7:00 UTC</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V7 — EDIT/PREVIEW TOGGLE
+       ================================================================= -->
+  <section class="variant v7 is-edit" data-variant="v7">
+    <div class="toggle-head">
+      <h2 style="font-size:22px; margin-right:8px">alexandra</h2>
+      <div class="mode-toggle" role="tablist">
+        <button class="on" onclick="
+          var s = this.closest('.v7'); s.classList.add('is-edit'); s.classList.remove('is-preview');
+          this.classList.add('on'); this.nextElementSibling.classList.remove('on');
+        ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          Edit
+        </button>
+        <button onclick="
+          var s = this.closest('.v7'); s.classList.add('is-preview'); s.classList.remove('is-edit');
+          this.classList.add('on'); this.previousElementSibling.classList.remove('on');
+        ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+      <span style="margin-left:auto; color:var(--fg-muted); font-size:13px">Auto-saved · 2 min ago</span>
+      <button class="btn btn-primary btn-sm">Share link</button>
+    </div>
+
+    <div class="v7-stage">
+      <!-- EDIT MODE -->
+      <div class="edit-mode">
+        <div class="edit-card">
+          <h3>Bio</h3>
+          <div style="font-size:12px; color:var(--fg-muted); margin-bottom:8px">The tagline under your name. Keep it under 120 chars.</div>
+          <textarea class="inp" rows="2">Creator + educator 🪄</textarea>
+        </div>
+
+        <div class="edit-card">
+          <h3>Blocks <span style="font-size:13px; font-weight:500; color:var(--fg-muted)">(drag to reorder)</span></h3>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px">
+            <div class="row" style="padding:10px; border:1px solid var(--border); border-radius:10px">
+              <span class="ic social-ig" style="width:32px; height:32px; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px">IG</span>
+              <div style="flex:1">
+                <div style="font-weight:500">Follow me on Instagram</div>
+                <div style="font-size:12px; color:var(--fg-muted)">@alexandra</div>
+              </div>
+              <span class="chip live">Live</span>
+            </div>
+            <div class="row" style="padding:10px; border:1px solid var(--border); border-radius:10px">
+              <span class="ic social-tt" style="width:32px; height:32px; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px">TT</span>
+              <div style="flex:1">
+                <div style="font-weight:500">Follow me on TikTok</div>
+                <div style="font-size:12px; color:var(--fg-muted)">@alexandra</div>
+              </div>
+              <span class="chip live">Live</span>
+            </div>
+            <div class="row" style="padding:10px; border:1px solid var(--border); border-radius:10px">
+              <span class="ic social-yt" style="width:32px; height:32px; border-radius:8px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px">YT</span>
+              <div style="flex:1">
+                <div style="font-weight:500">Follow me on YouTube</div>
+                <div style="font-size:12px; color:var(--fg-muted)">@alexandra</div>
+              </div>
+              <span class="chip live">Live</span>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px">+ Add block</button>
+        </div>
+
+        <div class="edit-card">
+          <h3>Design</h3>
+          <div class="row">
+            <span style="font-size:13px; color:var(--fg-muted); width:80px">Theme</span>
+            <div style="display:flex; gap:6px">
+              <span style="width:36px; height:36px; border-radius:10px; background:#fff; border:2px solid var(--brand-primary)"></span>
+              <span style="width:36px; height:36px; border-radius:10px; background:var(--brand-primary); border:2px solid transparent"></span>
+              <span style="width:36px; height:36px; border-radius:10px; background:#111; border:2px solid transparent"></span>
+              <span style="width:36px; height:36px; border-radius:10px; background:var(--warm-gradient); border:2px solid transparent"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIEW MODE -->
+      <div class="preview-mode">
+        <div class="phone-shell" style="margin-top:50px">
+          <div class="phone-inner">
+            <div class="phone-avatar">A</div>
+            <div class="phone-name">Alexandra</div>
+            <div class="phone-bio">Creator + educator 🪄</div>
+            <div class="phone-handle">tadaify.com/alexandra</div>
+            <div class="phone-blocks">
+              <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+              <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+              <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V8 — BOTTOM SHEET OVER PREVIEW
+       ================================================================= -->
+  <section class="variant v8" data-variant="v8">
+    <div class="v8-stage">
+      <div class="backdrop-phone">
+        <div class="phone-inner">
+          <div class="phone-avatar">A</div>
+          <div class="phone-name">Alexandra</div>
+          <div class="phone-bio">Creator + educator 🪄</div>
+          <div class="phone-handle">tadaify.com/alexandra</div>
+          <div class="phone-blocks">
+            <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+            <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+            <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet" id="v8-sheet">
+        <div class="handle" onclick="document.getElementById('v8-sheet').classList.toggle('expanded')" data-tip="Drag or tap to expand"></div>
+        <div class="sheet-title">
+          <h3>Blocks <span class="small" style="font-weight:400">3 live</span></h3>
+          <button class="btn btn-primary btn-sm">+ Add</button>
+        </div>
+        <div class="sheet-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          Search blocks…
+        </div>
+        <div class="sheet-blocks">
+          <div class="sblock">
+            <span class="ic social-ig">IG</span>
+            <div style="flex:1">
+              <div style="font-weight:500; font-size:14px">Instagram</div>
+              <div style="font-size:12px; color:var(--fg-muted)">@alexandra · 41 clicks</div>
+            </div>
+            <span class="chip live">Live</span>
+          </div>
+          <div class="sblock">
+            <span class="ic social-tt">TT</span>
+            <div style="flex:1">
+              <div style="font-weight:500; font-size:14px">TikTok</div>
+              <div style="font-size:12px; color:var(--fg-muted)">@alexandra · 32 clicks</div>
+            </div>
+            <span class="chip live">Live</span>
+          </div>
+          <div class="sblock">
+            <span class="ic social-yt">YT</span>
+            <div style="flex:1">
+              <div style="font-weight:500; font-size:14px">YouTube</div>
+              <div style="font-size:12px; color:var(--fg-muted)">@alexandra · 14 clicks</div>
+            </div>
+            <span class="chip live">Live</span>
+          </div>
+        </div>
+        <p style="margin-top:18px; font-size:12px; color:var(--fg-muted); text-align:center">
+          Drag the handle up to expand · tap again to collapse
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V9 — EDITORIAL MAGAZINE
+       ================================================================= -->
+  <section class="variant v9" data-variant="v9">
+    <div class="mag">
+      <div class="mag-masthead">
+        <span>Issue №142 · April 25</span>
+        <span>tadaify press — your page, edited like a cover story</span>
+      </div>
+
+      <div class="mag-hero">
+        <div>
+          <div class="mag-kicker">The Edit · Profile</div>
+          <h1>Alexandra</h1>
+          <div class="dek">“Creator + educator 🪄” — a creator page styled like the cover of a small, excellent magazine.</div>
+          <div class="mag-byline">
+            Live at tadaify.com/alexandra · 3 blocks · 142 visits this week
+          </div>
+        </div>
+        <div class="mag-phone-wrap">
+          <div class="phone-shell">
+            <div class="phone-inner">
+              <div class="phone-avatar">A</div>
+              <div class="phone-name">Alexandra</div>
+              <div class="phone-bio">Creator + educator 🪄</div>
+              <div class="phone-handle">tadaify.com/alexandra</div>
+              <div class="phone-blocks">
+                <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+                <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+                <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mag-articles">
+        <div class="article">
+          <div class="kicker">Section 01 · Content</div>
+          <h3>Three blocks, all live</h3>
+          <p>Instagram, TikTok, and YouTube — auto-added on signup. Add a newsletter, product, or video. 61% click-through this week.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px">Manage blocks →</button>
+        </div>
+        <div class="article">
+          <div class="kicker">Section 02 · Design</div>
+          <h3>Light theme, serif headlines</h3>
+          <p>Crimson Pro display + Inter body. Swap to dark, pick a warm accent, or upload a background photo.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px">Open design →</button>
+        </div>
+        <div class="article">
+          <div class="kicker">Section 03 · Readers</div>
+          <h3>142 readers this week</h3>
+          <p>Up 28% vs last week. Top traffic source: Instagram story link. Best-performing block: Instagram follow.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px">Full report →</button>
+        </div>
+      </div>
+
+      <div class="mag-toolbar" role="toolbar">
+        <span style="font-size:12px; color:rgba(255,255,255,0.5); margin-right:8px">Edit</span>
+        <button class="mbtn">+ Block</button>
+        <button class="mbtn">Bio</button>
+        <button class="mbtn">Design</button>
+        <button class="mbtn">Settings</button>
+        <span style="flex:1"></span>
+        <button class="btn btn-primary btn-sm">Share link</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       V10 — BENTO GRID
+       ================================================================= -->
+  <section class="variant v10" data-variant="v10">
+    <div class="bento-head">
+      <div>
+        <h2>Good morning, Alexandra</h2>
+        <div class="sub">Your page at a glance — drag tiles to rearrange.</div>
+      </div>
+      <div style="display:flex; gap:8px">
+        <button class="btn btn-ghost btn-sm">Customise tiles</button>
+        <button class="btn btn-primary btn-sm">+ Add block</button>
+      </div>
+    </div>
+
+    <div class="bento">
+      <!-- Preview tile -->
+      <div class="tile tile-preview">
+        <span class="grip">⋮⋮</span>
+        <h4>Live preview</h4>
+        <div class="phone-shell">
+          <div class="phone-inner">
+            <div class="phone-avatar">A</div>
+            <div class="phone-name">Alexandra</div>
+            <div class="phone-bio">Creator + educator 🪄</div>
+            <div class="phone-handle">tadaify.com/alexandra</div>
+            <div class="phone-blocks">
+              <div class="phone-block"><span class="pb-icon social-ig">IG</span>Instagram</div>
+              <div class="phone-block"><span class="pb-icon social-tt">TT</span>TikTok</div>
+              <div class="phone-block"><span class="pb-icon social-yt">YT</span>YouTube</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2)">View live ↗</button>
+      </div>
+
+      <!-- Blocks tile -->
+      <div class="tile tile-blocks">
+        <span class="grip">⋮⋮</span>
+        <h4>Blocks · 3 live</h4>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px">
+          <div class="mini-block"><span class="ic social-ig">IG</span><span style="flex:1; font-size:13px">Instagram</span><span style="font-size:12px; color:var(--fg-muted)">41</span></div>
+          <div class="mini-block"><span class="ic social-tt">TT</span><span style="flex:1; font-size:13px">TikTok</span><span style="font-size:12px; color:var(--fg-muted)">32</span></div>
+          <div class="mini-block"><span class="ic social-yt">YT</span><span style="flex:1; font-size:13px">YouTube</span><span style="font-size:12px; color:var(--fg-muted)">14</span></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="align-self:flex-start; margin-top:auto">Manage blocks →</button>
+      </div>
+
+      <!-- Visits tile -->
+      <div class="tile">
+        <span class="grip">⋮⋮</span>
+        <h4>Visits · 7d</h4>
+        <div class="big">142</div>
+        <div style="font-size:12px; color:var(--success)">↑ 28% vs prev week</div>
+        <div class="sparkline" style="margin-top:auto">
+          <span style="height:30%"></span><span style="height:40%"></span><span style="height:55%"></span><span style="height:45%"></span><span style="height:70%"></span><span style="height:85%"></span><span style="height:100%"></span>
+        </div>
+      </div>
+
+      <!-- Clicks tile -->
+      <div class="tile">
+        <span class="grip">⋮⋮</span>
+        <h4>Clicks · 7d</h4>
+        <div class="big">87</div>
+        <div style="font-size:12px; color:var(--success)">↑ 12% vs prev week</div>
+        <div style="font-size:12px; color:var(--fg-muted); margin-top:auto">Top: Instagram (41)</div>
+      </div>
+
+      <!-- Next actions tile -->
+      <div class="tile tile-actions" style="grid-column: span 1">
+        <span class="grip">⋮⋮</span>
+        <h4>Suggested next</h4>
+        <div class="action"><span class="num">1</span>Add a newsletter block</div>
+        <div class="action"><span class="num">2</span>Write a longer bio</div>
+        <div class="action"><span class="num">3</span>Pick a theme colour</div>
+      </div>
+
+      <!-- Domain tile -->
+      <div class="tile tile-domain" style="grid-column: span 2">
+        <span class="grip">⋮⋮</span>
+        <h4>Your URL</h4>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+          <div style="font-family:var(--font-display); font-size:24px; font-weight:600">tadaify.com/alexandra</div>
+          <span class="chip live">Live</span>
+        </div>
+        <div style="font-size:13px; color:var(--fg-muted); margin-top:auto">
+          Share this anywhere — Instagram bio, email sig, LinkedIn. <a href="#" style="color:var(--brand-primary)">Connect a custom domain →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ======================================================================
+     SCRIPTS
+====================================================================== -->
+<script src="./shared/tokens.js"></script>
+<script>
+  (function () {
+    var RATIONALES = {
+      v1: {
+        title: 'V1 — Classic sidebar (refined)',
+        body: 'Left nav · main content · right preview. The safe, familiar baseline — differentiated from Linktree by Crimson Pro typography, breathing room, and a persistent right-side live preview users can trust on day one.',
+        insp: 'Notion, Linktree, Stripe Dashboard',
+        best: 'Mainstream creators, first-time SaaS users, fastest learnability',
+        tr:   'Closest to Linktree — less visual differentiation; relies on typography + spacing to stand out.'
+      },
+      v2: {
+        title: 'V2 — Top tabs (Vercel / Stripe)',
+        body: 'Horizontal primary nav at top (Overview / Content / Design / Insights / Shop / Settings), full-width workspace below, preview available as a right-edge drawer. Data-dense Overview tab with stat cards and a sortable blocks table.',
+        insp: 'Vercel Dashboard, Stripe Dashboard, GitHub',
+        best: 'Data-driven creators, anyone who lives in analytics, wide screens',
+        tr:   'Horizontal tabs have limited room; becomes cramped if we add many sections later.'
+      },
+      v3: {
+        title: 'V3 — Figma canvas',
+        body: 'Three columns: Pages/Layers (left) · Infinite canvas with an editable phone (center) · Properties inspector (right). Click a block IN the preview to select and edit it — the preview IS the editor. Designer-native.',
+        insp: 'Figma, Framer, Sketch',
+        best: 'Design-forward creators, power users, visual thinkers',
+        tr:   'Steep for beginners; inspector terminology ("radius", "layers") may intimidate non-designers.'
+      },
+      v4: {
+        title: 'V4 — Notion doc + slash commands',
+        body: 'Single scrollable document. Bio, blocks, settings are all paragraphs. Press / to insert anything. Floating pill-preview bottom-right — collapses to 18% scale with one click. No sidebar, no tabs. Radically calm.',
+        insp: 'Notion, Craft, Obsidian',
+        best: 'Writers, minimalists, users who already live in doc-based tools',
+        tr:   'Slash-first is unfamiliar to non-Notion users; needs strong empty-state guidance.'
+      },
+      v5: {
+        title: 'V5 — Linear / cmd-K first',
+        body: 'Dark, minimal chrome. The main view is just your page + this-week stats. Every action hides behind ⌘K. Single-letter keyboard shortcuts (N = new block, D = design, S = stats). Built for speed, not discovery.',
+        insp: 'Linear, Superhuman, Raycast',
+        best: 'Power users, developers, creators who manage 5+ pages',
+        tr:   'Dark-first + keyboard-first is a high bar for Linktree\'s audience; not beginner-friendly by default.'
+      },
+      v6: {
+        title: 'V6 — Kanban board',
+        body: 'Blocks live as cards in 4 columns: Drafts · Live · Hidden · Scheduled. Drag a card across columns to publish, hide, or schedule. States become physical — something you see, not a dropdown you open.',
+        insp: 'Trello, Linear Board view, Notion Kanban',
+        best: 'Creators who batch-plan content (e.g. weekly publishing)',
+        tr:   'Wasted space for creators with only 3 blocks; shines once you cross ~10.'
+      },
+      v7: {
+        title: 'V7 — Edit/Preview toggle',
+        body: 'One massive toggle at top: Edit ↔ Preview. Edit = clean form (bio, blocks, design). Preview = full-screen device mockup, tap blocks to select. No side-by-side. Mental model: "I\'m editing" OR "I\'m looking" — never both.',
+        insp: 'Framer, Webflow, Squarespace editor',
+        best: 'Mobile-heavy creators, users who edit on phone/tablet, single-focus personalities',
+        tr:   'You lose the live-update feedback loop of side-by-side preview; each toggle is a context switch.'
+      },
+      v8: {
+        title: 'V8 — Bottom sheet over preview',
+        body: 'The preview is NOT a tiny thumbnail — it IS the screen. Blocks list lives in a drag-up bottom sheet (Apple Maps / Uber pattern). On desktop this mirrors the mobile editor exactly — same mental model, no context switch.',
+        insp: 'Apple Maps, Uber, iOS Weather',
+        best: 'Creators who edit primarily on phone, visual-first thinkers',
+        tr:   'Unconventional on desktop — 40% of screen is the phone; inefficient for data-heavy editing like a long products list.'
+      },
+      v9: {
+        title: 'V9 — Editorial magazine',
+        body: 'Your page as a cover story: masthead, giant serif hero, drop-cap dek, three "section" articles (Content / Design / Readers). Floating dark edit toolbar sticks to bottom. The most brand-forward of the 10 — feels like a Kinfolk spread.',
+        insp: 'Kinfolk, New Yorker website, Craft landing pages',
+        best: 'Writers, photographers, fashion/food creators — any brand-conscious tier',
+        tr:   'Heaviest on whitespace; data-poor; users who want "where do I click" may feel lost.'
+      },
+      v10: {
+        title: 'V10 — Bento grid',
+        body: 'iOS-home-screen-style grid of resizable tiles: big Preview card, Blocks card, Visits, Clicks, Suggested next, Your URL. Everything glanceable. Drag to rearrange. Feels like an app launchpad, not a form.',
+        insp: 'iOS Home Screen, Apple Weather, Arc Start page',
+        best: 'Returning users who check stats daily, users who value at-a-glance status',
+        tr:   'Less direct editing — most tiles link out to deeper pages; deep edit flows still need a secondary screen.'
+      }
+    };
+
+    var sel   = document.getElementById('variant-select');
+    var ratT  = document.getElementById('rat-title');
+    var ratB  = document.getElementById('rat-body');
+    var ratI  = document.getElementById('rat-insp');
+    var ratBe = document.getElementById('rat-best');
+    var ratTr = document.getElementById('rat-tr');
+
+    function show(id) {
+      document.querySelectorAll('.variant').forEach(function (v) {
+        v.classList.toggle('is-active', v.dataset.variant === id);
+      });
+      var r = RATIONALES[id];
+      if (r) {
+        ratT.textContent = r.title;
+        ratB.textContent = r.body;
+        ratI.textContent = r.insp;
+        ratBe.textContent = r.best;
+        ratTr.textContent = r.tr;
+      }
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+    }
+
+    sel.addEventListener('change', function () { show(sel.value); });
+    // deep-link via #v3
+    if (window.location.hash) {
+      var h = window.location.hash.replace('#', '');
+      if (RATIONALES[h]) {
+        sel.value = h;
+        show(h);
+      }
+    }
+
+    // V7 — ensure exactly one mode visible at load; is-edit class set in markup
+    // V5 — ESC to close cmd-k
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        var m = document.getElementById('v5-cmdk');
+        if (m) m.classList.remove('open');
+      }
+      // cmd-k opens palette while on V5
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        if (sel.value === 'v5') {
+          e.preventDefault();
+          document.getElementById('v5-cmdk').classList.add('open');
+        }
+      }
+    });
+  }());
+</script>
+</body>
+</html>
