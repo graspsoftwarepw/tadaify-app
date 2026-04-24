@@ -227,15 +227,12 @@
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; flex-wrap: wrap; gap: 12px;">
             <a href="#" id="back-link" class="text-sm text-muted">← back</a>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <a href="#" id="skip-link" class="btn btn-ghost">Skip for now</a>
-              <button class="btn btn-primary btn-lg" id="continue-btn" disabled onclick="goNext()">
-                Continue →
-              </button>
-            </div>
+            <button class="btn btn-primary btn-lg" id="continue-btn" onclick="goNext()">
+              <span id="continue-label">Continue →</span>
+            </button>
           </div>
-          <p class="text-sm text-subtle" style="text-align:right; margin-top: 8px;">
-            Skip publishes your page with just the auto-added social blocks — you can add more anytime.
+          <p class="text-sm text-subtle" style="text-align:right; margin-top: 8px;" id="continue-hint">
+            You can always add more blocks later from your dashboard.
           </p>
         </div>
 
@@ -331,10 +328,20 @@
       document.getElementById('count-pill').textContent = count + ' added';
       document.getElementById('count-pill').className = count > 0 ? 'count-pill ok' : 'count-pill';
       document.getElementById('block-status').textContent =
-        count === 0 ? 'needs 1 to publish' :
+        count === 0 ? 'draft — add a block to publish' :
         count === 1 ? 'ready to publish' :
         count + ' blocks · looking good';
-      document.getElementById('continue-btn').disabled = count === 0;
+
+      // Continue button copy + hint adapt to block count (never disabled)
+      var label = document.getElementById('continue-label');
+      var hint = document.getElementById('continue-hint');
+      if (count === 0) {
+        label.textContent = 'Skip & continue →';
+        hint.textContent = 'Your page will save as draft — add a block anytime from the dashboard to publish.';
+      } else {
+        label.textContent = 'Continue →';
+        hint.textContent = 'You can always add more blocks later from your dashboard.';
+      }
     }
 
     renderBlocks();
@@ -346,12 +353,6 @@
       if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
       window.location.href = './onboarding-tier.html?' + q;
     }
-
-    // Skip goes straight to tier with whatever blocks exist (can be just autos, or 0)
-    document.getElementById('skip-link').addEventListener('click', function(e) {
-      e.preventDefault();
-      goNext();
-    });
 
     window.addBlock = addBlock;
     window.removeBlock = removeBlock;
