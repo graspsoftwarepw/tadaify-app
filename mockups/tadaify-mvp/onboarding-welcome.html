@@ -1,133 +1,177 @@
 <!DOCTYPE html>
 <!--
-  Onboarding step 1/5 — welcome screen
-  F-008 dynamic welcome header + dual-path gate (social import vs. fresh)
+  Onboarding step 1/5 — pick social platforms (handle-based, DEC-SOCIAL-01)
+  F-008 dynamic welcome header + multi-select platform picker
+  Mobile-first, sexy. No OAuth, no account connection.
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>Welcome to tadaify</title>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
 </head>
-<body>
+<body class="ob-page">
   <div data-partial="nav"></div>
 
-  <main class="onboarding-shell">
-    <div class="onboarding-shell-inner">
+  <main class="ob-shell">
+    <div class="ob-inner">
 
       <!-- Progress bar -->
-      <div class="progress-bar">
-        <div class="progress-step active"><span class="progress-dot"></span></div>
-        <div class="progress-line"></div>
-        <div class="progress-step"><span class="progress-dot"></span></div>
-        <div class="progress-line"></div>
-        <div class="progress-step"><span class="progress-dot"></span></div>
-        <div class="progress-line"></div>
-        <div class="progress-step"><span class="progress-dot"></span></div>
-        <div class="progress-line"></div>
-        <div class="progress-step"><span class="progress-dot"></span></div>
+      <div class="ob-progress" aria-label="Step 1 of 5">
+        <span class="ob-progress-label">Step 1 of 5 · Welcome</span>
+        <div class="ob-progress-track">
+          <div class="ob-progress-fill" style="width:20%"></div>
+        </div>
       </div>
-      <p class="progress-label">Step 1 of 5 · Welcome</p>
 
       <!-- Hero -->
-      <div style="text-align:center; margin-top: 48px;">
-        <span class="logo-mark" data-logo style="width:96px; height:96px; display:inline-block;"></span>
-        <h1 style="margin-top: 24px; font-size: clamp(32px, 4.4vw, 48px);">
-          Welcome, <span style="color: var(--brand-primary);" id="welcome-handle">@yourname</span> 👋
+      <header class="ob-hero">
+        <span class="logo-mark" data-logo aria-hidden="true"></span>
+        <h1 class="ob-h1">
+          Welcome, <span class="grad" id="welcome-handle">@yourname</span>
+          <span class="wave" aria-hidden="true">👋</span>
         </h1>
-        <p class="lead text-muted" style="font-size: 18px; max-width: 620px; margin: 14px auto 0;">
-          Which platforms are you on? We'll pre-fill your name, bio, and recent posts — you can edit anything later.
+        <p class="ob-sub">
+          Which platforms are you on? We'll add <strong>"Follow me"</strong> link blocks that point to your profiles. Just your @handle — no account connection.
         </p>
-      </div>
+      </header>
 
-      <!-- Social platform checkbox grid -->
-      <div class="social-pick-grid" role="group" aria-label="Select the platforms you use">
+      <!-- Platform grid -->
+      <section class="sp-grid" role="group" aria-label="Select the platforms you use">
 
-        <label class="social-pick" data-platform="instagram" tabindex="0">
-          <input type="checkbox" name="platform" value="instagram" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: linear-gradient(45deg,#F58529,#DD2A7B,#8134AF,#515BD4);">📷</span>
-          <span class="social-pick-name">Instagram</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="instagram" tabindex="0" style="--sp-a:#F58529; --sp-b:#DD2A7B; --sp-c:#8134AF;">
+          <input type="checkbox" name="platform" value="instagram" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+            </svg>
+          </span>
+          <span class="sp-name">Instagram</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="tiktok" tabindex="0">
-          <input type="checkbox" name="platform" value="tiktok" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #000;">🎵</span>
-          <span class="social-pick-name">TikTok</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="tiktok" tabindex="0" style="--sp-a:#25F4EE; --sp-b:#000; --sp-c:#FE2C55;">
+          <input type="checkbox" name="platform" value="tiktok" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/>
+            </svg>
+          </span>
+          <span class="sp-name">TikTok</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="youtube" tabindex="0">
-          <input type="checkbox" name="platform" value="youtube" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #FF0000;">▶</span>
-          <span class="social-pick-name">YouTube</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="youtube" tabindex="0" style="--sp-a:#FF0000; --sp-b:#CC0000; --sp-c:#FF4444;">
+          <input type="checkbox" name="platform" value="youtube" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/>
+            </svg>
+          </span>
+          <span class="sp-name">YouTube</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="x" tabindex="0">
-          <input type="checkbox" name="platform" value="x" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #000;">𝕏</span>
-          <span class="social-pick-name">X (Twitter)</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="x" tabindex="0" style="--sp-a:#000; --sp-b:#333; --sp-c:#666;">
+          <input type="checkbox" name="platform" value="x" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </span>
+          <span class="sp-name">X (Twitter)</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="twitch" tabindex="0">
-          <input type="checkbox" name="platform" value="twitch" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #9146FF;">🎮</span>
-          <span class="social-pick-name">Twitch</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="twitch" tabindex="0" style="--sp-a:#9146FF; --sp-b:#772CE8; --sp-c:#A970FF;">
+          <input type="checkbox" name="platform" value="twitch" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M2.547.75L.75 5.344v18.093h6.188V27h3.41l3.411-3.563h4.985L24 17.672V.75zM21.75 16.547l-3.75 3.75h-6.188L8.438 23.86v-3.563H3.75V3h18zM18 7.5h-2.25v6.75H18zm-5.063 0h-2.25v6.75h2.25z"/>
+            </svg>
+          </span>
+          <span class="sp-name">Twitch</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="spotify" tabindex="0">
-          <input type="checkbox" name="platform" value="spotify" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #1DB954;">♫</span>
-          <span class="social-pick-name">Spotify</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="spotify" tabindex="0" style="--sp-a:#1DB954; --sp-b:#1AA34A; --sp-c:#4ADE80;">
+          <input type="checkbox" name="platform" value="spotify" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm5.5 17.3a.75.75 0 0 1-1 .25c-2.8-1.7-6.3-2.1-10.5-1.1a.75.75 0 0 1-.33-1.46c4.6-1.04 8.5-.6 11.6 1.3a.75.75 0 0 1 .24 1zm1.47-3.27a.94.94 0 0 1-1.28.3c-3.2-2-8.1-2.5-11.9-1.35a.94.94 0 0 1-.55-1.8c4.3-1.3 9.7-.7 13.4 1.55a.94.94 0 0 1 .33 1.3zm.13-3.4C15.3 8.4 8.6 8.2 5 9.3a1.12 1.12 0 1 1-.65-2.15c4.1-1.25 11.5-1 15.9 1.6a1.12 1.12 0 1 1-1.15 1.92z"/>
+            </svg>
+          </span>
+          <span class="sp-name">Spotify</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="linkedin" tabindex="0">
-          <input type="checkbox" name="platform" value="linkedin" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #0A66C2;">in</span>
-          <span class="social-pick-name">LinkedIn</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="linkedin" tabindex="0" style="--sp-a:#0A66C2; --sp-b:#004182; --sp-c:#378FE9;">
+          <input type="checkbox" name="platform" value="linkedin" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.95v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.55V9h3.57zM22.22 0H1.77C.8 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45C23.2 24 24 23.23 24 22.28V1.72C24 .77 23.2 0 22.22 0z"/>
+            </svg>
+          </span>
+          <span class="sp-name">LinkedIn</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="pinterest" tabindex="0">
-          <input type="checkbox" name="platform" value="pinterest" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #E60023;">P</span>
-          <span class="social-pick-name">Pinterest</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="pinterest" tabindex="0" style="--sp-a:#E60023; --sp-b:#AD081B; --sp-c:#FF4E5C;">
+          <input type="checkbox" name="platform" value="pinterest" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M12 0a12 12 0 0 0-4.37 23.18c-.1-1-.2-2.55.04-3.64.2-.99 1.35-6.3 1.35-6.3s-.34-.69-.34-1.7c0-1.6.93-2.78 2.08-2.78.98 0 1.45.73 1.45 1.62 0 .98-.63 2.46-.95 3.83-.27 1.14.58 2.07 1.7 2.07 2.05 0 3.62-2.16 3.62-5.28 0-2.76-1.98-4.7-4.82-4.7-3.28 0-5.2 2.46-5.2 5 0 .99.38 2.05.86 2.63a.35.35 0 0 1 .08.33c-.09.37-.3 1.14-.33 1.3-.05.22-.17.27-.4.16-1.48-.68-2.4-2.84-2.4-4.58 0-3.73 2.7-7.16 7.8-7.16 4.1 0 7.28 2.92 7.28 6.82 0 4.07-2.56 7.35-6.13 7.35-1.2 0-2.32-.62-2.7-1.35 0 0-.6 2.26-.74 2.82-.27 1.02-1 2.3-1.49 3.08A12 12 0 1 0 12 0z"/>
+            </svg>
+          </span>
+          <span class="sp-name">Pinterest</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-        <label class="social-pick" data-platform="threads" tabindex="0">
-          <input type="checkbox" name="platform" value="threads" class="social-pick-cb"/>
-          <span class="social-pick-icon" style="background: #000;">@</span>
-          <span class="social-pick-name">Threads</span>
-          <span class="social-pick-check">✓</span>
+        <label class="sp-card" data-platform="threads" tabindex="0" style="--sp-a:#000; --sp-b:#1f1f1f; --sp-c:#4a4a4a;">
+          <input type="checkbox" name="platform" value="threads" class="sp-cb"/>
+          <span class="sp-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M17.73 11.14c-.1-.05-.21-.1-.32-.14-.18-3.34-2-5.26-5.07-5.28h-.04c-1.83 0-3.36.78-4.3 2.2l1.7 1.16c.7-1.06 1.8-1.3 2.6-1.3h.02c1 0 1.75.3 2.22.87.34.42.57 1 .68 1.72-.83-.14-1.72-.18-2.67-.13-2.68.15-4.41 1.72-4.3 3.9.06 1.1.6 2.06 1.54 2.7.8.53 1.82.8 2.9.74 1.42-.08 2.54-.62 3.32-1.62.59-.75.97-1.72 1.14-2.95.7.43 1.22 1 1.5 1.67.5 1.17.52 3.08-1.03 4.63-1.36 1.36-3 1.95-5.45 1.96-2.73-.02-4.8-.9-6.14-2.6-1.27-1.6-1.92-3.93-1.95-6.9.03-2.97.68-5.3 1.95-6.9 1.34-1.7 3.4-2.58 6.14-2.6 2.77.02 4.88.9 6.26 2.64.68.85 1.19 1.92 1.52 3.17l1.98-.53c-.4-1.53-1.04-2.86-1.9-3.95C17.4 1.2 14.84.02 11.43 0h-.01C8.02.02 5.52 1.2 3.76 3.53 2.18 5.6 1.37 8.48 1.34 12v.01C1.37 15.5 2.18 18.4 3.76 20.47 5.52 22.8 8.02 24 11.42 24h.01c3.02-.02 5.15-.81 6.9-2.57 2.3-2.3 2.23-5.18 1.47-6.95-.55-1.27-1.6-2.3-3.05-2.96zm-5.27 4.72c-1.2.07-2.44-.47-2.5-1.6-.05-.85.6-1.8 2.6-1.9a9.5 9.5 0 0 1 .52-.02c.72 0 1.4.07 2 .2-.24 3.02-1.68 3.25-2.62 3.3z"/>
+            </svg>
+          </span>
+          <span class="sp-name">Threads</span>
+          <span class="sp-dot" aria-hidden="true"></span>
         </label>
 
-      </div>
+      </section>
 
-      <!-- Selection feedback + CTA -->
-      <div class="social-pick-actions">
-        <p class="social-pick-hint" id="pickHint">Pick one or more — or skip if you'd rather start from a blank template.</p>
-        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-          <a href="./onboarding-template.html" class="btn btn-secondary btn-lg" id="skipBtn">
-            Skip — I'll start from a template
-          </a>
-          <a href="./onboarding-social.html" class="btn btn-primary btn-lg" id="continueBtn">
-            Continue <span id="continueCount"></span>
-          </a>
-        </div>
-        <p class="tip-microcopy" style="text-align:center; margin-top: 18px; font-size:12px; color: var(--fg-subtle);">
-          You can connect or disconnect platforms anytime from settings.
-        </p>
+      <!-- Live preview of what will be added -->
+      <div class="sp-preview" id="spPreview" hidden>
+        <p class="sp-preview-label">We'll add these link blocks to your page:</p>
+        <div class="sp-preview-chips" id="spPreviewChips"></div>
       </div>
 
     </div>
   </main>
+
+  <!-- Sticky action bar (always visible on mobile, contained on desktop) -->
+  <div class="ob-actionbar">
+    <div class="ob-actionbar-inner">
+      <p class="ob-hint" id="pickHint">Pick one or more — or skip to start from a blank template.</p>
+      <div class="ob-buttons">
+        <a href="./onboarding-template.html" class="btn btn-ghost" id="skipBtn">
+          Skip
+        </a>
+        <a href="./onboarding-social.html" class="btn btn-warm btn-lg ob-cta" id="continueBtn">
+          <span class="ob-cta-label">Continue</span>
+          <span class="ob-cta-count" id="continueCount"></span>
+          <span class="ob-cta-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+      <p class="ob-microcopy">
+        You can add more anytime from settings.
+      </p>
+    </div>
+  </div>
 
   <div data-partial="footer"></div>
 
@@ -142,30 +186,41 @@
     var skipBtn = document.getElementById('skipBtn');
     var hint = document.getElementById('pickHint');
     var count = document.getElementById('continueCount');
-    var cbs = document.querySelectorAll('.social-pick-cb');
+    var preview = document.getElementById('spPreview');
+    var previewChips = document.getElementById('spPreviewChips');
+    var cbs = document.querySelectorAll('.sp-cb');
+
+    var PLATFORM_LABELS = {
+      instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube',
+      x: 'X', twitch: 'Twitch', spotify: 'Spotify',
+      linkedin: 'LinkedIn', pinterest: 'Pinterest', threads: 'Threads'
+    };
 
     function updateState() {
       var selected = [];
       cbs.forEach(function(cb) {
         if (cb.checked) selected.push(cb.value);
-      });
-
-      // Toggle visual selected state on label
-      cbs.forEach(function(cb) {
-        cb.closest('.social-pick').classList.toggle('is-selected', cb.checked);
+        cb.closest('.sp-card').classList.toggle('is-selected', cb.checked);
       });
 
       if (selected.length === 0) {
         continueBtn.classList.add('is-disabled');
         count.textContent = '';
-        hint.textContent = 'Pick one or more — or skip if you\u2019d rather start from a blank template.';
+        hint.textContent = 'Pick one or more — or skip to start from a blank template.';
+        preview.hidden = true;
       } else {
         continueBtn.classList.remove('is-disabled');
         count.textContent = '(' + selected.length + ')';
-        hint.textContent = selected.length + ' platform' + (selected.length > 1 ? 's' : '') + ' selected. We\u2019ll import from each.';
+        hint.textContent = selected.length === 1
+          ? '1 platform selected. We\u2019ll add a "Follow me" block for it.'
+          : selected.length + ' platforms selected. We\u2019ll add "Follow me" blocks for each.';
+        preview.hidden = false;
+        previewChips.innerHTML = selected.map(function(p) {
+          return '<span class="sp-chip" data-p="' + p + '">Follow me on ' + PLATFORM_LABELS[p] + '</span>';
+        }).join('');
       }
 
-      // Update outgoing links with handle + selected platforms
+      // Propagate handle + selected to outgoing links
       [continueBtn, skipBtn].forEach(function(a) {
         var url = new URL(a.href);
         url.searchParams.set('handle', handle);
@@ -180,116 +235,384 @@
 
     cbs.forEach(function(cb) { cb.addEventListener('change', updateState); });
 
-    // Keyboard support: Space/Enter on focused label toggles the checkbox
-    document.querySelectorAll('.social-pick').forEach(function(el) {
+    // Keyboard support
+    document.querySelectorAll('.sp-card').forEach(function(el) {
       el.addEventListener('keydown', function(e) {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();
-          var cb = el.querySelector('.social-pick-cb');
+          var cb = el.querySelector('.sp-cb');
           cb.checked = !cb.checked;
           updateState();
         }
       });
     });
 
-    // Continue disabled when nothing selected
     continueBtn.addEventListener('click', function(e) {
       if (continueBtn.classList.contains('is-disabled')) {
         e.preventDefault();
-        hint.textContent = 'Tick at least one platform — or use Skip if you\u2019d rather start from a template.';
-        hint.style.color = 'var(--warm-primary)';
-        setTimeout(function() { hint.style.color = ''; }, 1800);
+        hint.textContent = 'Tick at least one — or use Skip to start from a template.';
+        hint.classList.add('is-warn');
+        setTimeout(function() { hint.classList.remove('is-warn'); }, 1800);
       }
     });
 
     updateState();
   </script>
-  <style>
-    .tip-microcopy { font-size: 12px; }
 
-    /* Social platform checkbox grid */
-    .social-pick-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 12px;
-      margin: 40px auto 0;
-      max-width: 780px;
+  <style>
+    /* ---- Page shell ---- */
+    .ob-page { background: var(--bg); }
+    .ob-shell {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 16px 16px 200px;
     }
-    .social-pick {
+    .ob-inner { position: relative; }
+
+    @media (min-width: 720px) {
+      .ob-shell { padding: 32px 32px 140px; }
+    }
+
+    /* ---- Progress ---- */
+    .ob-progress { margin-bottom: 24px; }
+    .ob-progress-label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--fg-subtle);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .ob-progress-track {
+      height: 3px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .ob-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand-primary) 0%, var(--warm-primary) 100%);
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+
+    /* ---- Hero ---- */
+    .ob-hero {
+      text-align: center;
+      padding: 24px 0 8px;
+    }
+    .ob-hero .logo-mark {
+      width: 72px;
+      height: 72px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .ob-h1 {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: clamp(28px, 6vw, 44px);
+      line-height: 1.1;
+      margin: 0 0 12px;
+      letter-spacing: -0.02em;
+    }
+    .ob-h1 .grad {
+      background: linear-gradient(90deg, var(--brand-primary), #8B7FF5);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .ob-h1 .wave {
+      display: inline-block;
+      animation: wave 2.2s ease-in-out infinite;
+      transform-origin: 70% 80%;
+    }
+    @keyframes wave {
+      0%, 60%, 100% { transform: rotate(0deg); }
+      10% { transform: rotate(14deg); }
+      20% { transform: rotate(-8deg); }
+      30% { transform: rotate(14deg); }
+      40% { transform: rotate(-4deg); }
+      50% { transform: rotate(10deg); }
+    }
+    .ob-sub {
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--fg-muted);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+    .ob-sub strong { color: var(--fg); font-weight: 600; }
+
+    @media (min-width: 720px) {
+      .ob-hero { padding: 32px 0 16px; }
+      .ob-hero .logo-mark { width: 88px; height: 88px; margin-bottom: 24px; }
+      .ob-sub { font-size: 17px; max-width: 580px; }
+    }
+
+    /* ---- Platform grid ---- */
+    .sp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 32px 0 24px;
+    }
+    @media (min-width: 520px) {
+      .sp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    }
+    @media (min-width: 720px) {
+      .sp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 40px 0 32px; }
+    }
+
+    .sp-card {
       position: relative;
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 14px 16px;
-      background: var(--bg-elevated);
-      border: 2px solid var(--border);
-      border-radius: var(--radius-md);
+      padding: 14px 14px;
+      background: var(--bg-elevated, #fff);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
       cursor: pointer;
-      transition: border-color .15s ease, background-color .15s ease, transform .1s ease;
+      transition: transform .18s cubic-bezier(.2,.8,.2,1),
+                  box-shadow .18s ease,
+                  border-color .18s ease,
+                  background .18s ease;
       user-select: none;
       outline: none;
+      overflow: hidden;
+      min-height: 64px;
     }
-    .social-pick:hover { border-color: var(--brand-primary-muted, #A5B4FC); }
-    .social-pick:focus-visible { box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
-    .social-pick.is-selected {
-      border-color: var(--brand-primary);
-      background: rgba(99,102,241,0.06);
+    .sp-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--sp-a) 0%, var(--sp-b) 50%, var(--sp-c) 100%);
+      opacity: 0;
+      transition: opacity .18s ease;
+      pointer-events: none;
     }
-    .social-pick-cb {
+    .sp-card:hover {
+      border-color: var(--fg-subtle);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.08);
+    }
+    .sp-card:focus-visible {
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.35);
+    }
+    .sp-card.is-selected {
+      border-color: transparent;
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 2px var(--brand-primary),
+        0 10px 28px -10px rgba(99,102,241,0.5);
+      background: #fff;
+    }
+    .sp-card.is-selected::before { opacity: 0.06; }
+
+    .sp-cb {
       position: absolute; opacity: 0; pointer-events: none;
     }
-    .social-pick-icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: inline-flex; align-items: center; justify-content: center;
+
+    .sp-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: #fff;
-      font-size: 18px;
-      font-weight: 700;
+      background: linear-gradient(135deg, var(--sp-a) 0%, var(--sp-b) 50%, var(--sp-c) 100%);
       flex-shrink: 0;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        0 2px 8px -2px rgba(15,23,42,0.15);
+      transition: transform .22s cubic-bezier(.2,.8,.2,1);
     }
-    .social-pick-name {
+    .sp-card:hover .sp-icon { transform: scale(1.04); }
+    .sp-card.is-selected .sp-icon { transform: scale(1.06); }
+
+    .sp-name {
+      font-size: 15px;
       font-weight: 600;
       color: var(--fg);
       flex: 1;
-    }
-    .social-pick-check {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: var(--brand-primary);
-      color: #fff;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 13px;
-      font-weight: 700;
-      opacity: 0;
-      transform: scale(0.6);
-      transition: opacity .15s ease, transform .15s ease;
-    }
-    .social-pick.is-selected .social-pick-check {
-      opacity: 1;
-      transform: scale(1);
+      letter-spacing: -0.005em;
     }
 
-    .social-pick-actions {
-      margin-top: 32px;
-      max-width: 780px;
-      margin-left: auto;
-      margin-right: auto;
+    .sp-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      flex-shrink: 0;
+      position: relative;
+      transition: border-color .18s ease, background .18s ease, transform .22s cubic-bezier(.2,.8,.2,1);
     }
-    .social-pick-hint {
-      text-align: center;
+    .sp-card.is-selected .sp-dot {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary);
+      transform: scale(1.08);
+    }
+    .sp-card.is-selected .sp-dot::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 9px; height: 5px;
+      border: solid #fff;
+      border-width: 0 0 2px 2px;
+      transform: translate(-55%, -70%) rotate(-45deg);
+    }
+
+    @media (min-width: 520px) {
+      .sp-card { padding: 16px; min-height: 72px; gap: 14px; }
+      .sp-icon { width: 48px; height: 48px; border-radius: 13px; }
+      .sp-name { font-size: 16px; }
+    }
+
+    /* ---- Live preview of selected ---- */
+    .sp-preview {
+      background: rgba(99,102,241,0.04);
+      border: 1px dashed rgba(99,102,241,0.25);
+      border-radius: 14px;
+      padding: 16px;
       margin-bottom: 20px;
-      font-size: 14px;
+      animation: fadeInUp .3s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .sp-preview-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand-primary);
+      margin: 0 0 10px;
+      letter-spacing: .02em;
+    }
+    .sp-preview-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .sp-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      background: #fff;
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--fg);
+    }
+
+    /* ---- Sticky action bar ---- */
+    .ob-actionbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+    .ob-actionbar-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ob-hint {
+      font-size: 13px;
       color: var(--fg-muted);
+      margin: 0;
+      text-align: center;
       transition: color .2s ease;
     }
-    .btn.is-disabled {
-      opacity: 0.55;
+    .ob-hint.is-warn { color: var(--warm-primary, #D97706); font-weight: 500; }
+    .ob-buttons {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg-muted);
+      border: 1.5px solid var(--border);
+      flex: 0 0 auto;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 15px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .btn-ghost:hover { border-color: var(--fg-subtle); background: var(--bg-sunken, #f6f7fa); color: var(--fg); }
+
+    .ob-cta {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 20px -6px rgba(217, 119, 6, 0.55);
+      transition: transform .12s ease, box-shadow .15s ease, filter .15s ease;
+    }
+    .ob-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -6px rgba(217, 119, 6, 0.65); }
+    .ob-cta:active { transform: translateY(0); }
+    .ob-cta.is-disabled {
+      opacity: 0.45;
       cursor: not-allowed;
-      filter: saturate(0.6);
+      filter: saturate(0.4);
+      box-shadow: none;
+      pointer-events: auto;
+    }
+    .ob-cta-count { font-weight: 600; opacity: 0.9; font-size: 14px; }
+    .ob-cta-arrow { font-size: 18px; line-height: 1; transition: transform .15s ease; }
+    .ob-cta:hover .ob-cta-arrow { transform: translateX(3px); }
+
+    .ob-microcopy {
+      font-size: 11px;
+      color: var(--fg-subtle);
+      margin: 2px 0 0;
+      text-align: center;
     }
 
-    @media (max-width: 520px) {
-      .social-pick-grid { grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 720px) {
+      .ob-actionbar {
+        position: sticky;
+        bottom: 24px;
+        margin: 0 auto 24px;
+        max-width: 640px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 60px -20px rgba(15, 23, 42, 0.15);
+        padding: 16px 20px;
+      }
+      .ob-actionbar-inner { gap: 10px; }
+    }
+
+    /* Ensure main nav + footer don't collide on mobile */
+    [data-partial="footer"] { padding-bottom: 140px; }
+    @media (min-width: 720px) {
+      [data-partial="footer"] { padding-bottom: 0; }
     }
   </style>
 </body>
