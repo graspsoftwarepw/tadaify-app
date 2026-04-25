@@ -1483,6 +1483,458 @@
     body.dark-mode .iconbtn { color: #D1D5DB; }
     /* Animation tile previews stay legible in dark */
     body.dark-mode .anim-typewriter { color: #F3F4F6; }
+
+    /* ==============================================================
+       ADD-MODAL — Linktree-style integration picker
+       Prefix: .add-modal  (no collisions with existing .add-panel)
+       ============================================================== */
+
+    /* Backdrop */
+    .add-modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: amFadeIn .18s ease;
+    }
+    .add-modal-backdrop.open { display: flex; align-items: center; justify-content: center; }
+    @keyframes amFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Modal shell */
+    .add-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 24px 80px rgba(15,23,42,0.22), 0 4px 16px rgba(15,23,42,0.1);
+      width: min(880px, calc(100vw - 32px));
+      max-height: calc(100vh - 48px);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      animation: amSlideUp .22s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes amSlideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* Header */
+    .add-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 0;
+      flex-shrink: 0;
+    }
+    .add-modal-header h2 {
+      font-family: var(--font-display); font-size: 24px; font-weight: 600;
+      margin: 0; color: var(--fg); letter-spacing: -0.02em;
+    }
+    .add-modal-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid var(--border-strong); background: var(--bg);
+      color: var(--fg-muted); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; line-height: 1; flex-shrink: 0;
+      transition: all .15s ease;
+    }
+    .add-modal-close:hover { background: var(--bg-muted); color: var(--fg); }
+
+    /* Search row */
+    .add-modal-search-wrap {
+      padding: 16px 24px;
+      flex-shrink: 0;
+    }
+    .add-modal-search {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg); border: 1.5px solid var(--border-strong);
+      border-radius: 12px; padding: 10px 14px;
+      transition: border-color .15s ease;
+    }
+    .add-modal-search:focus-within { border-color: var(--brand-primary); }
+    .add-modal-search svg { color: var(--fg-muted); flex-shrink: 0; }
+    .add-modal-search input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-family: var(--font-sans); font-size: 14px; color: var(--fg);
+    }
+    .add-modal-search input::placeholder { color: var(--fg-muted); }
+
+    /* Detected URL chip */
+    .add-modal-detected {
+      display: none;
+      margin: 0 24px 12px;
+      padding: 8px 14px; border-radius: 10px;
+      background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.22);
+      font-size: 13px; color: var(--brand-primary); font-weight: 500;
+      align-items: center; gap: 8px; cursor: pointer;
+      flex-shrink: 0;
+    }
+    .add-modal-detected.visible { display: flex; }
+    .add-modal-detected:hover { background: rgba(99,102,241,0.14); }
+
+    /* Body — two-column */
+    .add-modal-body {
+      display: grid; grid-template-columns: 180px 1fr;
+      flex: 1; overflow: hidden;
+      border-top: 1px solid var(--border);
+      min-height: 0;
+    }
+
+    /* Left rail */
+    .add-modal-rail {
+      border-right: 1px solid var(--border);
+      padding: 12px 8px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 2px;
+      flex-shrink: 0;
+    }
+    .am-cat {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 10px;
+      font-size: 13.5px; font-weight: 500; color: var(--fg-muted);
+      cursor: pointer; background: transparent; border: none;
+      text-align: left; width: 100%; transition: all .12s ease;
+    }
+    .am-cat svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .am-cat:hover { background: var(--bg-muted); color: var(--fg); }
+    .am-cat.active {
+      background: rgba(99,102,241,0.1); color: var(--brand-primary); font-weight: 600;
+    }
+    .am-cat-viewall { margin-top: auto; padding-top: 8px; color: var(--fg-muted); }
+    .am-cat-viewall:hover { color: var(--brand-primary); }
+
+    /* Right area */
+    .add-modal-right {
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Category heading inside right area */
+    .add-modal-cat-title {
+      padding: 16px 20px 8px;
+      font-family: var(--font-display); font-size: 18px; font-weight: 600;
+      color: var(--fg); flex-shrink: 0;
+    }
+
+    /* Featured tiles row */
+    .add-modal-featured {
+      display: flex; gap: 10px; padding: 0 20px 14px;
+      flex-shrink: 0;
+    }
+    .am-feat-tile {
+      flex: 1; min-width: 100px; max-width: 160px;
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 14px 12px;
+      cursor: pointer; text-align: left;
+      transition: all .15s ease; display: flex; flex-direction: column; gap: 10px;
+    }
+    .am-feat-tile:hover {
+      border-color: var(--brand-primary);
+      box-shadow: 0 2px 8px rgba(99,102,241,0.12);
+      transform: translateY(-1px);
+    }
+    .am-feat-tile .am-ft-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; overflow: hidden; flex-shrink: 0;
+    }
+    .am-feat-tile .am-ft-name {
+      font-size: 13px; font-weight: 600; color: var(--fg);
+    }
+
+    /* Integration list */
+    .add-modal-list {
+      flex: 1; overflow-y: auto; padding: 0 12px 12px;
+    }
+
+    /* Integration row */
+    .am-integration-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 11px 8px; border-radius: 12px;
+      cursor: pointer; transition: all .12s ease;
+      border: 1px solid transparent;
+    }
+    .am-integration-row:hover {
+      background: var(--bg); border-color: var(--border);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(15,23,42,0.06);
+    }
+    .am-integration-row.highlighted {
+      background: rgba(99,102,241,0.06); border-color: rgba(99,102,241,0.25);
+    }
+    .am-int-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden; font-size: 18px;
+    }
+    .am-int-info { flex: 1; min-width: 0; }
+    .am-int-name {
+      font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 2px;
+    }
+    .am-int-desc {
+      font-size: 12px; color: var(--fg-muted); line-height: 1.4;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .am-int-right {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .am-gating-pill {
+      font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px;
+      white-space: nowrap;
+    }
+    .am-gating-pill.creator {
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.06));
+      color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .am-gating-pill.pro {
+      background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.06));
+      color: #7C3AED;
+      border: 1px solid rgba(139,92,246,0.25);
+    }
+    .am-int-chevron { color: var(--fg-muted); font-size: 14px; }
+
+    /* Empty / no results */
+    .add-modal-empty {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 20px; text-align: center;
+      color: var(--fg-muted); gap: 8px;
+    }
+    .add-modal-empty.visible { display: flex; }
+    .add-modal-empty svg { opacity: 0.35; }
+    .add-modal-empty p { font-size: 14px; margin: 0; }
+
+    /* Pro-gated inline confirm */
+    .am-gating-confirm {
+      display: none; position: fixed; z-index: 210;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      border-radius: 14px; padding: 16px 18px; max-width: 300px;
+      box-shadow: 0 8px 32px rgba(15,23,42,0.18);
+      font-size: 13px; color: var(--fg); line-height: 1.5;
+    }
+    .am-gating-confirm.visible { display: block; }
+    .am-gating-confirm strong { display: block; margin-bottom: 6px; }
+    .am-gc-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .am-gc-btns button {
+      flex: 1; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .am-gc-cancel { background: var(--bg-muted); border: 1px solid var(--border); color: var(--fg-muted); }
+    .am-gc-ok     { background: var(--brand-primary); border: none; color: #fff; }
+
+    /* Mobile — ≤640px: full-screen, rail becomes horizontal pill scroll */
+    @media (max-width: 640px) {
+      .add-modal {
+        width: 100vw; height: 100vh; max-height: 100vh;
+        border-radius: 0; margin: 0;
+      }
+      .add-modal-body {
+        grid-template-columns: 1fr; grid-template-rows: auto 1fr;
+      }
+      .add-modal-rail {
+        border-right: none; border-bottom: 1px solid var(--border);
+        flex-direction: row; overflow-x: auto; overflow-y: hidden;
+        padding: 8px 12px; gap: 6px;
+      }
+      .am-cat { padding: 6px 12px; white-space: nowrap; border-radius: 20px; }
+      .am-cat svg { display: none; }
+      .am-cat-viewall { margin-top: 0; padding-top: 0; }
+      .add-modal-featured { overflow-x: auto; }
+      .am-feat-tile { min-width: 110px; }
+    }
+
+    /* Dark mode tweaks for modal */
+    body.dark-mode .add-modal { background: #111827; border-color: #374151; }
+    body.dark-mode .add-modal-search { background: #1F2937; border-color: #374151; }
+    body.dark-mode .add-modal-search input { color: #F3F4F6; }
+    body.dark-mode .am-feat-tile { background: #1F2937; border-color: #374151; }
+    body.dark-mode .am-integration-row:hover { background: #1F2937; border-color: #374151; }
+    body.dark-mode .am-gating-confirm { background: #1F2937; border-color: #374151; }
+
+    /* ==============================================================
+       AI Theme matcher — Design > Theme sub-panel
+       ============================================================== */
+    .ai-theme-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(245,158,11,0.05) 100%);
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 14px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-theme-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 100% 0%, rgba(245,158,11,0.08), transparent 60%);
+      pointer-events: none;
+    }
+    .ai-theme-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .ai-spark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366F1, #F59E0B);
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .ai-tokens-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 11px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--fg-muted);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .ai-tokens-pill strong { color: var(--brand-primary); font-weight: 700; font-size: 12px; }
+    .ai-theme-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      margin-bottom: 12px;
+      position: relative;
+      flex-wrap: wrap;
+    }
+    .ai-theme-prompt {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .ai-theme-prompt:focus { outline: 2px solid rgba(99,102,241,0.3); outline-offset: -1px; border-color: var(--brand-primary); }
+    .ai-image-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease;
+      flex-shrink: 0;
+    }
+    .ai-image-btn:hover { border-color: var(--brand-primary); background: #FAFBFC; }
+    .ai-image-btn .hide-sm { display: none; }
+    @media (min-width: 480px) { .ai-image-btn .hide-sm { display: inline; } }
+    .ai-generate-btn { flex-shrink: 0; padding: 10px 18px; }
+    .ai-generate-btn .ai-btn-label { white-space: nowrap; }
+    .ai-generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .ai-suggest-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .ai-suggest-label {
+      font-size: 11px;
+      color: var(--fg-subtle);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+    .ai-chip {
+      padding: 4px 10px;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--fg);
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .ai-chip:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); }
+    .ai-tier-hint {
+      font-size: 11px;
+      color: var(--fg-muted);
+      padding: 8px 12px;
+      background: rgba(245,158,11,0.05);
+      border: 1px dashed rgba(245,158,11,0.25);
+      border-radius: 8px;
+      position: relative;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+    .ai-tier-hint strong { color: var(--fg); font-weight: 700; }
+    .ai-theme-result {
+      margin-top: 14px;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      animation: ai-fade-in .35s ease;
+      position: relative;
+    }
+    @keyframes ai-fade-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .ai-theme-result-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .ai-results-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    @media (min-width: 480px) { .ai-results-grid { grid-template-columns: repeat(4, 1fr); } }
+    .ai-result-tile { position: relative; }
+    .ai-result-tile .match-pct {
+      position: absolute;
+      top: 6px; right: 6px;
+      background: rgba(255,255,255,0.95);
+      color: var(--brand-primary);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      z-index: 2;
+    }
+    .ai-generate-btn.generating { background: var(--fg) !important; color: #fff !important; }
+    .ai-generate-btn.generating::before {
+      content: '';
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: ai-spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: -2px;
+    }
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+    .link-inline { color: var(--brand-primary); font-weight: 600; text-decoration: none; }
+    .link-inline:hover { text-decoration: underline; }
+
+    /* Dark-mode tweaks for AI theme card */
+    body.dark-mode .ai-theme-card { background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(245,158,11,0.08) 100%); border-color: rgba(99,102,241,0.3); }
+    body.dark-mode .ai-tokens-pill { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .ai-theme-prompt { background: #0A0F1C; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .ai-image-btn { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .ai-image-btn:hover { background: #1F2937; }
+    body.dark-mode .ai-chip { background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.35); color: #F3F4F6; }
+    body.dark-mode .ai-theme-result { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .ai-tier-hint { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); color: #D1D5DB; }
   </style>
 </head>
 <body data-state="ready">
@@ -1858,8 +2310,76 @@
 
             <!-- THEME -->
             <div class="design-panel" data-panel="theme">
+
+              <!-- ✨ AI theme matcher — predefined catalogue + semantic match (not generative) -->
+              <div class="field-group ai-theme-card">
+                <div class="ai-theme-head">
+                  <div>
+                    <label class="fg-label" style="display:flex; align-items:center; gap:8px; margin:0;">
+                      <span class="ai-spark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.4L20 10l-5.6 2.6L12 18l-2.4-5.4L4 10l5.6-2.6L12 2z"/><path d="M19 17l.6 1.4L21 19l-1.4.6L19 21l-.6-1.4L17 19l1.4-.6L19 17z"/></svg>
+                      </span>
+                      Generate with AI
+                    </label>
+                    <div class="fg-help" style="margin-top:6px">
+                      Describe what you like — or upload a photo that captures the vibe. We'll match you to the closest theme from our catalogue of 1000+ presets.
+                    </div>
+                  </div>
+                  <span class="ai-tokens-pill" id="ai-tokens-pill" data-tip="AI uses reset on the 1st of each month">
+                    <strong id="ai-tokens-count">9</strong>&nbsp;/&nbsp;10 AI uses left
+                  </span>
+                </div>
+
+                <div class="ai-theme-input-row">
+                  <input
+                    type="text"
+                    id="ai-theme-prompt"
+                    placeholder="e.g. warm sunset over Lisbon rooftops, editorial feel"
+                    class="ai-theme-prompt"
+                    maxlength="120"
+                  />
+                  <label for="ai-theme-image" class="ai-image-btn" data-tip="Upload an inspiration image — we extract the 2 dominant colors and match a theme">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-9 9"/></svg>
+                    <span class="hide-sm">Image</span>
+                  </label>
+                  <input type="file" id="ai-theme-image" accept="image/*" style="display:none" onchange="onAiImageSelected(this)"/>
+                  <button type="button" class="btn btn-warm ai-generate-btn" id="ai-generate-btn" onclick="generateAiTheme()">
+                    <span class="ai-btn-label">✨ Generate</span>
+                  </button>
+                </div>
+
+                <!-- Suggested chips — click to use as a hint -->
+                <div class="ai-suggest-chips">
+                  <span class="ai-suggest-label">Try:</span>
+                  <button type="button" class="ai-chip" onclick="useAiHint(this)">cozy bookstore</button>
+                  <button type="button" class="ai-chip" onclick="useAiHint(this)">90s zine</button>
+                  <button type="button" class="ai-chip" onclick="useAiHint(this)">brutalist concrete</button>
+                  <button type="button" class="ai-chip" onclick="useAiHint(this)">soft pastel skincare</button>
+                  <button type="button" class="ai-chip" onclick="useAiHint(this)">vinyl record store</button>
+                </div>
+
+                <!-- Result area — populated when AI matches return -->
+                <div class="ai-theme-result" id="ai-theme-result" hidden>
+                  <div class="ai-theme-result-head">
+                    <span>Closest matches from our catalogue</span>
+                    <button type="button" class="link-btn" onclick="closeAiResult()" style="background:transparent; border:0; color:var(--fg-muted); cursor:pointer; font-size:12px;">Close ×</button>
+                  </div>
+                  <div class="tile-grid ai-results-grid" id="ai-results-grid">
+                    <!-- populated by JS -->
+                  </div>
+                  <div class="fg-help" style="margin-top:10px; font-size:12px;">
+                    These are existing themes from our catalogue. We never generate brand-new colors — just find the best fit, so your page stays consistent and your AI quota stretches further.
+                  </div>
+                </div>
+
+                <!-- Tier hint (subtle, AP-028) -->
+                <div class="ai-tier-hint">
+                  💡 Want more matches? Creator gets <strong>40 AI uses/mo</strong> ($5/mo) · Pro gets <strong>200/mo</strong> ($15/mo). Locked for life.
+                </div>
+              </div>
+
               <div class="field-group">
-                <label class="fg-label">Presets</label>
+                <label class="fg-label">Or pick a preset</label>
                 <div class="fg-help">A preset sets all seven layers at once — you can still tweak any of them after.</div>
                 <div class="tile-grid">
                   <div class="tile" data-theme-preset="minimal"><div class="theme-minimal" style="position:absolute;inset:0"></div><div class="tile-label">Minimal</div></div>
@@ -1870,6 +2390,9 @@
                   <div class="tile" data-theme-preset="sunset"><div class="theme-sunset" style="position:absolute;inset:0"></div><div class="tile-label">Sunset</div></div>
                   <div class="tile" data-theme-preset="ocean"><div class="theme-ocean" style="position:absolute;inset:0"></div><div class="tile-label">Ocean</div></div>
                   <div class="tile" data-theme-preset="nord"><div class="theme-nord" style="position:absolute;inset:0"></div><div class="tile-label">Nord</div></div>
+                </div>
+                <div class="fg-help" style="margin-top:10px; font-size:12px;">
+                  Browsing all <strong>1000+ themes</strong>? <a href="#" class="link-inline">Open theme library →</a>
                 </div>
               </div>
             </div>
@@ -2311,69 +2834,70 @@
 
   </div><!-- /.layout -->
 
-  <!-- ============ Add-block slide-in panel ============ -->
-  <div class="add-panel" id="add-panel" aria-hidden="true">
-    <div class="add-panel-head">
-      <h3>Add a block</h3>
-      <button class="iconbtn" onclick="closeAddPanel()" data-tip="Close">✕</button>
-    </div>
-    <div style="font-size:13px; color:var(--fg-muted); margin-bottom:14px">Pick a category — we'll pre-fill styling and icons for you.</div>
-    <div class="add-categories">
-      <button class="cat-tile" onclick="addBlock('link')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
-        <span class="ct-name">Link</span>
-        <span class="ct-sub">URL with title, icon, CTA.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('social')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10"/></svg></span>
-        <span class="ct-name">Social</span>
-        <span class="ct-sub">IG, TikTok, YouTube, X, Threads…</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('text')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span>
-        <span class="ct-name">Text</span>
-        <span class="ct-sub">Heading or divider between sections.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('media')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span>
-        <span class="ct-name">Media</span>
-        <span class="ct-sub">Image, embed, Spotify, YouTube video.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('shop')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg></span>
-        <span class="ct-name">Sell</span>
-        <span class="ct-sub">Product, PDF, 1:1 call via Stripe.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('contact')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><polyline points="4 4 12 13 20 4"/></svg></span>
-        <span class="ct-name">Contact</span>
-        <span class="ct-sub">Email form, phone, booking link.</span>
-      </button>
-    </div>
+  <!-- ============ Add-block modal (Linktree-style) ============ -->
+  <div class="add-modal-backdrop" id="add-modal-backdrop" role="dialog" aria-modal="true" aria-label="Add a block" onclick="handleBackdropClick(event)">
+    <div class="add-modal" id="add-modal">
 
-    <button class="cat-more" onclick="toggleMoreCategories()" id="cat-more-btn">+ More categories</button>
+      <!-- Header -->
+      <div class="add-modal-header">
+        <h2>Add a block</h2>
+        <button class="add-modal-close" id="add-modal-close" aria-label="Close">✕</button>
+      </div>
 
-    <div class="add-more-categories" id="add-categories-more">
-      <button class="cat-tile" onclick="addBlock('event')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-        <span class="ct-name">Event</span>
-        <span class="ct-sub">RSVP, ticket, date + location.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('form')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></span>
-        <span class="ct-name">Form</span>
-        <span class="ct-sub">Email list, feedback, tiny survey.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('testimonial')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-        <span class="ct-name">Testimonial</span>
-        <span class="ct-sub">Social-proof quote with name + avatar.</span>
-      </button>
-      <button class="cat-tile" onclick="addBlock('tip')">
-        <span class="ct-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-        <span class="ct-name">Tip jar</span>
-        <span class="ct-sub">One-tap Stripe tip ($3, $5, custom).</span>
-      </button>
+      <!-- Search -->
+      <div class="add-modal-search-wrap">
+        <div class="add-modal-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="add-modal-search-input" placeholder="Paste a URL or search…" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <!-- Detected URL chip -->
+      <div class="add-modal-detected" id="add-modal-detected">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span id="add-modal-detected-text">Detected: Instagram · Click to add</span>
+      </div>
+
+      <!-- Two-column body -->
+      <div class="add-modal-body">
+
+        <!-- Left rail — categories -->
+        <nav class="add-modal-rail" id="add-modal-rail">
+          <!-- rendered by JS -->
+        </nav>
+
+        <!-- Right area -->
+        <div class="add-modal-right">
+          <div class="add-modal-cat-title" id="add-modal-cat-title">Suggested</div>
+
+          <!-- Featured tiles -->
+          <div class="add-modal-featured" id="add-modal-featured">
+            <!-- rendered by JS -->
+          </div>
+
+          <!-- Integration list -->
+          <div class="add-modal-list" id="add-modal-list">
+            <!-- rendered by JS -->
+          </div>
+
+          <!-- Empty state -->
+          <div class="add-modal-empty" id="add-modal-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <p>No integrations match your search.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Pro/Creator gating inline confirm (AP-028) -->
+  <div class="am-gating-confirm" id="am-gating-confirm">
+    <strong id="am-gc-title">💡 Creator tier feature</strong>
+    <span id="am-gc-body">This is a Creator tier feature ($5/mo). Add it as a placeholder block for now?</span>
+    <div class="am-gc-btns">
+      <button class="am-gc-cancel" onclick="closeGatingConfirm()">Cancel</button>
+      <button class="am-gc-ok" id="am-gc-ok">Add placeholder</button>
     </div>
   </div>
 
@@ -2694,6 +3218,126 @@
     window.selectSeg = selectSeg;
     window.replayAnimation = replayAnimation;
     window.toggleReducedMotion = toggleReducedMotion;
+
+    // =================================================================
+    // AI Theme matcher (mockup — predefined catalogue match)
+    // =================================================================
+    // Catalogue of theme classes that already exist in CSS (theme-bold,
+    // theme-minimal, etc.). In production this would be a 1000+ entry
+    // catalogue with semantic tags + dominant-color signatures.
+    const AI_THEME_CATALOGUE = [
+      { id: 'sunset',    label: 'Sunset',     tags: ['warm', 'sunset', 'rooftop', 'lisbon', 'orange', 'pink', 'editorial', 'photographer'] },
+      { id: 'editorial', label: 'Editorial',  tags: ['bookstore', 'cozy', 'serif', 'magazine', 'reading', 'cafe'] },
+      { id: 'ocean',     label: 'Ocean',      tags: ['blue', 'water', 'beach', 'calm', 'spa', 'skincare'] },
+      { id: 'minimal',   label: 'Minimal',    tags: ['clean', 'white', 'concrete', 'brutalist', 'gallery', 'architecture'] },
+      { id: 'playful',   label: 'Playful',    tags: ['pastel', '90s', 'zine', 'fun', 'colorful', 'youth'] },
+      { id: 'bold',      label: 'Bold',       tags: ['vibrant', 'vinyl', 'record', 'music', 'dance', 'club'] },
+      { id: 'dark',      label: 'Dark',       tags: ['night', 'gallery', 'photographer', 'moody', 'cinema', 'bw'] },
+      { id: 'nord',      label: 'Nord',       tags: ['scandinavian', 'cold', 'snow', 'ski', 'minimal', 'airy'] }
+    ];
+
+    function tokenize(text) {
+      return (text || '').toLowerCase().match(/\w+/g) || [];
+    }
+
+    function aiSemanticMatch(prompt) {
+      const tokens = tokenize(prompt);
+      if (tokens.length === 0) return AI_THEME_CATALOGUE.slice(0, 4).map(t => ({...t, match: 60 + Math.random()*15}));
+      const scored = AI_THEME_CATALOGUE.map(theme => {
+        let score = 0;
+        for (const t of tokens) {
+          for (const tag of theme.tags) {
+            if (tag === t) score += 10;
+            else if (tag.includes(t) || t.includes(tag)) score += 5;
+          }
+        }
+        return { ...theme, match: Math.min(99, 50 + score + Math.floor(Math.random() * 10)) };
+      });
+      scored.sort((a, b) => b.match - a.match);
+      return scored.slice(0, 4);
+    }
+
+    function generateAiTheme() {
+      const btn = document.getElementById('ai-generate-btn');
+      const promptEl = document.getElementById('ai-theme-prompt');
+      const tokensEl = document.getElementById('ai-tokens-count');
+      const resultEl = document.getElementById('ai-theme-result');
+      const gridEl = document.getElementById('ai-results-grid');
+
+      const remaining = parseInt(tokensEl.textContent, 10);
+      if (remaining <= 0) {
+        alert('Out of AI uses this month. Upgrade to Creator for 40/mo or Pro for 200/mo. Resets on the 1st.');
+        return;
+      }
+
+      btn.classList.add('generating');
+      btn.disabled = true;
+      const labelSpan = btn.querySelector('.ai-btn-label');
+      const original = labelSpan.textContent;
+      labelSpan.textContent = 'Matching…';
+
+      // Simulate API latency
+      setTimeout(() => {
+        const matches = aiSemanticMatch(promptEl.value);
+        gridEl.innerHTML = matches.map(m => `
+          <div class="tile ai-result-tile" data-theme-preset="${m.id}" onclick="applyAiTheme(this, '${m.id}')">
+            <span class="match-pct">${m.match}%</span>
+            <div class="theme-${m.id}" style="position:absolute;inset:0"></div>
+            <div class="tile-label">${m.label}</div>
+          </div>
+        `).join('');
+        resultEl.hidden = false;
+
+        // Decrement token
+        tokensEl.textContent = String(remaining - 1);
+
+        btn.classList.remove('generating');
+        btn.disabled = false;
+        labelSpan.textContent = original;
+      }, 900);
+    }
+
+    function applyAiTheme(tile, themeId) {
+      // Apply the chosen theme to the actual preset row above
+      const presetRow = document.querySelector('[data-panel="theme"] .field-group:last-child .tile-grid');
+      if (presetRow) {
+        presetRow.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
+        const target = presetRow.querySelector(`[data-theme-preset="${themeId}"]`);
+        if (target) {
+          target.classList.add('selected');
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+      // Mark this AI tile as the chosen one
+      tile.parentElement.querySelectorAll('.ai-result-tile').forEach(t => t.classList.remove('selected'));
+      tile.classList.add('selected');
+    }
+
+    function closeAiResult() {
+      document.getElementById('ai-theme-result').hidden = true;
+    }
+
+    function useAiHint(chip) {
+      document.getElementById('ai-theme-prompt').value = chip.textContent;
+      document.getElementById('ai-theme-prompt').focus();
+    }
+
+    function onAiImageSelected(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      // Mockup: pretend we extracted dominant colors and feed them as a synthetic prompt
+      const promptEl = document.getElementById('ai-theme-prompt');
+      const synthetic = `image: ${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')} — dominant colors detected`;
+      promptEl.value = synthetic;
+      // Auto-generate when image is uploaded
+      generateAiTheme();
+    }
+
+    window.generateAiTheme = generateAiTheme;
+    window.applyAiTheme = applyAiTheme;
+    window.closeAiResult = closeAiResult;
+    window.useAiHint = useAiHint;
+    window.onAiImageSelected = onAiImageSelected;
 
     // =================================================================
     // Theme toggle (light / dark)
