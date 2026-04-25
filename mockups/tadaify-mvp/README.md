@@ -21,6 +21,7 @@
 | `onboarding-complete.html` | Success — confetti + clipboard copy + Motion v10 burst | [#3 F-FULLFLOW-001](https://github.com/graspsoftwarepw/tadaify-app/issues/3) | 2026-04-25 |
 | `app-dashboard.html` | **Authenticated creator dashboard** — single sidebar + accordion + breadcrumb stepper for Design (v2 IA, accepted 2026-04-25) | [#26 F-APP-DASHBOARD-001](https://github.com/graspsoftwarepw/tadaify-app/issues/26) | 2026-04-25 |
 | `app-domain.html` | Custom domain management — 3-step add wizard (Enter / DNS / Live) + Free-tier subscription overlay + status states | [#30 F-CUSTOM-DOMAIN-001](https://github.com/graspsoftwarepw/tadaify-app/issues/30) | 2026-04-25 |
+| `app-settings.html` | **Authenticated creator settings** — Account / Billing / Security / GDPR & data / API keys (Pro) / Team (Business) / Danger zone (1-click cancel per AP-010, page-stays-live per AP-029, delete account per F-COMPLIANCE-001) | [#33 Account](https://github.com/graspsoftwarepw/tadaify-app/issues/33) · [#34 Billing](https://github.com/graspsoftwarepw/tadaify-app/issues/34) · [#35 Security](https://github.com/graspsoftwarepw/tadaify-app/issues/35) · [#36 GDPR](https://github.com/graspsoftwarepw/tadaify-app/issues/36) · [#37 API keys](https://github.com/graspsoftwarepw/tadaify-app/issues/37) · [#38 Team](https://github.com/graspsoftwarepw/tadaify-app/issues/38) · [#39 Danger zone](https://github.com/graspsoftwarepw/tadaify-app/issues/39) | 2026-04-25 |
 | `pricing.html` | Public pricing matrix — 4 tiers, compare table, Creator API spotlight, FAQ | [F-PRICING-LANDING-001 — TBD] | 2026-04-25 |
 | `creator-public.html` | Public creator page — what visitors see at tadaify.com/handle | implicit (rendered via F-FULLFLOW-001 publish path) | 2026-04-24 |
 | `product-public.html` | Public per-product page — tadaify.com/handle/p/slug | TBD (depends on F-PAGE-SHOP-001 #18) | 2026-04-24 |
@@ -88,6 +89,18 @@
 
 ## Changelog
 
+### 2026-04-25 — Settings mockup added (F-180..199 scope)
+- `app-settings.html` NEW — full settings panel: Account, Billing, Security, GDPR & data, API keys (Pro-gated), Team (Business-gated), Danger zone
+- AP-010 one-click cancel modal wired (no survey cascade)
+- AP-029 "page stays live" messaging in cancel + delete account flows
+- F-COMPLIANCE-001 GDPR data export + delete account + cookie preferences
+- DEC-CREATOR-API-01 API keys section with MCP server install snippet + Custom GPT template
+- DEC-PRICELOCK-01 "Locked for life" amber pill on Billing plan card
+- DEC-PRICELOCK-02 custom domain add-on line items in Billing
+- Demo toolbar (bottom-right, aria-hidden) for tier switching (Free/Creator/Pro/Business) to preview gated states
+- Settings link wired in `app-dashboard.html` and `app-domain.html` sidebars (were placeholders)
+- Cross-mockup link audit completed — 17 files scanned, 0 broken refs, 3 orphan candidates documented
+
 ### 2026-04-25 — Single-sidebar IA adopted (this PR)
 - `app-dashboard.html` replaced with v2 content (single-sidebar + breadcrumb stepper accordion). Old dual-rail v1 superseded.
 - `app-domain.html` added — full custom-domain management mockup
@@ -136,5 +149,5 @@
 
 - Read this README before starting any F-XXX-NNN implementation. The DEC trail and brand-lock are non-negotiable.
 - If your implementation deviates from the mockup, add a comment to the corresponding issue (per `change-tracker` skill) BEFORE merging the PR.
-- Cross-mockup navigation references: `./app-dashboard.html`, `./app-domain.html`, `./creator-public.html`, etc. — keep relative paths working when implementing routes.
+- Cross-mockup navigation references: `./app-dashboard.html`, `./app-domain.html`, `./app-settings.html`, `./creator-public.html`, etc. — keep relative paths working when implementing routes.
 - All mockups use `./shared/` assets — implementation should mirror this design-token approach (tokens.css → CSS variables in production).
