@@ -1,0 +1,577 @@
+<!--
+  type: mockup
+  project: tadaify
+  title: Login — auth screen
+  created_at: 2026-04-25
+  author: orchestrator
+  status: draft-for-review
+
+  Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify, Motion v10 logo, light/dark mode toggle.
+
+  DEC trail: DEC-019 tagline; DEC-WORDMARK-01 (no hyphen); DEC-TRIAL-01 (no trials); DEC-SOCIAL-01 (handle-input only, no OAuth dance); DEC-PRICELOCK-01/02; DEC-AI-QUOTA-LADDER-01 (Free 5).
+
+  Anti-patterns: AP-001 no Powered by, AP-013 no phone, AP-017 no trials, AP-024 progressive reveal, AP-030 Free default.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Log in — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    /* ----------------------------------------------------------------
+       AUTH TOPBAR — identical structure to register.html + app-dashboard
+       ---------------------------------------------------------------- */
+    .auth-bar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+      min-height: 54px;
+    }
+    .auth-bar .brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: inherit;
+    }
+    .auth-bar .wm { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -0.02em; }
+    .auth-bar .wm .ta  { color: var(--wm-ta); }
+    .auth-bar .wm .da  { color: var(--wm-da); }
+    .auth-bar .wm .ify { color: var(--wm-ify); }
+    .auth-bar .spacer { flex: 1; }
+    .auth-bar .bar-link {
+      font-size: 13px; font-weight: 500; color: var(--fg-muted);
+      text-decoration: none; white-space: nowrap;
+    }
+    .auth-bar .bar-link strong { color: var(--brand-primary); font-weight: 600; }
+    .auth-bar .bar-link:hover strong { color: var(--brand-primary-hover); }
+
+    /* Theme toggle — matches dashboard pattern exactly */
+    .theme-toggle-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent;
+      color: var(--fg-muted); cursor: pointer;
+      transition: all .12s ease;
+      position: relative;
+    }
+    .theme-toggle-btn:hover { background: var(--bg-muted); color: var(--fg); }
+    .theme-toggle-btn svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ----------------------------------------------------------------
+       LOGIN PAGE LAYOUT — centered card, full-width mobile
+       ---------------------------------------------------------------- */
+    .login-page {
+      min-height: calc(100vh - 54px);
+      display: flex; align-items: center; justify-content: center;
+      padding: clamp(24px, 5vw, 64px) 20px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: clamp(28px, 5vw, 44px);
+      box-shadow: var(--shadow-lg);
+    }
+    @media (max-width: 480px) {
+      .login-page { align-items: flex-start; padding: 0; }
+      .login-card {
+        border-radius: 0;
+        border-left: 0; border-right: 0; border-top: 0;
+        box-shadow: none;
+        padding: 28px 20px 100px;
+        max-width: 100%;
+      }
+    }
+
+    /* ----------------------------------------------------------------
+       WELCOME-BACK HINT (when ?handle= param present)
+       ---------------------------------------------------------------- */
+    .welcome-hint {
+      display: none; /* shown via JS when ?handle= exists */
+      align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.14);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+    .welcome-hint .wh-avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 17px;
+    }
+    .welcome-hint .wh-text { line-height: 1.4; }
+    .welcome-hint .wh-title {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 600; color: var(--fg);
+    }
+    .welcome-hint .wh-sub { font-size: 12px; color: var(--fg-muted); }
+
+    /* ----------------------------------------------------------------
+       LOGIN HEADER
+       ---------------------------------------------------------------- */
+    .login-header { margin-bottom: 24px; }
+    .login-header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 5vw, 38px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .login-header .subhead {
+      font-size: 15px; color: var(--fg-muted); line-height: 1.55;
+    }
+
+    /* ----------------------------------------------------------------
+       STAGGER FADE-UP entrance animations
+       ---------------------------------------------------------------- */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 320ms ease both; }
+    .delay-1 { animation-delay: 80ms; }
+    .delay-2 { animation-delay: 160ms; }
+    .delay-3 { animation-delay: 240ms; }
+    .delay-4 { animation-delay: 320ms; }
+    .delay-5 { animation-delay: 400ms; }
+    .delay-6 { animation-delay: 480ms; }
+
+    /* ----------------------------------------------------------------
+       FORM FIELDS
+       ---------------------------------------------------------------- */
+    .field-block { margin-bottom: 14px; }
+    .field-block label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--fg-muted); margin-bottom: 6px;
+    }
+
+    /* Password field with show/hide toggle */
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 60px; min-height: 44px; }
+    .pw-show-btn {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; padding: 4px 6px;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      color: var(--fg-muted); cursor: pointer;
+    }
+    .pw-show-btn:hover { color: var(--fg); }
+
+    .forgot-link {
+      display: block; text-align: right;
+      font-size: 12px; font-weight: 500; color: var(--fg-muted);
+      margin-top: 6px; text-decoration: none;
+    }
+    .forgot-link:hover { color: var(--brand-primary); }
+
+    /* ----------------------------------------------------------------
+       PRIMARY CTA
+       ---------------------------------------------------------------- */
+    .login-submit-btn {
+      width: 100%; min-height: 46px;
+      margin-top: 8px;
+    }
+
+    /* ----------------------------------------------------------------
+       DIVIDER
+       ---------------------------------------------------------------- */
+    .divider-or {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--fg-subtle); font-size: 12px;
+      margin: 18px 0;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .divider-or::before, .divider-or::after {
+      content: ""; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ----------------------------------------------------------------
+       GOOGLE BUTTON
+       ---------------------------------------------------------------- */
+    .auth-btn-google {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; width: 100%; min-height: 44px;
+      transition: all 120ms ease;
+      color: var(--fg);
+      justify-content: center;
+    }
+    .auth-btn-google:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
+    .auth-btn-google .google-icon { width: 20px; height: 20px; flex-shrink: 0; }
+
+    /* ----------------------------------------------------------------
+       MAGIC-LINK TOGGLE
+       ---------------------------------------------------------------- */
+    .magic-link-toggle {
+      width: 100%; margin-top: 10px;
+      background: none; border: 1px dashed var(--border-strong);
+      border-radius: var(--radius); padding: 10px 14px;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      color: var(--fg-muted); cursor: pointer;
+      transition: all 120ms ease;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 44px;
+    }
+    .magic-link-toggle:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+
+    /* The magic-link-only form (hidden by default) */
+    #magic-form { display: none; }
+    .magic-notice {
+      font-size: 12px; color: var(--fg-muted);
+      text-align: center; margin-top: 10px;
+    }
+
+    /* ----------------------------------------------------------------
+       TRUST TRIO STRIP
+       ---------------------------------------------------------------- */
+    .trust-strip {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin: 24px 0 0;
+    }
+    .trust-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 500;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      color: var(--fg-muted);
+      white-space: nowrap;
+    }
+
+    /* ----------------------------------------------------------------
+       BOTTOM LINK — Create account
+       ---------------------------------------------------------------- */
+    .create-account-row {
+      margin-top: 22px;
+      text-align: center;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .create-account-row a { color: var(--brand-primary); font-weight: 600; }
+    .create-account-row a:hover { color: var(--brand-primary-hover); }
+
+    /* ----------------------------------------------------------------
+       MOBILE: sticky CTA at bottom
+       ---------------------------------------------------------------- */
+    .sticky-cta-mobile {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+    }
+    .sticky-cta-mobile .btn { width: 100%; min-height: 46px; }
+    @media (max-width: 480px) {
+      .sticky-cta-mobile { display: block; }
+      /* hide the in-card submit on mobile, use sticky one */
+      .login-submit-btn { display: none; }
+    }
+
+    /* ----------------------------------------------------------------
+       DARK MODE OVERRIDES
+       ---------------------------------------------------------------- */
+    body.dark-mode {
+      background: #0B0F1E;
+      color: #F3F4F6;
+    }
+    body.dark-mode .auth-bar {
+      background: #0E1428;
+      border-bottom-color: #1F2937;
+    }
+    body.dark-mode .auth-bar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .auth-bar .bar-link { color: #9CA3AF; }
+    body.dark-mode .login-page { background: #0B0F1E; }
+    body.dark-mode .login-card {
+      background: #0E1428;
+      border-color: #1F2937;
+    }
+    body.dark-mode .login-header h1 { color: #F3F4F6; }
+    body.dark-mode .login-header .subhead { color: #9CA3AF; }
+    body.dark-mode .field-block label { color: #9CA3AF; }
+    body.dark-mode .input {
+      background: #141A2D;
+      border-color: #1F2937;
+      color: #F3F4F6;
+    }
+    body.dark-mode .input:focus { border-color: #6366F1; box-shadow: 0 0 0 4px rgba(99,102,241,0.18); }
+    body.dark-mode .pw-show-btn { color: #9CA3AF; }
+    body.dark-mode .pw-show-btn:hover { color: #F3F4F6; }
+    body.dark-mode .forgot-link { color: #9CA3AF; }
+    body.dark-mode .forgot-link:hover { color: #A5B4FC; }
+    body.dark-mode .auth-btn-google {
+      background: #141A2D; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .auth-btn-google:hover { background: #1F2937; border-color: #6366F1; }
+    body.dark-mode .magic-link-toggle {
+      border-color: #1F2937; color: #9CA3AF;
+    }
+    body.dark-mode .magic-link-toggle:hover { border-color: #6366F1; color: #A5B4FC; background: rgba(99,102,241,0.08); }
+    body.dark-mode .trust-chip { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .create-account-row { color: #9CA3AF; }
+    body.dark-mode .sticky-cta-mobile { background: #0E1428; border-top-color: #1F2937; }
+    body.dark-mode .welcome-hint {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.25);
+    }
+    body.dark-mode .welcome-hint .wh-title { color: #F3F4F6; }
+    body.dark-mode .welcome-hint .wh-sub { color: #9CA3AF; }
+    body.dark-mode .magic-notice { color: #9CA3AF; }
+    body.dark-mode #magic-form .input {
+      background: #141A2D; border-color: #1F2937; color: #F3F4F6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============ AUTH TOPBAR ============ -->
+  <header class="auth-bar">
+    <a class="brand" href="./landing.html">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+    </a>
+    <span class="spacer"></span>
+    <span class="bar-link">New here? <a href="./register.html"><strong>Sign up →</strong></a></span>
+    <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle light / dark theme">
+      <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </header>
+
+  <!-- ============ LOGIN PAGE ============ -->
+  <div class="login-page">
+    <div class="login-card">
+
+      <!-- WELCOME-BACK HINT (shown when ?handle= param present) -->
+      <div class="welcome-hint" id="welcome-hint">
+        <div class="wh-avatar" id="wh-avatar">A</div>
+        <div class="wh-text">
+          <div class="wh-title" id="wh-title">Hey, @alexandra 👋</div>
+          <div class="wh-sub">Good to see you back.</div>
+        </div>
+      </div>
+
+      <!-- LOGIN HEADER -->
+      <div class="login-header fade-up">
+        <h1 id="login-heading">Welcome back</h1>
+        <p class="subhead">Log in to keep building.</p>
+      </div>
+
+      <!-- PASSWORD LOGIN FORM (default) -->
+      <form id="pw-login-form" onsubmit="handleLogin(event)">
+
+        <div class="field-block fade-up delay-1">
+          <label for="email-input">Email</label>
+          <input class="input" type="email" id="email-input" name="email"
+            placeholder="you@example.com" autocomplete="email" required
+            style="width:100%; min-height:44px;" autofocus/>
+        </div>
+
+        <div class="field-block fade-up delay-2">
+          <label for="pw-input">Password</label>
+          <div class="pw-wrap">
+            <input class="input" type="password" id="pw-input" name="password"
+              placeholder="••••••••" autocomplete="current-password" required
+              style="width:100%;"/>
+            <button class="pw-show-btn" type="button" onclick="togglePwVis()" aria-label="Show/hide password">Show</button>
+          </div>
+          <a href="#" class="forgot-link" onclick="event.preventDefault(); showForgot()">Forgot password?</a>
+        </div>
+
+        <div class="field-block fade-up delay-3" style="display:flex;align-items:center;gap:8px; margin-bottom:6px;">
+          <input type="checkbox" id="stay-logged-in" style="flex-shrink:0; width:16px;height:16px;"/>
+          <label for="stay-logged-in" style="font-size:13px; font-weight:400; color:var(--fg-muted); margin:0; cursor:pointer;">
+            Stay logged in on this device
+          </label>
+        </div>
+
+        <button class="btn btn-primary login-submit-btn fade-up delay-4" type="submit">
+          Log in
+        </button>
+      </form>
+
+      <!-- MAGIC-LINK TOGGLE -->
+      <button class="magic-link-toggle fade-up delay-5" id="magic-toggle" onclick="toggleMagicLink()" type="button">
+        ✨ Send me a magic link instead
+      </button>
+
+      <!-- MAGIC-LINK FORM (hidden by default) -->
+      <div id="magic-form" class="fade-up delay-3">
+        <div class="field-block" style="margin-top:14px;">
+          <label for="magic-email">Email</label>
+          <input class="input" type="email" id="magic-email"
+            placeholder="you@example.com" autocomplete="email"
+            style="width:100%; min-height:44px;"/>
+        </div>
+        <button class="btn btn-primary" style="width:100%; min-height:46px;" onclick="handleMagicLink()">
+          Send magic link ✨
+        </button>
+        <p class="magic-notice">We'll email you a 1-click link — no password needed.</p>
+        <button type="button" onclick="toggleMagicLink()" style="display:block; margin:12px auto 0; background:none; border:none; font-size:13px; color:var(--fg-muted); cursor:pointer; font-family:inherit;">
+          ← Back to password
+        </button>
+      </div>
+
+      <!-- DIVIDER -->
+      <div class="divider-or fade-up delay-5" id="divider-or">or</div>
+
+      <!-- GOOGLE SOCIAL AUTH (Google only per DEC-SOCIAL-01) -->
+      <button class="auth-btn-google fade-up delay-6" onclick="handleGoogleLogin()">
+        <svg class="google-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          <path fill="none" d="M0 0h48v48H0z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <!-- TRUST TRIO STRIP -->
+      <div class="trust-strip fade-up delay-6">
+        <span class="trust-chip">🔒 Price locked for life</span>
+        <span class="trust-chip">💸 30-day money-back · No trials</span>
+        <span class="trust-chip">🛡 GDPR-compliant · export &amp; delete anytime</span>
+      </div>
+
+      <!-- CREATE ACCOUNT LINK -->
+      <div class="create-account-row fade-up delay-6">
+        First time here? <a href="./register.html">Create account →</a>
+      </div>
+
+      <!-- Card footer wordmark — subtle brand close -->
+      <div style="text-align:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+        <a href="./landing.html" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; opacity:0.6;">
+          <span class="logo-mark" data-logo style="width:18px;height:18px"></span>
+          <span class="wm" style="font-size:15px; font-family:var(--font-display); font-weight:600; letter-spacing:-0.02em;">
+            <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+          </span>
+        </a>
+        <p style="font-size:11px; color:var(--fg-subtle); margin-top:4px;">Turn your bio link into your best first impression.</p>
+      </div>
+
+    </div><!-- /login-card -->
+  </div><!-- /login-page -->
+
+  <!-- MOBILE STICKY CTA -->
+  <div class="sticky-cta-mobile">
+    <button class="btn btn-primary" onclick="handleLoginMobile()">Log in</button>
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    // ----------------------------------------------------------------
+    // URL param: ?handle=<name> — welcome-back hint + email pre-fill
+    // ----------------------------------------------------------------
+    var params   = new URLSearchParams(window.location.search);
+    var handle   = params.get('handle');
+    var nextPath = params.get('next') || './app-dashboard.html';
+
+    if (handle) {
+      var hint = document.getElementById('welcome-hint');
+      hint.style.display = 'flex';
+      document.getElementById('wh-title').textContent = 'Hey, @' + handle + ' \uD83D\uDC4B';
+      document.getElementById('wh-avatar').textContent = handle.charAt(0).toUpperCase();
+      document.getElementById('login-heading').textContent = 'Welcome back, @' + handle;
+      // Pre-fill email placeholder (handle may map to email in real app)
+      document.getElementById('email-input').placeholder = handle + '@example.com';
+      document.getElementById('magic-email').placeholder = handle + '@example.com';
+    }
+
+    // ----------------------------------------------------------------
+    // Password show / hide
+    // ----------------------------------------------------------------
+    function togglePwVis() {
+      var inp = document.getElementById('pw-input');
+      var btn = inp.parentNode.querySelector('.pw-show-btn');
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+      else { inp.type = 'password'; btn.textContent = 'Show'; }
+    }
+
+    // ----------------------------------------------------------------
+    // Magic link toggle
+    // ----------------------------------------------------------------
+    var magicVisible = false;
+    function toggleMagicLink() {
+      magicVisible = !magicVisible;
+      document.getElementById('pw-login-form').style.display  = magicVisible ? 'none' : '';
+      document.getElementById('magic-form').style.display     = magicVisible ? 'block' : 'none';
+      document.getElementById('divider-or').style.display     = magicVisible ? 'none' : '';
+      document.getElementById('magic-toggle').style.display   = magicVisible ? 'none' : '';
+      if (magicVisible) {
+        document.getElementById('magic-email').focus();
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // Form submissions (mockup level — no real auth)
+    // ----------------------------------------------------------------
+    function handleLogin(e) {
+      e.preventDefault();
+      alert('Mockup: in real app this would log you in and redirect to ' + nextPath);
+    }
+    function handleLoginMobile() {
+      alert('Mockup: in real app this would log you in and redirect to ' + nextPath);
+    }
+    function handleGoogleLogin() {
+      alert('Mockup: in real app this would authenticate via Google and redirect to ' + nextPath);
+    }
+    function handleMagicLink() {
+      var email = document.getElementById('magic-email').value;
+      if (!email) { document.getElementById('magic-email').focus(); return; }
+      alert('Mockup: in real app we would send a magic link to ' + email);
+    }
+    function showForgot() {
+      var email = document.getElementById('email-input').value;
+      alert('Mockup: in real app we would send a password reset to ' + (email || 'your email'));
+    }
+
+    window.togglePwVis    = togglePwVis;
+    window.toggleMagicLink = toggleMagicLink;
+    window.handleLogin    = handleLogin;
+    window.handleLoginMobile = handleLoginMobile;
+    window.handleGoogleLogin = handleGoogleLogin;
+    window.handleMagicLink = handleMagicLink;
+    window.showForgot     = showForgot;
+
+    // ----------------------------------------------------------------
+    // Theme toggle — mirrors dashboard + register pattern
+    // ----------------------------------------------------------------
+    var themeToggle = document.getElementById('theme-toggle');
+    (function() {
+      var saved;
+      try { saved = localStorage.getItem('tadaify-theme'); } catch(e) {}
+      if (saved === 'dark') document.body.classList.add('dark-mode');
+    })();
+    if (themeToggle) {
+      themeToggle.addEventListener('click', function() {
+        var isDark = document.body.classList.toggle('dark-mode');
+        try { localStorage.setItem('tadaify-theme', isDark ? 'dark' : 'light'); } catch(e) {}
+      });
+    }
+  </script>
+</body>
+</html>
