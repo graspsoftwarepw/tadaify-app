@@ -2317,7 +2317,7 @@
                     </div>
                   </div>
                   <span class="ai-tokens-pill" id="ai-tokens-pill" data-tip="AI uses reset on the 1st of each month">
-                    <strong id="ai-tokens-count">9</strong>&nbsp;/&nbsp;10 AI uses left
+                    <strong id="ai-tokens-count">4</strong>&nbsp;/&nbsp;5 AI uses left
                   </span>
                 </div>
 
@@ -3061,23 +3061,12 @@
       const pvBlock = document.querySelector('#pv-blocks [data-block="' + key + '"]');
       if (pvBlock) pvBlock.style.display = el.classList.contains('on') ? '' : 'none';
     }
-
+// =================================================================
+    // Add block panel — delegates to openAddBlockModal() (defined below)
     // =================================================================
-    // Add block panel
-    // =================================================================
-    function openAddPanel()  { document.getElementById('add-panel').classList.add('open'); }
-    function closeAddPanel() { document.getElementById('add-panel').classList.remove('open'); }
-    function toggleMoreCategories() {
-      const more = document.getElementById('add-categories-more');
-      const btn = document.getElementById('cat-more-btn');
-      more.classList.toggle('open');
-      btn.textContent = more.classList.contains('open') ? '− Fewer categories' : '+ More categories';
-    }
-    function addBlock(kind) {
-      closeAddPanel();
-      alert('In real app: would add a "' + kind + '" block and scroll to its new position.');
-    }
-
+    function openAddPanel(preCategory) { openAddBlockModal(preCategory); }
+    function closeAddPanel() { closeAddBlockModal(); }
+    function addBlock(kind) { openAddBlockModal(); }
     // =================================================================
     // Quick chips
     // =================================================================
