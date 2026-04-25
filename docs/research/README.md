@@ -18,3 +18,4 @@ indexed here. Reports are NOT acted upon until the DEC is answered.
 |------|--------|--------|
 | 2026-04-25 | [Multi-page accounts, grid layouts, and API-driven templates](./multi-page-grid-and-templates.md) | draft-for-review — DEC-MULTIPAGE-01 / DEC-LAYOUT-01 / DEC-APIPAGES-01 pending |
 | 2026-04-25 | [Paid articles / paid content — competitive landscape, payment infrastructure, take-rate, recommendation](./paid-articles-and-content.md) | draft-for-review — DEC-PAID-CONTENT-01 / DEC-PAID-PROCESSOR-01 / DEC-PAID-TAKERATE-01 / DEC-PAID-MODEL-01 pending |
+| 2026-04-25 | [Custom domains for SaaS — Cloudflare for SaaS vs AWS CloudFront SaaS pattern](./custom-domains-cloudflare-vs-cloudfront.md) | draft-for-review — DEC-CUSTOM-DOMAIN-PROVIDER-01 / DEC-CUSTOM-DOMAIN-VALIDATION-01 / DEC-CUSTOM-DOMAIN-PRICING-01 pending |
