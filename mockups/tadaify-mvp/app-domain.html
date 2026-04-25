@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Custom domain management — /app/domain (F-CUSTOM-DOMAIN-001)
+  created_at: 2026-04-25
+  author: orchestrator
+  status: draft-for-review
+
+  Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify, Motion v10 logo, light/dark mode toggle.
+
+  DEC trail:
+    DEC-PRICELOCK-02 (universal $2/mo add-on, every tier)
+    DEC-PRICELOCK-01 (price-locked-for-life)
+    DEC-CUSTOM-DOMAIN-NAV-01=A (dedicated 6th sidebar item with soon pill — this mockup defines the soon-state replacement)
+    DEC-WORDMARK-01 (no hyphen)
+    DEC-DOMAIN-01 (single-domain architecture; custom domains route TO tadaify infrastructure)
+
+  URL state:
+    ?action=add              — opens add wizard on load
+    ?action=add&step=2&domain=alexandra.com — re-opens wizard at step 2
+    ?domain=alexandra.com    — focus that domain row in list state
+    ?state=empty             — empty state (default)
+    ?state=list              — domain list state (1+ domains)
+    ?tier=free               — Free tier (default; first domain triggers Stripe overlay)
+    ?tier=creator            — Creator tier (1 included, $2/mo each extra)
+    ?tier=pro                — Pro tier (1 included)
+    ?tier=business           — Business tier (10 included)
+
+  Anti-patterns: AP-001 / AP-013 / AP-017 / AP-031.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Shared atoms ── */
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger { background: var(--danger-bg); color: #991B1B; border-color: rgba(239,68,68,0.25); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 10px; font-size: 12px; border-radius: 7px; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px) {
+      .layout { grid-template-columns: 72px 1fr; }
+    }
+    @media (min-width: 1180px) {
+      .layout { grid-template-columns: 240px 1fr; }
+    }
+
+    /* ── Sidebar ── */
+    aside.side {
+      display: none;
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      padding: 18px 10px 18px;
+      flex-direction: column; gap: 8px;
+      position: sticky; top: 54px; align-self: start;
+      height: calc(100vh - 54px);
+      overflow-y: auto;
+    }
+    @media (min-width: 720px) { aside.side { display: flex; } }
+
+    .side-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg);
+    }
+    .side-user .av {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 15px;
+      flex-shrink: 0;
+    }
+    .side-user .utxt { min-width: 0; flex: 1; }
+    .side-user .uname { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .side-user .uhandle { font-size: 11px; color: var(--fg-muted); }
+    .side-user .chevron { color: var(--fg-subtle); }
+
+    .nav-group { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; }
+    .nav-group + .nav-group { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 9px 10px; border-radius: 9px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg);
+      text-align: left; transition: background .12s ease, color .12s ease;
+    }
+    .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--fg-muted); }
+    .nav-item:hover { background: var(--bg-muted); }
+    .nav-item.active { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+    .nav-item.active svg { color: var(--brand-primary); }
+    .nav-item .nav-count {
+      margin-left: auto; font-size: 11px; font-weight: 600;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .nav-divider { border-top: 1px solid var(--border); margin: 6px 0; }
+    .nav-add-page {
+      padding-left: 22px !important; cursor: not-allowed !important;
+      opacity: 0.55; font-style: italic;
+    }
+    .nav-add-page .nav-icon {
+      width: 17px; height: 17px; flex-shrink: 0; color: var(--fg-subtle);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 500;
+    }
+    .nav-add-page .nav-pill {
+      margin-left: auto; font-size: 10px; font-weight: 600;
+      padding: 1px 6px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-subtle);
+    }
+    .nav-add-page:hover { background: transparent !important; }
+
+    /* Tablet rail — icons only */
+    @media (min-width: 720px) and (max-width: 1179px) {
+      aside.side { padding: 14px 8px; }
+      .side-user .utxt, .side-user .chevron { display: none; }
+      .nav-item { justify-content: center; padding: 10px 6px; }
+      .nav-item > span.label, .nav-item .nav-count { display: none; }
+      .nav-item svg { width: 20px; height: 20px; }
+    }
+
+    /* ── Main content ── */
+    main.content {
+      padding: 24px 20px 120px;
+      min-width: 0;
+      max-width: 860px;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 60px; } }
+
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 5px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ── Empty state ── */
+    .empty-hero {
+      background: linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(139,92,246,0.04) 100%);
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 20px;
+      padding: 48px 32px;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .empty-hero .eh-icon {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(139,92,246,0.10));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; margin-bottom: 4px;
+    }
+    .empty-hero h2 {
+      font-family: var(--font-display); font-size: 26px; font-weight: 600;
+      letter-spacing: -0.02em; margin: 0;
+    }
+    .empty-hero .eh-url {
+      font-size: 15px; color: var(--brand-primary); font-weight: 500;
+      font-family: var(--font-mono); background: rgba(99,102,241,0.07);
+      padding: 6px 14px; border-radius: 8px;
+    }
+    .empty-hero .eh-desc {
+      font-size: 14px; color: var(--fg-muted); max-width: 420px; line-height: 1.55;
+    }
+    .empty-hero .eh-price {
+      font-size: 13px; color: var(--fg-subtle);
+      background: var(--bg-muted); border-radius: 8px; padding: 6px 14px;
+    }
+    .empty-hero .eh-price strong { color: var(--fg-muted); }
+
+    .empty-footer {
+      margin-top: 24px;
+      padding: 18px 20px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .empty-footer p { font-size: 13.5px; color: var(--fg-muted); }
+    .empty-footer a { color: var(--brand-primary); font-weight: 500; }
+    .empty-footer a:hover { text-decoration: underline; }
+    .registrar-chips {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+    }
+    .reg-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; color: var(--fg-muted);
+      background: var(--bg-muted); border: 1px solid var(--border);
+    }
+
+    /* ── Domain list ── */
+    .domain-list { display: flex; flex-direction: column; gap: 12px; }
+    .domain-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex; align-items: center; gap: 14px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .domain-card:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
+    .domain-card.is-focused { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .domain-status-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-green { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .dot-yellow { background: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+    .dot-red { background: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .dot-gray { background: var(--fg-subtle); }
+
+    .domain-info { flex: 1; min-width: 0; }
+    .domain-name {
+      font-weight: 600; font-size: 15px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .domain-name .primary-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; padding: 2px 8px; border-radius: 999px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+    }
+    .domain-meta {
+      font-size: 12.5px; color: var(--fg-muted); margin-top: 3px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .domain-meta .dm-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .pulse-wrap { display: flex; align-items: center; gap: 5px; }
+    .pulse {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--warning);
+      animation: pulse-anim 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-anim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .domain-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+    .kebab-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent;
+      color: var(--fg-muted); display: flex; align-items: center; justify-content: center;
+      font-size: 18px; line-height: 1; transition: all .12s ease;
+      position: relative;
+    }
+    .kebab-btn:hover { background: var(--bg-muted); color: var(--fg); border-color: var(--border); }
+
+    .dropdown-menu {
+      display: none; position: absolute; right: 0; top: calc(100% + 4px);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px; padding: 6px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      min-width: 200px; z-index: 100;
+    }
+    .dropdown-menu.open { display: block; }
+    .dm-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500; color: var(--fg);
+      background: transparent; border: none; text-align: left;
+      transition: background .1s ease;
+    }
+    .dm-item svg { width: 15px; height: 15px; color: var(--fg-muted); flex-shrink: 0; }
+    .dm-item:hover { background: var(--bg-muted); }
+    .dm-item.danger { color: var(--danger); }
+    .dm-item.danger svg { color: var(--danger); }
+    .dm-item.danger:hover { background: var(--danger-bg); }
+    .dm-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* Billing info row */
+    .billing-row {
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 13px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .billing-row strong { color: var(--fg); font-weight: 600; }
+
+    /* ── Add domain modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 24px 80px rgba(15,23,42,0.22);
+      width: min(560px, calc(100vw - 32px));
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      animation: modalSlide .22s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes modalSlide {
+      from { transform: translateY(14px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 24px 0;
+    }
+    .modal-header h2 {
+      font-family: var(--font-display); font-size: 22px; font-weight: 600;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid var(--border-strong); background: var(--bg);
+      color: var(--fg-muted); display: flex; align-items: center; justify-content: center;
+      font-size: 16px; line-height: 1; transition: all .15s ease;
+    }
+    .modal-close:hover { background: var(--bg-muted); color: var(--fg); }
+    .modal-body { padding: 20px 24px 28px; }
+
+    /* Wizard step indicator */
+    .wizard-steps {
+      display: flex; align-items: center; gap: 0;
+      margin-bottom: 24px;
+    }
+    .ws-step {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600; color: var(--fg-subtle);
+    }
+    .ws-step .ws-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; transition: all .2s ease;
+    }
+    .ws-step.active { color: var(--brand-primary); }
+    .ws-step.active .ws-num { border-color: var(--brand-primary); background: var(--brand-primary); color: #fff; }
+    .ws-step.done .ws-num { border-color: var(--success); background: var(--success); color: #fff; }
+    .ws-step.done .ws-num::before { content: "✓"; }
+    .ws-step.done .ws-num span { display: none; }
+    .ws-connector {
+      flex: 1; height: 2px; background: var(--border-strong); margin: 0 8px;
+      border-radius: 2px; transition: background .2s ease;
+    }
+    .ws-connector.done { background: var(--success); }
+
+    /* Wizard panels */
+    .wiz-panel { display: none; flex-direction: column; gap: 16px; }
+    .wiz-panel.active { display: flex; }
+
+    /* Step 1 — Enter domain */
+    .field-label {
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+    }
+    .domain-input-wrap {
+      display: flex; align-items: center;
+      background: var(--bg);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 2px 4px 2px 14px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .domain-input-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .domain-input-wrap .prefix {
+      font-size: 15px; color: var(--fg-muted); white-space: nowrap; font-weight: 400;
+    }
+    .domain-input-wrap input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 15px; font-weight: 500; color: var(--fg);
+      padding: 11px 8px; min-width: 0;
+    }
+    .domain-input-wrap input::placeholder { color: var(--fg-subtle); font-weight: 400; }
+    .input-hint { font-size: 12px; color: var(--fg-subtle); margin-top: 5px; }
+    .input-error { font-size: 12px; color: var(--danger); margin-top: 5px; display: none; }
+    .input-error.visible { display: block; }
+
+    /* Subdomain checkbox */
+    .checkbox-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 14px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      cursor: pointer; transition: border-color .15s ease;
+    }
+    .checkbox-row:hover { border-color: var(--border-strong); }
+    .checkbox-row input[type="checkbox"] {
+      width: 16px; height: 16px; margin-top: 1px;
+      accent-color: var(--brand-primary); cursor: pointer; flex-shrink: 0;
+    }
+    .checkbox-row .cr-body { flex: 1; }
+    .checkbox-row .cr-title { font-size: 14px; font-weight: 500; }
+    .checkbox-row .cr-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Step 2 — DNS */
+    .dns-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .dns-card-header {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    .dns-col-head {
+      padding: 10px 16px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--fg-subtle);
+    }
+    .dns-col-head:first-child { border-right: 1px solid var(--border); }
+    .dns-rows { display: flex; flex-direction: column; }
+    .dns-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    .dns-row:last-child { border-bottom: 0; }
+    .dns-cell {
+      padding: 10px 16px;
+      font-size: 13px;
+    }
+    .dns-cell:first-child { border-right: 1px solid var(--border); color: var(--fg-muted); }
+    .dns-cell .field-name { font-size: 11px; color: var(--fg-subtle); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .dns-cell code {
+      font-family: var(--font-mono); font-size: 13px;
+      background: rgba(99,102,241,0.08); color: var(--brand-primary);
+      padding: 2px 7px; border-radius: 5px; display: inline-block; margin-top: 2px;
+      word-break: break-all;
+    }
+
+    /* DNS status indicator */
+    .dns-status-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .dns-status-bar.verified {
+      background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25);
+    }
+    .dns-status-bar svg { flex-shrink: 0; }
+
+    /* Registrar expandable */
+    .registrar-expander {
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden;
+    }
+    .re-trigger {
+      width: 100%; text-align: left;
+      padding: 12px 16px; background: var(--bg-elevated);
+      font-size: 13.5px; font-weight: 500; color: var(--fg-muted);
+      border: none; display: flex; align-items: center; justify-content: space-between;
+      transition: background .12s ease;
+    }
+    .re-trigger:hover { background: var(--bg-muted); color: var(--fg); }
+    .re-trigger .chevron { transition: transform .2s ease; }
+    .re-trigger.open .chevron { transform: rotate(180deg); }
+    .re-body {
+      display: none;
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .re-body.open { display: block; }
+    .re-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .re-row:last-child { border-bottom: none; }
+    .re-registrar { font-weight: 600; min-width: 110px; color: var(--fg); }
+    .re-path { color: var(--fg-muted); line-height: 1.45; }
+
+    /* Step 3 — SSL */
+    .ssl-timeline { display: flex; flex-direction: column; gap: 0; }
+    .ssl-step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0;
+    }
+    .ssl-step + .ssl-step { border-top: 1px solid var(--border); }
+    .ssl-icon {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+    .ssl-icon.done { background: var(--success-bg); }
+    .ssl-icon.pending {
+      background: var(--warning-bg);
+      animation: ssl-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes ssl-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+    }
+    .ssl-icon.waiting { background: var(--bg-muted); }
+    .ssl-body { flex: 1; }
+    .ssl-title { font-size: 14px; font-weight: 600; }
+    .ssl-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    .live-cta {
+      background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.04));
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 14px; padding: 20px;
+      text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center;
+    }
+    .live-cta .lc-domain {
+      font-family: var(--font-mono); font-size: 16px; font-weight: 600;
+      color: var(--success);
+      background: rgba(16,185,129,0.1); padding: 6px 16px; border-radius: 8px;
+    }
+    .live-cta .lc-actions { display: flex; gap: 8px; }
+
+    /* Stripe payment overlay (Free first domain) */
+    .stripe-overlay-panel {
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .stripe-plan-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.05));
+      border: 1.5px solid rgba(99,102,241,0.2);
+      border-radius: 14px; padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .spc-left .spc-name { font-size: 15px; font-weight: 600; }
+    .spc-left .spc-desc { font-size: 12.5px; color: var(--fg-muted); margin-top: 3px; }
+    .spc-left .spc-note {
+      font-size: 11.5px; color: var(--brand-primary); margin-top: 5px;
+      font-style: italic;
+    }
+    .spc-price {
+      font-family: var(--font-display); font-size: 26px; font-weight: 600;
+      color: var(--fg); white-space: nowrap;
+    }
+    .spc-price sub { font-size: 13px; font-family: var(--font-sans); color: var(--fg-muted); font-weight: 400; }
+
+    .card-form-mock {
+      border: 1px solid var(--border-strong);
+      border-radius: 12px; padding: 14px 16px;
+      background: var(--bg); display: flex; flex-direction: column; gap: 12px;
+    }
+    .cf-row { display: flex; gap: 10px; }
+    .cf-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .cf-field label { font-size: 11px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .cf-field input {
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      padding: 9px 12px; font-size: 14px; background: var(--bg-elevated); color: var(--fg);
+      outline: none; font-family: var(--font-mono);
+    }
+    .cf-field input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .pay-methods {
+      display: flex; gap: 8px; align-items: center;
+      padding: 10px 14px;
+      background: var(--bg-muted); border-radius: 10px;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .pay-method-icon {
+      padding: 3px 8px; border-radius: 4px; background: var(--bg-elevated);
+      border: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--fg-muted);
+    }
+
+    /* Right sidebar: domain best practices */
+    .side-tips {
+      display: none;
+    }
+    @media (min-width: 1100px) {
+      .domain-layout { display: grid; grid-template-columns: 1fr 260px; gap: 28px; align-items: start; }
+      .side-tips { display: block; position: sticky; top: 82px; }
+    }
+    .tips-panel {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .tips-panel h3 {
+      font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-subtle);
+      margin: 0 0 12px;
+    }
+    .tip-chip {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; line-height: 1.45;
+    }
+    .tip-chip:last-child { border-bottom: none; }
+    .tip-chip .tip-ic { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .tip-chip .tip-title { font-weight: 600; color: var(--fg); }
+    .tip-chip .tip-body { color: var(--fg-muted); font-size: 12.5px; margin-top: 2px; }
+
+    .footer-help {
+      margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--fg-subtle); text-align: center;
+    }
+    .footer-help a { color: var(--brand-primary); font-weight: 500; }
+    .footer-help a:hover { text-decoration: underline; }
+
+    /* ── Confirmation modal for remove ── */
+    .confirm-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(15,23,42,0.22);
+      width: min(440px, calc(100vw - 32px));
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 14px;
+      animation: modalSlide .22s cubic-bezier(0.22,1,0.36,1);
+    }
+    .confirm-modal h3 { font-family: var(--font-display); font-size: 20px; margin: 0; }
+    .confirm-modal p { font-size: 14px; color: var(--fg-muted); line-height: 1.55; margin: 0; }
+    .confirm-modal p strong { color: var(--fg); }
+    .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+    /* ── Mobile bottom tabs ── */
+    .mobile-tabs {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+    @media (min-width: 720px) { .mobile-tabs { display: none; } }
+    .mt-btn {
+      background: transparent; border: 0; padding: 6px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 10px; color: var(--fg-muted); font-weight: 500;
+    }
+    .mt-btn svg { width: 20px; height: 20px; }
+    .mt-btn.active { color: var(--brand-primary); }
+    .mt-btn.active svg { color: var(--brand-primary); }
+
+    /* ── Dark mode ── */
+    body.dark-mode {
+      --bg: #0B0F1E; --bg-elevated: #141A2D; --bg-muted: #1F2937;
+      --bg-sunken: #0A0F1C; --fg: #F3F4F6; --fg-muted: #9CA3AF;
+      --fg-subtle: #6B7280; --border: #1F2937; --border-strong: #374151;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode aside.side { background: #141A2D; border-right-color: #1F2937; }
+    body.dark-mode .side-user { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .nav-item { color: #9CA3AF; }
+    body.dark-mode .nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .empty-hero { border-color: rgba(99,102,241,0.2); background: linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.06)); }
+    body.dark-mode .domain-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .domain-card:hover { border-color: #374151; }
+    body.dark-mode .dns-card { background: #0A0F1C; border-color: #1F2937; }
+    body.dark-mode .dns-card-header, .dark-mode .dns-col-head { border-color: #1F2937; }
+    body.dark-mode .dns-cell:first-child { border-color: #1F2937; }
+    body.dark-mode .dns-row { border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-close { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .domain-input-wrap { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .checkbox-row { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .card-form-mock { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .cf-field input { background: #141A2D; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .tips-panel { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .billing-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .registrar-expander { border-color: #1F2937; }
+    body.dark-mode .re-trigger { background: #141A2D; color: #9CA3AF; }
+    body.dark-mode .re-trigger:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .re-body { background: #0A0F1C; border-color: #1F2937; }
+    body.dark-mode .re-row { border-color: #1F2937; }
+    body.dark-mode .confirm-modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .dropdown-menu { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .dm-item:hover { background: #1F2937; }
+    body.dark-mode .stripe-plan-card { border-color: rgba(99,102,241,0.3); }
+    body.dark-mode .pay-methods { background: #0A0F1C; }
+    body.dark-mode .pay-method-icon { background: #141A2D; border-color: #374151; color: #9CA3AF; }
+    body.dark-mode .empty-footer { background: #141A2D; border-color: #1F2937; }
+
+    /* State visibility */
+    body[data-state="empty"] .state-list { display: none; }
+    body[data-state="empty"] .state-empty { display: flex; flex-direction: column; gap: 16px; }
+    body[data-state="list"] .state-empty { display: none; }
+    body[data-state="list"] .state-list { display: flex; flex-direction: column; gap: 0; }
+
+    /* Wizard state visibility */
+    [data-wizard-step="1"] .wiz-panel[data-step="1"] { display: flex; }
+    [data-wizard-step="2"] .wiz-panel[data-step="2"] { display: flex; }
+    [data-wizard-step="3"] .wiz-panel[data-step="3"] { display: flex; }
+    [data-wizard-step="payment"] .wiz-panel[data-step="payment"] { display: flex; }
+
+    /* Tier-specific billing note */
+    .billing-free, .billing-creator, .billing-pro, .billing-business { display: none; }
+    body[data-tier="free"] .billing-free { display: block; }
+    body[data-tier="creator"] .billing-creator { display: block; }
+    body[data-tier="pro"] .billing-pro { display: block; }
+    body[data-tier="business"] .billing-business { display: block; }
+  </style>
+</head>
+<body data-state="empty" data-tier="free">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b id="handle-text">alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout" id="layout">
+
+  <!-- ====== SIDEBAR ====== -->
+  <aside class="side" aria-label="Primary navigation">
+    <div class="side-user">
+      <div class="av">A</div>
+      <div class="utxt">
+        <div class="uname">Alexandra Silva</div>
+        <div class="uhandle">@alexandra · Free</div>
+      </div>
+      <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
+    </div>
+
+    <!-- GROUP 1: Homepage + Add page disabled -->
+    <div class="nav-group">
+      <button class="nav-item" data-nav="page" data-tip="Homepage" aria-label="Homepage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="label">Homepage</span>
+        <span class="nav-count">3</span>
+      </button>
+      <button class="nav-item nav-add-page" aria-disabled="true">
+        <span class="nav-icon">+</span>
+        <span class="nav-label">Add page</span>
+        <span class="nav-pill">soon</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- GROUP 2: Design + Domain ACTIVE -->
+    <div class="nav-group" style="padding-top:0">
+      <button class="nav-item" data-nav="design" data-tip="Design">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
+        <span class="label">Design</span>
+      </button>
+      <button class="nav-item active" data-nav="domain" data-tip="Custom domain" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="label">Domain</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- GROUP 3: Insights + Shop -->
+    <div class="nav-group" style="padding-top:0">
+      <button class="nav-item" data-nav="insights" data-tip="Insights">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+        <span class="label">Insights</span>
+      </button>
+      <button class="nav-item" data-nav="shop" data-tip="Shop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        <span class="label">Shop</span>
+        <span class="nav-count">0</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- GROUP 4: Settings + Help -->
+    <div class="nav-group" style="padding-top:0">
+      <button class="nav-item" data-nav="settings" data-tip="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3v0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <span class="label">Settings</span>
+      </button>
+      <button class="nav-item" data-tip="Help &amp; docs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
+        <span class="label">Help &amp; docs</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="content" id="main-content">
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1>Your domain</h1>
+        <p class="sub">Connect a custom domain so visitors see your URL, not ours.</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary btn-sm" onclick="openWizard(1)" id="add-domain-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add domain
+        </button>
+      </div>
+    </div>
+
+    <div class="domain-layout">
+      <div>
+        <!-- ===== STATE: EMPTY ===== -->
+        <div class="state-empty" role="region" aria-label="No domains connected">
+
+          <div class="empty-hero">
+            <div class="eh-icon" aria-hidden="true">🌐</div>
+            <h2>Make tadaify yours</h2>
+            <div class="eh-url">alexandra.com → your tadaify page</div>
+            <p class="eh-desc">Looks more professional. Builds your brand. Gives you a clean URL your audience will trust and remember.</p>
+            <button class="btn btn-primary" onclick="openWizard(1)" style="margin-top:4px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add domain
+            </button>
+            <p class="eh-price"><strong>$2/mo per domain</strong> — universal add-on, every tier. Cancel anytime.</p>
+          </div>
+
+          <div class="empty-footer">
+            <p><strong>Already have a domain?</strong> Add it above — no transfer required.</p>
+            <p>Need to buy one? These registrars have great prices and no dark patterns:</p>
+            <div class="registrar-chips">
+              <span class="reg-chip">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Namecheap
+              </span>
+              <span class="reg-chip">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Porkbun
+              </span>
+              <span class="reg-chip">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Cloudflare Registrar
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== STATE: LIST (1+ domains) ===== -->
+        <div class="state-list" role="region" aria-label="Connected domains">
+
+          <div class="domain-list" id="domain-list">
+
+            <!-- Domain 1 — live + primary -->
+            <div class="domain-card" id="domain-card-1">
+              <div class="domain-status-dot dot-green" aria-label="Active"></div>
+              <div class="domain-info">
+                <div class="domain-name">
+                  alexandra.com
+                  <span class="primary-badge">Primary</span>
+                </div>
+                <div class="domain-meta">
+                  <span>Connected</span>
+                  <span class="dm-sep"></span>
+                  <span>SSL active</span>
+                  <span class="dm-sep"></span>
+                  <span>47 days</span>
+                </div>
+              </div>
+              <div class="domain-actions">
+                <a href="#" class="btn btn-ghost btn-xs" onclick="event.preventDefault()" target="_blank" rel="noopener" title="Visit site" aria-label="Visit alexandra.com">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Visit
+                </a>
+                <div style="position:relative">
+                  <button class="kebab-btn" onclick="toggleDropdown('dd1')" aria-label="Domain options" aria-haspopup="true" aria-expanded="false" id="dd1-btn">⋯</button>
+                  <div class="dropdown-menu" id="dd1" role="menu">
+                    <button class="dm-item" role="menuitem" onclick="closeDropdowns()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      Set as primary
+                    </button>
+                    <button class="dm-item" role="menuitem" onclick="closeDropdowns()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      Test live
+                    </button>
+                    <button class="dm-item" role="menuitem" onclick="closeDropdowns()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.9"/></svg>
+                      Re-check DNS / SSL
+                    </button>
+                    <div class="dm-divider" role="separator"></div>
+                    <button class="dm-item danger" role="menuitem" onclick="openConfirm('alexandra.com', '28'); closeDropdowns()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      Remove domain
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Domain 2 — provisioning (DNS verified, SSL pending) -->
+            <div class="domain-card" id="domain-card-2">
+              <div class="domain-status-dot dot-yellow" aria-label="Provisioning"></div>
+              <div class="domain-info">
+                <div class="domain-name">store.alexandra.com</div>
+                <div class="domain-meta">
+                  <span>DNS verified</span>
+                  <span class="dm-sep"></span>
+                  <span class="pulse-wrap">
+                    <span class="pulse" aria-hidden="true"></span>
+                    SSL provisioning…
+                  </span>
+                  <span class="dm-sep"></span>
+                  <span>Updates every 30s</span>
+                </div>
+              </div>
+              <div class="domain-actions">
+                <div style="position:relative">
+                  <button class="kebab-btn" onclick="toggleDropdown('dd2')" aria-label="Domain options" aria-haspopup="true" id="dd2-btn">⋯</button>
+                  <div class="dropdown-menu" id="dd2" role="menu">
+                    <button class="dm-item" role="menuitem" onclick="closeDropdowns()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.9"/></svg>
+                      Re-check DNS / SSL
+                    </button>
+                    <div class="dm-divider" role="separator"></div>
+                    <button class="dm-item danger" role="menuitem" onclick="openConfirm('store.alexandra.com', '27'); closeDropdowns()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      Remove domain
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Billing info (tier-contextual) -->
+          <div class="billing-row billing-free">
+            <strong>Billing: 2 domains × $2/mo = $4/mo</strong><br>
+            No domains are included on Free — this $4/mo covers both.
+          </div>
+          <div class="billing-row billing-creator">
+            <strong>Billing: 1 domain included · 1 extra × $2/mo = $2/mo</strong><br>
+            Creator includes 1 domain. You're paying for 1 extra.
+          </div>
+          <div class="billing-row billing-pro">
+            <strong>Billing: 1 domain included · 1 extra × $2/mo = $2/mo</strong><br>
+            Pro includes 1 domain. You're paying for 1 extra.
+          </div>
+          <div class="billing-row billing-business">
+            <strong>Billing: 10 domains included · both covered</strong><br>
+            Business includes 10 domains. Both of yours are on your plan.
+          </div>
+
+        </div>
+
+        <!-- ===== DNS TROUBLESHOOTING expandable ===== -->
+        <div class="registrar-expander" style="margin-top:28px" id="registrar-expander">
+          <button class="re-trigger" onclick="toggleRegistrar(this)" aria-expanded="false" aria-controls="registrar-body">
+            <span>🔧 DNS troubleshooting — common registrars &amp; errors</span>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="re-body" id="registrar-body" role="region">
+            <div class="re-row">
+              <span class="re-registrar">Namecheap</span>
+              <span class="re-path">Domain List → Manage → Advanced DNS → Add New Record → CNAME</span>
+            </div>
+            <div class="re-row">
+              <span class="re-registrar">GoDaddy</span>
+              <span class="re-path">My Products → DNS → Add → CNAME; set Name to @ and Value to tadaify.com</span>
+            </div>
+            <div class="re-row">
+              <span class="re-registrar">Cloudflare</span>
+              <span class="re-path">Dashboard → DNS → Records → Add record. Important: set proxy status to DNS Only (grey cloud) — not proxied.</span>
+            </div>
+            <div class="re-row">
+              <span class="re-registrar">Porkbun</span>
+              <span class="re-path">Manage → DNS → Quick DNS → CNAME to tadaify.com</span>
+            </div>
+            <div class="re-row">
+              <span class="re-registrar">Google Domains<br><span style="font-weight:400;font-size:12px;color:var(--fg-subtle)">(now Squarespace)</span></span>
+              <span class="re-path">DNS → Manage custom records → Create new record → CNAME</span>
+            </div>
+            <div style="margin-top:12px;padding:10px 12px;background:rgba(245,158,11,0.06);border-radius:8px;font-size:12.5px;color:var(--fg-muted);line-height:1.5">
+              <strong style="color:var(--fg-muted)">DNS propagation</strong> usually takes under 1 hour, but can take up to 48h. If still pending after 2h, double-check the CNAME value and TTL. <a href="#" onclick="event.preventDefault()" style="color:var(--brand-primary);font-weight:500">Read the full guide →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page footer -->
+        <div class="footer-help">
+          <a href="#" onclick="event.preventDefault()">Read the domain setup guide</a>
+          &nbsp;·&nbsp;
+          <a href="#" onclick="event.preventDefault()">Contact support</a>
+        </div>
+      </div>
+
+      <!-- ===== RIGHT TIPS PANEL (desktop only) ===== -->
+      <aside class="side-tips" aria-label="Domain best practices">
+        <div class="tips-panel">
+          <h3>Domain best practices</h3>
+          <div class="tip-chip">
+            <span class="tip-ic">📈</span>
+            <div>
+              <div class="tip-title">SEO benefit</div>
+              <div class="tip-body">Your own domain signals authority to search engines. Links pointing to yourdomain.com build equity you own — not tadaify.com's.</div>
+            </div>
+          </div>
+          <div class="tip-chip">
+            <span class="tip-ic">📧</span>
+            <div>
+              <div class="tip-title">Email forwarding</div>
+              <div class="tip-body">We don't provide email. For hello@yourdomain.com forwarding try <strong>ImprovMX</strong> (free tier) or Cloudflare Email Routing.</div>
+            </div>
+          </div>
+          <div class="tip-chip">
+            <span class="tip-ic">🔗</span>
+            <div>
+              <div class="tip-title">Subdomain vs apex</div>
+              <div class="tip-body"><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">links.yourdomain.com</code> works great if you want your main site on the root. Apex (<code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">yourdomain.com</code>) looks cleanest.</div>
+            </div>
+          </div>
+          <div class="tip-chip">
+            <span class="tip-ic">🌐</span>
+            <div>
+              <div class="tip-title">Existing website?</div>
+              <div class="tip-body">Yes — you can use a subdomain like <code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">links.yourdomain.com</code> while your main site stays on Webflow, Squarespace, etc.</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </main>
+</div>
+
+<!-- ====== ADD DOMAIN WIZARD MODAL ====== -->
+<div class="modal-backdrop" id="add-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="if(event.target===this) closeWizard()">
+  <div class="modal" id="wizard-shell" data-wizard-step="1">
+    <div class="modal-header">
+      <h2 id="modal-title">Add a domain</h2>
+      <button class="modal-close" onclick="closeWizard()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Step indicator -->
+      <div class="wizard-steps" role="list" aria-label="Wizard progress">
+        <div class="ws-step active" id="ws1" role="listitem">
+          <div class="ws-num"><span>1</span></div>
+          <span>Domain</span>
+        </div>
+        <div class="ws-connector" id="wc1"></div>
+        <div class="ws-step" id="ws2" role="listitem">
+          <div class="ws-num"><span>2</span></div>
+          <span>DNS</span>
+        </div>
+        <div class="ws-connector" id="wc2"></div>
+        <div class="ws-step" id="ws3" role="listitem">
+          <div class="ws-num"><span>3</span></div>
+          <span>Live</span>
+        </div>
+      </div>
+
+      <!-- ===== STEP 1: Enter domain ===== -->
+      <div class="wiz-panel" data-step="1" id="step1-panel">
+        <div>
+          <div class="field-label">Your domain</div>
+          <div class="domain-input-wrap">
+            <input type="text" id="domain-input" placeholder="yourdomain.com" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Domain name" oninput="validateDomainInput(this)" />
+          </div>
+          <p class="input-hint">Enter just the domain — no http://, no www. Works with apex (<code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">yourdomain.com</code>) or subdomain (<code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">links.yourdomain.com</code>).</p>
+          <p class="input-error" id="domain-error" role="alert"></p>
+          <p class="input-detect" id="domain-detect" style="display:none;font-size:12px;color:var(--brand-primary);margin-top:6px"></p>
+        </div>
+
+        <!-- Subdomain checkbox removed — we auto-detect from input (>2 dot-separated parts → subdomain) -->
+        <input type="hidden" id="subdomain-check" />
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+          <button class="btn btn-ghost btn-sm" onclick="closeWizard()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="goToStep2()" id="step1-continue">Continue</button>
+        </div>
+      </div>
+
+      <!-- ===== PAYMENT OVERLAY (Free tier, first domain) ===== -->
+      <div class="wiz-panel" data-step="payment">
+        <div class="stripe-plan-card">
+          <div class="spc-left">
+            <div class="spc-name">Custom domain add-on</div>
+            <div class="spc-desc" id="domain-being-added">yourdomain.com</div>
+            <div class="spc-note">Not an upgrade — Free stays Free. This covers the domain only.</div>
+          </div>
+          <div class="spc-price">$2<sub>/mo</sub></div>
+        </div>
+
+        <div class="card-form-mock" aria-label="Payment details (mock)">
+          <div>
+            <div class="field-label">Card number</div>
+            <div class="cf-field">
+              <input type="text" placeholder="4242 4242 4242 4242" value="" maxlength="19" aria-label="Card number" />
+            </div>
+          </div>
+          <div class="cf-row">
+            <div class="cf-field">
+              <label>Expiry</label>
+              <input type="text" placeholder="MM / YY" maxlength="7" aria-label="Expiry date" />
+            </div>
+            <div class="cf-field">
+              <label>CVC</label>
+              <input type="text" placeholder="123" maxlength="4" aria-label="CVC" />
+            </div>
+          </div>
+          <div class="pay-methods">
+            <span style="font-size:12px;color:var(--fg-subtle);flex:1">Or pay with:</span>
+            <span class="pay-method-icon">Apple Pay</span>
+            <span class="pay-method-icon">Google Pay</span>
+          </div>
+        </div>
+
+        <p style="font-size:12px;color:var(--fg-subtle);text-align:center;margin-top:-4px">
+          $2/mo billed monthly, starting today. Cancel anytime from Settings → Billing.
+        </p>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+          <button class="btn btn-ghost btn-sm" onclick="goToStep1()">Back</button>
+          <button class="btn btn-primary btn-sm" onclick="goToStep2(true)">Pay &amp; continue</button>
+        </div>
+      </div>
+
+      <!-- ===== STEP 2: DNS instructions ===== -->
+      <div class="wiz-panel" data-step="2">
+        <p style="font-size:13.5px;color:var(--fg-muted);margin:0">Add this record at your domain registrar, then click Verify.</p>
+
+        <div class="dns-card" role="table" aria-label="DNS record to add">
+          <div class="dns-card-header" role="row">
+            <div class="dns-col-head" role="columnheader">Add at your registrar</div>
+            <div class="dns-col-head" role="columnheader">Value (point to tadaify)</div>
+          </div>
+          <div class="dns-rows">
+            <div class="dns-row" role="row">
+              <div class="dns-cell" role="cell">
+                <div class="field-name">Type</div>
+                <code>CNAME</code>
+              </div>
+              <div class="dns-cell" role="cell">
+                <div class="field-name">Value</div>
+                <code>tadaify.com</code>
+              </div>
+            </div>
+            <div class="dns-row" role="row">
+              <div class="dns-cell" role="cell">
+                <div class="field-name">Name / Host</div>
+                <code id="dns-name-value">@</code>
+              </div>
+              <div class="dns-cell" role="cell">
+                <div class="field-name">TTL</div>
+                <code>Auto (or 3600)</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domain ownership TXT (Cloudflare verification) -->
+        <details style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:10px 14px;font-size:13px;font-weight:500;color:var(--fg-muted);cursor:pointer;user-select:none;list-style:none">
+            Also add this TXT record (required by some registrars)
+          </summary>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg)">
+            <div style="font-size:12.5px;color:var(--fg-muted);margin-bottom:8px">If your registrar or DNS provider asks for a verification token:</div>
+            <div class="dns-card">
+              <div class="dns-rows">
+                <div class="dns-row">
+                  <div class="dns-cell"><div class="field-name">Type</div><code>TXT</code></div>
+                  <div class="dns-cell"><div class="field-name">Value</div><code>tadaify-verify=a8f3e1b2</code></div>
+                </div>
+                <div class="dns-row">
+                  <div class="dns-cell"><div class="field-name">Name</div><code>@</code></div>
+                  <div class="dns-cell"><div class="field-name">TTL</div><code>Auto</code></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Live status -->
+        <div class="dns-status-bar" id="dns-status-bar" role="status" aria-live="polite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="dns-status-text">Waiting for DNS… checking every 30 seconds</span>
+        </div>
+
+        <div class="registrar-expander">
+          <button class="re-trigger" onclick="toggleRegistrar(this)" aria-expanded="false">
+            <span>Where do I find this in my registrar?</span>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="re-body" role="region">
+            <div class="re-row"><span class="re-registrar">Namecheap</span><span class="re-path">Domain List → Manage → Advanced DNS → Add New Record → CNAME</span></div>
+            <div class="re-row"><span class="re-registrar">Cloudflare</span><span class="re-path">DNS → Records → Add. Set proxy to DNS Only (grey cloud), NOT proxied.</span></div>
+            <div class="re-row"><span class="re-registrar">Porkbun</span><span class="re-path">Manage → DNS → Quick DNS → CNAME to tadaify.com</span></div>
+            <div class="re-row"><span class="re-registrar">GoDaddy</span><span class="re-path">My Products → DNS → Add → CNAME; Name = @, Value = tadaify.com</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-ghost btn-sm" onclick="goToStep1()">Back</button>
+          <button class="btn btn-primary btn-sm" onclick="simulateVerify()">I've added the records — verify now</button>
+        </div>
+      </div>
+
+      <!-- ===== STEP 3: SSL + Live ===== -->
+      <div class="wiz-panel" data-step="3">
+        <div class="ssl-timeline" role="list" aria-label="Provisioning status">
+          <div class="ssl-step" role="listitem">
+            <div class="ssl-icon done" aria-label="Done">✓</div>
+            <div class="ssl-body">
+              <div class="ssl-title">DNS verified</div>
+              <div class="ssl-sub" id="dns-verified-time">Verified just now</div>
+            </div>
+          </div>
+          <div class="ssl-step" role="listitem" id="ssl-step-provision">
+            <div class="ssl-icon pending" aria-label="In progress">⏳</div>
+            <div class="ssl-body">
+              <div class="ssl-title">Provisioning SSL certificate…</div>
+              <div class="ssl-sub">Usually takes 30–90 seconds. Hang tight.</div>
+            </div>
+          </div>
+          <div class="ssl-step" role="listitem" id="ssl-step-live" style="opacity:0.35">
+            <div class="ssl-icon waiting" aria-label="Waiting">🔒</div>
+            <div class="ssl-body">
+              <div class="ssl-title">SSL ready</div>
+              <div class="ssl-sub">Waiting for provisioning…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live CTA (shown after SSL ready) -->
+        <div class="live-cta" id="live-cta" style="display:none" role="status" aria-live="polite">
+          <div style="font-size:22px">🎉</div>
+          <div class="lc-domain" id="live-domain-url">https://yourdomain.com</div>
+          <p style="font-size:13.5px;color:var(--fg-muted);margin:0">Your custom domain is live and secured with SSL.</p>
+          <div class="lc-actions">
+            <button class="btn btn-ghost btn-sm" onclick="copyLiveUrl()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy URL
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="closeWizard()">Done</button>
+          </div>
+          <p style="font-size:12px;color:var(--fg-subtle)">$2/mo billed monthly, starting today. Cancel anytime in Settings → Billing.</p>
+        </div>
+
+        <!-- SSL failure state -->
+        <div id="ssl-error" style="display:none;padding:14px 16px;background:var(--danger-bg);border:1px solid rgba(239,68,68,0.25);border-radius:10px;font-size:13px;color:#991B1B" role="alert">
+          <strong>SSL provisioning timed out.</strong> This sometimes happens with high load.
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none" onclick="retrySSL()">Retry provisioning</button>
+            <a href="#" onclick="event.preventDefault()" style="color:#991B1B;font-weight:500;font-size:13px;align-self:center">Wait 15 min before contacting support →</a>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+  </div><!-- /modal -->
+</div><!-- /modal-backdrop -->
+
+<!-- ====== REMOVE CONFIRMATION MODAL ====== -->
+<div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" onclick="if(event.target===this) closeConfirm()">
+  <div class="confirm-modal">
+    <h3 id="confirm-title">Remove <span id="confirm-domain-name">yourdomain.com</span>?</h3>
+    <p>Visitors will be redirected to <strong>tadaify.com/alexandra</strong>. The subscription line item cancels at end of your current billing period (<span id="confirm-days-left">28</span> days remaining).</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeConfirm()">Keep domain</button>
+      <button class="btn btn-danger btn-sm" onclick="closeConfirm()">Remove domain</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MOBILE BOTTOM TABS ====== -->
+<nav class="mobile-tabs" aria-label="Mobile navigation">
+  <button class="mt-btn" data-nav="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    Home
+  </button>
+  <button class="mt-btn" data-nav="design">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+    Design
+  </button>
+  <button class="mt-btn active" data-nav="domain">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    Domain
+  </button>
+  <button class="mt-btn" data-nav="insights">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+    Stats
+  </button>
+  <button class="mt-btn" data-nav="settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8"/></svg>
+    Settings
+  </button>
+</nav>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // ── URL state ──
+  const params = new URLSearchParams(window.location.search);
+  const handle = params.get('handle') || 'alexandra';
+  const state = params.get('state') || 'empty';
+  const tier = params.get('tier') || 'free';
+  const action = params.get('action');
+  const urlDomain = params.get('domain');
+  const urlStep = params.get('step') ? parseInt(params.get('step')) : null;
+
+  document.getElementById('handle-text').textContent = handle;
+  document.body.dataset.state = state;
+  document.body.dataset.tier = tier;
+
+  // Update user handle in sidebar
+  document.querySelector('.uhandle').textContent = '@' + handle + ' · ' + (tier.charAt(0).toUpperCase() + tier.slice(1));
+
+  // Update add domain button label in list state
+  const addBtn = document.getElementById('add-domain-btn');
+  if (state === 'list') {
+    addBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add another`;
+  }
+
+  // Focus a specific domain row if ?domain= param
+  if (urlDomain && state === 'list') {
+    document.querySelectorAll('.domain-card').forEach(card => {
+      const name = card.querySelector('.domain-name');
+      if (name && name.textContent.trim().startsWith(urlDomain)) {
+        card.classList.add('is-focused');
+        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      }
+    });
+  }
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+  }
+
+  // ── Current domain being added ──
+  let currentDomain = 'yourdomain.com';
+  let sslTimer = null;
+
+  // ── Wizard ──
+  function openWizard(step) {
+    step = step || 1;
+    document.getElementById('add-modal').classList.add('open');
+    setWizardStep(step);
+    if (document.getElementById('domain-input')) {
+      setTimeout(() => document.getElementById('domain-input').focus(), 100);
+    }
+  }
+
+  function closeWizard() {
+    document.getElementById('add-modal').classList.remove('open');
+    if (sslTimer) { clearTimeout(sslTimer); sslTimer = null; }
+    setTimeout(() => {
+      setWizardStep(1);
+      document.getElementById('domain-input').value = '';
+      document.getElementById('domain-error').classList.remove('visible');
+      resetSslSteps();
+    }, 300);
+  }
+
+  function setWizardStep(step) {
+    const shell = document.getElementById('wizard-shell');
+    shell.dataset.wizardStep = step;
+
+    // Step indicators
+    const steps = ['ws1','ws2','ws3'];
+    const connectors = ['wc1','wc2'];
+    steps.forEach((id, i) => {
+      const el = document.getElementById(id);
+      const stepNum = i + 1;
+      el.classList.remove('active','done');
+      if (typeof step === 'number') {
+        if (stepNum < step) el.classList.add('done');
+        else if (stepNum === step) el.classList.add('active');
+      } else if (step === 'payment') {
+        if (stepNum === 1) el.classList.add('active');
+      }
+    });
+    connectors.forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.classList.toggle('done', typeof step === 'number' && step > i + 1);
+    });
+  }
+
+  function goToStep1() { setWizardStep(1); }
+
+  function goToStep2(fromPayment) {
+    if (!fromPayment) {
+      const input = document.getElementById('domain-input');
+      const val = input.value.trim();
+      if (!isValidDomain(val)) {
+        const err = document.getElementById('domain-error');
+        err.textContent = val ? 'Please enter a valid domain (e.g. yourdomain.com)' : 'Please enter a domain name.';
+        err.classList.add('visible');
+        input.focus();
+        return;
+      }
+      currentDomain = val;
+
+      // Free tier, first domain → payment overlay
+      if (tier === 'free' && state === 'empty') {
+        document.getElementById('domain-being-added').textContent = currentDomain;
+        setWizardStep('payment');
+        return;
+      }
+    }
+
+    // Set DNS name hint based on subdomain checkbox
+    const isSubdomain = document.getElementById('subdomain-check').checked;
+    const dnsName = isSubdomain ? currentDomain.split('.')[0] : '@';
+    document.getElementById('dns-name-value').textContent = dnsName;
+
+    setWizardStep(2);
+    startDnsPolling();
+  }
+
+  function startDnsPolling() {
+    const bar = document.getElementById('dns-status-bar');
+    const txt = document.getElementById('dns-status-text');
+    let count = 0;
+    const poll = setInterval(() => {
+      count++;
+      txt.textContent = 'Waiting for DNS… last checked ' + (count * 30) + 's ago';
+    }, 30000);
+    // Store so we can clear on close
+    window._dnsPollTimer = poll;
+  }
+
+  function simulateVerify() {
+    const bar = document.getElementById('dns-status-bar');
+    const txt = document.getElementById('dns-status-text');
+    bar.classList.add('verified');
+    bar.querySelector('svg').outerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    txt.textContent = 'DNS verified ✓';
+    if (window._dnsPollTimer) clearInterval(window._dnsPollTimer);
+    setTimeout(() => { setWizardStep(3); simulateSSL(); }, 900);
+  }
+
+  function simulateSSL() {
+    const now = new Date();
+    document.getElementById('dns-verified-time').textContent = 'Verified at ' + now.toLocaleTimeString();
+    sslTimer = setTimeout(() => {
+      // Mark SSL ready
+      const provStep = document.getElementById('ssl-step-provision');
+      provStep.querySelector('.ssl-icon').className = 'ssl-icon done';
+      provStep.querySelector('.ssl-icon').textContent = '✓';
+      provStep.querySelector('.ssl-title').textContent = 'SSL certificate ready';
+      provStep.querySelector('.ssl-sub').textContent = 'TLS 1.3, 90-day cert, auto-renewed.';
+
+      const liveStep = document.getElementById('ssl-step-live');
+      liveStep.style.opacity = '1';
+      liveStep.querySelector('.ssl-icon').className = 'ssl-icon done';
+      liveStep.querySelector('.ssl-icon').textContent = '✓';
+      liveStep.querySelector('.ssl-sub').textContent = 'Your domain is secured and live.';
+
+      // Show live CTA
+      const cta = document.getElementById('live-cta');
+      document.getElementById('live-domain-url').textContent = 'https://' + (currentDomain || 'yourdomain.com');
+      cta.style.display = 'flex';
+      cta.style.flexDirection = 'column';
+    }, 3500);
+  }
+
+  function resetSslSteps() {
+    const provStep = document.getElementById('ssl-step-provision');
+    provStep.querySelector('.ssl-icon').className = 'ssl-icon pending';
+    provStep.querySelector('.ssl-icon').textContent = '⏳';
+    provStep.querySelector('.ssl-title').textContent = 'Provisioning SSL certificate…';
+    provStep.querySelector('.ssl-sub').textContent = 'Usually takes 30–90 seconds. Hang tight.';
+
+    const liveStep = document.getElementById('ssl-step-live');
+    liveStep.style.opacity = '0.35';
+    liveStep.querySelector('.ssl-icon').className = 'ssl-icon waiting';
+    liveStep.querySelector('.ssl-icon').textContent = '🔒';
+    liveStep.querySelector('.ssl-sub').textContent = 'Waiting for provisioning…';
+
+    document.getElementById('live-cta').style.display = 'none';
+    document.getElementById('ssl-error').style.display = 'none';
+
+    const bar = document.getElementById('dns-status-bar');
+    bar.classList.remove('verified');
+    document.getElementById('dns-status-text').textContent = 'Waiting for DNS… checking every 30 seconds';
+  }
+
+  function retrySSL() {
+    document.getElementById('ssl-error').style.display = 'none';
+    simulateSSL();
+  }
+
+  // ── Domain validation ──
+  function isValidDomain(val) {
+    if (!val) return false;
+    const re = /^(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(\.[a-zA-Z0-9-]{1,63}(?<!-))*\.[a-zA-Z]{2,}$/;
+    return re.test(val);
+  }
+
+  function validateDomainInput(input) {
+    const err = document.getElementById('domain-error');
+    const detect = document.getElementById('domain-detect');
+    const sub = document.getElementById('subdomain-check');
+    const val = input.value.trim();
+    if (!val) { err.classList.remove('visible'); detect.style.display = 'none'; return; }
+    if (val.includes('http') || val.includes('www.')) {
+      err.textContent = 'No need for http:// or www. — just the domain (e.g. yourdomain.com)';
+      err.classList.add('visible');
+      detect.style.display = 'none';
+    } else if (val.includes(' ')) {
+      err.textContent = 'Domain names cannot contain spaces.';
+      err.classList.add('visible');
+      detect.style.display = 'none';
+    } else if (isValidDomain(val)) {
+      err.classList.remove('visible');
+      // Auto-detect apex vs subdomain (more than 2 dot-separated parts → subdomain)
+      const parts = val.split('.');
+      const isSubdomain = parts.length > 2;
+      sub.value = isSubdomain ? '1' : '0';
+      sub.checked = isSubdomain;
+      if (isSubdomain) {
+        detect.innerHTML = '✓ Detected: <strong>subdomain</strong> — clean CNAME setup, works with any registrar.';
+      } else {
+        detect.innerHTML = '✓ Detected: <strong>apex domain</strong> — needs A record (or transfer DNS to Cloudflare for CNAME flattening).';
+      }
+      detect.style.display = 'block';
+    } else {
+      err.classList.remove('visible');
+      detect.style.display = 'none';
+    }
+  }
+
+  // ── Copy live URL ──
+  function copyLiveUrl() {
+    const url = document.getElementById('live-domain-url').textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+    const btn = event.target.closest('button');
+    btn.textContent = 'Copied!';
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy URL`;
+    }, 1500);
+  }
+
+  // ── Dropdown kebab menus ──
+  function toggleDropdown(id) {
+    const menu = document.getElementById(id);
+    const wasOpen = menu.classList.contains('open');
+    closeDropdowns();
+    if (!wasOpen) menu.classList.add('open');
+  }
+
+  function closeDropdowns() {
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  }
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.kebab-btn')) closeDropdowns();
+  });
+
+  // ── Confirm modal ──
+  function openConfirm(domain, days) {
+    document.getElementById('confirm-domain-name').textContent = domain;
+    document.getElementById('confirm-days-left').textContent = days;
+    document.getElementById('confirm-modal').classList.add('open');
+  }
+  function closeConfirm() {
+    document.getElementById('confirm-modal').classList.remove('open');
+  }
+
+  // ── Registrar expander ──
+  function toggleRegistrar(btn) {
+    const body = btn.nextElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  }
+
+  // ── URL deep-link: ?action=add ──
+  if (action === 'add') {
+    const step = urlStep || 1;
+    if (urlDomain) { currentDomain = urlDomain; }
+    setTimeout(() => openWizard(step), 200);
+  }
+
+  // ── Keyboard: Esc closes modals ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeWizard();
+      closeConfirm();
+      closeDropdowns();
+    }
+  });
+
+  // ── State toggle buttons (demo helper — not part of real UX) ──
+  // Adds small dev toolbar for mockup reviewer
+  (function() {
+    const toolbar = document.createElement('div');
+    toolbar.setAttribute('aria-hidden', 'true');
+    toolbar.style.cssText = `
+      position:fixed;bottom:72px;right:14px;z-index:999;
+      display:flex;flex-direction:column;gap:6px;align-items:flex-end;
+    `;
+    toolbar.innerHTML = `
+      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:600;color:var(--fg-subtle);display:flex;flex-direction:column;gap:4px">
+        <div style="color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;font-size:10px">Mockup state</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button onclick="document.body.dataset.state='empty'" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer">Empty</button>
+          <button onclick="document.body.dataset.state='list'" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer">List</button>
+          <button onclick="openWizard(1)" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer">Wizard</button>
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">
+          <button onclick="document.body.dataset.tier='free'" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer">Free</button>
+          <button onclick="document.body.dataset.tier='creator'" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer">Creator</button>
+          <button onclick="document.body.dataset.tier='business'" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer">Business</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(toolbar);
+  })();
+</script>
+</body>
+</html>

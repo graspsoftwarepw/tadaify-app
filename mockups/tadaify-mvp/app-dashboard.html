@@ -2,39 +2,43 @@
 <!--
   type: mockup
   project: tadaify
-  title: Authenticated creator dashboard (/app) — Classic Sidebar (V1 polished)
+  title: Dashboard variant — single sidebar + breadcrumb stepper (A/B against app-dashboard.html)
   created_at: 2026-04-25
-  author: orchestrator
+  author: orchestrator-opus-4.7
   status: draft-for-review
+  baseline: app-dashboard.html (latest on main)
 
-  Derived from: ./app-dashboard-variants.html [data-variant="v1"]
-  User pick: V1 — Classic Sidebar. Two required expansions:
-    1. Three-way device toggle (Mobile default / Tablet / Desktop)
-    2. Rich Page panel (profile card + socials + collections + archive)
-       + functional Design panel with sub-nav
+  Experiment: collapse Design's secondary left rail into expandable
+  sub-items inside the main sidebar. Add a breadcrumb-style stepper
+  (prev / current / next) at the top of each Design sub-section for
+  sequential walkthrough. Everything else identical.
 
-  URL state:
+  Goal: A/B comparison. User picks one IA + applies winning variant
+  back to app-dashboard.html in a follow-up.
+
+  All locked DECs respected (same as app-dashboard.html base):
+  DEC-019, DEC-WORDMARK-01, DEC-PRICELOCK-01/02, DEC-MULTIPAGE-01,
+  DEC-LAYOUT-01, DEC-CREATOR-API-01, DEC-AI-QUOTA-LADDER-01,
+  DEC-AI-FEATURES-ROADMAP-01, DEC-ANIMATIONS-SPLIT-01,
+  DEC-WALLPAPER-ANIM-01, DEC-PINNED-MSG-01, DEC-CUSTOM-DOMAIN-NAV-01,
+  DEC-OPT-BADGE, DEC-CUSTOM-DOMAIN-PROVIDER-01,
+  DEC-CUSTOM-DOMAIN-VALIDATION-01.
+
+  Anti-patterns: AP-001 / AP-013 / AP-017 / AP-031 — all enforced.
+
+  URL state (extends app-dashboard.html):
     ?handle=alexandra (default)
     ?tab=pages|page|design|insights|shop|settings (default page)
     ?subtab=theme|profile|background|text|buttons|animations|colors|footer (default background)
     ?device=mobile|tablet|desktop (default mobile)
     ?state=ready|empty (default ready)
-
-  Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
-
-  Anti-patterns respected:
-    AP-001 NO "Powered by tadaify" toggle — user-configurable footer content instead
-    AP-017 no trials
-    AP-028 Pro-gated features = subtle inline 💡 Creator-tier badges (never a blocking modal)
-    AP-030 Free default
-    AP-031 no sticky upgrade banner
-    AP-045 progressive disclosure — 6 default block categories, "More" reveals full set
+    ?nav=expanded — auto-expand Design accordion on load when on a Design sub-tab (default behavior)
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — tadaify</title>
+  <title>Dashboard v2 (single-nav A/B) — tadaify</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -281,6 +285,56 @@
     }
     .nav-add-page:hover { background: transparent !important; }
 
+    /* --------------------------------------------------------------
+       V2 — Sidebar accordion: Design parent + collapsible sub-items
+       (replaces the secondary left rail in app-dashboard.html)
+       -------------------------------------------------------------- */
+    .nav-design-parent {
+      position: relative;
+    }
+    .nav-design-parent .nav-caret {
+      margin-left: auto; flex-shrink: 0;
+      width: 14px; height: 14px;
+      color: var(--fg-subtle);
+      transition: transform .18s ease;
+    }
+    .nav-design-parent[aria-expanded="true"] .nav-caret { transform: rotate(90deg); }
+    .nav-design-parent[aria-expanded="true"] {
+      background: var(--bg-muted);
+      color: var(--fg);
+    }
+    .nav-design-parent[aria-expanded="true"].active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+    }
+
+    .nav-sub-list {
+      display: none;
+      flex-direction: column; gap: 1px;
+      margin: 2px 0 4px 0;
+      padding-left: 8px;
+      border-left: 1px solid var(--border);
+      margin-left: 17px; /* aligns under parent icon */
+    }
+    .nav-sub-list[data-expanded="true"] { display: flex; }
+
+    .nav-sub-item {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 6px 10px; border-radius: 7px;
+      font-size: 12.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; transition: background .12s ease, color .12s ease;
+      cursor: pointer;
+    }
+    .nav-sub-item svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--fg-subtle); }
+    .nav-sub-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .nav-sub-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+    .nav-sub-item.active svg { color: var(--brand-primary); }
+
     /* Tablet rail — icons only */
     @media (min-width: 720px) and (max-width: 1179px) {
       aside.side { padding: 14px 8px; }
@@ -289,6 +343,124 @@
       .nav-item { justify-content: center; padding: 10px 6px; }
       .nav-item > span.label, .nav-item .nav-count { display: none; }
       .nav-item svg { width: 20px; height: 20px; }
+      /* On tablet the accordion expands to a tooltip-like flyout instead of inline list */
+      .nav-design-parent .nav-caret { display: none; }
+      .nav-sub-list { display: none !important; }
+    }
+
+    /* --------------------------------------------------------------
+       V2 — Breadcrumb stepper (top of Design sub-section content)
+       -------------------------------------------------------------- */
+    .design-stepper {
+      display: none; /* shown only when tab=design */
+      align-items: center; justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(99,102,241,0.06), rgba(99,102,241,0.03));
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 12px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .layout[data-tab="design"] .design-stepper { display: flex; }
+
+    .stepper-cell {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 12px; border-radius: 8px;
+      background: transparent; border: 0;
+      font-size: 13px; font-weight: 500; color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+      min-width: 0;
+    }
+    .stepper-cell:hover:not(:disabled) {
+      background: rgba(255,255,255,0.7);
+      color: var(--fg);
+    }
+    .stepper-cell:disabled {
+      opacity: 0.35; cursor: default;
+    }
+    .stepper-cell svg.chev {
+      width: 13px; height: 13px; color: currentColor; flex-shrink: 0;
+    }
+    .stepper-cell.is-current {
+      background: rgba(255,255,255,0.85);
+      color: var(--brand-primary);
+      font-weight: 700;
+      font-size: 13.5px;
+      box-shadow: 0 1px 2px rgba(99,102,241,0.10);
+      flex: 1; justify-content: center;
+      position: relative;
+    }
+    .stepper-cell.is-current .step-spark {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+      flex-shrink: 0;
+    }
+    .stepper-cell.is-current::after {
+      content: '';
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid currentColor;
+      margin-left: 6px;
+      opacity: 0.55;
+      flex-shrink: 0;
+    }
+    .stepper-divider {
+      width: 1px; height: 18px; background: rgba(99,102,241,0.20); flex-shrink: 0;
+    }
+
+    /* Stepper dropdown — full picker of all 8 sub-tabs */
+    .stepper-dropdown {
+      display: none;
+      position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      min-width: 220px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      padding: 6px;
+      z-index: 20;
+    }
+    .stepper-dropdown[data-open="true"] { display: block; }
+    .stepper-dropdown-item {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 8px 10px; border-radius: 7px;
+      background: transparent; border: 0;
+      font-size: 13px; font-weight: 500; color: var(--fg);
+      text-align: left; cursor: pointer;
+      transition: background .12s ease;
+    }
+    .stepper-dropdown-item:hover { background: var(--bg-muted); }
+    .stepper-dropdown-item.is-current {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary); font-weight: 600;
+    }
+    .stepper-dropdown-item .radio-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stepper-dropdown-item.is-current .radio-dot {
+      border-color: var(--brand-primary);
+    }
+    .stepper-dropdown-item.is-current .radio-dot::after {
+      content: ''; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--brand-primary);
+    }
+
+    /* Mobile stepper — collapse to single label + chevrons */
+    @media (max-width: 719px) {
+      .design-stepper { padding: 8px 10px; }
+      .stepper-cell:not(.is-current):not(.stepper-arrow) { display: none; }
+      .stepper-divider { display: none; }
+      .stepper-arrow {
+        padding: 7px 9px;
+      }
+      .stepper-arrow .stepper-arrow-label { display: none; }
     }
 
     /* --------------------------------------------------------------
@@ -683,22 +855,14 @@
       margin-top: 22px;
       display: grid; grid-template-columns: 1fr; gap: 20px;
     }
-    @media (min-width: 860px) {
-      .design-wrap { grid-template-columns: 180px 1fr; }
-    }
+    /* V2: single-column — secondary rail collapsed into sidebar accordion.
+       The 860px breakpoint that adds a 180px left rail is intentionally REMOVED. */
 
+    /* V2: hide the legacy .design-subnav (its function is replaced by the
+       sidebar accordion + breadcrumb stepper). Markup is preserved for diff
+       parity but visually + interactively suppressed. */
     .design-subnav {
-      display: flex; gap: 4px;
-      overflow-x: auto; padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-    }
-    @media (min-width: 860px) {
-      .design-subnav {
-        flex-direction: column;
-        border-bottom: 0; border-right: 1px solid var(--border);
-        padding: 0 12px 0 0;
-        overflow-x: visible;
-      }
+      display: none !important;
     }
     .sub-item {
       display: flex; align-items: center; gap: 10px;
@@ -1448,6 +1612,25 @@
     body.dark-mode .side .nav-item { color: #9CA3AF; }
     body.dark-mode .side .nav-item:hover { background: #1F2937; color: #F3F4F6; }
     body.dark-mode .side .nav-item.active { background: rgba(99, 102, 241, 0.18); color: #A5B4FC; }
+    /* V2: accordion + stepper dark-mode */
+    body.dark-mode .nav-design-parent[aria-expanded="true"] { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .nav-design-parent[aria-expanded="true"].active { background: rgba(99, 102, 241, 0.18); color: #A5B4FC; }
+    body.dark-mode .nav-sub-list { border-left-color: #1F2937; }
+    body.dark-mode .nav-sub-item { color: #9CA3AF; }
+    body.dark-mode .nav-sub-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .nav-sub-item.active { background: rgba(99, 102, 241, 0.18); color: #A5B4FC; }
+    body.dark-mode .design-stepper {
+      background: linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.05));
+      border-color: rgba(99,102,241,0.30);
+    }
+    body.dark-mode .stepper-cell { color: #9CA3AF; }
+    body.dark-mode .stepper-cell:hover:not(:disabled) { background: rgba(31,41,55,0.6); color: #F3F4F6; }
+    body.dark-mode .stepper-cell.is-current { background: #1F2937; color: #A5B4FC; }
+    body.dark-mode .stepper-divider { background: rgba(99,102,241,0.30); }
+    body.dark-mode .stepper-dropdown { background: #141A2D; border-color: #1F2937; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    body.dark-mode .stepper-dropdown-item { color: #F3F4F6; }
+    body.dark-mode .stepper-dropdown-item:hover { background: #1F2937; }
+    body.dark-mode .stepper-dropdown-item.is-current { background: rgba(99,102,241,0.18); color: #A5B4FC; }
     body.dark-mode .side .side-user { border-bottom-color: #1F2937; }
     body.dark-mode .side .utxt .uname { color: #F3F4F6; }
     body.dark-mode .side .utxt .uhandle { color: #6B7280; }
@@ -2161,13 +2344,49 @@
       <!-- DIVIDER -->
       <div class="nav-divider"></div>
 
-      <!-- GROUP 2: Design + Domain (building tools) -->
+      <!-- GROUP 2: Design (accordion) + Domain (building tools) -->
       <div class="nav-group" style="padding-top:0">
-        <button class="nav-item" data-nav="design" data-tip="Design">
+        <!-- V2: Design parent with inline-expanding sub-items (replaces secondary rail) -->
+        <button class="nav-item nav-design-parent" data-nav="design" data-tip="Design" aria-expanded="false" aria-controls="nav-design-sub">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
           <span class="label">Design</span>
+          <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="nav-item" data-nav="domain" data-tip="Custom domain — universal $2/mo add-on per DEC-PRICELOCK-02. Coming soon." onclick="alert('Domain — Coming soon. Universal $2/mo add-on per DEC-PRICELOCK-02. Available on every tier — Free, Creator, Pro, Business.')">
+        <div class="nav-sub-list" id="nav-design-sub" data-expanded="false" role="group" aria-label="Design sub-sections">
+          <button class="nav-sub-item" data-nav-sub="theme">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+            <span>Theme</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            <span>Profile</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="background">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+            <span>Background</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+            <span>Text</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="buttons">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="5" rx="2.5"/><rect x="2" y="14" width="20" height="5" rx="2.5"/></svg>
+            <span>Buttons</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="animations">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
+            <span>Animations</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
+            <span>Colors</span>
+          </button>
+          <button class="nav-sub-item" data-nav-sub="footer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            <span>Footer</span>
+          </button>
+        </div>
+        <button class="nav-item" data-nav="domain" data-tip="Custom domain — universal $2/mo add-on per DEC-PRICELOCK-02. Coming soon." onclick="event.preventDefault(); window.location.href='./app-domain.html';">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           <span class="label">Domain</span>
           <span style="margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--bg-muted);color:var(--fg-subtle);white-space:nowrap">soon</span>
@@ -2537,6 +2756,25 @@
           </nav>
 
           <div class="design-content" style="min-width:0">
+
+            <!-- V2: Breadcrumb stepper — prev / current / next, replaces the secondary rail walkthrough -->
+            <nav class="design-stepper" aria-label="Design sub-section stepper" id="design-stepper">
+              <button class="stepper-cell stepper-arrow" data-stepper="prev" aria-label="Previous sub-section">
+                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <span class="stepper-arrow-label" data-stepper-prev-label>—</span>
+              </button>
+              <span class="stepper-divider" aria-hidden="true"></span>
+              <button class="stepper-cell is-current" data-stepper="current" aria-haspopup="listbox" aria-expanded="false" aria-controls="stepper-dropdown">
+                <span class="step-spark" aria-hidden="true"></span>
+                <span data-stepper-current-label>Background</span>
+              </button>
+              <span class="stepper-divider" aria-hidden="true"></span>
+              <button class="stepper-cell stepper-arrow" data-stepper="next" aria-label="Next sub-section">
+                <span class="stepper-arrow-label" data-stepper-next-label>Text</span>
+                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div class="stepper-dropdown" id="stepper-dropdown" data-open="false" role="listbox" aria-label="All Design sub-sections"></div>
+            </nav>
 
             <!-- THEME -->
             <div class="design-panel" data-panel="theme">
@@ -3379,20 +3617,183 @@
     }
 
     // =================================================================
-    // Design sub-nav
+    // V2: Design sub-nav (sidebar accordion + breadcrumb stepper)
+    //
+    // Single source of truth for "current sub-section" remains the same
+    // mechanism as v1 (active class on .design-panel). What changes:
+    //   - .sub-item (legacy secondary rail) is hidden via CSS but still
+    //     gets state synced for diff parity.
+    //   - .nav-sub-item (sidebar accordion children) drives navigation.
+    //   - .design-stepper (top of .design-content) shows prev/curr/next
+    //     window + dropdown for full picker.
     // =================================================================
+    const SUBTAB_ORDER = ['theme', 'profile', 'background', 'text', 'buttons', 'animations', 'colors', 'footer'];
+    const SUBTAB_LABELS = {
+      theme: 'Theme', profile: 'Profile', background: 'Background', text: 'Text',
+      buttons: 'Buttons', animations: 'Animations', colors: 'Colors', footer: 'Footer'
+    };
+
     function setSubnav(sub) {
+      // Legacy secondary-rail state (hidden but kept in sync)
       document.querySelectorAll('.sub-item').forEach(b => {
         b.classList.toggle('active', b.dataset.subnav === sub);
       });
+      // Active panel
       document.querySelectorAll('.design-panel').forEach(p => {
         p.classList.toggle('active', p.dataset.panel === sub);
       });
+      // V2: sidebar accordion sub-items
+      document.querySelectorAll('.nav-sub-item').forEach(b => {
+        b.classList.toggle('active', b.dataset.navSub === sub);
+      });
+      // V2: ensure accordion is expanded so active sub-item is visible
+      setDesignAccordion(true);
+      // V2: refresh stepper window
+      renderStepper(sub);
       syncUrl();
     }
     document.querySelectorAll('.sub-item').forEach(btn => {
       btn.addEventListener('click', () => setSubnav(btn.dataset.subnav));
     });
+    document.querySelectorAll('.nav-sub-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setTab('design');
+        setSubnav(btn.dataset.navSub);
+      });
+    });
+
+    // -----------------------------------------------------------------
+    // V2: Sidebar accordion expand/collapse for Design parent
+    // -----------------------------------------------------------------
+    function setDesignAccordion(expanded) {
+      const parent = document.querySelector('.nav-design-parent');
+      const list = document.getElementById('nav-design-sub');
+      if (!parent || !list) return;
+      parent.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      list.dataset.expanded = expanded ? 'true' : 'false';
+    }
+    (function wireDesignParentClick() {
+      const parent = document.querySelector('.nav-design-parent');
+      if (!parent) return;
+      // Override default data-nav handler — toggle accordion + jump into Design tab
+      parent.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const currentlyExpanded = parent.getAttribute('aria-expanded') === 'true';
+        const onDesignTab = layoutEl.dataset.tab === 'design';
+        if (!onDesignTab) {
+          // First click: enter Design tab + expand
+          setTab('design');
+          setDesignAccordion(true);
+          // Default to current subtab from URL (already applied via initialSubtab)
+        } else {
+          // Already on Design tab — toggle accordion
+          setDesignAccordion(!currentlyExpanded);
+        }
+      }, true /* capture, so we beat the generic data-nav handler */);
+    })();
+
+    // -----------------------------------------------------------------
+    // V2: Breadcrumb stepper — prev / current / next + full dropdown
+    // -----------------------------------------------------------------
+    function renderStepper(sub) {
+      const i = SUBTAB_ORDER.indexOf(sub);
+      if (i < 0) return;
+      const prev = i > 0 ? SUBTAB_ORDER[i - 1] : null;
+      const next = i < SUBTAB_ORDER.length - 1 ? SUBTAB_ORDER[i + 1] : null;
+      const stepper = document.getElementById('design-stepper');
+      if (!stepper) return;
+
+      const prevBtn = stepper.querySelector('[data-stepper="prev"]');
+      const nextBtn = stepper.querySelector('[data-stepper="next"]');
+      const currLbl = stepper.querySelector('[data-stepper-current-label]');
+      const prevLbl = stepper.querySelector('[data-stepper-prev-label]');
+      const nextLbl = stepper.querySelector('[data-stepper-next-label]');
+
+      currLbl.textContent = SUBTAB_LABELS[sub];
+      prevLbl.textContent = prev ? SUBTAB_LABELS[prev] : '—';
+      nextLbl.textContent = next ? SUBTAB_LABELS[next] : '—';
+      prevBtn.disabled = !prev;
+      nextBtn.disabled = !next;
+      prevBtn.dataset.target = prev || '';
+      nextBtn.dataset.target = next || '';
+
+      // Render dropdown items (rebuild on every change to stay in sync)
+      const dd = document.getElementById('stepper-dropdown');
+      if (dd) {
+        dd.innerHTML = SUBTAB_ORDER.map(key => `
+          <button class="stepper-dropdown-item${key === sub ? ' is-current' : ''}" data-stepper-pick="${key}" role="option" aria-selected="${key === sub}">
+            <span class="radio-dot" aria-hidden="true"></span>
+            <span>${SUBTAB_LABELS[key]}</span>
+          </button>
+        `).join('');
+        dd.querySelectorAll('[data-stepper-pick]').forEach(item => {
+          item.addEventListener('click', () => {
+            setSubnav(item.dataset.stepperPick);
+            closeStepperDropdown();
+          });
+        });
+      }
+    }
+
+    function openStepperDropdown() {
+      const dd = document.getElementById('stepper-dropdown');
+      const cur = document.querySelector('.stepper-cell.is-current');
+      if (!dd || !cur) return;
+      dd.dataset.open = 'true';
+      cur.setAttribute('aria-expanded', 'true');
+      // close on outside click
+      setTimeout(() => {
+        document.addEventListener('click', function handler(e) {
+          if (!dd.contains(e.target) && !cur.contains(e.target)) {
+            closeStepperDropdown();
+            document.removeEventListener('click', handler);
+          }
+        });
+      }, 0);
+    }
+    function closeStepperDropdown() {
+      const dd = document.getElementById('stepper-dropdown');
+      const cur = document.querySelector('.stepper-cell.is-current');
+      if (!dd) return;
+      dd.dataset.open = 'false';
+      if (cur) cur.setAttribute('aria-expanded', 'false');
+    }
+
+    (function wireStepper() {
+      const stepper = document.getElementById('design-stepper');
+      if (!stepper) return;
+      stepper.querySelector('[data-stepper="prev"]').addEventListener('click', (e) => {
+        const target = e.currentTarget.dataset.target;
+        if (target) setSubnav(target);
+      });
+      stepper.querySelector('[data-stepper="next"]').addEventListener('click', (e) => {
+        const target = e.currentTarget.dataset.target;
+        if (target) setSubnav(target);
+      });
+      stepper.querySelector('[data-stepper="current"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dd = document.getElementById('stepper-dropdown');
+        if (dd && dd.dataset.open === 'true') {
+          closeStepperDropdown();
+        } else {
+          openStepperDropdown();
+        }
+      });
+      // Keyboard: ← / → navigates when stepper area focused
+      stepper.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+          const t = stepper.querySelector('[data-stepper="prev"]').dataset.target;
+          if (t) { e.preventDefault(); setSubnav(t); }
+        } else if (e.key === 'ArrowRight') {
+          const t = stepper.querySelector('[data-stepper="next"]').dataset.target;
+          if (t) { e.preventDefault(); setSubnav(t); }
+        } else if (e.key === 'Escape') {
+          closeStepperDropdown();
+        }
+      });
+    })();
 
     // =================================================================
     // Device toggle
@@ -4043,6 +4444,15 @@
     setTab(initialTab);
     setSubnav(initialSubtab);
     setDevice(initialDevice);
+
+    // V2: auto-expand Design accordion if user landed directly on a
+    // Design sub-tab (default behavior; ?nav=collapsed would override
+    // but is not exposed in MVP). The setSubnav call above already
+    // expands it; this is just defensive for ?tab=design without subtab.
+    const initialNav = params.get('nav');
+    if (initialTab === 'design' || initialNav === 'expanded') {
+      setDesignAccordion(true);
+    }
   </script>
 </body>
 </html>
