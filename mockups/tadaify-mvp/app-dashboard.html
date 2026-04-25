@@ -289,21 +289,24 @@
        V2 — Sidebar accordion: Design parent + collapsible sub-items
        (replaces the secondary left rail in app-dashboard.html)
        -------------------------------------------------------------- */
-    .nav-design-parent {
+    .nav-design-parent, .nav-pages-parent {
       position: relative;
     }
-    .nav-design-parent .nav-caret {
+    .nav-design-parent .nav-caret, .nav-pages-parent .nav-caret {
       margin-left: auto; flex-shrink: 0;
       width: 14px; height: 14px;
       color: var(--fg-subtle);
       transition: transform .18s ease;
     }
-    .nav-design-parent[aria-expanded="true"] .nav-caret { transform: rotate(90deg); }
-    .nav-design-parent[aria-expanded="true"] {
+    .nav-design-parent[aria-expanded="true"] .nav-caret,
+    .nav-pages-parent[aria-expanded="true"] .nav-caret { transform: rotate(90deg); }
+    .nav-design-parent[aria-expanded="true"],
+    .nav-pages-parent[aria-expanded="true"] {
       background: var(--bg-muted);
       color: var(--fg);
     }
-    .nav-design-parent[aria-expanded="true"].active {
+    .nav-design-parent[aria-expanded="true"].active,
+    .nav-pages-parent[aria-expanded="true"].active {
       background: rgba(99,102,241,0.10);
       color: var(--brand-primary);
     }
@@ -344,7 +347,8 @@
       .nav-item > span.label, .nav-item .nav-count { display: none; }
       .nav-item svg { width: 20px; height: 20px; }
       /* On tablet the accordion expands to a tooltip-like flyout instead of inline list */
-      .nav-design-parent .nav-caret { display: none; }
+      .nav-design-parent .nav-caret, .nav-pages-parent .nav-caret { display: none; }
+      .nav-pages-parent .nav-count { display: none; }
       .nav-sub-list { display: none !important; }
     }
 
@@ -2327,18 +2331,26 @@
         <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
       </div>
 
-      <!-- GROUP 1: Pages (Homepage + Add page disabled) -->
+      <!-- GROUP 1: Pages (accordion parent + Home + Add page disabled) -->
       <div class="nav-group">
-        <button class="nav-item active" data-nav="page" data-tip="Homepage" aria-label="Homepage">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span class="label">Homepage</span>
-          <span class="nav-count" id="nav-page-count">3</span>
+        <button class="nav-item nav-pages-parent active" data-nav="pages" data-tip="Pages"
+                aria-expanded="true" aria-controls="nav-pages-sub" aria-label="Pages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="label">Pages</span>
+          <span class="nav-count" id="nav-pages-count">1</span>
+          <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="nav-item nav-add-page is-disabled" data-tip="Multi-page coming Q+1 — Free 1 / Creator 5 / Pro 20 / Business unlimited per DEC-MULTIPAGE-01" aria-disabled="true" onclick="event.preventDefault();event.stopPropagation();showAddPageToast(event)">
-          <span class="nav-icon">+</span>
-          <span class="nav-label">Add page</span>
-          <span class="nav-pill nav-pill-soon">soon</span>
-        </button>
+        <div class="nav-sub-list" id="nav-pages-sub" data-expanded="true" role="group" aria-label="Pages list">
+          <button class="nav-sub-item active" data-nav-sub="home" data-nav="page" data-tip="Home — your main page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Home</span>
+          </button>
+          <button class="nav-sub-item nav-sub-add is-disabled" data-tip="Multi-page coming Q+1 — Free 1 / Creator 5 / Pro 20 / Business unlimited per DEC-MULTIPAGE-01" aria-disabled="true" onclick="event.preventDefault();event.stopPropagation();showAddPageToast(event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add page</span>
+            <span class="nav-pill nav-pill-soon" style="margin-left:auto">soon</span>
+          </button>
+        </div>
       </div>
 
       <!-- DIVIDER -->
@@ -2414,10 +2426,10 @@
 
       <!-- GROUP 4: Settings (standalone, no section header) -->
       <div class="nav-group" style="padding-top:0">
-        <button class="nav-item" data-nav="settings" data-tip="Settings">
+        <a href="./app-settings.html" class="nav-item" data-nav="settings" data-tip="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
           <span class="label">Settings</span>
-        </button>
+        </a>
         <button class="nav-item" data-tip="Help &amp; docs">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
           <span class="label">Help &amp; docs</span>
@@ -3570,7 +3582,7 @@
     // =================================================================
     const params = new URLSearchParams(window.location.search);
     const handle = params.get('handle') || 'alexandra';
-    // ?tab=pages legacy redirect → page (Homepage)
+    // ?tab=pages legacy redirect → page (Home)
     const rawTab = params.get('tab') || 'page';
     const initialTab = rawTab === 'pages' ? 'page' : rawTab;
     const initialSubtab = params.get('subtab') || 'background';
@@ -3657,9 +3669,19 @@
     });
     document.querySelectorAll('.nav-sub-item').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        if (btn.classList.contains('is-disabled')) return; // disabled Add page
         e.stopPropagation();
-        setTab('design');
-        setSubnav(btn.dataset.navSub);
+        // Pages group (e.g. Home) → page tab; Design group → design tab + sub-section
+        const inPagesGroup = !!btn.closest('#nav-pages-sub');
+        if (inPagesGroup) {
+          setTab('page');
+          // mark the clicked Home (or future page sub) active among siblings
+          document.querySelectorAll('#nav-pages-sub .nav-sub-item').forEach(s => s.classList.remove('active'));
+          btn.classList.add('active');
+        } else {
+          setTab('design');
+          setSubnav(btn.dataset.navSub);
+        }
       });
     });
 
@@ -3673,6 +3695,32 @@
       parent.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       list.dataset.expanded = expanded ? 'true' : 'false';
     }
+    function setPagesAccordion(expanded) {
+      const parent = document.querySelector('.nav-pages-parent');
+      const list = document.getElementById('nav-pages-sub');
+      if (!parent || !list) return;
+      parent.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      list.dataset.expanded = expanded ? 'true' : 'false';
+    }
+    (function wirePagesParentClick() {
+      const parent = document.querySelector('.nav-pages-parent');
+      if (!parent) return;
+      parent.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const onPageTab = layoutEl.dataset.tab === 'page';
+        if (!onPageTab) {
+          // First click: enter page tab + ensure expanded
+          setTab('page');
+          setPagesAccordion(true);
+        } else {
+          // Already on page tab — toggle accordion
+          const currentlyExpanded = parent.getAttribute('aria-expanded') === 'true';
+          setPagesAccordion(!currentlyExpanded);
+        }
+      }, true);
+    })();
+
     (function wireDesignParentClick() {
       const parent = document.querySelector('.nav-design-parent');
       if (!parent) return;

@@ -194,6 +194,33 @@
     }
     .nav-add-page:hover { background: transparent !important; }
 
+    /* Pages accordion (always-expanded read-only on Domain page) */
+    .nav-pages-parent { position: relative; }
+    .nav-pages-parent .nav-caret {
+      margin-left: 6px; flex-shrink: 0;
+      width: 14px; height: 14px;
+      color: var(--fg-subtle);
+      transform: rotate(90deg);
+    }
+    .nav-sub-list {
+      display: flex; flex-direction: column; gap: 1px;
+      margin: 2px 0 4px 17px;
+      padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+    .nav-sub-item {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 6px 10px; border-radius: 7px;
+      font-size: 12.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; text-decoration: none;
+      transition: background .12s ease, color .12s ease; cursor: pointer;
+    }
+    .nav-sub-item svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--fg-subtle); }
+    .nav-sub-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .nav-sub-item.is-disabled { cursor: not-allowed; opacity: 0.55; font-style: italic; }
+    .nav-sub-item.is-disabled:hover { background: transparent; color: var(--fg-muted); }
+
     /* Tablet rail — icons only */
     @media (min-width: 720px) and (max-width: 1179px) {
       aside.side { padding: 14px 8px; }
@@ -201,6 +228,9 @@
       .nav-item { justify-content: center; padding: 10px 6px; }
       .nav-item > span.label, .nav-item .nav-count { display: none; }
       .nav-item svg { width: 20px; height: 20px; }
+      .nav-pages-parent .nav-caret { display: none; }
+      .nav-pages-parent .nav-count { display: none; }
+      .nav-sub-list { display: none; }
     }
 
     /* ── Main content ── */
@@ -821,18 +851,25 @@
       <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
     </div>
 
-    <!-- GROUP 1: Homepage + Add page disabled -->
+    <!-- GROUP 1: Pages (parent always expanded — no JS toggle on Domain page) -->
     <div class="nav-group">
-      <button class="nav-item" data-nav="page" data-tip="Homepage" aria-label="Homepage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="label">Homepage</span>
-        <span class="nav-count">3</span>
-      </button>
-      <button class="nav-item nav-add-page" aria-disabled="true">
-        <span class="nav-icon">+</span>
-        <span class="nav-label">Add page</span>
-        <span class="nav-pill">soon</span>
-      </button>
+      <a href="./app-dashboard.html?tab=page" class="nav-item nav-pages-parent" data-tip="Pages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="label">Pages</span>
+        <span class="nav-count">1</span>
+        <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <div class="nav-sub-list">
+        <a href="./app-dashboard.html?tab=page" class="nav-sub-item" data-tip="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </a>
+        <button class="nav-sub-item is-disabled" aria-disabled="true" data-tip="Multi-page coming Q+1 — DEC-MULTIPAGE-01">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Add page</span>
+          <span class="nav-pill" style="margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--bg-muted);color:var(--fg-subtle);white-space:nowrap">soon</span>
+        </button>
+      </div>
     </div>
 
     <div class="nav-divider"></div>
@@ -868,10 +905,10 @@
 
     <!-- GROUP 4: Settings + Help -->
     <div class="nav-group" style="padding-top:0">
-      <button class="nav-item" data-nav="settings" data-tip="Settings">
+      <a href="./app-settings.html" class="nav-item" data-nav="settings" data-tip="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3v0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         <span class="label">Settings</span>
-      </button>
+      </a>
       <button class="nav-item" data-tip="Help &amp; docs">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
         <span class="label">Help &amp; docs</span>
