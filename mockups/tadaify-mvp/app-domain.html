@@ -1154,17 +1154,13 @@
           <div class="domain-input-wrap">
             <input type="text" id="domain-input" placeholder="yourdomain.com" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Domain name" oninput="validateDomainInput(this)" />
           </div>
-          <p class="input-hint">Enter just the domain — no http://, no www.</p>
+          <p class="input-hint">Enter just the domain — no http://, no www. Works with apex (<code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">yourdomain.com</code>) or subdomain (<code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-muted);padding:1px 5px;border-radius:4px">links.yourdomain.com</code>).</p>
           <p class="input-error" id="domain-error" role="alert"></p>
+          <p class="input-detect" id="domain-detect" style="display:none;font-size:12px;color:var(--brand-primary);margin-top:6px"></p>
         </div>
 
-        <label class="checkbox-row" for="subdomain-check">
-          <input type="checkbox" id="subdomain-check" />
-          <div class="cr-body">
-            <div class="cr-title">I want to use a subdomain</div>
-            <div class="cr-sub">e.g. links.yourdomain.com instead of yourdomain.com</div>
-          </div>
-        </label>
+        <!-- Subdomain checkbox removed — we auto-detect from input (>2 dot-separated parts → subdomain) -->
+        <input type="hidden" id="subdomain-check" />
 
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
           <button class="btn btn-ghost btn-sm" onclick="closeWizard()">Cancel</button>
@@ -1592,16 +1588,34 @@
 
   function validateDomainInput(input) {
     const err = document.getElementById('domain-error');
+    const detect = document.getElementById('domain-detect');
+    const sub = document.getElementById('subdomain-check');
     const val = input.value.trim();
-    if (!val) { err.classList.remove('visible'); return; }
+    if (!val) { err.classList.remove('visible'); detect.style.display = 'none'; return; }
     if (val.includes('http') || val.includes('www.')) {
       err.textContent = 'No need for http:// or www. — just the domain (e.g. yourdomain.com)';
       err.classList.add('visible');
+      detect.style.display = 'none';
     } else if (val.includes(' ')) {
       err.textContent = 'Domain names cannot contain spaces.';
       err.classList.add('visible');
+      detect.style.display = 'none';
+    } else if (isValidDomain(val)) {
+      err.classList.remove('visible');
+      // Auto-detect apex vs subdomain (more than 2 dot-separated parts → subdomain)
+      const parts = val.split('.');
+      const isSubdomain = parts.length > 2;
+      sub.value = isSubdomain ? '1' : '0';
+      sub.checked = isSubdomain;
+      if (isSubdomain) {
+        detect.innerHTML = '✓ Detected: <strong>subdomain</strong> — clean CNAME setup, works with any registrar.';
+      } else {
+        detect.innerHTML = '✓ Detected: <strong>apex domain</strong> — needs A record (or transfer DNS to Cloudflare for CNAME flattening).';
+      }
+      detect.style.display = 'block';
     } else {
       err.classList.remove('visible');
+      detect.style.display = 'none';
     }
   }
 
