@@ -256,6 +256,30 @@
     .nav-item.active .nav-count {
       background: rgba(99,102,241,0.15); color: var(--brand-primary);
     }
+    .nav-divider {
+      border-top: 1px solid var(--border);
+      margin: 6px 0;
+    }
+    .nav-add-page {
+      padding-left: 22px !important;
+      cursor: not-allowed !important;
+      opacity: 0.55;
+      font-style: italic;
+    }
+    .nav-add-page .nav-icon {
+      width: 17px; height: 17px; flex-shrink: 0;
+      color: var(--fg-subtle);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 500;
+    }
+    .nav-add-page .nav-pill {
+      margin-left: auto;
+      font-size: 10px; font-weight: 600;
+      padding: 1px 6px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-subtle);
+      white-space: nowrap;
+    }
+    .nav-add-page:hover { background: transparent !important; }
 
     /* Tablet rail — icons only */
     @media (min-width: 720px) and (max-width: 1179px) {
@@ -1230,7 +1254,7 @@
     .layout[data-tab="insights"] .main-placeholder[data-for="insights"] { display: block; }
     .layout[data-tab="shop"]     .main-placeholder[data-for="shop"]     { display: block; }
     .layout[data-tab="settings"] .main-placeholder[data-for="settings"] { display: block; }
-    .layout[data-tab="pages"]    .main-placeholder[data-for="pages"]    { display: block; }
+    /* data-tab="pages" removed — "pages" nav item replaced by disabled "+ Add page" sub-item */
 
     /* Empty-state visibility */
     .only-ready { display: block; }
@@ -2120,21 +2144,41 @@
         <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
       </div>
 
+      <!-- GROUP 1: Pages (Homepage + Add page disabled) -->
       <div class="nav-group">
-        <button class="nav-item" data-nav="pages" data-tip="Pages">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
-          <span class="label">Pages</span>
-          <span class="nav-count" style="background:rgba(156,163,175,0.15);color:#9CA3AF;font-size:10px;padding:1px 6px;border-radius:99px;font-weight:500;margin-left:auto">soon</span>
-        </button>
-        <button class="nav-item" data-nav="page" data-tip="Page">
+        <button class="nav-item active" data-nav="page" data-tip="Homepage" aria-label="Homepage">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span class="label">Page</span>
+          <span class="label">Homepage</span>
           <span class="nav-count" id="nav-page-count">3</span>
         </button>
+        <button class="nav-item nav-add-page is-disabled" data-tip="Multi-page coming Q+1 — Free 1 / Creator 5 / Pro 20 / Business unlimited per DEC-MULTIPAGE-01" aria-disabled="true" onclick="event.preventDefault();event.stopPropagation();showAddPageToast(event)">
+          <span class="nav-icon">+</span>
+          <span class="nav-label">Add page</span>
+          <span class="nav-pill nav-pill-soon">soon</span>
+        </button>
+      </div>
+
+      <!-- DIVIDER -->
+      <div class="nav-divider"></div>
+
+      <!-- GROUP 2: Design + Domain (building tools) -->
+      <div class="nav-group" style="padding-top:0">
         <button class="nav-item" data-nav="design" data-tip="Design">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
           <span class="label">Design</span>
         </button>
+        <button class="nav-item" data-nav="domain" data-tip="Custom domain — universal $2/mo add-on per DEC-PRICELOCK-02. Coming soon." onclick="alert('Domain — Coming soon. Universal $2/mo add-on per DEC-PRICELOCK-02. Available on every tier — Free, Creator, Pro, Business.')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="label">Domain</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--bg-muted);color:var(--fg-subtle);white-space:nowrap">soon</span>
+        </button>
+      </div>
+
+      <!-- DIVIDER -->
+      <div class="nav-divider"></div>
+
+      <!-- GROUP 3: Insights + Shop -->
+      <div class="nav-group" style="padding-top:0">
         <button class="nav-item" data-nav="insights" data-tip="Insights">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
           <span class="label">Insights</span>
@@ -2146,13 +2190,11 @@
         </button>
       </div>
 
-      <div class="nav-group">
-        <div class="nav-label">Account</div>
-        <button class="nav-item" data-nav="domain" data-tip="Custom Domain" onclick="alert('Domain — Coming soon. Universal $2/mo add-on per DEC-PRICELOCK-02. Available on every tier — Free, Creator, Pro, Business.')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span class="label">Domain</span>
-          <span style="margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--bg-muted);color:var(--fg-subtle);white-space:nowrap">soon</span>
-        </button>
+      <!-- DIVIDER -->
+      <div class="nav-divider"></div>
+
+      <!-- GROUP 4: Settings (standalone, no section header) -->
+      <div class="nav-group" style="padding-top:0">
         <button class="nav-item" data-nav="settings" data-tip="Settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
           <span class="label">Settings</span>
@@ -3233,13 +3275,9 @@
 
   <!-- ============ Mobile bottom tabs ============ -->
   <nav class="mobile-tabs" aria-label="Mobile navigation">
-    <button class="mt-btn" data-nav="pages" style="opacity:0.55">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
-      Pages
-    </button>
     <button class="mt-btn active" data-nav="page">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-      Page
+      Home
     </button>
     <button class="mt-btn" data-nav="design">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
@@ -3294,7 +3332,9 @@
     // =================================================================
     const params = new URLSearchParams(window.location.search);
     const handle = params.get('handle') || 'alexandra';
-    const initialTab = params.get('tab') || 'page';
+    // ?tab=pages legacy redirect → page (Homepage)
+    const rawTab = params.get('tab') || 'page';
+    const initialTab = rawTab === 'pages' ? 'page' : rawTab;
     const initialSubtab = params.get('subtab') || 'background';
     const initialDevice = params.get('device') || 'mobile';
     const initialState = params.get('state') || 'ready';
@@ -3317,8 +3357,26 @@
       syncUrl();
     }
     document.querySelectorAll('[data-nav]').forEach(btn => {
+      if (btn.getAttribute('aria-disabled') === 'true') return; // skip disabled items
       btn.addEventListener('click', () => setTab(btn.dataset.nav));
     });
+
+    // Add-page disabled button — show tooltip flash
+    function showAddPageToast(e) {
+      const existing = document.getElementById('add-page-toast');
+      if (existing) return;
+      const toast = document.createElement('div');
+      toast.id = 'add-page-toast';
+      toast.textContent = 'Multi-page coming Q+1';
+      Object.assign(toast.style, {
+        position: 'fixed', left: (e.clientX + 12) + 'px', top: (e.clientY - 8) + 'px',
+        background: 'var(--fg)', color: 'var(--bg)', fontSize: '12px', fontWeight: '600',
+        padding: '5px 10px', borderRadius: '6px', zIndex: '9999',
+        pointerEvents: 'none', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0,0,0,.18)'
+      });
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1500);
+    }
 
     // =================================================================
     // Design sub-nav
