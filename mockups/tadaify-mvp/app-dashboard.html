@@ -16,7 +16,7 @@
   URL state:
     ?handle=alexandra (default)
     ?tab=page|design|insights|shop|settings (default page)
-    ?subtab=theme|header|wallpaper|text|buttons|colors|footer (default wallpaper)
+    ?subtab=theme|header|wallpaper|text|buttons|animations|colors|footer (default wallpaper)
     ?device=mobile|tablet|desktop (default mobile)
     ?state=ready|empty (default ready)
 
@@ -1238,6 +1238,159 @@
     body[data-state="empty"] .only-empty { display: block; }
 
     .row-sp { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+    /* ==============================================================
+       Animations sub-panel
+       ============================================================== */
+    .tile-grid-anim { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    .anim-tile .anim-preview {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #F8F9FC;
+      overflow: hidden;
+    }
+    .pill-signature {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.18));
+      color: #6366F1;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      vertical-align: middle;
+    }
+
+    /* "None" preview — flat line */
+    .anim-none::after { content: ''; width: 40%; height: 2px; background: #D1D5DB; border-radius: 2px; }
+
+    /* "Ta-da" — orbit + flash (echoes Motion v10) */
+    .anim-tada .anim-dot {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #F59E0B 0%, #DC8908 75%);
+      box-shadow: 0 0 18px rgba(245,158,11,0.55);
+      animation: anim-tada 2.2s cubic-bezier(.2,.8,.2,1) infinite;
+    }
+    @keyframes anim-tada {
+      0%   { transform: scale(0.3); opacity: 0; box-shadow: 0 0 0 rgba(245,158,11,0); }
+      28%  { transform: scale(1.25); opacity: 1; box-shadow: 0 0 32px rgba(245,158,11,0.9); }
+      45%  { transform: scale(1); opacity: 1; }
+      85%  { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+
+    /* Cascade — three bars appear with stagger */
+    .anim-cascade { flex-direction: column; gap: 4px; }
+    .anim-cascade span {
+      width: 46px; height: 4px; border-radius: 2px; background: #6366F1;
+      opacity: 0;
+      animation: anim-cascade 2s ease-in-out infinite;
+    }
+    .anim-cascade span:nth-child(1) { animation-delay: 0s; }
+    .anim-cascade span:nth-child(2) { animation-delay: 0.18s; background: #8B5CF6; }
+    .anim-cascade span:nth-child(3) { animation-delay: 0.36s; background: #F59E0B; }
+    @keyframes anim-cascade {
+      0%   { transform: translateY(6px); opacity: 0; }
+      30%  { transform: translateY(0); opacity: 1; }
+      80%  { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-3px); opacity: 0; }
+    }
+
+    /* Fade up */
+    .anim-fadeup span {
+      width: 42px; height: 20px; border-radius: 4px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      animation: anim-fadeup 2s ease-in-out infinite;
+    }
+    @keyframes anim-fadeup {
+      0%   { transform: translateY(12px); opacity: 0; }
+      35%  { transform: translateY(0); opacity: 1; }
+      80%  { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-2px); opacity: 0; }
+    }
+
+    /* Spotlight orbit — Motion v10 echo */
+    .anim-spotlight { position: relative; }
+    .anim-spotlight::before {
+      content: '';
+      position: absolute; inset: 16px;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(99,102,241,0.25);
+    }
+    .anim-spotlight .anim-orb {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #F59E0B;
+      box-shadow: 0 0 14px #F59E0B;
+      top: 50%; left: 50%;
+      transform-origin: -20px 0;
+      animation: anim-orbit 2.4s linear infinite;
+    }
+    @keyframes anim-orbit {
+      from { transform: translate(-50%, -50%) rotate(0deg) translateX(22px); }
+      to   { transform: translate(-50%, -50%) rotate(360deg) translateX(22px); }
+    }
+
+    /* Typewriter caret */
+    .anim-typewriter { align-items: baseline; gap: 2px; font-family: var(--font-display, serif); font-size: 18px; color: var(--fg); }
+    .anim-typewriter::before {
+      content: 'Hello';
+      opacity: 0;
+      animation: anim-type 3s steps(5) infinite;
+      overflow: hidden;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .anim-typewriter .anim-caret {
+      color: var(--brand-primary);
+      font-weight: 400;
+      animation: anim-caret 1s step-start infinite;
+    }
+    @keyframes anim-type {
+      0%   { opacity: 0; width: 0; }
+      10%  { opacity: 1; width: 0; }
+      60%  { opacity: 1; width: 5ch; }
+      90%  { opacity: 1; width: 5ch; }
+      100% { opacity: 0; width: 5ch; }
+    }
+    @keyframes anim-caret {
+      50% { opacity: 0; }
+    }
+
+    /* Accessibility row */
+    .a11y-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      background: rgba(99,102,241,0.04);
+      border: 1px solid rgba(99,102,241,0.15);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .a11y-row input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; cursor: pointer; }
+
+    /* Reduced-motion halts the tile animations */
+    body.reduced-motion .anim-preview *,
+    body.reduced-motion .anim-tile .anim-preview::after,
+    body.reduced-motion .anim-tile .anim-preview::before { animation: none !important; }
+
+    /* Phone preview re-play class hooks */
+    .phone-screen.is-replaying .phone-blocks > * {
+      opacity: 0;
+      animation: block-entrance-stagger .7s cubic-bezier(.2,.8,.2,1) forwards;
+    }
+    .phone-screen.is-replaying .phone-blocks > *:nth-child(1) { animation-delay: 0.05s; }
+    .phone-screen.is-replaying .phone-blocks > *:nth-child(2) { animation-delay: 0.18s; }
+    .phone-screen.is-replaying .phone-blocks > *:nth-child(3) { animation-delay: 0.31s; }
+    .phone-screen.is-replaying .phone-blocks > *:nth-child(n+4) { animation-delay: 0.44s; }
+    @keyframes block-entrance-stagger {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
   </style>
 </head>
 <body data-state="ready">
@@ -1592,6 +1745,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="5" rx="2.5"/><rect x="2" y="14" width="20" height="5" rx="2.5"/></svg>
               Buttons
             </button>
+            <button class="sub-item" data-subnav="animations">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
+              Animations
+            </button>
             <button class="sub-item" data-subnav="colors">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
               Colors
@@ -1797,6 +1954,81 @@
                   <input type="text" value="#111827"/>
                   <span class="swatch" style="background:#111827"></span>
                 </div>
+              </div>
+            </div>
+
+            <!-- ANIMATIONS — tadaify signature: the "ta-da" reveal moments -->
+            <div class="design-panel" data-panel="animations">
+              <div class="fg-help" style="font-size:13px; color:var(--fg-muted); margin-bottom:14px">
+                Motion is core to the <span style="font-family:var(--font-display); font-style:italic">tadaify</span> brand — visitors should feel the reveal.
+                Pick how your page appears, how blocks animate in, and how they respond to touch.
+                <button type="button" class="link-btn" onclick="replayAnimation()" style="margin-left:6px; background:transparent; border:0; color:var(--brand-primary); font-weight:600; cursor:pointer; padding:0;">↻ Replay preview</button>
+              </div>
+
+              <div class="field-group">
+                <label class="fg-label">Page entrance</label>
+                <div class="fg-help">The first thing visitors see when the page loads.</div>
+                <div class="tile-grid tile-grid-anim">
+                  <div class="tile anim-tile" data-anim-entrance="none" onclick="selectAnim(this, 'entrance', 'none')">
+                    <div class="anim-preview anim-none"></div>
+                    <div class="tile-label">None</div>
+                  </div>
+                  <div class="tile anim-tile selected" data-anim-entrance="tada" onclick="selectAnim(this, 'entrance', 'tada')">
+                    <div class="anim-preview anim-tada"><span class="anim-dot"></span></div>
+                    <div class="tile-label">Ta-da reveal <span class="pill-signature">signature</span></div>
+                  </div>
+                  <div class="tile anim-tile" data-anim-entrance="cascade" onclick="selectAnim(this, 'entrance', 'cascade')">
+                    <div class="anim-preview anim-cascade"><span></span><span></span><span></span></div>
+                    <div class="tile-label">Cascade</div>
+                  </div>
+                  <div class="tile anim-tile" data-anim-entrance="fade-up" onclick="selectAnim(this, 'entrance', 'fade-up')">
+                    <div class="anim-preview anim-fadeup"><span></span></div>
+                    <div class="tile-label">Fade up</div>
+                  </div>
+                  <div class="tile anim-tile" data-anim-entrance="spotlight" onclick="selectAnim(this, 'entrance', 'spotlight')">
+                    <div class="anim-preview anim-spotlight"><span class="anim-orb"></span></div>
+                    <div class="tile-label">Spotlight orbit</div>
+                  </div>
+                  <div class="tile anim-tile" data-anim-entrance="typewriter" onclick="selectAnim(this, 'entrance', 'typewriter')">
+                    <div class="anim-preview anim-typewriter"><span class="anim-caret">|</span></div>
+                    <div class="tile-label">Typewriter</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="fg-label">Block entrance</label>
+                <div class="fg-help">How each block appears individually on first view.</div>
+                <div class="seg-row" role="group">
+                  <button class="seg" data-anim-block="none" onclick="selectSeg(this, 'block', 'none')">None</button>
+                  <button class="seg active" data-anim-block="stagger" onclick="selectSeg(this, 'block', 'stagger')">Stagger cascade</button>
+                  <button class="seg" data-anim-block="pop" onclick="selectSeg(this, 'block', 'pop')">Pop-in</button>
+                  <button class="seg" data-anim-block="slide-up" onclick="selectSeg(this, 'block', 'slide-up')">Slide up</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="fg-label">Hover effect</label>
+                <div class="fg-help">What happens when a visitor hovers (desktop) or taps (mobile) a block.</div>
+                <div class="seg-row" role="group">
+                  <button class="seg" data-anim-hover="none" onclick="selectSeg(this, 'hover', 'none')">None</button>
+                  <button class="seg active" data-anim-hover="lift" onclick="selectSeg(this, 'hover', 'lift')">Lift</button>
+                  <button class="seg" data-anim-hover="glow" onclick="selectSeg(this, 'hover', 'glow')">Glow</button>
+                  <button class="seg" data-anim-hover="tilt" onclick="selectSeg(this, 'hover', 'tilt')">Tilt 3D</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="fg-label">Accessibility</label>
+                <label class="a11y-row">
+                  <input type="checkbox" id="reduced-motion-toggle" checked onchange="toggleReducedMotion(this)"/>
+                  <div>
+                    <div style="font-weight:600; color:var(--fg); font-size:14px">Respect reduced-motion</div>
+                    <div class="fg-help" style="margin-top:2px">
+                      Visitors with <code>prefers-reduced-motion: reduce</code> in their OS settings see a still version. Keep this on unless you have a strong reason.
+                    </div>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -2329,6 +2561,44 @@
         opt.classList.add('selected');
       });
     });
+
+    // =================================================================
+    // Animations sub-panel
+    // =================================================================
+    function selectAnim(tile, kind, value) {
+      // kind is currently 'entrance' only for tile-based picker
+      tile.parentElement.querySelectorAll('.anim-tile').forEach(t => t.classList.remove('selected'));
+      tile.classList.add('selected');
+      document.body.dataset['anim' + kind.charAt(0).toUpperCase() + kind.slice(1)] = value;
+      replayAnimation();
+    }
+
+    function selectSeg(btn, kind, value) {
+      btn.parentElement.querySelectorAll('.seg').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.body.dataset['anim' + kind.charAt(0).toUpperCase() + kind.slice(1)] = value;
+      if (kind === 'block') replayAnimation();
+    }
+
+    function replayAnimation() {
+      const screens = document.querySelectorAll('.phone-screen');
+      screens.forEach(s => {
+        s.classList.remove('is-replaying');
+        // Force reflow so the re-added class retriggers the animation
+        void s.offsetWidth;
+        s.classList.add('is-replaying');
+        setTimeout(() => s.classList.remove('is-replaying'), 1400);
+      });
+    }
+
+    function toggleReducedMotion(cb) {
+      document.body.classList.toggle('reduced-motion', !cb.checked);
+    }
+
+    window.selectAnim = selectAnim;
+    window.selectSeg = selectSeg;
+    window.replayAnimation = replayAnimation;
+    window.toggleReducedMotion = toggleReducedMotion;
 
     // =================================================================
     // Boot
