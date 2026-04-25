@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <!--
-  tadaify.com/pricing — 4 tiers + transparent comparison
-  UX improvements:
-    1. NO free-trial gate — 30-day money-back instead (anti-dark-pattern)
-    2. Annual default toggle, shows "2 months free" savings in the same view
-    3. Free tier features called out with positive framing
-    4. Custom domain explicitly surfaced as +$2/mo add-on on ANY tier (even Free)
-    5. Full expandable feature comparison by category, not locked behind signup
-    6. "Why 0% fees" FAQ block — transparent about our pricing philosophy
+  type: mockup
+  project: tadaify
+  title: Pricing landing page (F-PRICING-LANDING-001)
+  created_at: 2026-04-25
+  author: orchestrator
+  status: draft-for-review
+  supersedes: pricing.html v1 (2026-04-24 pre-second-wave)
+
+  Locked DECs reflected:
+    DEC-PRICELOCK-01 (price-lock-for-life)
+    DEC-PRICELOCK-02 (universal $2 domain add-on)
+    DEC-MULTIPAGE-01 (Pages tier ladder Free 1 / Creator 5 / Pro 20 / Business unlimited)
+    DEC-LAYOUT-01 (grid in MVP — referenced in Pro feature list as A/B testing layout variants)
+    DEC-CREATOR-API-01 (Pro pillar — dedicated section)
+    DEC-AI-QUOTA-LADDER-01 (5 / 20 / 100 / unlimited)
+    DEC-AI-FEATURES-ROADMAP-01 (text-only AI)
+    DEC-TRIAL-01 (no trials)
+    DEC-OPT-BADGE (opt-in support badge mention)
+    AP-001 (no Powered by — never)
 -->
 <html lang="en">
 <head>
@@ -17,6 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
+    /* ─── Billing toggle ─── */
     .billing-toggle {
       display: inline-flex;
       align-items: center;
@@ -24,25 +36,28 @@
       background: var(--bg-muted);
       border-radius: var(--radius-full);
       padding: 4px;
-      margin: 24px 0 40px;
+      margin: 24px 0 16px;
     }
     .billing-toggle button {
       border: 0; background: transparent;
       padding: 10px 22px; border-radius: var(--radius-full);
       font-weight: 600; color: var(--fg-muted);
       display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer;
     }
     .billing-toggle button.active {
       background: var(--bg-elevated); color: var(--fg);
       box-shadow: var(--shadow-sm);
     }
+
+    /* ─── Tier grid ─── */
     .tier-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 20px;
     }
     @media (max-width: 1080px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 560px)  { .tier-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px)  { .tier-grid { grid-template-columns: 1fr; } }
 
     .tier {
       position: relative;
@@ -72,18 +87,129 @@
     .tier ul { list-style: none; padding: 0; margin: 20px 0 0; flex-grow: 1; }
     .tier li { padding: 8px 0; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
     .tier li::before { content: "✓"; color: var(--success); font-weight: 700; flex-shrink: 0; }
-    .tier li.lock::before { content: "🔒"; color: var(--fg-subtle); }
-    .tier .btn { margin-top: 18px; width: 100%; }
+    .tier .btn { margin-top: 18px; width: 100%; min-height: 44px; font-size: 15px; }
 
-    .addon-callout {
-      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08));
-      border: 1px dashed var(--brand-primary);
-      border-radius: var(--radius-lg);
-      padding: 20px 24px;
-      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-      margin-top: 32px;
+    /* ─── Locked-for-life badge on paid cards ─── */
+    .lock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(245, 158, 11, 0.12);
+      color: #B45309;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-top: 8px;
+      width: fit-content;
     }
 
+    /* ─── Save badge ─── */
+    .save-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--success-bg); color: #065F46;
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full);
+    }
+
+    /* ─── Price-lock-for-life banner (aligned with onboarding-tier) ─── */
+    .pricelock-banner {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: linear-gradient(135deg, #0B0F1E 0%, #1F2937 100%);
+      color: #F9FAFB;
+      border-radius: 18px;
+      padding: 20px 28px;
+      margin: 0 auto 16px;
+      max-width: 880px;
+      box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .pricelock-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.25), transparent 55%),
+                  radial-gradient(circle at 90% 100%, rgba(245, 158, 11, 0.2), transparent 55%);
+      pointer-events: none;
+    }
+    .pricelock-icon {
+      font-size: 32px; line-height: 1; flex-shrink: 0; padding-top: 2px;
+      filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4));
+      position: relative; z-index: 1;
+    }
+    .pricelock-body { position: relative; z-index: 1; }
+    .pricelock-title {
+      font-family: var(--font-display, serif);
+      font-size: 19px; font-weight: 600; margin: 0 0 6px;
+      color: #FDE68A; letter-spacing: -0.01em;
+    }
+    .pricelock-text {
+      font-size: 14px; line-height: 1.55; margin: 0;
+      color: rgba(249, 250, 251, 0.88);
+    }
+    .pricelock-text strong { color: #FFF; font-weight: 600; }
+    @media (max-width: 640px) {
+      .pricelock-banner { flex-direction: column; padding: 18px; }
+      .pricelock-title { font-size: 17px; }
+    }
+
+    /* ─── Universal $2 add-on (amber dashed row) ─── */
+    .addon-universal {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: 28px auto 0;
+      max-width: 880px;
+      padding: 14px 20px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 14px;
+    }
+    .addon-universal p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--fg); }
+    .addon-universal strong { font-weight: 700; }
+    .addon-plus {
+      background: #F59E0B; color: #fff;
+      width: 26px; height: 26px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; flex-shrink: 0; font-size: 16px;
+    }
+    @media (max-width: 640px) { .addon-universal { padding: 12px 14px; } .addon-universal p { font-size: 13px; } }
+
+    /* ─── AI quota explainer ─── */
+    .ai-explainer {
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06));
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 14px;
+      padding: 18px 22px;
+      max-width: 880px;
+      margin: 20px auto 0;
+      font-size: 14px;
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    .ai-explainer strong { color: var(--brand-primary); }
+
+    /* ─── Creator API spotlight ─── */
+    .creator-api-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+    .creator-api-section h2 { font-size: clamp(22px, 3vw, 30px); margin-bottom: 8px; }
+    .creator-api-section .pill-pro { margin-bottom: 16px; display: inline-flex; }
+    .creator-api-section ul { list-style: none; padding: 0; margin: 20px 0 0; }
+    .creator-api-section ul li { padding: 10px 0; font-size: 15px; display: flex; gap: 10px; border-bottom: 1px solid var(--border); }
+    .creator-api-section ul li:last-child { border-bottom: none; }
+    .creator-api-section ul li::before { content: "→"; color: var(--brand-primary); font-weight: 700; flex-shrink: 0; }
+
+    /* ─── Compare tabs (expandable) ─── */
     .compare-tab {
       border-bottom: 1px solid var(--border);
       padding: 18px 0;
@@ -104,125 +230,166 @@
     .check { color: var(--success); font-weight: 700; }
     .cross { color: var(--fg-subtle); }
 
-    .save-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: var(--success-bg); color: #065F46;
-      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full);
+    /* ─── Compare matrix ─── */
+    .compare-matrix-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .compare-matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 560px;
+    }
+    .compare-matrix th {
+      background: var(--bg-muted);
+      padding: 14px 16px;
+      text-align: center;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+      position: sticky; top: 0;
+    }
+    .compare-matrix th:first-child { text-align: left; }
+    .compare-matrix td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .compare-matrix td:first-child { text-align: left; font-weight: 500; }
+    .compare-matrix tr:last-child td { border-bottom: none; }
+    .compare-matrix .category-row td {
+      background: var(--bg-muted);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
+      padding: 8px 16px;
     }
 
-    /* Price-lock banner */
-    .pricelock-banner {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      border: 1px solid rgba(99,102,241,0.4);
-      border-radius: 16px;
-      padding: 20px 28px;
-      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-      margin: 0 auto 32px;
-      max-width: 880px;
+    /* ─── FAQ ─── */
+    .faq-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-bottom: 10px;
     }
-    .pricelock-banner .lock-icon {
-      font-size: 32px; flex-shrink: 0;
-    }
-    .pricelock-banner .lock-body { flex: 1; min-width: 240px; }
-    .pricelock-banner .lock-title {
-      font-size: 17px; font-weight: 700;
-      color: #FDE68A;
-      margin: 0 0 4px;
-    }
-    .pricelock-banner .lock-desc {
-      font-size: 14px; color: rgba(249,250,251,0.80);
-      margin: 0;
-    }
+    .faq-item summary { font-weight: 600; cursor: pointer; font-size: 15px; list-style: none; }
+    .faq-item p { color: var(--fg-muted); margin-top: 12px; font-size: 14px; line-height: 1.6; }
 
-    /* Free tier custom domain add-on note */
-    .free-domain-note {
-      margin-top: 12px;
-      padding: 10px 14px;
-      background: rgba(245,158,11,0.10);
-      border: 1.5px dashed #F59E0B;
-      border-radius: 10px;
-      font-size: 13px;
-      color: var(--fg);
+    /* ─── Optional badge section ─── */
+    .opt-badge-section {
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.06));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px 36px;
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
     }
-    .free-domain-note strong { color: #92400E; }
+    .opt-badge-section h3 { font-size: 20px; margin-bottom: 12px; }
+    .opt-badge-section p { font-size: 14px; color: var(--fg-muted); line-height: 1.65; max-width: 520px; margin: 0 auto; }
 
-    /* Locked-for-life pill badge */
-    .pill-locked {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(99,102,241,0.10);
-      border: 1px solid rgba(99,102,241,0.30);
-      color: #4338CA;
-      font-size: 11px; font-weight: 700;
-      padding: 3px 9px; border-radius: var(--radius-full);
-      margin-top: 8px;
+    /* ─── Sticky CTA bar ─── */
+    .sticky-cta {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+      z-index: 100;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+      flex-wrap: wrap;
     }
+    .sticky-cta.visible { transform: translateY(0); }
+    .sticky-cta p { margin: 0; font-size: 14px; font-weight: 600; }
+    @media (max-width: 640px) { .sticky-cta { padding: 10px 16px; } .sticky-cta p { display: none; } }
   </style>
 </head>
 <body>
   <div data-partial="nav"></div>
 
+  <!-- ═══════════════════════ HERO ═══════════════════════ -->
   <section class="container" style="padding: 64px 24px 32px; text-align:center">
     <span class="pill pill-warm">💸 No trials · 30-day money-back on any paid tier</span>
     <h1 style="margin-top: 20px; font-size: clamp(40px, 5vw, 60px);">Pick your tier. Switch anytime.</h1>
     <p class="text-muted" style="margin-top: 16px; font-size: 18px; max-width: 580px; margin-left: auto; margin-right: auto;">
-      Every paid feature is previewable on Free with a 🔒 Pro pill — no surprise paywalls mid-edit.
-      Upgrade only after you've seen it work.
+      One page is forever free. Upgrade only when you want — every paid feature is previewable on Free with a 🔒 pill, no surprise paywalls mid-edit.
     </p>
 
-    <!-- Price-lock-for-life banner -->
-    <div class="pricelock-banner">
-      <span class="lock-icon">🔒</span>
-      <div class="lock-body">
-        <p class="lock-title">Price locked for life</p>
-        <p class="lock-desc">Subscribe today and pay this price forever — as long as your subscription stays active, we never raise it. New prices only affect new signups.</p>
+    <!-- Price-lock-for-life banner (aligned with onboarding-tier.html) -->
+    <div class="pricelock-banner" style="margin-top: 32px;">
+      <div class="pricelock-icon" aria-hidden="true">🔒</div>
+      <div class="pricelock-body">
+        <p class="pricelock-title">Your price is locked for life.</p>
+        <p class="pricelock-text">
+          Subscribe today at <strong>$X/mo</strong> → pay <strong>$X/mo</strong> in year 3, year 5, year 10 —
+          as long as your subscription stays active. We <strong>never</strong> raise your price.
+          Only if you cancel and re-subscribe later do you pay the then-current price.
+        </p>
       </div>
     </div>
 
+    <!-- Billing toggle -->
     <div class="billing-toggle">
       <button class="active" data-bill="annual">Annual <span class="save-badge">Save 2 months</span></button>
       <button data-bill="monthly">Monthly</button>
     </div>
   </section>
 
-  <section class="container" style="padding-bottom: 40px;">
+  <!-- ═══════════════════════ TIER GRID ═══════════════════════ -->
+  <section class="container" style="padding-bottom: 0;">
     <div class="tier-grid">
 
       <!-- FREE -->
       <div class="tier">
         <h3>Free</h3>
-        <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="0" data-price-monthly="0">0</span><span class="cadence">forever</span></div>
+        <div class="price">
+          <span class="currency">$</span><span class="amount" data-price-annual="0" data-price-monthly="0">0</span><span class="cadence">forever</span>
+        </div>
         <p class="tagline">Everything an indie creator needs to start selling this weekend.</p>
         <ul>
-          <li>1 page (homepage) <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">coming soon</span></li>
+          <li>1 page (homepage) <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
           <li>Unlimited blocks + links</li>
+          <li>5 AI uses/mo <span style="font-size:12px;color:var(--fg-muted)">(theme matcher / bio rewrite / copy suggest)</span></li>
+          <li>30d analytics</li>
+          <li>All core features</li>
+          <li>tadaify.com/you subdomain</li>
           <li>Inline Stripe checkout</li>
-          <li>Per-product landing pages</li>
-          <li>30 days analytics</li>
-          <li>5 AI uses/mo (theme matcher + bio rewrite + copy suggest)</li>
-          <li>Community support</li>
           <li>No "Powered by" footer — ever</li>
         </ul>
-        <a href="./register.html" class="btn btn-secondary" style="margin-top: 18px;">Start free</a>
+        <div class="free-domain-note" style="margin-top:12px;padding:10px 14px;background:rgba(245,158,11,0.10);border:1.5px dashed #F59E0B;border-radius:10px;font-size:13px;color:var(--fg);">
+          <strong style="color:#92400E">Optional:</strong> Add your own domain for <strong>+$2/mo</strong> — no upgrade needed.
+        </div>
+        <a href="./register.html" class="btn btn-secondary" style="margin-top:18px; min-height:44px;">Start free →</a>
       </div>
 
       <!-- CREATOR -->
       <div class="tier tier-popular">
         <span class="tier-badge pill pill-pro">⭐ Most popular</span>
         <h3>Creator</h3>
-        <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="4" data-price-monthly="5">4</span><span class="cadence">/mo · billed annually</span></div>
-        <span class="pill-locked">🔒 Locked for life</span>
+        <div class="price">
+          <span class="currency">$</span><span class="amount" data-price-annual="4" data-price-monthly="5">4</span><span class="cadence">/mo · billed annually</span>
+        </div>
+        <span class="lock-badge">🔒 Locked for life</span>
         <p class="tagline" style="margin-top:10px;">Your domain, verified badge, 180d analytics, human support — the "I'm serious about this" tier.</p>
         <ul>
-          <li>5 pages — privacy, about, portfolio… <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">coming soon</span></li>
-          <li><strong>1 custom domain included</strong> (save $24/yr)</li>
-          <li>180 days analytics history</li>
+          <li>Everything in Free, plus:</li>
+          <li>5 pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
+          <li><strong>1 custom domain included</strong></li>
+          <li>180d analytics history</li>
           <li>20 AI uses/mo</li>
-          <li>24h email support</li>
-          <li>Custom favicon + OG image</li>
+          <li>Sell products + communities <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">Phase 1 commerce</span></li>
+          <li>Priority email support 24h</li>
+          <li>Custom favicon</li>
           <li>Scheduled publishing</li>
-          <li>Verified ✓ badge on your page</li>
+          <li>Verified ✓ creator badge</li>
           <li>Directory listing (opt-in)</li>
-          <li>Seamless upgrade from "domain-only" add-on</li>
         </ul>
         <a href="./register.html?plan=creator" class="btn btn-primary">Go Creator →</a>
       </div>
@@ -230,21 +397,25 @@
       <!-- PRO -->
       <div class="tier">
         <h3>Pro</h3>
-        <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="12" data-price-monthly="15">12</span><span class="cadence">/mo · billed annually</span></div>
-        <span class="pill-locked">🔒 Locked for life</span>
-        <p class="tagline" style="margin-top:10px;">Power features for creators treating this like a business.</p>
+        <div class="price">
+          <span class="currency">$</span><span class="amount" data-price-annual="12" data-price-monthly="15">12</span><span class="cadence">/mo · billed annually</span>
+        </div>
+        <span class="lock-badge">🔒 Locked for life</span>
+        <p class="tagline" style="margin-top:10px;">Power features for creators treating this like a business. Includes the <strong>Creator API</strong>.</p>
         <ul>
           <li>Everything in Creator, plus:</li>
-          <li>20 pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">coming soon</span></li>
-          <li>1 custom domain included</li>
+          <li>20 pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
+          <li>1 custom domain included (extra +$2/mo)</li>
           <li>Unlimited analytics history</li>
-          <li>100 AI uses/mo + Creator API + MCP server (Claude/ChatGPT)</li>
-          <li>Email + chat support (12h)</li>
-          <li>Pre-launch waitlist pages</li>
-          <li>Removable tadaify branding in email receipts</li>
-          <li>Abandoned-cart email recovery</li>
-          <li>A/B test blocks</li>
+          <li>100 AI uses/mo</li>
+          <li><strong>Creator API</strong> + MCP server + ChatGPT/Claude integration <span style="font-size:12px;color:var(--fg-muted)">"Hire your AI to manage your tadaify"</span></li>
+          <li>A/B testing</li>
+          <li>Advanced integrations</li>
+          <li>Removable branding in email receipts</li>
+          <li>Abandoned-cart recovery</li>
           <li>Advanced SEO tools</li>
+          <li>Email + chat support 12h</li>
+          <li>Pre-launch waitlist pages</li>
         </ul>
         <a href="./register.html?plan=pro" class="btn btn-secondary">Go Pro →</a>
       </div>
@@ -252,17 +423,19 @@
       <!-- BUSINESS -->
       <div class="tier">
         <h3>Business</h3>
-        <div class="price"><span class="currency">$</span><span class="amount" data-price-annual="40" data-price-monthly="49">40</span><span class="cadence">/mo · billed annually</span></div>
-        <span class="pill-locked">🔒 Locked for life</span>
-        <p class="tagline" style="margin-top:10px;">Teams, multi-brand, white-glove onboarding.</p>
+        <div class="price">
+          <span class="currency">$</span><span class="amount" data-price-annual="40" data-price-monthly="49">40</span><span class="cadence">/mo · billed annually</span>
+        </div>
+        <span class="lock-badge">🔒 Locked for life</span>
+        <p class="tagline" style="margin-top:10px;">Teams, multi-brand, white-glove onboarding. Agencies welcome.</p>
         <ul>
           <li>Everything in Pro, plus:</li>
-          <li>Unlimited pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">coming soon</span></li>
-          <li>10 custom domains (agency)</li>
+          <li>Unlimited pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
+          <li>10 custom domains (agency multi-client)</li>
           <li>Unlimited AI uses</li>
           <li>5 seats included (roles + audit log)</li>
-          <li>Multi-brand accounts</li>
-          <li>Priority support (2h, phone)</li>
+          <li>White-label exports</li>
+          <li>Priority support 2h (phone)</li>
           <li>Onboarding session + migration help</li>
           <li>SSO (Google Workspace / Okta)</li>
           <li>Dedicated account manager</li>
@@ -271,58 +444,137 @@
         <a href="./register.html?plan=business" class="btn btn-secondary">Start Business →</a>
       </div>
 
+    </div><!-- .tier-grid -->
+
+    <!-- Universal $2 add-on banner -->
+    <div class="addon-universal">
+      <span class="addon-plus">+</span>
+      <p>
+        Need extra domains? Add <strong>$2/mo per custom domain</strong> to any plan — Free included. No upgrade needed.
+      </p>
     </div>
 
-    <!-- CUSTOM DOMAIN ADD-ON -->
-    <div class="addon-callout">
-      <span style="font-size: 28px">🌐</span>
-      <div style="flex: 1; min-width: 260px;">
-        <strong style="font-size:16px">Custom domain add-on — $2/mo (or $20/yr)</strong>
-        <p class="text-muted text-sm" style="margin-top: 4px">
-          Available on <em>any</em> tier including Free. <code>yourname.com</code> → your tadaify page.
-          Creator tier already includes 1 domain free.
-        </p>
-      </div>
-      <a href="./register.html?domain=1" class="btn btn-secondary btn-sm">Add a domain →</a>
+    <!-- AI quota explainer -->
+    <div class="ai-explainer">
+      <strong>What counts as an AI use?</strong> Theme matcher, bio rewrite, block copy suggest — text-only AI features (DEC-AI-FEATURES-ROADMAP-01).
+      Image generation never consumes your AI quota. Free: 5/mo · Creator: 20/mo · Pro: 100/mo · Business: unlimited.
     </div>
   </section>
 
-  <!-- WHAT'S ON FREE -->
-  <section class="section" style="background: var(--bg-muted)">
-    <div class="container">
-      <div style="max-width: 640px; margin: 0 auto 24px; text-align: center">
-        <span class="pill pill-warm">🎁 Everything on Free</span>
-        <h2 style="margin-top: 14px">Everything you need on Free. Pay only when you grow.</h2>
-        <p class="text-muted" style="margin-top: 12px">Custom themes, analytics, scheduling, email capture, QR codes, animations, 0% fees — all included. No &ldquo;Powered by&rdquo; footer on your page, ever.</p>
-      </div>
+  <!-- ═══════════════════════ COMPARE MATRIX ═══════════════════════ -->
+  <section class="section container" style="max-width: 960px;">
+    <div style="text-align:center; margin-bottom: 32px;">
+      <span class="pill pill-warm" style="margin-bottom:14px; display:inline-flex;">📊 Compare all tiers</span>
+      <h2>Everything, side by side</h2>
+      <p class="text-muted" style="margin-top:10px;">Quick-scan matrix. Expandable categories below for full detail.</p>
+    </div>
 
-      <table class="compare-table" style="background:var(--bg-elevated);border-radius:14px;overflow:hidden; width: 100%; border-collapse: collapse;">
+    <div class="compare-matrix-wrap">
+      <table class="compare-matrix">
         <thead>
           <tr>
-            <th style="text-align:left; padding: 16px">Feature</th>
-            <th style="padding: 16px; text-align: center;">tadaify Free</th>
-            <th style="padding: 16px; text-align: center;">tadaify Creator ($5/mo)</th>
-            <th style="padding: 16px; text-align: center;">tadaify Pro ($15/mo)</th>
+            <th style="width:36%">Feature</th>
+            <th>Free</th>
+            <th>Creator<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$5/mo</span></th>
+            <th>Pro<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$15/mo</span></th>
+            <th>Business<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$49/mo</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">No &ldquo;Powered by&rdquo; footer</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">Animated intro on page load</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">Inline Stripe checkout (no redirect)</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">Per-product sales pages</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">Guest-mode editor (no signup)</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">Analytics history</td><td>30 days</td><td>180 days</td><td>Unlimited</td></tr>
-          <tr><td style="padding: 12px 16px; border-top:1px solid var(--border)">Platform fee on sales</td><td class="check">0%</td><td class="check">0%</td><td class="check">0%</td></tr>
+          <!-- Pages & Domains -->
+          <tr class="category-row"><td colspan="5">Pages &amp; Domains</td></tr>
+          <tr><td>Pages</td><td>1</td><td>5</td><td>20</td><td>Unlimited</td></tr>
+          <tr><td>Custom domain</td><td>+$2/mo add-on</td><td>1 included</td><td>1 incl. (extra +$2/mo)</td><td>10 included</td></tr>
+          <tr><td>tadaify.com subdomain</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Scheduled publishing</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Pre-launch waitlist pages</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+
+          <!-- Analytics -->
+          <tr class="category-row"><td colspan="5">Analytics</td></tr>
+          <tr><td>Analytics history</td><td>30 days</td><td>180 days</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>Per-block clicks</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Geography + UTM</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Conversion funnel</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+
+          <!-- AI -->
+          <tr class="category-row"><td colspan="5">AI (text-only)</td></tr>
+          <tr><td>AI uses / month</td><td>5</td><td>20</td><td>100</td><td>Unlimited</td></tr>
+          <tr><td>Theme matcher</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Bio rewrite</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Block copy suggest</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Creator API + MCP server</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+
+          <!-- Editor & Branding -->
+          <tr class="category-row"><td colspan="5">Editor &amp; Branding</td></tr>
+          <tr><td>Unlimited blocks</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Theme customization</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Custom favicon</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Verified ✓ creator badge</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>A/B block testing</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Removable email branding</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>White-label exports</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+
+          <!-- Commerce -->
+          <tr class="category-row"><td colspan="5">Commerce</td></tr>
+          <tr><td>Inline Stripe checkout</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Platform fee on sales</td><td class="check">0%</td><td class="check">0%</td><td class="check">0%</td><td class="check">0%</td></tr>
+          <tr><td>Sell products + communities</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Abandoned-cart recovery</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Advanced SEO tools</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+
+          <!-- Email & Integrations -->
+          <tr class="category-row"><td colspan="5">Email &amp; Integrations</td></tr>
+          <tr><td>Email capture blocks</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Mailchimp / ConvertKit / Resend</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Zapier / Make webhooks</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Custom webhook on sale</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Directory listing (opt-in)</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+
+          <!-- Support & Team -->
+          <tr class="category-row"><td colspan="5">Support &amp; Team</td></tr>
+          <tr><td>Support channel</td><td>Community</td><td>Email 24h</td><td>Email + chat 12h</td><td>Phone 2h</td></tr>
+          <tr><td>Seats</td><td>1</td><td>1</td><td>2</td><td>5 (add $8/seat)</td></tr>
+          <tr><td>Roles + audit log</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>SSO (Google Workspace / Okta)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>Onboarding + migration help</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>Dedicated account manager</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>99.95% uptime SLA</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+
+          <!-- Price guarantee -->
+          <tr class="category-row"><td colspan="5">Guarantee</td></tr>
+          <tr><td>Price locked for life</td><td>—</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>30-day money-back</td><td>—</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- EXPANDABLE FULL COMPARISON -->
+  <!-- ═══════════════════════ CREATOR API SPOTLIGHT ═══════════════════════ -->
+  <section class="section">
+    <div class="creator-api-section">
+      <span class="pill pill-pro" style="margin-bottom:14px; display:inline-flex;">⚡ Pro tier exclusive</span>
+      <h2>Hire ChatGPT (or Claude) to manage your tada!ify</h2>
+      <p class="text-muted" style="margin-top:8px; font-size:15px;">
+        Pro tier ships with our <strong>Creator API</strong> — so your AI assistant can run your page while you focus on creating.
+      </p>
+      <ul>
+        <li>REST API + OpenAPI 3.0 schema published at <code>tadaify.com/api/openapi.json</code></li>
+        <li>MCP server (<code>@tadaify/mcp</code> npm) — 1-line Claude Desktop config</li>
+        <li>Custom GPT instructions template — copy-paste, add your API key, done</li>
+        <li>Agent-recipe gallery: "daily refresh latest YouTube video" · "pinned message from Notion DB" · "reorder by analytics"</li>
+      </ul>
+      <div style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="./register.html?plan=pro" class="btn btn-primary" style="min-height:44px;">Get Creator API with Pro →</a>
+        <a href="#" class="btn btn-secondary" style="min-height:44px;">View API docs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ EXPANDABLE FULL COMPARISON ═══════════════════════ -->
   <section class="section container" style="max-width: 880px">
     <h2 style="text-align:center">Full feature comparison</h2>
     <p class="text-muted text-center" style="margin-top: 10px; margin-bottom: 28px">
-      By category. Expand to see exactly what each tier includes.
+      By category — expand to see exactly what each tier includes.
     </p>
 
     <details class="compare-tab" open>
@@ -332,6 +584,7 @@
         <tbody>
           <tr><td>Unlimited blocks</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>Theme customization</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Custom favicon</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>Scheduled publishing</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>A/B block testing</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
         </tbody>
@@ -345,8 +598,8 @@
         <tbody>
           <tr><td>Inline Stripe checkout</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>Platform fee on sales</td><td class="check">0%</td><td class="check">0%</td><td class="check">0%</td><td class="check">0%</td></tr>
-          <tr><td>Abandoned-cart email</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td>Upsell / cross-sell</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Sell products + communities</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Abandoned-cart recovery</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
         </tbody>
       </table>
     </details>
@@ -378,14 +631,15 @@
     </details>
 
     <details class="compare-tab">
-      <summary>AI</summary>
+      <summary>AI (text-only — DEC-AI-FEATURES-ROADMAP-01)</summary>
       <table>
         <thead><tr><th>Feature</th><th>Free</th><th>Creator</th><th>Pro</th><th>Business</th></tr></thead>
         <tbody>
-          <tr><td>AI credits / mo</td><td>10</td><td>40</td><td>200</td><td>Unlimited</td></tr>
-          <tr><td>AI copywriter</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td>AI image generator</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td>AI layout builder</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>AI uses / month</td><td>5</td><td>20</td><td>100</td><td>Unlimited</td></tr>
+          <tr><td>Theme matcher</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Bio rewrite</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Block copy suggest</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Creator API + MCP server</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
         </tbody>
       </table>
     </details>
@@ -397,45 +651,89 @@
         <tbody>
           <tr><td>Seats</td><td>1</td><td>1</td><td>2</td><td>5 (add $8/seat)</td></tr>
           <tr><td>Roles + audit log</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td>SSO</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>SSO (Google Workspace / Okta)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
           <tr><td>SLA</td><td>—</td><td>—</td><td>—</td><td>99.95%</td></tr>
         </tbody>
       </table>
     </details>
   </section>
 
-  <!-- FAQ -->
+  <!-- ═══════════════════════ OPTIONAL SUPPORT BADGE ═══════════════════════ -->
+  <section class="section">
+    <div class="opt-badge-section">
+      <span style="font-size: 28px">💚</span>
+      <h3 style="margin-top:10px;">Help us grow (optional)</h3>
+      <p>
+        tada!ify never forces our brand on your page. But if you want to support an indie team growing
+        something they care about, you can opt-in to a small <strong>"made with tada!ify"</strong> footer badge.
+        Default <strong>OFF</strong> on every tier, always free, never tracked. Turn it on in Settings → Branding.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ FAQ ═══════════════════════ -->
   <section class="section container" style="max-width: 760px; background: var(--bg-muted); border-radius: 28px; padding: 48px 40px; margin-bottom: 80px;">
     <h2 style="text-align:center">Pricing FAQ</h2>
     <div style="margin-top: 28px">
-      <details class="faq" open style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 10px;">
-        <summary style="font-weight:600; cursor:pointer">Why 0% fees on paid tiers?</summary>
-        <p class="text-muted" style="margin-top:12px">Because we already charge you a subscription. Charging again on the sale is a double-dip we opt out of. Stripe&rsquo;s processing fee still applies (~2.9% + 30&cent;) &mdash; that&rsquo;s Stripe&rsquo;s, not ours.</p>
+
+      <details class="faq-item" open>
+        <summary>Will my price ever go up?</summary>
+        <p>No. Your price is locked for life as long as your subscription stays active (DEC-PRICELOCK-01). If you cancel and re-subscribe later, you pay the then-current price. We update prices for new signups only.</p>
       </details>
-      <details class="faq" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 10px;">
-        <summary style="font-weight:600; cursor:pointer">How does the money-back guarantee work?</summary>
-        <p class="text-muted" style="margin-top:12px">Email us within 30 days of your first charge on any paid tier. No questions, no "reason required". Full refund, no partial prorations.</p>
+
+      <details class="faq-item">
+        <summary>Are there free trials?</summary>
+        <p>No trials (DEC-TRIAL-01) — they create dark-pattern pressure. Instead: every paid feature is <em>previewable</em> on Free with a 🔒 pill so you can see it before paying. And if you upgrade and change your mind, email us within 30 days for a full refund. No questions asked.</p>
       </details>
-      <details class="faq" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 10px;">
-        <summary style="font-weight:600; cursor:pointer">Custom domain — cross-tier math?</summary>
-        <p class="text-muted" style="margin-top:12px">Free + $2/mo domain = $24/yr. Creator tier (no domain add-on) = $48/yr and includes 1 domain. So if you want <em>just</em> a domain, stay on Free + add-on. If you want support + analytics + AI, Creator is $2/mo more net.</p>
+
+      <details class="faq-item">
+        <summary>Can I have multiple pages?</summary>
+        <p>Free starts with 1 page (homepage). Multi-page is coming post-MVP: Creator gets 5, Pro gets 20, Business gets unlimited. All current plans lock in at the multi-page tier when the feature ships — no price bump (DEC-MULTIPAGE-01).</p>
       </details>
-      <details class="faq" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 10px;">
-        <summary style="font-weight:600; cursor:pointer">Annual vs monthly — is it worth it?</summary>
-        <p class="text-muted" style="margin-top:12px">Annual gives you 2 months free. If you're not sure, start monthly and switch later — no penalty, same price day 1 when you upgrade.</p>
+
+      <details class="faq-item">
+        <summary>Do you take a cut on my products?</summary>
+        <p>0% platform fee on every tier. We make money from subscriptions, not commissions. Stripe processor fees (~2.9% + $0.30/tx) are Stripe's — not ours.</p>
       </details>
-      <details class="faq" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 10px;">
-        <summary style="font-weight:600; cursor:pointer">Enterprise / over 5 seats?</summary>
-        <p class="text-muted" style="margin-top:12px">Business tier scales per seat ($8/seat beyond 5). For agencies managing 10+ client brands, reach out — we have a flat custom SOW with shared billing.</p>
+
+      <details class="faq-item">
+        <summary>Can ChatGPT manage my page for me?</summary>
+        <p>Yes — Pro tier ships with our Creator API + MCP server + a copy-paste Custom GPT instructions template (DEC-CREATOR-API-01). Your AI assistant gets read/write access to your tada!ify page. Manage blocks, update content, reorder by analytics — all from a chat prompt.</p>
       </details>
-      <details class="faq" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 10px;">
-        <summary style="font-weight:600; cursor:pointer">EU VAT / sales tax?</summary>
-        <p class="text-muted" style="margin-top:12px">Yes, we collect EU VAT automatically for Member State buyers using Stripe Tax. Price shown excludes VAT; invoice includes both rows.</p>
+
+      <details class="faq-item">
+        <summary>Why 0% fees on paid tiers?</summary>
+        <p>Because we already charge you a subscription. Charging again on each sale is a double-dip we opt out of. Stripe's processing fee still applies (~2.9% + 30¢) — that's Stripe's, not ours.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>How does the money-back guarantee work?</summary>
+        <p>Email us within 30 days of your first charge on any paid tier. No questions, no "reason required". Full refund, no partial prorations.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Custom domain — cross-tier math?</summary>
+        <p>Free + $2/mo domain add-on = $24/yr. Creator tier (no add-on needed) = $48/yr and includes 1 domain. If you only want a domain, stay Free + add the domain. If you want support + analytics + AI, Creator is $2/mo more net (DEC-PRICELOCK-02).</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Annual vs monthly — is it worth it?</summary>
+        <p>Annual gives you 2 months free. If you're not sure, start monthly and switch anytime — no penalty, your locked price stays the same.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Enterprise / over 5 seats?</summary>
+        <p>Business tier scales per seat ($8/seat beyond 5). For agencies managing 10+ client brands, reach out — we offer a flat custom SOW with shared billing.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>EU VAT / sales tax?</summary>
+        <p>Yes, we collect EU VAT automatically for Member State buyers via Stripe Tax. Price shown excludes VAT; invoice includes both rows.</p>
       </details>
     </div>
   </section>
 
-  <!-- FINAL CTA -->
+  <!-- ═══════════════════════ FINAL CTA ═══════════════════════ -->
   <section class="cta-band">
     <div class="container">
       <h2>Start free. Upgrade anytime.</h2>
@@ -446,11 +744,18 @@
         🔒 Price locked for life — we never raise the price on active subscribers.
       </p>
       <div class="flex" style="justify-content:center; gap: 12px; margin-top: 28px; flex-wrap: wrap;">
-        <a href="./register.html" class="btn btn-warm btn-lg">Claim your handle →</a>
-        <a href="./try.html" class="btn btn-ghost btn-lg" style="color:#FFF; border:1px solid rgba(255,255,255,0.4)">Build a page without signing up</a>
+        <a href="./register.html" class="btn btn-warm btn-lg" style="min-height:44px;">Claim your handle →</a>
+        <a href="./try.html" class="btn btn-ghost btn-lg" style="color:#FFF; border:1px solid rgba(255,255,255,0.4); min-height:44px;">Build a page without signing up</a>
       </div>
     </div>
   </section>
+
+  <!-- ═══════════════════════ STICKY CTA ═══════════════════════ -->
+  <div class="sticky-cta" id="sticky-cta">
+    <p>Ready to unlock your full creator toolkit?</p>
+    <a href="./register.html" class="btn btn-primary btn-sm" style="min-height:44px; min-width:140px; white-space:nowrap;">Start free →</a>
+    <a href="./register.html?plan=creator" class="btn btn-secondary btn-sm" style="min-height:44px; min-width:140px; white-space:nowrap;">Go Creator $5/mo</a>
+  </div>
 
   <div data-partial="footer"></div>
 
@@ -472,6 +777,17 @@
         });
       });
     });
+
+    // Sticky CTA — show after scrolling past the tier grid
+    (function() {
+      var stickyEl = document.getElementById('sticky-cta');
+      var shown = false;
+      window.addEventListener('scroll', function() {
+        var scrolled = window.scrollY > 600;
+        if (scrolled && !shown) { stickyEl.classList.add('visible'); shown = true; }
+        else if (!scrolled && shown) { stickyEl.classList.remove('visible'); shown = false; }
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
