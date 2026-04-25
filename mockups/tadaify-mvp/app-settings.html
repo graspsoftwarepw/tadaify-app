@@ -247,6 +247,34 @@
     .nav-add-page .nav-pill { margin-left: auto; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 99px; background: var(--bg-muted); color: var(--fg-subtle); white-space: nowrap; }
     .nav-add-page:hover { background: transparent !important; }
 
+    /* Pages accordion (always-expanded read-only on Settings page) */
+    .nav-pages-parent { position: relative; }
+    .nav-pages-parent .nav-caret {
+      margin-left: 6px; flex-shrink: 0;
+      width: 14px; height: 14px;
+      color: var(--fg-subtle);
+      transform: rotate(90deg);
+    }
+    .nav-sub-list {
+      display: flex; flex-direction: column; gap: 1px;
+      margin: 2px 0 4px 17px;
+      padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+    .nav-sub-item {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 6px 10px; border-radius: 7px;
+      font-size: 12.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; text-decoration: none;
+      transition: background .12s ease, color .12s ease;
+      cursor: pointer;
+    }
+    .nav-sub-item svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--fg-subtle); }
+    .nav-sub-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .nav-sub-item.is-disabled { cursor: not-allowed; opacity: 0.55; font-style: italic; }
+    .nav-sub-item.is-disabled:hover { background: transparent; color: var(--fg-muted); }
+
     @media (min-width: 720px) and (max-width: 1099px) {
       aside.side { padding: 14px 8px; }
       .side-user .utxt, .side-user .chevron { display: none; }
@@ -254,6 +282,9 @@
       .nav-item { justify-content: center; padding: 10px 6px; }
       .nav-item > span.label, .nav-item .nav-count { display: none; }
       .nav-item svg { width: 20px; height: 20px; }
+      .nav-pages-parent .nav-caret { display: none; }
+      .nav-pages-parent .nav-count { display: none; }
+      .nav-sub-list { display: none; }
     }
 
     /* -----------------------------------------------------------------------
@@ -794,18 +825,25 @@
       <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
     </div>
 
-    <!-- GROUP 1: Homepage + Add page -->
+    <!-- GROUP 1: Pages (parent always expanded — no JS toggle on Settings page) -->
     <div class="nav-group">
-      <a href="./app-dashboard.html?tab=page" class="nav-item" data-tip="Homepage">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="label">Homepage</span>
-        <span class="nav-count">3</span>
+      <a href="./app-dashboard.html?tab=page" class="nav-item nav-pages-parent" data-tip="Pages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="label">Pages</span>
+        <span class="nav-count">1</span>
+        <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
-      <button class="nav-item nav-add-page" aria-disabled="true">
-        <span class="nav-icon">+</span>
-        <span class="nav-label">Add page</span>
-        <span class="nav-pill">soon</span>
-      </button>
+      <div class="nav-sub-list">
+        <a href="./app-dashboard.html?tab=page" class="nav-sub-item" data-tip="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </a>
+        <button class="nav-sub-item is-disabled" aria-disabled="true" data-tip="Multi-page coming Q+1 — DEC-MULTIPAGE-01">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Add page</span>
+          <span class="nav-pill" style="margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--bg-muted);color:var(--fg-subtle);white-space:nowrap">soon</span>
+        </button>
+      </div>
     </div>
 
     <div class="nav-divider"></div>
@@ -969,19 +1007,32 @@
             </div>
           </div>
 
-          <!-- Handle & Email (read-only) -->
+          <!-- Handle (editable, 1/30d cap) & Email -->
           <div class="settings-section">
             <div class="settings-section-title">Account identity</div>
 
             <div class="field-row">
               <div class="field-label">
                 Handle
-                <span class="field-hint">Your public URL slug</span>
+                <span class="field-hint">Your public URL slug · 1 change per 30 days</span>
               </div>
               <div class="field-body">
-                <input class="field-input" type="text" value="@alexandra" readonly>
-                <p style="font-size:12px;color:var(--fg-muted);margin-top:6px">
-                  Handle changes require manual review — <a href="mailto:support@tadaify.com" style="color:var(--brand-primary)">contact support</a>.
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <div style="position:relative;flex:1;min-width:240px">
+                    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--fg-muted);font-size:14px;pointer-events:none;font-family:var(--font-sans)">tadaify.com/</span>
+                    <input class="field-input" type="text" id="handle-input" value="alexandra"
+                           oninput="checkHandle(this.value)"
+                           style="padding-left:96px;padding-right:96px"
+                           maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <span id="handle-status" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--fg-muted)">current</span>
+                  </div>
+                  <button class="btn btn-primary btn-sm" id="handle-save-btn" disabled
+                          onclick="openHandleConfirm()">
+                    Save handle
+                  </button>
+                </div>
+                <p id="handle-hint" style="font-size:12px;color:var(--fg-muted);margin-top:6px">
+                  Lowercase letters, numbers, and dashes. 3–30 chars. Last changed: <strong>never</strong>.
                 </p>
               </div>
             </div>
@@ -1039,22 +1090,14 @@
             </p>
           </div>
 
-          <!-- Payment method -->
+          <!-- Recent invoices (read-only — Stripe is source of truth) -->
           <div class="settings-section">
-            <div class="settings-section-title with-action">
-              Payment method
-              <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would open Stripe payment update')">Update</button>
-            </div>
-            <div class="payment-card">
-              <span class="card-brand-pill">Visa</span>
-              <span style="font-size:13.5px;color:var(--fg)">•••• •••• •••• 4242</span>
-              <span style="font-size:12px;color:var(--fg-muted);margin-left:auto">Expires 08/27</span>
-            </div>
-          </div>
-
-          <!-- Invoices -->
-          <div class="settings-section">
-            <div class="settings-section-title">Invoices (last 12 months)</div>
+            <div class="settings-section-title">Recent invoices</div>
+            <p style="font-size:12.5px;color:var(--fg-muted);margin:-2px 0 12px;line-height:1.55">
+              Last 3 charges. Click a row to open the Stripe-hosted PDF in a new tab.
+              Full history, card update, and cancellation live in the
+              <a href="#" onclick="openStripePortal('invoices'); return false;" style="color:var(--brand-primary)">Stripe billing portal</a>.
+            </p>
             <div style="overflow-x:auto">
               <table class="invoice-table">
                 <thead>
@@ -1066,13 +1109,44 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Apr 1, 2026</td><td>$8.00</td><td><span class="status-paid">✓ Paid</span></td><td><button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would download PDF')">PDF</button></td></tr>
-                  <tr><td>Mar 1, 2026</td><td>$8.00</td><td><span class="status-paid">✓ Paid</span></td><td><button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would download PDF')">PDF</button></td></tr>
-                  <tr><td>Feb 1, 2026</td><td>$8.00</td><td><span class="status-paid">✓ Paid</span></td><td><button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would download PDF')">PDF</button></td></tr>
-                  <tr><td>Jan 1, 2026</td><td>$8.00</td><td><span class="status-paid">✓ Paid</span></td><td><button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would download PDF')">PDF</button></td></tr>
-                  <tr><td>Dec 1, 2025</td><td>$8.00</td><td><span class="status-paid">✓ Paid</span></td><td><button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would download PDF')">PDF</button></td></tr>
+                  <tr>
+                    <td>Apr 1, 2026</td><td>$8.00</td>
+                    <td><span class="status-paid">✓ Paid</span></td>
+                    <td><a href="#" onclick="openStripeInvoice('in_1Q9aLE...', event)" class="btn btn-ghost btn-xs">View on Stripe ↗</a></td>
+                  </tr>
+                  <tr>
+                    <td>Mar 1, 2026</td><td>$8.00</td>
+                    <td><span class="status-paid">✓ Paid</span></td>
+                    <td><a href="#" onclick="openStripeInvoice('in_1Q9aJX...', event)" class="btn btn-ghost btn-xs">View on Stripe ↗</a></td>
+                  </tr>
+                  <tr>
+                    <td>Feb 1, 2026</td><td>$8.00</td>
+                    <td><span class="status-paid">✓ Paid</span></td>
+                    <td><a href="#" onclick="openStripeInvoice('in_1Q9aHk...', event)" class="btn btn-ghost btn-xs">View on Stripe ↗</a></td>
+                  </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Manage in Stripe -->
+          <div class="settings-section">
+            <div class="settings-section-title">Manage in Stripe</div>
+            <p style="font-size:13px;color:var(--fg-muted);margin:-2px 0 14px;line-height:1.6">
+              Card on file, full invoice history (PDF), tax IDs and address, and one-click cancel
+              are managed inside the Stripe-hosted Customer Portal — we never see or store your card details.
+              You'll be redirected to Stripe and brought right back here when you're done.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              <button class="btn btn-primary btn-sm" onclick="openStripePortal('billing')">
+                Manage billing in Stripe ↗
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="openStripePortal('payment_method_update')">
+                Update card
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="openStripePortal('invoices')">
+                All invoices
+              </button>
             </div>
           </div>
 
@@ -1528,6 +1602,36 @@
   </div>
 </div>
 
+<!-- Change handle modal (1/30d cap, 30d redirect then released) -->
+<div class="modal-backdrop" id="change-handle-modal" onclick="closeModal(this, event)">
+  <div class="modal">
+    <button class="modal-close-x" onclick="this.closest('.modal-backdrop').classList.remove('open')">×</button>
+    <h3>Change handle?</h3>
+    <p class="modal-sub">
+      Your tadaify slug changes from <strong>tadaify.com/<span id="handle-old">alexandra</span></strong>
+      to <strong>tadaify.com/<span id="handle-new">—</span></strong>.
+    </p>
+    <div class="modal-warning" style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <strong>What happens to the old URL</strong><br>
+        For 30 days, <code>tadaify.com/<span class="handle-old-mirror">alexandra</span></code> will <strong>301-redirect to your primary page</strong>:
+        <span id="redirect-target-line" style="display:block;margin-top:4px">→ <code>https://alexandra.com/</code> <span style="color:var(--fg-muted);font-size:11.5px">(your active custom domain)</span></span>
+        After 30 days the old slug is released and someone else can claim it.
+      </div>
+      <div style="font-size:12.5px;color:var(--fg-muted);border-top:1px solid var(--border);padding-top:10px">
+        <strong>Custom domains stay bound to your account</strong> — they're not tied to your handle, so
+        <code class="handle-custom-mirror">alexandra.com</code> keeps working with no DNS change.
+        Only the tadaify.com slug needs a redirect.<br><br>
+        You can change your handle again in <strong>30 days</strong>.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-backdrop').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="alert('Mockup — would update handle, start 30d redirect, and lock further changes for 30d'); this.closest('.modal-backdrop').classList.remove('open')">Confirm change</button>
+    </div>
+  </div>
+</div>
+
 <!-- Cancel subscription modal (AP-010 one-click) -->
 <div class="modal-backdrop" id="cancel-modal" onclick="closeModal(this, event)">
   <div class="modal">
@@ -1737,6 +1841,7 @@
 
   /* ── Tier switcher (demo toolbar) ── */
   function setTier(tier) {
+    DEMO_TIER = tier;
     var apiLocked   = document.getElementById('api-locked');
     var apiUnlocked = document.getElementById('api-unlocked');
     var teamLocked  = document.getElementById('team-locked');
@@ -1765,6 +1870,120 @@
       b.style.color = 'var(--fg)';
       b.style.borderColor = 'var(--border)';
     });
+  }
+
+  /* ── Handle availability check (mockup demo, no network) ── */
+  var RESERVED_HANDLES = ['admin','api','app','www','support','blog','help','docs','login','register','signin','signup','about','pricing','terms','privacy','legal','contact','tadaify','settings','dashboard','onboarding','mail','email','status','assets','static','public','admin-panel'];
+  var TAKEN_DEMO = ['alex','john','test','demo','taken','sarah','emma','mike'];
+  // Handles whose previous owner changed their slug; redirect window still active.
+  // Keys = handle, values = days until release (30d policy → released and free to claim).
+  var EXPIRING_HANDLES = { 'taylor': 22, 'oldalex': 7, 'jess': 3 };
+  var CURRENT_HANDLE = 'alexandra';
+  var HANDLE_VALID_RE = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/;
+
+  function checkHandle(value) {
+    var status  = document.getElementById('handle-status');
+    var hint    = document.getElementById('handle-hint');
+    var saveBtn = document.getElementById('handle-save-btn');
+    var v = (value || '').toLowerCase().trim();
+
+    var setState = function(label, tone, msg) {
+      status.textContent = label;
+      if (tone === 'ok') {
+        status.style.background = 'rgba(34,197,94,.18)';
+        status.style.color = '#16a34a';
+      } else if (tone === 'err') {
+        status.style.background = 'rgba(239,68,68,.15)';
+        status.style.color = 'var(--danger)';
+      } else {
+        status.style.background = 'var(--surface-2)';
+        status.style.color = 'var(--fg-muted)';
+      }
+      hint.innerHTML = msg;
+      hint.style.color = (tone === 'err') ? 'var(--danger)' : 'var(--fg-muted)';
+    };
+
+    if (v === CURRENT_HANDLE) {
+      saveBtn.disabled = true;
+      setState('current', 'neutral', 'Lowercase letters, numbers, and dashes. 3–30 chars. Last changed: <strong>never</strong>.');
+      return;
+    }
+    if (v.length < 3) {
+      saveBtn.disabled = true;
+      setState('too short', 'err', 'Minimum 3 characters.');
+      return;
+    }
+    if (!HANDLE_VALID_RE.test(v)) {
+      saveBtn.disabled = true;
+      setState('invalid', 'err', 'Use lowercase letters, numbers, and dashes (no leading/trailing dash).');
+      return;
+    }
+    if (RESERVED_HANDLES.indexOf(v) !== -1) {
+      saveBtn.disabled = true;
+      setState('reserved', 'err', 'This handle is reserved for system use.');
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(EXPIRING_HANDLES, v)) {
+      var days = EXPIRING_HANDLES[v];
+      saveBtn.disabled = true;
+      setState('expiring · ' + days + 'd', 'err',
+        'Taken — releases in <strong>' + days + ' day' + (days === 1 ? '' : 's') + '</strong>. ' +
+        'Previous owner changed handle; we hold a 30-day redirect so their old links keep working. ' +
+        'Come back after release to claim it.');
+      return;
+    }
+    if (TAKEN_DEMO.indexOf(v) !== -1) {
+      saveBtn.disabled = true;
+      setState('taken', 'err', 'Someone already uses this handle.');
+      return;
+    }
+    saveBtn.disabled = false;
+    setState('available', 'ok',
+      'Available — old slug 301s to your primary page for 30 days, then released. ' +
+      'Custom domain (if any) keeps working unchanged. You can change again in 30 days.');
+  }
+
+  /* ── Stripe Customer Portal redirects (mockup demo) ──
+     Real impl: POST /create-billing-portal-session →
+     stripe.billingPortal.sessions.create({ customer, return_url, flow_data: {...} }) → redirect. */
+  function openStripePortal(flow) {
+    var labels = {
+      billing: 'overview',
+      payment_method_update: 'card update',
+      invoices: 'invoice history',
+      subscription_cancel: 'cancellation flow'
+    };
+    alert('Mockup — would redirect to Stripe Customer Portal (' + (labels[flow] || flow) + ').\nReturn URL: /app/settings#billing');
+  }
+  function openStripeInvoice(invoiceId, event) {
+    if (event) event.preventDefault();
+    alert('Mockup — would open Stripe-hosted invoice PDF for ' + invoiceId + ' in a new tab.');
+  }
+
+  /* Demo state for redirect-target preview. setTier() updates DEMO_TIER below. */
+  var DEMO_TIER = 'creator';
+  var DEMO_CUSTOM_DOMAIN = 'alexandra.com';
+
+  function openHandleConfirm() {
+    var v = document.getElementById('handle-input').value.toLowerCase().trim();
+    document.getElementById('handle-old').textContent = CURRENT_HANDLE;
+    document.getElementById('handle-new').textContent = v;
+    document.querySelectorAll('.handle-old-mirror').forEach(function(el){ el.textContent = CURRENT_HANDLE; });
+    document.querySelectorAll('.handle-custom-mirror').forEach(function(el){ el.textContent = DEMO_CUSTOM_DOMAIN; });
+
+    // Free tier in this demo = no custom domain → fallback to new slug.
+    var hasCustomDomain = (DEMO_TIER !== 'free');
+    var line = document.getElementById('redirect-target-line');
+    if (line) {
+      if (hasCustomDomain) {
+        line.innerHTML = '→ <code>https://' + DEMO_CUSTOM_DOMAIN + '/</code> ' +
+          '<span style="color:var(--fg-muted);font-size:11.5px">(your active custom domain — primary)</span>';
+      } else {
+        line.innerHTML = '→ <code>https://tadaify.com/' + v + '</code> ' +
+          '<span style="color:var(--fg-muted);font-size:11.5px">(no custom domain on file — fallback to new slug)</span>';
+      }
+    }
+    document.getElementById('change-handle-modal').classList.add('open');
   }
 
   /* ── Keyboard Esc closes modals ── */

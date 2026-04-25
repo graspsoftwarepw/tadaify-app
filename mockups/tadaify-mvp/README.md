@@ -132,7 +132,7 @@
 
 ### 2026-04-24 — DEC-MULTIPAGE-01 application
 - Pages tier ladder added to pricing.html, onboarding-tier.html
-- Dashboard sidebar gained Pages placeholder (post-merge: replaced with Homepage + disabled Add page)
+- Dashboard sidebar: Pages accordion (parent) with Home as first page + disabled Add page sub-item. Mirror this structure in every dashboard-side mockup; first page is always labeled **Home**, never "Homepage" (rejected 2026-04-25).
 - Issues #1, #3 forward-compat updates
 
 ### 2026-04-24 — Initial dashboard mockup wave
