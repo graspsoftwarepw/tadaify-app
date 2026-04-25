@@ -3533,9 +3533,9 @@
         document.getElementById('am-gc-title').textContent = `💡 ${tier} feature`;
         document.getElementById('am-gc-body').textContent = `"${item.name}" is a ${tier} feature. Add as a placeholder for now? You can swap to a real one after upgrading.`;
         const gc = document.getElementById('am-gating-confirm');
-        gc.classList.add('open');
+        gc.classList.add('visible');
         document.getElementById('am-gc-ok').onclick = () => {
-          gc.classList.remove('open');
+          gc.classList.remove('visible');
           alert(`Added "${item.name}" as a placeholder block.`);
           closeAddBlockModal();
         };
@@ -3545,21 +3545,23 @@
       closeAddBlockModal();
     }
 
-    function openAddBlockModal() {
+    function openAddBlockModal(preCategory) {
       const bd = document.getElementById('add-modal-backdrop');
       bd.classList.add('open');
-      amSetCategory('suggested');
+      document.body.style.overflow = 'hidden';
+      amSetCategory(preCategory || 'suggested');
       setTimeout(() => document.getElementById('add-modal-search-input').focus(), 50);
     }
 
     function closeAddBlockModal() {
       document.getElementById('add-modal-backdrop').classList.remove('open');
+      document.body.style.overflow = '';
       document.getElementById('add-modal-search-input').value = '';
       document.getElementById('add-modal-detected').classList.remove('visible');
     }
 
     function closeGatingConfirm() {
-      document.getElementById('am-gating-confirm').classList.remove('open');
+      document.getElementById('am-gating-confirm').classList.remove('visible');
     }
 
     function handleBackdropClick(e) {
