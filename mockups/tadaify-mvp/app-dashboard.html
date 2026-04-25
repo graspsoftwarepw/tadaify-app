@@ -2020,7 +2020,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               Copy link
             </button>
-            <button class="btn btn-primary btn-sm" onclick="openAddPanel()">
+            <button class="btn btn-primary btn-sm" onclick="openAddBlockModal()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add block
             </button>
@@ -2064,7 +2064,7 @@
               <button class="pc-social social-x" data-tip="X @alexandra" onclick="alert('In the real app this jumps to the X Follow block editor.')">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7 8 8.3 12h-6.5l-5-7.3L5.8 22H2.7l7.5-8.6L2 2h6.6l4.6 6.6L18.9 2zm-1 18.1h1.8L7.3 3.8H5.4l12.5 16.3z"/></svg>
               </button>
-              <button class="pc-social-add" data-tip="Add another social" onclick="openAddPanel()">+</button>
+              <button class="pc-social-add" data-tip="Add another social" onclick="openAddBlockModal()">+</button>
             </div>
           </div>
           <button class="pc-edit" onclick="toggleProfileEdit()">
@@ -2212,7 +2212,7 @@
               </div>
             </div>
 
-            <button class="add-block" onclick="openAddPanel()">
+            <button class="add-block" onclick="openAddBlockModal()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add a block
             </button>
@@ -2223,14 +2223,14 @@
         <div class="only-empty">
           <div class="section-label">Get started</div>
           <div class="empty-cards">
-            <button class="empty-card" onclick="openAddPanel()">
+            <button class="empty-card" onclick="openAddBlockModal()">
               <span class="ec-ic">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
               </span>
               <div class="ec-title">Add a link</div>
               <div class="ec-body">Your newsletter, portfolio, merch — anything with a URL.</div>
             </button>
-            <button class="empty-card" onclick="openAddPanel()">
+            <button class="empty-card" onclick="openAddBlockModal()">
               <span class="ec-ic">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10M12 2a15 15 0 0 0-4 10 15 15 0 0 0 4 10"/></svg>
               </span>
@@ -3344,6 +3344,262 @@
         try { localStorage.setItem('tadaify-theme', isDark ? 'dark' : 'light'); } catch (e) {}
       });
     }
+
+    // =================================================================
+    // Add Block modal — extensible integration picker
+    // =================================================================
+    const AM_CATEGORIES = [
+      { id: 'suggested', label: 'Suggested', icon: '✨' },
+      { id: 'link',      label: 'Link',      icon: '🔗' },
+      { id: 'social',    label: 'Social',    icon: '👥' },
+      { id: 'media',     label: 'Media',     icon: '▶' },
+      { id: 'commerce',  label: 'Commerce',  icon: '💳' },
+      { id: 'contact',   label: 'Contact',   icon: '✉' },
+      { id: 'events',    label: 'Events',    icon: '📅' },
+      { id: 'text',      label: 'Text',      icon: '📝' },
+      { id: 'layout',    label: 'Layout',    icon: '▦' }
+    ];
+    const AM_INTEGRATIONS = [
+      // featured = shown as tile above the list (per category)
+      { id:'add-link',     cat:'link',     name:'Add link',          desc:'Any URL — YouTube, blog, custom',           icon:'🔗', gating:'free',    featured:true },
+      { id:'collection',   cat:'link',     name:'Collection',        desc:'Group links under a heading',                icon:'📂', gating:'free',    featured:true },
+      { id:'instagram',    cat:'social',   name:'Instagram',         desc:'Follow-me block linking to your profile',    color:'linear-gradient(45deg,#F58529,#DD2A7B,#8134AF,#515BD4)', gating:'free', featured:true },
+      { id:'tiktok',       cat:'social',   name:'TikTok',            desc:'Follow-me block linking to your profile',    color:'#000', gating:'free', featured:true },
+      { id:'youtube',      cat:'social',   name:'YouTube',           desc:'Follow-me block linking to your channel',    color:'#FF0000', gating:'free', featured:true },
+      { id:'x',            cat:'social',   name:'X (Twitter)',       desc:'Follow-me block linking to your profile',    color:'#000', gating:'free' },
+      { id:'twitch',       cat:'social',   name:'Twitch',            desc:'Channel link with live indicator',           color:'#9146FF', gating:'free' },
+      { id:'spotify',      cat:'social',   name:'Spotify',           desc:'Profile link',                                color:'#1DB954', gating:'free' },
+      { id:'linkedin',     cat:'social',   name:'LinkedIn',          desc:'Profile link',                                color:'#0A66C2', gating:'free' },
+      { id:'pinterest',    cat:'social',   name:'Pinterest',         desc:'Profile link',                                color:'#E60023', gating:'free' },
+      { id:'threads',      cat:'social',   name:'Threads',           desc:'Profile link',                                color:'#000', gating:'free' },
+      { id:'soundcloud',   cat:'social',   name:'SoundCloud',        desc:'Profile link',                                color:'#FF5500', gating:'free' },
+      { id:'discord',      cat:'social',   name:'Discord',           desc:'Server invite',                               color:'#5865F2', gating:'free' },
+      { id:'yt-embed',     cat:'media',    name:'YouTube embed',     desc:'Inline video player',                         icon:'▶', gating:'free',  featured:true },
+      { id:'spot-track',   cat:'media',    name:'Spotify track',     desc:'Inline music player',                         icon:'♫', gating:'free',  featured:true },
+      { id:'vimeo',        cat:'media',    name:'Vimeo',             desc:'Embedded video',                              icon:'▶', gating:'free' },
+      { id:'apple-music',  cat:'media',    name:'Apple Music',       desc:'Track or playlist embed',                     icon:'♫', gating:'free' },
+      { id:'audio-file',   cat:'media',    name:'Audio file',        desc:'Upload an MP3 / WAV',                         icon:'🎙', gating:'creator' },
+      { id:'image-gallery',cat:'media',    name:'Image gallery',     desc:'Carousel of images',                          icon:'🖼', gating:'free' },
+      { id:'video-file',   cat:'media',    name:'Video file',        desc:'Upload an MP4',                               icon:'🎬', gating:'creator' },
+      { id:'product',      cat:'commerce', name:'Product',           desc:'Sell a digital download',                     icon:'💳', gating:'free',   featured:true },
+      { id:'service',      cat:'commerce', name:'Service',           desc:'Hourly / fixed-price service',                icon:'🛠', gating:'creator', featured:true },
+      { id:'tip-jar',      cat:'commerce', name:'Tip jar',           desc:'Accept tips — no platform fee',               icon:'🫙', gating:'free',  featured:true },
+      { id:'donations',    cat:'commerce', name:'Donations',         desc:'Cause-led contribution',                       icon:'❤', gating:'free' },
+      { id:'booking',      cat:'commerce', name:'Booking',           desc:'Calendar-based appointments',                 icon:'📅', gating:'pro' },
+      { id:'affiliate',    cat:'commerce', name:'Affiliate link',    desc:'Tracked link with commission split',          icon:'🤝', gating:'free' },
+      { id:'email',        cat:'contact',  name:'Email capture',     desc:'Grow your newsletter list',                   icon:'✉', gating:'free',  featured:true },
+      { id:'form',         cat:'contact',  name:'Contact form',      desc:'Custom-field form posting to your inbox',     icon:'📋', gating:'creator' },
+      { id:'cal-booking',  cat:'contact',  name:'Calendar booking',  desc:'Cal.com / Calendly / TidyCal embed',           icon:'📆', gating:'pro' },
+      { id:'whatsapp',     cat:'contact',  name:'WhatsApp',          desc:'Click-to-chat link',                          icon:'💬', gating:'free' },
+      { id:'event-card',   cat:'events',   name:'Event card',        desc:'Single upcoming event with date / RSVP',      icon:'🎟', gating:'free',  featured:true },
+      { id:'tour-list',    cat:'events',   name:'Tour list',         desc:'Multi-date tour or workshop schedule',         icon:'📍', gating:'pro' },
+      { id:'bandsintown',  cat:'events',   name:'Bandsintown',        desc:'Auto-pull tour dates from your Bandsintown',  icon:'🎤', gating:'pro' },
+      { id:'section',      cat:'text',     name:'Section header',    desc:'Heading divider with icon',                   icon:'§', gating:'free',  featured:true },
+      { id:'quote',        cat:'text',     name:'Quote',             desc:'Pull-quote with attribution',                 icon:'❝', gating:'free',  featured:true },
+      { id:'bio',          cat:'text',     name:'Bio paragraph',     desc:'Long-form intro under header',                icon:'¶', gating:'free' },
+      { id:'newsletter-cta',cat:'text',    name:'Newsletter CTA',    desc:'Stylised email-list prompt',                  icon:'✉', gating:'free' },
+      { id:'disclaimer',   cat:'text',     name:'Disclaimer',        desc:'Small-print compliance line',                 icon:'⚠', gating:'free' },
+      { id:'spacer',       cat:'layout',   name:'Spacer',            desc:'Vertical breathing room',                     icon:'⇕', gating:'free',  featured:true },
+      { id:'divider',      cat:'layout',   name:'Divider',           desc:'Subtle horizontal line',                      icon:'—', gating:'free',  featured:true },
+      { id:'image',        cat:'layout',   name:'Image',             desc:'Full-width image block',                      icon:'🖼', gating:'free' },
+      { id:'carousel',     cat:'layout',   name:'Image carousel',    desc:'Swipeable image set',                         icon:'🎠', gating:'free' },
+      { id:'logo-cloud',   cat:'layout',   name:'Logo cloud',        desc:'Press / clients / brands strip',              icon:'☁', gating:'free' },
+      { id:'featured',     cat:'layout',   name:'Featured card',     desc:'Highlighted prominent block',                 icon:'⭐', gating:'free' }
+    ];
+
+    // URL → integration auto-detect
+    const URL_DETECT = [
+      { hosts:['instagram.com','instagr.am'],     id:'instagram' },
+      { hosts:['tiktok.com'],                     id:'tiktok'    },
+      { hosts:['youtube.com','youtu.be'],         id:'youtube'   },
+      { hosts:['twitter.com','x.com'],            id:'x'         },
+      { hosts:['twitch.tv'],                      id:'twitch'    },
+      { hosts:['spotify.com','open.spotify.com'], id:'spotify'   },
+      { hosts:['linkedin.com'],                   id:'linkedin'  },
+      { hosts:['pinterest.com'],                  id:'pinterest' },
+      { hosts:['threads.net'],                    id:'threads'   },
+      { hosts:['soundcloud.com'],                 id:'soundcloud'},
+      { hosts:['discord.gg','discord.com'],       id:'discord'   },
+      { hosts:['vimeo.com'],                      id:'vimeo'     }
+    ];
+
+    let amActiveCategory = 'suggested';
+
+    function amRenderRail() {
+      const rail = document.getElementById('add-modal-rail');
+      if (!rail) return;
+      rail.innerHTML = AM_CATEGORIES.map(c =>
+        `<button class="am-cat ${c.id === amActiveCategory ? 'active' : ''}" data-cat="${c.id}" onclick="amSetCategory('${c.id}')">
+           <span style="font-size:14px;">${c.icon}</span><span>${c.label}</span>
+         </button>`
+      ).join('');
+    }
+
+    function amItemsForCategory(cat) {
+      if (cat === 'suggested') {
+        return AM_INTEGRATIONS.filter(i => i.featured).slice(0, 12);
+      }
+      return AM_INTEGRATIONS.filter(i => i.cat === cat);
+    }
+
+    function amGatingPill(gating) {
+      if (gating === 'creator') return '<span class="am-gating-pill creator">💡 Creator</span>';
+      if (gating === 'pro')     return '<span class="am-gating-pill pro">💡 Pro</span>';
+      return '';
+    }
+
+    function amTileMarkup(item) {
+      const colorBg = item.color || 'linear-gradient(135deg,#6366F1,#8B5CF6)';
+      const iconContent = item.color ? '' : (item.icon || '🔗');
+      const iconColor = item.color ? '#fff' : '#fff';
+      return `
+        <div class="am-feat-tile" data-id="${item.id}" onclick="amPickItem('${item.id}')">
+          <span class="am-ft-icon" style="background:${colorBg}; color:${iconColor};">${iconContent}</span>
+          <div class="am-ft-name">${item.name}</div>
+          ${amGatingPill(item.gating)}
+        </div>`;
+    }
+
+    function amRowMarkup(item) {
+      const colorBg = item.color || 'linear-gradient(135deg,#6366F1,#8B5CF6)';
+      const iconContent = item.color ? '' : (item.icon || '🔗');
+      return `
+        <div class="am-integration-row" data-id="${item.id}" onclick="amPickItem('${item.id}')">
+          <span class="am-int-icon" style="background:${colorBg}; color:#fff;">${iconContent}</span>
+          <div class="am-int-info">
+            <div class="am-int-name">${item.name}</div>
+            <div class="am-int-desc">${item.desc}</div>
+          </div>
+          <div class="am-int-right">
+            ${amGatingPill(item.gating)}
+            <span class="am-int-chevron">›</span>
+          </div>
+        </div>`;
+    }
+
+    function amRender() {
+      const cat = amActiveCategory;
+      const title = AM_CATEGORIES.find(c => c.id === cat)?.label || 'Add';
+      document.getElementById('add-modal-cat-title').textContent = title;
+      const items = amItemsForCategory(cat);
+      const featured = items.filter(i => i.featured).slice(0, 4);
+      const rest = items.filter(i => !featured.includes(i));
+      document.getElementById('add-modal-featured').innerHTML = featured.map(amTileMarkup).join('');
+      document.getElementById('add-modal-list').innerHTML = rest.map(amRowMarkup).join('');
+      document.getElementById('add-modal-empty').style.display = items.length === 0 ? 'flex' : 'none';
+    }
+
+    function amSetCategory(cat) {
+      amActiveCategory = cat;
+      document.getElementById('add-modal-search-input').value = '';
+      document.getElementById('add-modal-detected').classList.remove('visible');
+      amRenderRail();
+      amRender();
+    }
+
+    function amSearch(query) {
+      const q = (query || '').trim().toLowerCase();
+      const detectedEl = document.getElementById('add-modal-detected');
+      const detectedTextEl = document.getElementById('add-modal-detected-text');
+      // URL detection
+      const urlMatch = q.match(/(?:https?:\/\/)?(?:www\.)?([^\/\s]+)/);
+      if (urlMatch && q.includes('.')) {
+        const host = urlMatch[1];
+        for (const d of URL_DETECT) {
+          if (d.hosts.some(h => host.includes(h))) {
+            const it = AM_INTEGRATIONS.find(x => x.id === d.id);
+            if (it) {
+              detectedTextEl.textContent = `Detected: ${it.name} · Click to add`;
+              detectedEl.dataset.itemId = it.id;
+              detectedEl.classList.add('visible');
+              return;
+            }
+          }
+        }
+        // Fallback to generic Link
+        const link = AM_INTEGRATIONS.find(x => x.id === 'add-link');
+        detectedTextEl.textContent = `Detected: Generic link · Click to add`;
+        detectedEl.dataset.itemId = link.id;
+        detectedEl.classList.add('visible');
+        return;
+      }
+      detectedEl.classList.remove('visible');
+      // Text search
+      if (q === '') { amRender(); return; }
+      const filtered = AM_INTEGRATIONS.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        i.desc.toLowerCase().includes(q)
+      );
+      document.getElementById('add-modal-cat-title').textContent = `Results for "${query}"`;
+      document.getElementById('add-modal-featured').innerHTML = '';
+      document.getElementById('add-modal-list').innerHTML = filtered.map(amRowMarkup).join('');
+      document.getElementById('add-modal-empty').style.display = filtered.length === 0 ? 'flex' : 'none';
+    }
+
+    function amPickItem(itemId) {
+      const item = AM_INTEGRATIONS.find(i => i.id === itemId);
+      if (!item) return;
+      if (item.gating !== 'free') {
+        const tier = item.gating === 'creator' ? 'Creator ($5/mo)' : 'Pro ($15/mo)';
+        document.getElementById('am-gc-title').textContent = `💡 ${tier} feature`;
+        document.getElementById('am-gc-body').textContent = `"${item.name}" is a ${tier} feature. Add as a placeholder for now? You can swap to a real one after upgrading.`;
+        const gc = document.getElementById('am-gating-confirm');
+        gc.classList.add('open');
+        document.getElementById('am-gc-ok').onclick = () => {
+          gc.classList.remove('open');
+          alert(`Added "${item.name}" as a placeholder block.`);
+          closeAddBlockModal();
+        };
+        return;
+      }
+      alert(`Added "${item.name}" to your page.`);
+      closeAddBlockModal();
+    }
+
+    function openAddBlockModal() {
+      const bd = document.getElementById('add-modal-backdrop');
+      bd.classList.add('open');
+      amSetCategory('suggested');
+      setTimeout(() => document.getElementById('add-modal-search-input').focus(), 50);
+    }
+
+    function closeAddBlockModal() {
+      document.getElementById('add-modal-backdrop').classList.remove('open');
+      document.getElementById('add-modal-search-input').value = '';
+      document.getElementById('add-modal-detected').classList.remove('visible');
+    }
+
+    function closeGatingConfirm() {
+      document.getElementById('am-gating-confirm').classList.remove('open');
+    }
+
+    function handleBackdropClick(e) {
+      if (e.target === e.currentTarget) closeAddBlockModal();
+    }
+
+    // Wire up modal close button + ESC + search input + detected chip
+    document.getElementById('add-modal-close')?.addEventListener('click', closeAddBlockModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('add-modal-backdrop').classList.contains('open')) {
+        closeAddBlockModal();
+      }
+    });
+    document.getElementById('add-modal-search-input')?.addEventListener('input', e => amSearch(e.target.value));
+    document.getElementById('add-modal-detected')?.addEventListener('click', () => {
+      const id = document.getElementById('add-modal-detected').dataset.itemId;
+      if (id) amPickItem(id);
+    });
+
+    // Initial render so modal is ready when opened
+    amRenderRail();
+    amRender();
+
+    window.openAddBlockModal = openAddBlockModal;
+    window.closeAddBlockModal = closeAddBlockModal;
+    window.amSetCategory = amSetCategory;
+    window.amPickItem = amPickItem;
+    window.handleBackdropClick = handleBackdropClick;
+    window.closeGatingConfirm = closeGatingConfirm;
 
     // =================================================================
     // Boot
