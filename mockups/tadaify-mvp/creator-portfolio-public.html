@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Portfolio page render — creator view at tadaify.com/<handle>/portfolio — F-PAGE-PORTFOLIO-001 #16
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view that renders projects authored via app-page-portfolio.html.
+  5 sub-views demoed in one file via in-page hash routing:
+    #/             → Masonry list (default)
+    #/grid         → uniform Grid variant
+    #/carousel     → Carousel variant (single hero, dots + arrows)
+    #/project/<slug> → single project case study (cover + meta + body + gallery + collaborators + CTA + related)
+    #/tag/<slug>   → masonry filtered by tag
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: grids collapse to single column; pagination becomes "Load more".
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every link works in-page; tag filter actually filters; layout switcher swaps grids; lightbox actually opens)
+    - feedback_no_right_side_drawers (lightbox = centered modal, not a side panel)
+    - No tadaify nav bar on creator pages — minimal back-link bar instead.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio — Alexandra Silva — tadaify.com/alexandra/portfolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values from tokens.css (Indigo Serif).
+       Body wash mirrors creator-public + creator-blog-public so the
+       portfolio reads as a sub-page of the same site.
+       ============================================================ */
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    /* Mockup hub return strip */
+    .mockup-hub-strip {
+      background: rgba(99,102,241,0.07);
+      border-bottom: 1px dashed rgba(99,102,241,0.2);
+      padding: 8px 16px;
+      font-size: 12px;
+      text-align: center;
+      color: var(--fg-muted);
+    }
+    .mockup-hub-strip a { color: var(--brand-primary); font-weight: 600; }
+
+    /* URL strip + creator identity row (mirrors creator-blog-public) */
+    .top-strip {
+      max-width: 1080px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a { color: var(--fg-muted); padding: 4px 8px; border-radius: 6px; }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono {
+      font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+
+    .creator-row {
+      max-width: 1080px; margin: 0 auto;
+      padding: 32px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Page hero (list views) */
+    .page-hero {
+      max-width: 1080px; margin: 0 auto;
+      padding: 24px 20px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 52px);
+      letter-spacing: -0.02em; margin: 0;
+    }
+    .page-hero .lede {
+      max-width: 680px; color: var(--fg-muted);
+      font-size: 16.5px; line-height: 1.55; margin-top: 12px;
+    }
+    .page-hero .meta-line {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 18px; font-size: 12.5px; color: var(--fg-muted);
+    }
+    .page-hero .meta-line a {
+      color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .page-hero .meta-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+
+    .controls {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-top: 18px;
+    }
+    .controls .layout-switch {
+      display: inline-flex; gap: 2px; padding: 3px;
+      background: var(--bg-muted); border-radius: 9px;
+    }
+    .controls .layout-switch button {
+      padding: 5px 11px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--fg-muted);
+      font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .controls .layout-switch button.is-active {
+      background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm);
+    }
+    .controls .layout-switch svg { width: 12px; height: 12px; }
+    .controls .sort-wrap select {
+      padding: 6px 26px 6px 12px; border: 1px solid var(--border-strong); border-radius: 9px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 12.5px; outline: 0; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+    }
+
+    .tag-bar {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .tag-chip {
+      padding: 5px 11px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      transition: border-color .12s, color .12s, background .12s;
+      cursor: pointer;
+    }
+    .tag-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .tag-chip.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+    /* Section divider for layout sub-views (so reviewer can see all 3 in one file) */
+    .layout-section {
+      max-width: 1080px; margin: 0 auto;
+      padding: 14px 20px 4px;
+    }
+    .layout-section .layout-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-mono); font-size: 11px; color: var(--brand-primary);
+      background: rgba(99,102,241,0.10);
+      padding: 4px 10px; border-radius: 999px;
+    }
+
+    /* ===========================================================
+       MASONRY LAYOUT (default)
+       CSS columns to keep markup simple; works without JS.
+       =========================================================== */
+    .masonry {
+      max-width: 1080px; margin: 0 auto;
+      padding: 14px 20px 60px;
+      column-count: 3; column-gap: 16px;
+    }
+    @media (max-width: 900px) { .masonry { column-count: 2; } }
+    @media (max-width: 560px) { .masonry { column-count: 1; } }
+
+    .pcard-mason {
+      display: block; break-inside: avoid;
+      margin-bottom: 16px;
+      border-radius: 14px; overflow: hidden;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      text-decoration: none; color: inherit;
+      transition: transform .15s, border-color .15s, box-shadow .15s;
+      position: relative;
+    }
+    .pcard-mason:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border-strong);
+    }
+    .pcard-mason .cover {
+      width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 38px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    }
+    /* Asymmetric heights — the whole point of masonry */
+    .pcard-mason .cover.h-tall { height: 360px; font-size: 56px; }
+    .pcard-mason .cover.h-mid  { height: 240px; font-size: 44px; }
+    .pcard-mason .cover.h-low  { height: 180px; font-size: 36px; }
+    .pcard-mason .cover.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+    .pcard-mason .cover.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .pcard-mason .cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .pcard-mason .cover.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .pcard-mason .cover.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+    .pcard-mason .cover.t-violet  { background: linear-gradient(135deg, #C026D3, #7C3AED); }
+
+    .pcard-mason .featured-pin {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(11,15,30,0.65); color: #fff;
+      padding: 4px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .pcard-mason .video-pill {
+      position: absolute; bottom: 12px; right: 12px;
+      background: rgba(11,15,30,0.7); color: #fff;
+      padding: 3px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .pcard-mason .meta { padding: 14px 16px 16px; }
+    .pcard-mason .pc-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 18px; line-height: 1.25; letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .pcard-mason .pc-line {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 11.5px; color: var(--fg-muted);
+      margin-top: 6px;
+    }
+    .pcard-mason .pc-tag {
+      padding: 1px 7px; border-radius: 999px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-weight: 600; font-size: 10.5px;
+    }
+
+    /* ===========================================================
+       UNIFORM GRID LAYOUT
+       =========================================================== */
+    .uniform-grid {
+      max-width: 1080px; margin: 0 auto;
+      padding: 14px 20px 60px;
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 900px) { .uniform-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .uniform-grid { grid-template-columns: 1fr; } }
+
+    .pcard-grid {
+      display: flex; flex-direction: column;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      text-decoration: none; color: inherit;
+      transition: transform .15s, box-shadow .15s, border-color .15s;
+      position: relative;
+    }
+    .pcard-grid:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border-strong);
+    }
+    .pcard-grid .cover {
+      aspect-ratio: 1 / 1;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 48px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    }
+    .pcard-grid .cover.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+    .pcard-grid .cover.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .pcard-grid .cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .pcard-grid .cover.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .pcard-grid .cover.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+    .pcard-grid .cover.t-violet  { background: linear-gradient(135deg, #C026D3, #7C3AED); }
+    .pcard-grid .featured-pin {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(11,15,30,0.65); color: #fff;
+      padding: 4px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .pcard-grid .meta { padding: 14px 16px 16px; }
+    .pcard-grid .pc-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; line-height: 1.3; letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .pcard-grid .pc-line {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 11.5px; color: var(--fg-muted);
+      margin-top: 6px;
+    }
+    .pcard-grid .pc-tag {
+      padding: 1px 7px; border-radius: 999px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-weight: 600; font-size: 10.5px;
+    }
+
+    /* ===========================================================
+       CAROUSEL LAYOUT
+       =========================================================== */
+    .carousel {
+      max-width: 1080px; margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+    .carousel-stage {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      border-radius: 18px; overflow: hidden;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: flex-end;
+      box-shadow: var(--shadow-lg);
+    }
+    .carousel-stage.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+    .carousel-stage.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .carousel-stage.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .carousel-stage.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .carousel-stage.t-violet  { background: linear-gradient(135deg, #C026D3, #7C3AED); }
+
+    .carousel-stage .stage-cap {
+      width: 100%;
+      padding: 18px 24px 22px;
+      background: linear-gradient(180deg, transparent, rgba(11,15,30,0.55) 50%, rgba(11,15,30,0.85));
+      color: #fff;
+    }
+    .carousel-stage h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(22px, 3vw, 32px); margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .carousel-stage .stage-meta {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-top: 6px;
+      font-size: 13px; color: rgba(255,255,255,0.85);
+    }
+    .carousel-stage .stage-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,0.6); }
+    .carousel-stage .pc-tag {
+      padding: 2px 9px; border-radius: 999px;
+      background: rgba(255,255,255,0.18); color: #fff;
+      font-weight: 600; font-size: 11px;
+    }
+    .carousel-stage .open-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.95); color: #111827;
+      padding: 8px 14px; border-radius: 999px;
+      font-weight: 600; font-size: 13px; text-decoration: none;
+    }
+    .carousel-stage .open-cta:hover { background: #fff; }
+
+    .carousel-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(11,15,30,0.55); color: #fff; border: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .12s;
+    }
+    .carousel-arrow:hover { background: rgba(11,15,30,0.85); }
+    .carousel-arrow.prev { left: 16px; }
+    .carousel-arrow.next { right: 16px; }
+    .carousel-arrow svg { width: 16px; height: 16px; }
+
+    .carousel-dots {
+      display: flex; gap: 8px; justify-content: center;
+      margin-top: 18px;
+    }
+    .carousel-dots button {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--bg-sunken); border: 0; cursor: pointer;
+      transition: background .12s, transform .12s;
+    }
+    .carousel-dots button.is-current { background: var(--brand-primary); transform: scale(1.4); }
+    .carousel-dots button:hover { background: var(--border-strong); }
+
+    .carousel-thumbs {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(6, 1fr);
+      margin-top: 18px;
+    }
+    @media (max-width: 760px) { .carousel-thumbs { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 480px) { .carousel-thumbs { grid-template-columns: repeat(3, 1fr); } }
+    .carousel-thumbs button {
+      aspect-ratio: 1 / 1; border-radius: 8px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      border: 2px solid transparent; cursor: pointer;
+      color: #fff; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .12s, border-color .12s;
+    }
+    .carousel-thumbs button:hover { transform: translateY(-2px); }
+    .carousel-thumbs button.is-current { border-color: var(--brand-primary); }
+    .carousel-thumbs button.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+    .carousel-thumbs button.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .carousel-thumbs button.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .carousel-thumbs button.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .carousel-thumbs button.t-violet  { background: linear-gradient(135deg, #C026D3, #7C3AED); }
+
+    /* Pagination (re-used by all list layouts) */
+    .pagination {
+      max-width: 1080px; margin: 0 auto;
+      padding: 0 20px 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .pagination .pg-meta { font-size: 13px; color: var(--fg-muted); }
+    .pagination .pg-controls { display: flex; gap: 4px; }
+    .pagination .pg-controls button {
+      padding: 7px 12px; border: 1px solid var(--border-strong); border-radius: 7px;
+      background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13.5px; cursor: pointer;
+    }
+    .pagination .pg-controls button:hover:not(:disabled) { background: var(--bg-muted); }
+    .pagination .pg-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .pg-controls button.is-current { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .pagination .load-more { display: none; }
+    @media (max-width: 560px) {
+      .pagination .pg-meta, .pagination .pg-controls { display: none; }
+      .pagination .load-more { display: inline-flex; }
+      .pagination { justify-content: center; }
+    }
+    .load-more {
+      padding: 11px 22px; border-radius: 999px;
+      background: var(--brand-primary); color: #fff; font-weight: 600;
+      border: 0; cursor: pointer; font: inherit; font-size: 14px;
+    }
+    .load-more:hover { background: var(--brand-primary-hover); }
+
+    /* ============================================================
+       SINGLE PROJECT VIEW
+       ============================================================ */
+    .project-cover-full {
+      width: 100%;
+      aspect-ratio: 16 / 7;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 80px;
+      margin-top: 8px;
+    }
+    .project-article {
+      max-width: 760px; margin: 0 auto;
+      padding: 36px 20px 18px;
+    }
+    .project-article h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5.5vw, 54px);
+      letter-spacing: -0.02em; line-height: 1.1; margin: 0;
+    }
+    .project-meta-row {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 22px; padding: 16px 0;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      font-size: 13.5px; color: var(--fg-muted);
+    }
+    .project-meta-row .meta-cell { display: inline-flex; align-items: center; gap: 6px; }
+    .project-meta-row .meta-cell b { color: var(--fg); font-weight: 600; }
+    .project-meta-row .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .project-meta-row .share {
+      margin-left: auto; display: flex; gap: 6px;
+    }
+    .project-meta-row .share button {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      color: var(--fg-muted); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .project-meta-row .share button:hover { background: var(--bg-muted); color: var(--fg); }
+    .project-meta-row .share svg { width: 14px; height: 14px; }
+
+    .project-body {
+      max-width: 760px; margin: 0 auto;
+      padding: 0 20px 40px;
+      font-family: var(--font-display); font-size: 19px; line-height: 1.7; color: var(--fg);
+    }
+    .project-body p { margin: 0 0 1.1em; }
+    .project-body h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 28px; letter-spacing: -0.01em;
+      margin: 1.4em 0 0.6em;
+    }
+    .project-body blockquote {
+      margin: 1.4em 0; padding: 0 0 0 18px;
+      border-left: 3px solid var(--brand-primary);
+      color: var(--fg-muted); font-style: italic;
+    }
+    .project-body ul { padding-left: 22px; margin: 0 0 1.1em; }
+    .project-body li { margin-bottom: 0.4em; }
+
+    /* Image gallery — clickable thumbs open lightbox */
+    .gallery {
+      max-width: 1080px; margin: 0 auto;
+      padding: 8px 20px 32px;
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 760px) { .gallery { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .gallery { grid-template-columns: 1fr; } }
+    .gallery .gthumb {
+      aspect-ratio: 4 / 3;
+      border-radius: 12px; overflow: hidden; cursor: zoom-in;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 32px;
+      transition: transform .15s, box-shadow .15s;
+      position: relative;
+    }
+    .gallery .gthumb:hover { transform: scale(1.02); box-shadow: var(--shadow); }
+    .gallery .gthumb.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+    .gallery .gthumb.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .gallery .gthumb.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .gallery .gthumb.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .gallery .gthumb.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+    .gallery .gthumb .zoom-pill {
+      position: absolute; bottom: 8px; right: 8px;
+      background: rgba(11,15,30,0.6); color: #fff;
+      padding: 3px 7px; border-radius: 6px;
+      font-size: 10.5px; font-weight: 600; font-family: var(--font-sans);
+    }
+
+    /* Collaborators block */
+    .collabs {
+      max-width: 760px; margin: 0 auto;
+      padding: 0 20px 32px;
+    }
+    .collabs h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 18px; margin: 0 0 12px;
+      color: var(--fg);
+    }
+    .collabs .collab-list {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .collab-card {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .collab-card .av {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 13px;
+      flex-shrink: 0;
+    }
+    .collab-card .who { line-height: 1.3; }
+    .collab-card .name { font-weight: 600; font-size: 13.5px; }
+    .collab-card .role { font-size: 12px; color: var(--fg-muted); }
+
+    /* External CTA */
+    .ext-cta {
+      max-width: 760px; margin: 0 auto;
+      padding: 0 20px 32px;
+      display: flex; justify-content: center;
+    }
+    .ext-cta a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--brand-primary); color: #fff;
+      padding: 12px 22px; border-radius: 999px;
+      font-weight: 600; font-size: 14px;
+    }
+    .ext-cta a:hover { background: var(--brand-primary-hover); }
+    .ext-cta a svg { width: 14px; height: 14px; }
+
+    /* Project tags */
+    .project-tags {
+      max-width: 760px; margin: 0 auto;
+      padding: 4px 20px 24px;
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    /* Related */
+    .related {
+      max-width: 1080px; margin: 0 auto;
+      padding: 32px 20px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .related h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 0 0 18px;
+    }
+    .related-grid {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 760px) { .related-grid { grid-template-columns: 1fr; } }
+
+    /* Footer mirrors creator-public.html social block */
+    .creator-footer {
+      max-width: 1080px; margin: 0 auto;
+      padding: 36px 20px 60px;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+      border-top: 1px solid var(--border);
+    }
+    .creator-footer .socials { display: flex; gap: 10px; }
+    .creator-footer .social {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; text-decoration: none; color: var(--fg-muted);
+      transition: transform 140ms, border 140ms, color 140ms;
+    }
+    .creator-footer .social:hover { transform: translateY(-2px); border-color: var(--brand-primary); color: var(--brand-primary); }
+    .creator-footer .ftr-row {
+      display: flex; gap: 14px; align-items: center; font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .creator-footer .ftr-row a { color: var(--brand-primary); font-weight: 600; }
+
+    /* ============================================================
+       LIGHTBOX (centered modal — per no-right-side-drawers rule)
+       ============================================================ */
+    .lightbox-backdrop {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(11,15,30,0.85);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px; opacity: 0; transition: opacity .14s ease;
+    }
+    .lightbox-backdrop.is-open { display: flex; opacity: 1; }
+    .lightbox {
+      width: min(960px, 96vw); max-height: 92vh;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .lightbox .lb-stage {
+      width: 100%; flex: 1; min-height: 0;
+      border-radius: 14px; overflow: hidden;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 96px;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .lightbox-backdrop.is-open .lb-stage { transform: translateY(0) scale(1); }
+    .lightbox .lb-cap {
+      color: #fff; font-size: 13px;
+      display: flex; gap: 14px; align-items: center;
+    }
+    .lightbox .lb-cap b { font-weight: 600; }
+    .lightbox .lb-close {
+      position: fixed; top: 16px; right: 16px;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.12); color: #fff; border: 0;
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .lightbox .lb-close:hover { background: rgba(255,255,255,0.22); }
+
+    /* View switcher */
+    .view { display: none; animation: fade-in .18s ease-out both; }
+    .view.is-current { display: block; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .empty-tag {
+      max-width: 700px; margin: 0 auto;
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--fg-muted);
+    }
+    .empty-tag .emoji { font-size: 36px; }
+    .empty-tag h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 8px 0 6px; color: var(--fg); }
+
+  </style>
+</head>
+<body>
+
+<!-- Mockup hub return strip — public creator pages don't have tadaify chrome in production -->
+<div class="mockup-hub-strip">
+  <a href="./index.html">← back to mockup hub</a>
+  · Public visitor view ·
+  Switch view:
+  <a href="#/" onclick="showView('list','masonry')">Masonry</a>
+  ·
+  <a href="#/grid" onclick="showView('list','grid')">Grid</a>
+  ·
+  <a href="#/carousel" onclick="showView('list','carousel')">Carousel</a>
+  ·
+  <a href="#/project/sourdough-and-co" onclick="showSingle('sourdough-and-co')">Single project</a>
+  ·
+  <a href="#/tag/branding" onclick="filterByTag('branding'); showView('list','masonry')">Tag filter</a>
+</div>
+
+<!-- ===== Top URL strip (orientation only) ===== -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Alexandra's main page</a>
+  <span class="url-mono">tadaify.com/alexandra/<b id="url-tail">portfolio</b></span>
+</div>
+
+<!-- ===== Compact creator identity row ===== -->
+<div class="creator-row">
+  <div class="av">A</div>
+  <div class="who">
+    <div class="who-name">Alexandra Silva</div>
+    <div class="who-handle">@alexandrasilva · Lisbon · art direction &amp; illustration</div>
+  </div>
+  <a href="./creator-public.html" class="back-to-main">All my links →</a>
+</div>
+
+<!-- =================================================================
+     VIEW 1 — LIST (Masonry / Grid / Carousel — toggle below)
+     ================================================================= -->
+<section class="view is-current" id="view-list" data-view="list">
+
+  <div class="page-hero">
+    <h1>Selected work</h1>
+    <p class="lede">
+      A growing collection of brand systems, illustrations, and photography from the last six years.
+      Available for commissions — Lisbon &amp; remote.
+    </p>
+    <div class="meta-line">
+      <span><b id="proj-count">47</b> projects · 6 years</span>
+      <span class="dot"></span>
+      <a href="#" onclick="event.preventDefault();alert('Mockup — opens RSS in newsreader')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        Subscribe via RSS
+      </a>
+      <span class="dot"></span>
+      <a href="mailto:hello@alexandrasilva.studio" onclick="event.preventDefault();alert('Mockup — opens email composer')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Email me about a project
+      </a>
+    </div>
+
+    <div class="controls">
+      <div class="layout-switch" id="layout-switch" role="tablist" aria-label="Grid mode">
+        <button class="is-active" role="tab" aria-selected="true" onclick="switchLayout(this, 'masonry')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          Masonry
+        </button>
+        <button role="tab" aria-selected="false" onclick="switchLayout(this, 'grid')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Grid
+        </button>
+        <button role="tab" aria-selected="false" onclick="switchLayout(this, 'carousel')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="12" height="16" rx="2"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg>
+          Carousel
+        </button>
+      </div>
+
+      <div class="sort-wrap">
+        <select aria-label="Sort">
+          <option value="newest" selected>Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="featured">Featured first</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="tag-bar" id="tag-bar">
+      <button class="tag-chip is-active" data-tag="" onclick="filterByTag('')">All</button>
+      <button class="tag-chip" data-tag="branding"     onclick="filterByTag('branding')">Branding</button>
+      <button class="tag-chip" data-tag="illustration" onclick="filterByTag('illustration')">Illustration</button>
+      <button class="tag-chip" data-tag="photography"  onclick="filterByTag('photography')">Photography</button>
+      <button class="tag-chip" data-tag="3d"           onclick="filterByTag('3d')">3D</button>
+      <button class="tag-chip" data-tag="video"        onclick="filterByTag('video')">Video</button>
+      <button class="tag-chip" data-tag="lettering"    onclick="filterByTag('lettering')">Lettering</button>
+    </div>
+  </div>
+
+  <!-- ===== Layout sub-view: MASONRY (default) ===== -->
+  <div id="layout-masonry" class="layout-pane">
+    <div class="layout-section">
+      <span class="layout-tag">layout · masonry · #/</span>
+    </div>
+    <div class="masonry" id="masonry-grid">
+
+      <a class="pcard-mason" href="#/project/sourdough-and-co" data-tags="branding,illustration" onclick="showSingle('sourdough-and-co')">
+        <div class="cover h-tall t-warm" aria-hidden="true">🍞</div>
+        <span class="featured-pin">★ Featured</span>
+        <div class="meta">
+          <h3 class="pc-title">Sourdough &amp; Co — bakery rebrand</h3>
+          <div class="pc-line">
+            <span>2026 · Lisbon</span>
+            <span class="pc-tag">branding</span>
+            <span class="pc-tag">illustration</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/norte-bank-film" data-tags="video,branding" onclick="showSingle('norte-bank-film')">
+        <div class="cover h-mid t-slate" aria-hidden="true">▶</div>
+        <span class="featured-pin">★ Featured</span>
+        <span class="video-pill">▶ 0:42</span>
+        <div class="meta">
+          <h3 class="pc-title">Norte Bank — onboarding film</h3>
+          <div class="pc-line">
+            <span>2025 · Norte Bank</span>
+            <span class="pc-tag">video</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/sintra-fog" data-tags="photography" onclick="showSingle('sintra-fog')">
+        <div class="cover h-mid t-rose" aria-hidden="true">📷</div>
+        <span class="featured-pin">★ Featured</span>
+        <div class="meta">
+          <h3 class="pc-title">Sintra fog — landscape series</h3>
+          <div class="pc-line">
+            <span>2025 · Personal</span>
+            <span class="pc-tag">photography</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/botanica" data-tags="illustration,lettering" onclick="showSingle('botanica')">
+        <div class="cover h-low t-emerald" aria-hidden="true">🌿</div>
+        <div class="meta">
+          <h3 class="pc-title">Botanica — calendar lettering</h3>
+          <div class="pc-line">
+            <span>2025</span>
+            <span class="pc-tag">illustration</span>
+            <span class="pc-tag">lettering</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/cubica" data-tags="3d,branding" onclick="showSingle('cubica')">
+        <div class="cover h-tall t-violet" aria-hidden="true">🧊</div>
+        <div class="meta">
+          <h3 class="pc-title">Cubica — 3D type explorations</h3>
+          <div class="pc-line">
+            <span>2024 · Personal</span>
+            <span class="pc-tag">3d</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/after-hours" data-tags="photography" onclick="showSingle('after-hours')">
+        <div class="cover h-mid t-slate" aria-hidden="true">🌃</div>
+        <div class="meta">
+          <h3 class="pc-title">After hours — Lisbon nights</h3>
+          <div class="pc-line">
+            <span>2024 · Personal</span>
+            <span class="pc-tag">photography</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/marca-cafe" data-tags="branding" onclick="showSingle('marca-cafe')">
+        <div class="cover h-low t-sky" aria-hidden="true">📐</div>
+        <div class="meta">
+          <h3 class="pc-title">Marca Café — coffeeshop identity</h3>
+          <div class="pc-line">
+            <span>2024 · Marca</span>
+            <span class="pc-tag">branding</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/petalo" data-tags="illustration" onclick="showSingle('petalo')">
+        <div class="cover h-low t-rose" aria-hidden="true">🌸</div>
+        <div class="meta">
+          <h3 class="pc-title">Pétalo — perfume box illustration</h3>
+          <div class="pc-line">
+            <span>2024 · Pétalo Studio</span>
+            <span class="pc-tag">illustration</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="pcard-mason" href="#/project/ferrocarril" data-tags="branding,lettering" onclick="showSingle('ferrocarril')">
+        <div class="cover h-mid t-warm" aria-hidden="true">🚂</div>
+        <div class="meta">
+          <h3 class="pc-title">Ferrocarril — heritage railway poster set</h3>
+          <div class="pc-line">
+            <span>2023 · CP Comboios</span>
+            <span class="pc-tag">branding</span>
+            <span class="pc-tag">lettering</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Empty-tag state (revealed when filterByTag matches 0) -->
+    <div class="empty-tag" id="empty-tag-state" style="display:none">
+      <div class="emoji">🌿</div>
+      <h3>No projects tagged "<span id="empty-tag-name"></span>" yet</h3>
+      <p>Try another tag, or <a href="#" onclick="event.preventDefault();filterByTag('')" style="color:var(--brand-primary); font-weight:600">view all projects</a>.</p>
+    </div>
+
+    <div class="pagination">
+      <div class="pg-meta">Showing <b>1–9</b> of <b>47</b> projects</div>
+      <div class="pg-controls">
+        <button disabled aria-label="Previous">←</button>
+        <button class="is-current" aria-current="page">1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>4</button>
+        <button>5</button>
+        <button aria-label="Next">→</button>
+      </div>
+      <button class="load-more" onclick="alert('Mockup — appends next 9 projects')">Load more</button>
+    </div>
+  </div>
+
+  <!-- ===== Layout sub-view: GRID ===== -->
+  <div id="layout-grid" class="layout-pane" style="display:none">
+    <div class="layout-section">
+      <span class="layout-tag">layout · grid · #/grid</span>
+    </div>
+    <div class="uniform-grid" id="uniform-grid">
+
+      <a class="pcard-grid" href="#/project/sourdough-and-co" data-tags="branding,illustration" onclick="showSingle('sourdough-and-co')">
+        <div class="cover t-warm" aria-hidden="true">🍞</div>
+        <span class="featured-pin">★ Featured</span>
+        <div class="meta">
+          <h3 class="pc-title">Sourdough &amp; Co — bakery rebrand</h3>
+          <div class="pc-line"><span>2026</span><span class="pc-tag">branding</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/norte-bank-film" data-tags="video,branding" onclick="showSingle('norte-bank-film')">
+        <div class="cover t-slate" aria-hidden="true">▶</div>
+        <span class="featured-pin">★ Featured</span>
+        <div class="meta">
+          <h3 class="pc-title">Norte Bank — onboarding film</h3>
+          <div class="pc-line"><span>2025</span><span class="pc-tag">video</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/sintra-fog" data-tags="photography" onclick="showSingle('sintra-fog')">
+        <div class="cover t-rose" aria-hidden="true">📷</div>
+        <span class="featured-pin">★ Featured</span>
+        <div class="meta">
+          <h3 class="pc-title">Sintra fog — landscape series</h3>
+          <div class="pc-line"><span>2025</span><span class="pc-tag">photography</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/botanica" data-tags="illustration,lettering" onclick="showSingle('botanica')">
+        <div class="cover t-emerald" aria-hidden="true">🌿</div>
+        <div class="meta">
+          <h3 class="pc-title">Botanica — calendar lettering</h3>
+          <div class="pc-line"><span>2025</span><span class="pc-tag">illustration</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/cubica" data-tags="3d,branding" onclick="showSingle('cubica')">
+        <div class="cover t-violet" aria-hidden="true">🧊</div>
+        <div class="meta">
+          <h3 class="pc-title">Cubica — 3D type explorations</h3>
+          <div class="pc-line"><span>2024</span><span class="pc-tag">3d</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/after-hours" data-tags="photography" onclick="showSingle('after-hours')">
+        <div class="cover t-slate" aria-hidden="true">🌃</div>
+        <div class="meta">
+          <h3 class="pc-title">After hours — Lisbon nights</h3>
+          <div class="pc-line"><span>2024</span><span class="pc-tag">photography</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/marca-cafe" data-tags="branding" onclick="showSingle('marca-cafe')">
+        <div class="cover t-sky" aria-hidden="true">📐</div>
+        <div class="meta">
+          <h3 class="pc-title">Marca Café — coffeeshop identity</h3>
+          <div class="pc-line"><span>2024</span><span class="pc-tag">branding</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/petalo" data-tags="illustration" onclick="showSingle('petalo')">
+        <div class="cover t-rose" aria-hidden="true">🌸</div>
+        <div class="meta">
+          <h3 class="pc-title">Pétalo — perfume box illustration</h3>
+          <div class="pc-line"><span>2024</span><span class="pc-tag">illustration</span></div>
+        </div>
+      </a>
+
+      <a class="pcard-grid" href="#/project/ferrocarril" data-tags="branding,lettering" onclick="showSingle('ferrocarril')">
+        <div class="cover t-warm" aria-hidden="true">🚂</div>
+        <div class="meta">
+          <h3 class="pc-title">Ferrocarril — heritage railway poster set</h3>
+          <div class="pc-line"><span>2023</span><span class="pc-tag">branding</span></div>
+        </div>
+      </a>
+
+    </div>
+
+    <div class="pagination">
+      <div class="pg-meta">Showing <b>1–9</b> of <b>47</b> projects</div>
+      <div class="pg-controls">
+        <button disabled aria-label="Previous">←</button>
+        <button class="is-current" aria-current="page">1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>4</button>
+        <button>5</button>
+        <button aria-label="Next">→</button>
+      </div>
+      <button class="load-more" onclick="alert('Mockup — appends next 9 projects')">Load more</button>
+    </div>
+  </div>
+
+  <!-- ===== Layout sub-view: CAROUSEL ===== -->
+  <div id="layout-carousel" class="layout-pane" style="display:none">
+    <div class="layout-section">
+      <span class="layout-tag">layout · carousel · #/carousel</span>
+    </div>
+    <div class="carousel">
+      <div class="carousel-stage t-warm" id="carousel-stage" aria-live="polite">
+        <button class="carousel-arrow prev" aria-label="Previous project" onclick="carouselStep(-1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="carousel-arrow next" aria-label="Next project" onclick="carouselStep(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="stage-cap" id="stage-cap">
+          <h2 id="stage-title">Sourdough &amp; Co — bakery rebrand</h2>
+          <div class="stage-meta">
+            <span id="stage-year">2026</span>
+            <span class="dot"></span>
+            <span id="stage-client">Lisbon, PT</span>
+            <span class="dot"></span>
+            <span class="pc-tag">branding</span>
+            <span class="pc-tag">illustration</span>
+          </div>
+          <a class="open-cta" href="#/project/sourdough-and-co" onclick="showSingle('sourdough-and-co')">Open case study →</a>
+        </div>
+      </div>
+
+      <div class="carousel-dots" role="tablist" aria-label="Project navigation">
+        <button class="is-current" data-i="0" onclick="carouselGoTo(0)" aria-label="Project 1"></button>
+        <button data-i="1" onclick="carouselGoTo(1)" aria-label="Project 2"></button>
+        <button data-i="2" onclick="carouselGoTo(2)" aria-label="Project 3"></button>
+        <button data-i="3" onclick="carouselGoTo(3)" aria-label="Project 4"></button>
+        <button data-i="4" onclick="carouselGoTo(4)" aria-label="Project 5"></button>
+        <button data-i="5" onclick="carouselGoTo(5)" aria-label="Project 6"></button>
+      </div>
+
+      <div class="carousel-thumbs" id="carousel-thumbs">
+        <button class="t-warm    is-current" data-i="0" onclick="carouselGoTo(0)" aria-label="Sourdough &amp; Co">🍞</button>
+        <button class="t-slate"              data-i="1" onclick="carouselGoTo(1)" aria-label="Norte Bank">▶</button>
+        <button class="t-rose"               data-i="2" onclick="carouselGoTo(2)" aria-label="Sintra fog">📷</button>
+        <button class="t-emerald"            data-i="3" onclick="carouselGoTo(3)" aria-label="Botanica">🌿</button>
+        <button class="t-violet"             data-i="4" onclick="carouselGoTo(4)" aria-label="Cubica">🧊</button>
+        <button class="t-sky"                data-i="5" onclick="carouselGoTo(5)" aria-label="Marca Café">📐</button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- =================================================================
+     VIEW 2 — SINGLE PROJECT (#/project/<slug>)
+     ================================================================= -->
+<section class="view" id="view-project" data-view="project">
+
+  <div class="project-cover-full" aria-hidden="true" id="single-cover">🍞</div>
+
+  <article class="project-article">
+    <h1 id="single-title">Sourdough &amp; Co — bakery rebrand</h1>
+
+    <div class="project-meta-row">
+      <span class="meta-cell"><b id="single-year">2026</b></span>
+      <span class="dot"></span>
+      <span class="meta-cell">Medium · <b id="single-medium">Branding · Illustration</b></span>
+      <span class="dot"></span>
+      <span class="meta-cell">Client · <b id="single-client">Sourdough &amp; Co</b></span>
+      <div class="share">
+        <button data-tip="Copy link" aria-label="Copy link" onclick="alert('Mockup — link copied')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </button>
+        <button data-tip="Share to X" aria-label="Share to X" onclick="alert('Mockup — opens share dialog')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h3l-7.5 8.6L22 22h-6.6l-5.2-6.8L4.4 22H1.4l8.1-9.3L1 2h6.7l4.7 6.2L18 2z"/></svg>
+        </button>
+        <button data-tip="Share via email" aria-label="Share via email" onclick="alert('Mockup — opens mailto draft')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </button>
+      </div>
+    </div>
+  </article>
+
+  <div class="project-body">
+    <p>A four-month rebrand for a Lisbon neighborhood bakery — identity system, packaging across twelve SKUs, three custom illustrations for the seasonal range, and a printed loyalty card you genuinely want to keep in your wallet.</p>
+
+    <p>The wordmark uses a single-stroke italic to evoke a baker's quick chalk hand on a paper bag. The seal sits in a softened crest — formal enough for the loaf wrappers, friendly enough for the kids' birthday boxes.</p>
+
+    <h2>Brief</h2>
+    <p>Sourdough &amp; Co opened in 2018 with a logo cobbled together from a photo of a vintage Portuguese bakery sign. They wanted an identity that could grow with them — three more locations were already on the roadmap.</p>
+
+    <blockquote>"We needed something that doesn't shrink. The old logo only worked at the size we found it. The new one had to read on a 5cm sticker and a 2-metre awning."</blockquote>
+
+    <h2>Process</h2>
+    <ul>
+      <li>Two weeks of café visits + interviews with the head baker, two staff, six regulars</li>
+      <li>Three rounds of mark exploration; the chalk-italic landed in round 2</li>
+      <li>Packaging system: paper bags + wax-paper sheets + wooden bread tags + reusable cotton totes</li>
+      <li>Custom illustrations for the seasonal range (winter, spring, summer, fall) — printed in two-colour</li>
+      <li>Loyalty card in pearl card stock with hot foil — the "want to keep" object</li>
+    </ul>
+
+    <h2>Outcome</h2>
+    <p>Six months in, two new locations opened with the system applied end-to-end. The seasonal illustrations now drive an Instagram following the bakery did not have before — the original ask was identity, the unexpected outcome was content.</p>
+  </div>
+
+  <!-- Multi-image gallery -->
+  <div class="gallery" id="single-gallery">
+    <button class="gthumb t-warm"    onclick="openLightbox(0)" aria-label="Gallery image 1">🍞<span class="zoom-pill">1 / 5</span></button>
+    <button class="gthumb t-rose"    onclick="openLightbox(1)" aria-label="Gallery image 2">🥖<span class="zoom-pill">2 / 5</span></button>
+    <button class="gthumb t-emerald" onclick="openLightbox(2)" aria-label="Gallery image 3">🌾<span class="zoom-pill">3 / 5</span></button>
+    <button class="gthumb"           onclick="openLightbox(3)" aria-label="Gallery image 4">🧁<span class="zoom-pill">4 / 5</span></button>
+    <button class="gthumb t-sky"     onclick="openLightbox(4)" aria-label="Gallery image 5">📦<span class="zoom-pill">5 / 5</span></button>
+    <button class="gthumb t-slate"   onclick="openLightbox(5)" aria-label="Gallery image 6">🏷<span class="zoom-pill">6 / 5</span></button>
+  </div>
+
+  <!-- Collaborators (Business / Team feature) -->
+  <div class="collabs">
+    <h3>Made with</h3>
+    <div class="collab-list">
+      <div class="collab-card">
+        <div class="av">M</div>
+        <div class="who">
+          <div class="name">Maya Chen</div>
+          <div class="role">Co-illustration</div>
+        </div>
+      </div>
+      <div class="collab-card">
+        <div class="av">T</div>
+        <div class="who">
+          <div class="name">Tomás Reis</div>
+          <div class="role">Print &amp; production</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- External CTA (Project URL) -->
+  <div class="ext-cta">
+    <a href="https://behance.net/alexandra/sourdough" target="_blank" rel="noopener" onclick="event.preventDefault();alert('Mockup — opens Behance case study in new tab')">
+      View full case study on Behance
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </a>
+  </div>
+
+  <!-- Project tags -->
+  <div class="project-tags">
+    <button class="tag-chip" onclick="filterByTag('branding'); showView('list','masonry')">branding</button>
+    <button class="tag-chip" onclick="filterByTag('illustration'); showView('list','masonry')">illustration</button>
+    <button class="tag-chip" onclick="filterByTag('lettering'); showView('list','masonry')">lettering</button>
+  </div>
+
+  <!-- Related projects -->
+  <div class="related">
+    <h2>Related projects</h2>
+    <div class="related-grid">
+      <a class="pcard-grid" href="#/project/marca-cafe" onclick="showSingle('marca-cafe')">
+        <div class="cover t-sky" aria-hidden="true">📐</div>
+        <div class="meta">
+          <h3 class="pc-title">Marca Café — coffeeshop identity</h3>
+          <div class="pc-line"><span>2024</span><span class="pc-tag">branding</span></div>
+        </div>
+      </a>
+      <a class="pcard-grid" href="#/project/botanica" onclick="showSingle('botanica')">
+        <div class="cover t-emerald" aria-hidden="true">🌿</div>
+        <div class="meta">
+          <h3 class="pc-title">Botanica — calendar lettering</h3>
+          <div class="pc-line"><span>2025</span><span class="pc-tag">illustration</span></div>
+        </div>
+      </a>
+      <a class="pcard-grid" href="#/project/petalo" onclick="showSingle('petalo')">
+        <div class="cover t-rose" aria-hidden="true">🌸</div>
+        <div class="meta">
+          <h3 class="pc-title">Pétalo — perfume box illustration</h3>
+          <div class="pc-line"><span>2024</span><span class="pc-tag">illustration</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===== Footer (mirror creator-public.html social block) ===== -->
+<footer class="creator-footer">
+  <div class="socials">
+    <a href="#" class="social" title="Instagram" aria-label="Instagram" onclick="event.preventDefault();alert('Mockup — opens Instagram')">📸</a>
+    <a href="#" class="social" title="Behance"   aria-label="Behance"   onclick="event.preventDefault();alert('Mockup — opens Behance')">🅑</a>
+    <a href="#" class="social" title="Dribbble"  aria-label="Dribbble"  onclick="event.preventDefault();alert('Mockup — opens Dribbble')">🏀</a>
+    <a href="#" class="social" title="Email"     aria-label="Email"     onclick="event.preventDefault();alert('Mockup — opens email composer')">✉️</a>
+  </div>
+  <div class="ftr-row">
+    Powered by
+    <span class="wordmark wordmark-sm" style="font-family:var(--font-display);">
+      <span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>
+    </span>
+    <span style="opacity:0.6">·</span>
+    <a href="./landing.html">get yours free →</a>
+  </div>
+</footer>
+
+<!-- ============================================================
+     LIGHTBOX (centered modal — per no-right-side-drawers)
+     ============================================================ -->
+<div class="lightbox-backdrop" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview" hidden>
+  <button class="lb-close" onclick="closeLightbox()" aria-label="Close (Esc)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="lightbox">
+    <div class="lb-stage" id="lb-stage" aria-live="polite">🍞</div>
+    <div class="lb-cap"><b id="lb-counter">1 / 6</b><span>·</span><span id="lb-name">Cover — wordmark + crest</span></div>
+  </div>
+</div>
+
+<script src="./shared/tokens.js"></script>
+<script>
+  // ============================================================
+  // View routing (#/, #/grid, #/carousel, #/project/<slug>, #/tag/<slug>)
+  // ============================================================
+  function showView(name, layoutMode) {
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('is-current'); });
+    var el = document.getElementById('view-' + name);
+    if (el) el.classList.add('is-current');
+
+    if (name === 'list' && layoutMode) {
+      switchLayoutTo(layoutMode);
+    }
+
+    var tail = name === 'project' ? 'portfolio/' + (window.__currentProjectSlug || 'project')
+             : (name === 'list' && layoutMode === 'grid')     ? 'portfolio?layout=grid'
+             : (name === 'list' && layoutMode === 'carousel') ? 'portfolio?layout=carousel'
+             : (window.__currentTag) ? 'portfolio?tag=' + window.__currentTag
+             : 'portfolio';
+    document.getElementById('url-tail').textContent = tail;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showSingle(slug) {
+    window.__currentProjectSlug = slug;
+    var p = projectFor(slug);
+    document.getElementById('single-title').innerHTML  = p.title;
+    document.getElementById('single-cover').textContent = p.emoji;
+    document.getElementById('single-cover').style.background = p.bg;
+    document.getElementById('single-year').textContent  = p.year;
+    document.getElementById('single-medium').textContent = p.medium;
+    document.getElementById('single-client').textContent = p.client;
+    showView('project');
+    return false;
+  }
+
+  function projectFor(slug) {
+    var data = {
+      'sourdough-and-co':  { title: 'Sourdough &amp; Co — bakery rebrand', emoji: '🍞', bg: 'linear-gradient(135deg,#FDE68A,#F59E0B)', year: '2026', medium: 'Branding · Illustration', client: 'Sourdough &amp; Co' },
+      'norte-bank-film':   { title: 'Norte Bank — onboarding film',         emoji: '▶',  bg: 'linear-gradient(135deg,#475569,#0F172A)', year: '2025', medium: 'Video · Branding',     client: 'Norte Bank' },
+      'sintra-fog':        { title: 'Sintra fog — landscape series',        emoji: '📷', bg: 'linear-gradient(135deg,#FB7185,#BE185D)', year: '2025', medium: 'Photography',           client: 'Personal' },
+      'botanica':          { title: 'Botanica — calendar lettering',        emoji: '🌿', bg: 'linear-gradient(135deg,#34D399,#047857)', year: '2025', medium: 'Illustration · Lettering', client: 'Botanica Magazine' },
+      'cubica':            { title: 'Cubica — 3D type explorations',        emoji: '🧊', bg: 'linear-gradient(135deg,#C026D3,#7C3AED)', year: '2024', medium: '3D · Branding',         client: 'Personal' },
+      'after-hours':       { title: 'After hours — Lisbon nights',          emoji: '🌃', bg: 'linear-gradient(135deg,#475569,#0F172A)', year: '2024', medium: 'Photography',           client: 'Personal' },
+      'marca-cafe':        { title: 'Marca Café — coffeeshop identity',     emoji: '📐', bg: 'linear-gradient(135deg,#38BDF8,#0369A1)', year: '2024', medium: 'Branding',              client: 'Marca' },
+      'petalo':            { title: 'Pétalo — perfume box illustration',    emoji: '🌸', bg: 'linear-gradient(135deg,#FB7185,#BE185D)', year: '2024', medium: 'Illustration',          client: 'Pétalo Studio' },
+      'ferrocarril':       { title: 'Ferrocarril — heritage railway poster set', emoji: '🚂', bg: 'linear-gradient(135deg,#FDE68A,#F59E0B)', year: '2023', medium: 'Branding · Lettering', client: 'CP Comboios' }
+    };
+    return data[slug] || data['sourdough-and-co'];
+  }
+
+  // ============================================================
+  // Layout switcher (Masonry / Grid / Carousel)
+  // ============================================================
+  function switchLayout(btn, mode) {
+    btn.parentElement.querySelectorAll('button').forEach(function (b) {
+      b.classList.remove('is-active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    btn.classList.add('is-active');
+    btn.setAttribute('aria-selected', 'true');
+    switchLayoutTo(mode);
+    var tail = mode === 'masonry' ? 'portfolio' : ('portfolio?layout=' + mode);
+    document.getElementById('url-tail').textContent = tail;
+  }
+  function switchLayoutTo(mode) {
+    document.querySelectorAll('.layout-pane').forEach(function (p) { p.style.display = 'none'; });
+    var pane = document.getElementById('layout-' + mode);
+    if (pane) pane.style.display = '';
+    // Sync the buttons too (when triggered from hash router or thumbs)
+    document.querySelectorAll('#layout-switch button').forEach(function (b) {
+      var active = b.textContent.trim().toLowerCase() === mode;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+
+  // ============================================================
+  // Tag filter (acts on whichever layout is currently visible)
+  // ============================================================
+  function filterByTag(tag) {
+    window.__currentTag = tag;
+    document.querySelectorAll('#tag-bar .tag-chip').forEach(function (c) {
+      c.classList.toggle('is-active', c.dataset.tag === tag);
+    });
+
+    var visible = 0;
+    ['masonry-grid', 'uniform-grid'].forEach(function (gridId) {
+      var grid = document.getElementById(gridId);
+      if (!grid) return;
+      grid.querySelectorAll('[data-tags]').forEach(function (card) {
+        var tags = (card.dataset.tags || '').split(',').map(function (t) { return t.trim(); });
+        var match = !tag || tags.indexOf(tag) !== -1;
+        card.style.display = match ? '' : 'none';
+        if (match && grid.style.display !== 'none' && grid.parentElement.style.display !== 'none') visible++;
+      });
+    });
+
+    var empty = document.getElementById('empty-tag-state');
+    var feedM  = document.getElementById('masonry-grid');
+    var feedG  = document.getElementById('uniform-grid');
+    var anyVisible = false;
+    [feedM, feedG].forEach(function (g) {
+      if (!g) return;
+      var someVisible = Array.prototype.some.call(g.querySelectorAll('[data-tags]'), function (c) { return c.style.display !== 'none'; });
+      if (someVisible) anyVisible = true;
+    });
+    if (!anyVisible && tag) {
+      empty.style.display = '';
+      document.getElementById('empty-tag-name').textContent = tag;
+    } else {
+      empty.style.display = 'none';
+    }
+
+    // Update visible count (rough; matches per-grid count)
+    var c = 0;
+    var visibleGrid = (feedM && feedM.parentElement.style.display !== 'none') ? feedM : feedG;
+    if (visibleGrid) {
+      visibleGrid.querySelectorAll('[data-tags]').forEach(function (card) {
+        if (card.style.display !== 'none') c++;
+      });
+    }
+    document.getElementById('proj-count').textContent = c;
+    document.getElementById('url-tail').textContent = tag ? ('portfolio?tag=' + tag) : 'portfolio';
+  }
+
+  // ============================================================
+  // Carousel mechanics
+  // ============================================================
+  var CAROUSEL = [
+    { slug: 'sourdough-and-co',  title: 'Sourdough &amp; Co — bakery rebrand',    year: '2026', client: 'Lisbon, PT',   t: 't-warm',    tags: ['branding','illustration'], emoji: '🍞' },
+    { slug: 'norte-bank-film',   title: 'Norte Bank — onboarding film',           year: '2025', client: 'Norte Bank',   t: 't-slate',   tags: ['video','branding'],        emoji: '▶' },
+    { slug: 'sintra-fog',        title: 'Sintra fog — landscape series',          year: '2025', client: 'Personal',     t: 't-rose',    tags: ['photography'],             emoji: '📷' },
+    { slug: 'botanica',          title: 'Botanica — calendar lettering',          year: '2025', client: 'Botanica',     t: 't-emerald', tags: ['illustration','lettering'], emoji: '🌿' },
+    { slug: 'cubica',            title: 'Cubica — 3D type explorations',          year: '2024', client: 'Personal',     t: 't-violet',  tags: ['3d','branding'],           emoji: '🧊' },
+    { slug: 'marca-cafe',        title: 'Marca Café — coffeeshop identity',       year: '2024', client: 'Marca',        t: 't-sky',     tags: ['branding'],                emoji: '📐' }
+  ];
+  var carouselIdx = 0;
+  function carouselGoTo(i) {
+    if (i < 0) i = CAROUSEL.length - 1;
+    if (i >= CAROUSEL.length) i = 0;
+    carouselIdx = i;
+    var p = CAROUSEL[i];
+    var stage = document.getElementById('carousel-stage');
+    // Reset color classes then apply current
+    stage.className = 'carousel-stage ' + p.t;
+    document.getElementById('stage-title').innerHTML = p.title;
+    document.getElementById('stage-year').textContent = p.year;
+    document.getElementById('stage-client').textContent = p.client;
+    // Wire the open CTA to current slug
+    var cta = stage.querySelector('.open-cta');
+    if (cta) {
+      cta.setAttribute('href', '#/project/' + p.slug);
+      cta.onclick = function (e) { e.preventDefault(); showSingle(p.slug); };
+    }
+    // Sync dots + thumbs
+    document.querySelectorAll('.carousel-dots button').forEach(function (b) {
+      b.classList.toggle('is-current', Number(b.dataset.i) === i);
+    });
+    document.querySelectorAll('#carousel-thumbs button').forEach(function (b) {
+      b.classList.toggle('is-current', Number(b.dataset.i) === i);
+    });
+  }
+  function carouselStep(d) { carouselGoTo(carouselIdx + d); }
+
+  // ============================================================
+  // Lightbox (centered modal — no right-drawer)
+  // ============================================================
+  var GALLERY_NAMES = ['Cover — wordmark + crest', 'Loaf wrapper', 'Seasonal illustration — winter', 'Loyalty card — pearl + foil', 'Reusable tote', 'Wood bread tags'];
+  var GALLERY_EMOJI = ['🍞', '🥖', '🌾', '🧁', '📦', '🏷'];
+  var lbIdx = 0;
+  function openLightbox(i) {
+    lbIdx = i;
+    syncLightbox();
+    var bd = document.getElementById('lightbox');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closeLightbox() {
+    var bd = document.getElementById('lightbox');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+  function syncLightbox() {
+    document.getElementById('lb-stage').textContent = GALLERY_EMOJI[lbIdx] || '🖼';
+    document.getElementById('lb-counter').textContent = (lbIdx + 1) + ' / ' + GALLERY_NAMES.length;
+    document.getElementById('lb-name').textContent = GALLERY_NAMES[lbIdx] || '';
+  }
+  document.addEventListener('keydown', function (e) {
+    var lb = document.getElementById('lightbox');
+    if (lb && lb.classList.contains('is-open')) {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') { lbIdx = (lbIdx + 1) % GALLERY_NAMES.length; syncLightbox(); }
+      if (e.key === 'ArrowLeft')  { lbIdx = (lbIdx - 1 + GALLERY_NAMES.length) % GALLERY_NAMES.length; syncLightbox(); }
+    }
+  });
+  document.getElementById('lightbox').addEventListener('click', function (e) {
+    if (e.target === this) closeLightbox();
+  });
+
+  // ============================================================
+  // Boot from hash
+  // ============================================================
+  function boot() {
+    var h = location.hash || '#/';
+    if (h.indexOf('#/project/') === 0) showSingle(h.replace('#/project/', ''));
+    else if (h.indexOf('#/tag/') === 0) {
+      var t = h.replace('#/tag/', '');
+      window.__currentTag = t;
+      filterByTag(t);
+      showView('list', 'masonry');
+    } else if (h === '#/grid')     { showView('list', 'grid'); }
+    else if (h === '#/carousel') { showView('list', 'carousel'); }
+    else                         { showView('list', 'masonry'); }
+  }
+  window.addEventListener('hashchange', boot);
+  boot();
+</script>
+</body>
+</html>
