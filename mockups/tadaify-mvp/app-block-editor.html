@@ -1068,6 +1068,97 @@
       font-size: 12.5px; font-weight: 500;
       text-align: center;
     }
+    /* FIX-EMB-001 — Embed auto-detect chip + provider-list reminder.
+       Empty / recognized / unsupported visual states. */
+    .embed-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .embed-chip.is-empty {
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .embed-chip.is-recognized {
+      background: rgba(16,185,129,0.14); color: #047857;
+      border-color: rgba(16,185,129,0.4);
+    }
+    body.dark-mode .embed-chip.is-recognized { color: #6EE7B7; }
+    .embed-chip.is-unsupported {
+      background: rgba(239,68,68,0.10); color: #B91C1C;
+      border-color: rgba(239,68,68,0.4);
+    }
+    body.dark-mode .embed-chip.is-unsupported { color: #FCA5A5; }
+    .embed-chip .ec-icon { font-size: 14px; line-height: 1; }
+    .embed-chip .ec-text strong { font-weight: 700; }
+    .embed-chip .ec-link {
+      background: transparent; border: 0; padding: 0;
+      color: inherit; font-weight: 700; cursor: pointer;
+      text-decoration: underline; font-size: inherit;
+      font-family: inherit;
+    }
+    .embed-provider-reminder {
+      margin-top: 14px;
+      padding: 10px 12px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px dashed var(--border);
+    }
+    .embed-provider-reminder .epr-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .embed-provider-reminder .epr-list {
+      font-size: 12px; color: var(--fg);
+      line-height: 1.5;
+    }
+
+    /* Embed live-preview empty state — shown until a recognized URL is
+       pasted. Distinct from the previous .preview-embed (still used by
+       Video block). */
+    .preview-embed-empty {
+      width: 100%; aspect-ratio: 16/9; border-radius: 10px;
+      background: rgba(255,255,255,0.10);
+      border: 1px dashed rgba(255,255,255,0.4);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.85);
+      text-align: center; padding: 14px;
+    }
+    .preview-embed-empty .pee-icon { font-size: 22px; opacity: 0.85; }
+    .preview-embed-empty .pee-msg { font-size: 12px; font-weight: 500; line-height: 1.4; max-width: 220px; }
+    .preview-embed-frame { width: 100%; }
+    .preview-embed-frame .pef-caption {
+      margin-top: 6px;
+      font-size: 12px; opacity: 0.85; color: #fff;
+      font-style: italic; text-align: center;
+    }
+
+    .preview-form { text-align: center; }
+    .preview-form .pf-heading {
+      font-size: 16px; font-weight: 700; margin-bottom: 4px;
+      color: #fff;
+    }
+    .preview-form .pf-subhead {
+      font-size: 12px; opacity: 0.85; margin-bottom: 10px;
+      color: #fff; line-height: 1.35;
+    }
+    .preview-form .pf-row {
+      display: flex; gap: 6px; align-items: stretch;
+    }
+    .preview-form .pf-row input {
+      flex: 1; min-width: 0; margin-bottom: 0;
+    }
+    .preview-form .pf-row button {
+      flex: 0 0 auto; width: auto; padding: 10px 14px;
+      white-space: nowrap;
+    }
+    @media (max-width: 380px) {
+      .preview-form .pf-row { flex-direction: column; }
+      .preview-form .pf-row button { width: 100%; }
+    }
     .preview-form input {
       width: 100%; padding: 10px 12px;
       background: rgba(255,255,255,0.22);
@@ -1081,6 +1172,170 @@
       background: #fff; color: var(--brand-primary);
       border: 0; border-radius: 8px;
       font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+
+    /* FIX-NLT-001 — Newsletter provider connection panels + tier-gated
+       sections rendered through the `raw` field kind. Visual container
+       distinct from a plain field so creators see "this whole panel
+       belongs to the chosen provider" without an Advanced toggle. */
+    .nlt-panel {
+      margin-top: 6px;
+      padding: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .nlt-panel-head {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 4px;
+    }
+    .nlt-panel-title {
+      font-size: 12px; font-weight: 700;
+      color: var(--fg);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .nlt-panel-sub {
+      font-size: 12px; color: var(--fg-muted); font-weight: 500;
+    }
+    .nlt-key-row {
+      display: flex; gap: 6px; align-items: stretch;
+    }
+    .nlt-key-row input {
+      flex: 1; min-width: 0;
+      font-family: var(--font-mono); font-size: 12px;
+    }
+    .nlt-key-show {
+      flex: 0 0 auto; padding: 0 12px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer;
+      font-size: 14px;
+    }
+    .nlt-test-field {
+      display: flex; align-items: center; gap: 10px;
+      flex-wrap: wrap;
+    }
+    .nlt-test-btn {
+      padding: 8px 14px; border-radius: 8px;
+      background: var(--bg-muted); color: var(--fg);
+      border: 1px solid var(--border); cursor: pointer;
+      font-size: 12px; font-weight: 600;
+      font-family: var(--font-sans);
+    }
+    .nlt-test-btn:hover { background: var(--bg-sunken); }
+    .nlt-test-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: 600;
+    }
+    .nlt-test-badge.is-testing {
+      background: rgba(99,102,241,0.14); color: #4338CA;
+    }
+    .nlt-test-badge.is-success {
+      background: rgba(16,185,129,0.14); color: #047857;
+    }
+    .nlt-test-badge.is-error {
+      background: rgba(239,68,68,0.12); color: #B91C1C;
+    }
+    body.dark-mode .nlt-test-badge.is-testing { color: #C7D2FE; }
+    body.dark-mode .nlt-test-badge.is-success { color: #6EE7B7; }
+    body.dark-mode .nlt-test-badge.is-error   { color: #FCA5A5; }
+
+    .nlt-gsheets-signin, .nlt-gsheets-connected {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 8px;
+      background: #fff; color: #3C4043;
+      border: 1px solid #DADCE0;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .nlt-gsheets-signin:hover { background: #F8F9FA; }
+    .nlt-gsheets-connected { cursor: default; }
+    .nlt-gsheets-connected strong { font-weight: 600; }
+    .nlt-gsheets-disconnect {
+      margin-left: auto;
+      background: transparent; border: 0; cursor: pointer;
+      color: var(--fg-muted); font-size: 11px; font-weight: 600;
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .nlt-gsheets-disconnect:hover { background: var(--bg-muted); color: var(--fg); }
+
+    .nlt-our-endpoint {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px dashed var(--border);
+    }
+    .nlt-our-endpoint code {
+      flex: 1; min-width: 0;
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--fg);
+      overflow-x: auto; white-space: nowrap;
+    }
+    .nlt-copy-btn {
+      flex: 0 0 auto;
+      padding: 4px 10px; border-radius: 6px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .nlt-payload-details {
+      margin-top: 4px;
+      padding: 8px 10px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+    }
+    .nlt-payload-details summary {
+      cursor: pointer; font-size: 12px; font-weight: 600;
+      color: var(--fg); padding: 2px 0;
+    }
+    .nlt-payload {
+      margin: 8px 0 4px;
+      padding: 10px; border-radius: 6px;
+      background: var(--bg-sunken);
+      font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5;
+      color: var(--fg); white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* Tier-gated sections (Schedule visibility / A/B test) — fully
+       interactive, never blurred, gated only at SAVE per
+       feedback_no_blur_premium_features. */
+    .nlt-section {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-elevated);
+    }
+    .nlt-section-head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 4px;
+    }
+    .nlt-section-title {
+      font-size: 13px; font-weight: 700; color: var(--fg);
+    }
+    .nlt-section-sub {
+      font-size: 12px; color: var(--fg-muted);
+      margin-bottom: 8px; line-height: 1.4;
+    }
+    .nlt-sched-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-top: 6px;
+    }
+    .nlt-ab-tabs {
+      display: inline-flex; gap: 4px;
+      padding: 3px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .nlt-ab-tab {
+      padding: 5px 12px; border-radius: 6px;
+      background: transparent; border: 0; cursor: pointer;
+      font-size: 12px; font-weight: 600; color: var(--fg-muted);
+      font-family: var(--font-sans);
+    }
+    .nlt-ab-tab.is-active {
+      background: var(--bg-elevated); color: var(--fg);
+      box-shadow: 0 1px 2px rgba(17,24,39,0.08);
     }
     .preview-product {
       display: flex; gap: 10px; align-items: center;
@@ -2767,6 +3022,438 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /* FIX-EMB-001 — Embed provider whitelist + safe-by-construction      */
+    /*               detector + iframe URL builder.                       */
+    /*                                                                    */
+    /* Locked MVP scope = exactly 12 providers (DEC-109): Spotify ·       */
+    /* SoundCloud · Bandcamp · Apple Podcasts · Apple Music · YouTube ·   */
+    /* Vimeo · TikTok · Twitter/X · Bluesky · Instagram · Loom.           */
+    /*                                                                    */
+    /* Detection rules:                                                   */
+    /*   { kind: 'empty' }       — no URL pasted                          */
+    /*   { kind: 'recognized', providerId, providerLabel, icon, iframeSrc } */
+    /*   { kind: 'unsupported' } — URL parsed but not in whitelist        */
+    /* ------------------------------------------------------------------ */
+    var EMBED_PROVIDERS = [
+      { id: 'spotify',         label: 'Spotify',         icon: '🎵', detect: /^https?:\/\/open\.spotify\.com\/(track|album|playlist|episode|show|artist)\/([A-Za-z0-9]+)/ },
+      { id: 'soundcloud',      label: 'SoundCloud',      icon: '🔊', detect: /^https?:\/\/(?:www\.|m\.)?soundcloud\.com\/([\w-]+\/[\w-]+)/ },
+      { id: 'bandcamp',        label: 'Bandcamp',        icon: '🎸', detect: /^https?:\/\/([\w-]+)\.bandcamp\.com\/(track|album)\/([\w-]+)/ },
+      { id: 'apple-podcasts',  label: 'Apple Podcasts',  icon: '🎙', detect: /^https?:\/\/podcasts\.apple\.com\/(?:[a-z]{2}\/)?podcast\/[^/]+\/id(\d+)/ },
+      { id: 'apple-music',     label: 'Apple Music',     icon: '🍎', detect: /^https?:\/\/music\.apple\.com\/(?:[a-z]{2}\/)?(album|playlist|song)\/[^/]+\/(\d+)/ },
+      { id: 'youtube',         label: 'YouTube',         icon: '🎬', detect: /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/ },
+      { id: 'vimeo',           label: 'Vimeo',           icon: '🎥', detect: /^https?:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?(\d+)/ },
+      { id: 'tiktok',          label: 'TikTok',          icon: '🎵', detect: /^https?:\/\/(?:www\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/(\d+)/ },
+      { id: 'twitter',         label: 'Twitter / X',     icon: '𝕏',  detect: /^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w]+\/status\/(\d+)/ },
+      { id: 'bluesky',         label: 'Bluesky',         icon: '🦋', detect: /^https?:\/\/bsky\.app\/profile\/([\w.-]+)\/post\/([\w]+)/ },
+      { id: 'instagram',       label: 'Instagram',       icon: '📷', detect: /^https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/([\w-]+)/ },
+      { id: 'loom',            label: 'Loom',            icon: '📹', detect: /^https?:\/\/(?:www\.)?loom\.com\/share\/([a-f0-9]+)/ }
+    ];
+
+    function detectEmbedProvider(url) {
+      var u = (url || '').trim();
+      if (!u) return { kind: 'empty' };
+      for (var i = 0; i < EMBED_PROVIDERS.length; i++) {
+        var p = EMBED_PROVIDERS[i];
+        var m = u.match(p.detect);
+        if (m) {
+          return {
+            kind: 'recognized',
+            providerId: p.id,
+            providerLabel: p.label,
+            icon: p.icon,
+            iframeSrc: buildEmbedIframeSrc(p.id, m, u)
+          };
+        }
+      }
+      // Some shape of URL was pasted but no provider matched.
+      return /^https?:\/\//i.test(u) ? { kind: 'unsupported' } : { kind: 'empty' };
+    }
+
+    /* Build a safe iframe src by RECONSTRUCTING the provider's official
+       embed URL from extracted IDs — never pass the raw user URL. */
+    function buildEmbedIframeSrc(providerId, match, originalUrl) {
+      switch (providerId) {
+        case 'spotify':
+          // /embed/<type>/<id>
+          return 'https://open.spotify.com/embed/' + match[1] + '/' + match[2] + '?utm_source=tadaify';
+        case 'soundcloud':
+          return 'https://w.soundcloud.com/player/?url=' + encodeURIComponent('https://soundcloud.com/' + match[1]) + '&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false';
+        case 'bandcamp':
+          // Real Bandcamp embeds need an album/track numeric ID — mockup uses a stable placeholder iframe.
+          return 'https://bandcamp.com/EmbeddedPlayer/album=12345/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=true/transparent=true/';
+        case 'apple-podcasts':
+          return 'https://embed.podcasts.apple.com/podcast/id' + match[1];
+        case 'apple-music':
+          return 'https://embed.music.apple.com/' + (match[1] === 'song' ? 'song' : match[1]) + '/' + match[2];
+        case 'youtube':
+          return 'https://www.youtube-nocookie.com/embed/' + match[1] + '?rel=0&modestbranding=1&color=white&playsinline=1';
+        case 'vimeo':
+          return 'https://player.vimeo.com/video/' + match[1] + '?dnt=1&title=0&byline=0&portrait=0';
+        case 'tiktok':
+          return 'https://www.tiktok.com/embed/v2/' + match[1];
+        case 'twitter':
+          // Twitter widget embeds via tadaify resolver (publish.twitter.com pattern).
+          return 'https://platform.twitter.com/embed/Tweet.html?id=' + match[1];
+        case 'bluesky':
+          return 'https://embed.bsky.app/embed/' + match[1] + '/' + match[2];
+        case 'instagram':
+          return 'https://www.instagram.com/p/' + match[1] + '/embed';
+        case 'loom':
+          return 'https://www.loom.com/embed/' + match[1];
+      }
+      return '';
+    }
+
+    function renderEmbedDetectChip(detection) {
+      var cls = 'embed-chip';
+      var content;
+      if (detection.kind === 'empty') {
+        cls += ' is-empty';
+        content = '<span class="ec-icon">🔍</span><span class="ec-text">Paste a URL from Spotify, YouTube, TikTok, or 9 more</span>';
+      } else if (detection.kind === 'unsupported') {
+        cls += ' is-unsupported';
+        content = '<span class="ec-icon">❌</span><span class="ec-text">Provider not supported. ' +
+                  '<button type="button" class="ec-link" onclick="loadType(\'link\')">Try a Link button instead →</button></span>';
+      } else {
+        cls += ' is-recognized';
+        content = '<span class="ec-icon">' + escapeHtml(detection.icon) + '</span>' +
+                  '<span class="ec-text"><strong>' + escapeHtml(detection.providerLabel) + '</strong> detected</span>';
+      }
+      return '<div class="field"><div class="' + cls + '">' + content + '</div></div>';
+    }
+
+    function renderEmbedProviderListReminder() {
+      var labels = EMBED_PROVIDERS.map(function (p) { return p.label; }).join(' · ');
+      return '<div class="field embed-provider-reminder">' +
+        '<div class="epr-title">Supports embeds from</div>' +
+        '<div class="epr-list">' + escapeHtml(labels) + '</div>' +
+      '</div>';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* FIX-NLT-001 — Newsletter provider catalog + per-provider panels    */
+    /*                                                                    */
+    /* 7 options total per locked MVP scope (DEC-116/117/118/119):        */
+    /*   6 native (Kit, Beehiiv, MailerLite, Mailchimp, Klaviyo,           */
+    /*   Google Sheets) + 1 generic webhook fallback. NO Substack,        */
+    /*   NO Buttondown — both deferred to v2.                             */
+    /* ------------------------------------------------------------------ */
+    var NEWSLETTER_PROVIDERS = {
+      'kit':           { name: 'Kit',           apiKeyHelp: 'Find your API key in Kit → Settings → Advanced.' },
+      'beehiiv':       { name: 'Beehiiv',       apiKeyHelp: 'Find your API key in Beehiiv → Settings → API.' },
+      'mailerlite':    { name: 'MailerLite',    apiKeyHelp: 'Find your API key in MailerLite → Integrations → API.' },
+      'mailchimp':     { name: 'Mailchimp',     apiKeyHelp: 'Find your API key in Mailchimp → Account → Extras → API keys.' },
+      'klaviyo':       { name: 'Klaviyo',       apiKeyHelp: 'Find your API key in Klaviyo → Settings → API keys.' }
+    };
+
+    /* Mocked lists — what the audience-selector dropdown shows after the
+       fake "Loading…" delay. Same shape across providers; the labels are
+       provider-flavoured to read realistic. */
+    var NEWSLETTER_MOCK_LISTS = {
+      'kit':         [['form_alex_main','Main signup form'], ['form_alex_drops','New drops alerts'], ['form_alex_vip','VIP early access']],
+      'beehiiv':     [['pub_alex_main','alexandra.beehiiv.com'], ['pub_alex_news','Alex Weekly'], ['pub_alex_pro','Pro tier publication']],
+      'mailerlite':  [['grp_alex_main','Main subscribers'], ['grp_alex_drops','New release alerts'], ['grp_alex_vip','VIP list']],
+      'mailchimp':   [['list_alex_main','Main audience'], ['list_alex_drops','Drops & releases'], ['list_alex_vip','VIP & superfans']],
+      'klaviyo':     [['lst_alex_main','Main list'], ['lst_alex_drops','New drops'], ['lst_alex_vip','VIP segment']]
+    };
+
+    var DEFAULT_CREATOR_HANDLE = 'alexandra';
+
+    /* Connection-test mock state, per provider. Cleared on provider switch. */
+    var NEWSLETTER_TEST_STATE = {}; // { kit: 'idle'|'testing'|'success'|'error', ... }
+
+    function renderNewsletterProviderPanel(prov, state) {
+      if (prov === 'google-sheets')   return renderNewsletterGoogleSheetsPanel(state);
+      if (prov === 'webhook')         return renderNewsletterWebhookPanel(state);
+      return renderNewsletterApiKeyPanel(prov, state);
+    }
+
+    /* Generic API-key + audience selector panel — used by Kit, Beehiiv,
+       MailerLite, Mailchimp, Klaviyo. Per-provider quirks layered on top. */
+    function renderNewsletterApiKeyPanel(prov, state) {
+      var meta = NEWSLETTER_PROVIDERS[prov] || NEWSLETTER_PROVIDERS.kit;
+      var apiKey = state['apiKey_' + prov] || '';
+      var listChoice = state['listId_' + prov] || '';
+      var sourceTag = state.sourceTag || ('tadaify-' + DEFAULT_CREATOR_HANDLE);
+      var testStatus = NEWSLETTER_TEST_STATE[prov] || 'idle';
+      var listOptions = NEWSLETTER_MOCK_LISTS[prov] || [];
+
+      var statusBadge = '';
+      if (testStatus === 'testing') {
+        statusBadge = '<span class="nlt-test-badge is-testing">Testing…</span>';
+      } else if (testStatus === 'success') {
+        statusBadge = '<span class="nlt-test-badge is-success">✓ Connected</span>';
+      } else if (testStatus === 'error') {
+        statusBadge = '<span class="nlt-test-badge is-error">✗ Couldn\'t reach ' + escapeHtml(meta.name) + ' — check the key and try again</span>';
+      }
+
+      var listsLoading = (testStatus !== 'success' && !listChoice);
+      var listSelect;
+      if (listsLoading) {
+        listSelect = '<select disabled><option>Loading…</option></select>';
+      } else {
+        var opts = listOptions.map(function (o) {
+          return '<option value="' + escapeHtml(o[0]) + '"' + (o[0] === listChoice ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>';
+        }).join('');
+        listSelect = '<select onchange="newsletterUpdateProviderField(\'' + prov + '\', \'listId\', this.value)">' +
+                     '<option value="">Pick a list…</option>' + opts + '</select>';
+      }
+
+      var doiToggle = '';
+      if (prov === 'beehiiv') {
+        /* DEC-102 — DOI default ON for Beehiiv (recommended). */
+        var doiOn = state.doubleOptIn !== false;
+        doiToggle =
+          '<div class="toggle-row" style="padding:8px 0">' +
+            '<div class="lbl"><div class="t">Double opt-in (recommended)</div>' +
+              '<div class="s">Sends a confirmation email before adding the subscriber. Improves deliverability and matches GDPR best practice.</div></div>' +
+            '<span class="switch' + (doiOn ? ' on' : '') + '" role="switch" aria-checked="' + (doiOn ? 'true' : 'false') + '" tabindex="0" ' +
+                  'onclick="toggleField(\'doubleOptIn\', this)" ' +
+                  'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleField(\'doubleOptIn\', this);}"></span>' +
+          '</div>';
+      }
+
+      var captureNameToggle = '';
+      if (prov === 'klaviyo') {
+        /* DEC-120 — standard scope = email + name. */
+        var captureName = state.captureName !== false;
+        captureNameToggle =
+          '<div class="toggle-row" style="padding:8px 0">' +
+            '<div class="lbl"><div class="t">Capture name field</div>' +
+              '<div class="s">Show a "Name" input next to the email field on the public page.</div></div>' +
+            '<span class="switch' + (captureName ? ' on' : '') + '" role="switch" aria-checked="' + (captureName ? 'true' : 'false') + '" tabindex="0" ' +
+                  'onclick="toggleField(\'captureName\', this)" ' +
+                  'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleField(\'captureName\', this);}"></span>' +
+          '</div>';
+      }
+
+      return '<div class="nlt-panel" data-provider="' + escapeHtml(prov) + '">' +
+        '<div class="nlt-panel-head">' +
+          '<span class="nlt-panel-title">Connect ' + escapeHtml(meta.name) + '</span>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="nlt-key-' + escapeHtml(prov) + '">API key</label>' +
+          '<div class="nlt-key-row">' +
+            '<input id="nlt-key-' + escapeHtml(prov) + '" type="password" autocomplete="off" spellcheck="false" ' +
+                   'placeholder="Paste your ' + escapeHtml(meta.name) + ' API key" ' +
+                   'value="' + escapeHtml(apiKey) + '" ' +
+                   'oninput="newsletterUpdateProviderField(\'' + prov + '\', \'apiKey\', this.value)" />' +
+            '<button type="button" class="nlt-key-show" aria-label="Show / hide key" ' +
+                    'onclick="newsletterToggleKeyVisibility(\'nlt-key-' + escapeHtml(prov) + '\', this)">👁</button>' +
+          '</div>' +
+          '<div class="help">' + escapeHtml(meta.apiKeyHelp) + ' Stored encrypted in tadaify Vault — never shown after save.</div>' +
+        '</div>' +
+        '<div class="field nlt-test-field">' +
+          '<button type="button" class="nlt-test-btn" onclick="newsletterTestConnection(\'' + prov + '\')">Test connection</button>' +
+          statusBadge +
+        '</div>' +
+        '<div class="field">' +
+          '<label>List / audience</label>' +
+          listSelect +
+          '<div class="help">Where new subscribers from this block will land.</div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="nlt-tag">Source tag</label>' +
+          '<input id="nlt-tag" type="text" value="' + escapeHtml(sourceTag) + '" ' +
+                 'oninput="updateField(\'sourceTag\', this.value)" />' +
+          '<div class="help">Identifies subscribers who came in through this block — handy for segmenting later.</div>' +
+        '</div>' +
+        doiToggle +
+        captureNameToggle +
+      '</div>';
+    }
+
+    function renderNewsletterGoogleSheetsPanel(state) {
+      /* DEC-121 + feedback_no_blur_premium_features — free for all tiers,
+         no badge needed. */
+      var signedIn = state.gsheetsSignedIn === true;
+      var sheetChoice = state.gsheetSheetId || '';
+      var tab = state.gsheetTab || 'Subscribers';
+
+      var sheetSelect;
+      if (!signedIn) {
+        sheetSelect = '<select disabled><option>Sign in first to load sheets</option></select>';
+      } else {
+        var mockSheets = [
+          ['sheet_alex_main','Newsletter signups'],
+          ['sheet_alex_promo','Promo campaign tracker'],
+          ['sheet_alex_test','Test sheet']
+        ];
+        var opts = mockSheets.map(function (o) {
+          return '<option value="' + escapeHtml(o[0]) + '"' + (o[0] === sheetChoice ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>';
+        }).join('');
+        sheetSelect = '<select onchange="updateField(\'gsheetSheetId\', this.value)">' +
+                      '<option value="">Loading sheets…</option>' + opts + '</select>';
+      }
+
+      var signinBlock = signedIn
+        ? '<div class="nlt-gsheets-connected">' +
+            '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>' +
+            '<span>Signed in as <strong>alex@example.com</strong></span>' +
+            '<button type="button" class="nlt-gsheets-disconnect" onclick="newsletterGsheetsToggle()">Disconnect</button>' +
+          '</div>'
+        : '<button type="button" class="nlt-gsheets-signin" onclick="newsletterGsheetsToggle()">' +
+            '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>' +
+            '<span>Sign in with Google</span>' +
+          '</button>';
+
+      return '<div class="nlt-panel" data-provider="google-sheets">' +
+        '<div class="nlt-panel-head">' +
+          '<span class="nlt-panel-title">Connect Google Sheets</span>' +
+        '</div>' +
+        '<div class="field">' + signinBlock +
+          '<div class="help">We only request access to the sheet you choose. You can revoke access at any time in your Google account.</div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label>Sheet</label>' +
+          sheetSelect +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="nlt-tab">Append to tab</label>' +
+          '<input id="nlt-tab" type="text" value="' + escapeHtml(tab) + '" ' +
+                 'oninput="updateField(\'gsheetTab\', this.value)" />' +
+          '<div class="help">If the tab doesn\'t exist yet, we\'ll create it on the first signup.</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function renderNewsletterWebhookPanel(state) {
+      /* DEC-104 — versioned URL path tadaify.com/wh/v1/<creator>. */
+      var hookUrl = state.webhookUrl || '';
+      var ourEndpoint = 'https://tadaify.com/wh/v1/' + DEFAULT_CREATOR_HANDLE;
+      var samplePayload = '{\n  "email": "fan@example.com",\n  "name": "Fan name (if captured)",\n  "source": "tadaify-' + DEFAULT_CREATOR_HANDLE + '",\n  "block_id": "blk_a1b2c3",\n  "submitted_at": "2026-04-26T18:14:22Z"\n}';
+
+      return '<div class="nlt-panel" data-provider="webhook">' +
+        '<div class="nlt-panel-head">' +
+          '<span class="nlt-panel-title">Generic webhook</span>' +
+          '<span class="nlt-panel-sub">Send signups to any HTTPS endpoint you control.</span>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="nlt-webhook-url">Webhook URL</label>' +
+          '<input id="nlt-webhook-url" type="url" placeholder="https://your-server.com/api/newsletter" ' +
+                 'value="' + escapeHtml(hookUrl) + '" ' +
+                 'oninput="updateField(\'webhookUrl\', this.value)" />' +
+          '<div class="help">We POST a JSON payload to this URL on every signup. Must be HTTPS. Should respond within 5 seconds.</div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label>Or use our endpoint</label>' +
+          '<div class="nlt-our-endpoint">' +
+            '<code>' + escapeHtml(ourEndpoint) + '</code>' +
+            '<button type="button" class="nlt-copy-btn" onclick="newsletterCopyEndpoint(this, \'' + escapeHtml(ourEndpoint) + '\')">Copy</button>' +
+          '</div>' +
+          '<div class="help">If you don\'t have a server yet, point your form at this URL — we\'ll forward signups to your inbox while you set things up.</div>' +
+        '</div>' +
+        '<details class="nlt-payload-details">' +
+          '<summary>Payload schema</summary>' +
+          '<pre class="nlt-payload"><code>' + escapeHtml(samplePayload) + '</code></pre>' +
+          '<div class="help">Fields are stable — we add new optional fields without breaking your integration.</div>' +
+        '</details>' +
+      '</div>';
+    }
+
+    function renderNewsletterScheduleVisibilityPanel(state) {
+      /* feedback_no_blur_premium_features — fully visible + interactive,
+         tier badge inline; gate at SAVE via TierGate (placeholder below). */
+      var enabled = !!state.scheduleVisibilityEnabled;
+      var startsAt = state.scheduleStartsAt || '';
+      var endsAt   = state.scheduleEndsAt   || '';
+      return '<div class="nlt-section nlt-section-creator">' +
+        '<div class="nlt-section-head">' +
+          '<span class="nlt-section-title">Schedule visibility</span>' +
+          '<span data-tier-badge="creator"></span>' +
+        '</div>' +
+        '<div class="nlt-section-sub">Show this newsletter block only between two dates — handy for launches or limited-time campaigns.</div>' +
+        '<!-- TierGate modal triggered on save when free-tier creator enables Schedule visibility -->' +
+        '<div class="toggle-row" style="padding:8px 0">' +
+          '<div class="lbl"><div class="t">Enable schedule</div>' +
+            '<div class="s">When off, the block is always visible.</div></div>' +
+          '<span class="switch' + (enabled ? ' on' : '') + '" role="switch" aria-checked="' + (enabled ? 'true' : 'false') + '" tabindex="0" ' +
+                'onclick="toggleField(\'scheduleVisibilityEnabled\', this)" ' +
+                'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleField(\'scheduleVisibilityEnabled\', this);}"></span>' +
+        '</div>' +
+        '<div class="nlt-sched-row">' +
+          '<div class="field"><label>Starts at</label>' +
+            '<input type="datetime-local" value="' + escapeHtml(startsAt) + '" ' +
+                   'oninput="updateField(\'scheduleStartsAt\', this.value)" />' +
+          '</div>' +
+          '<div class="field"><label>Ends at</label>' +
+            '<input type="datetime-local" value="' + escapeHtml(endsAt) + '" ' +
+                   'oninput="updateField(\'scheduleEndsAt\', this.value)" />' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function renderNewsletterAbTestPanel(state) {
+      /* feedback_no_blur_premium_features — fully visible + interactive,
+         tier badge inline; gate at SAVE via TierGate (placeholder below). */
+      var which = state.nltAbTab || 'A';
+      var headingA = state.nltAbHeadingA || (state.heading || 'Join my list');
+      var headingB = state.nltAbHeadingB || 'One email a week — never spam';
+      var ctaA     = state.nltAbCtaA     || (state.cta || 'Subscribe');
+      var ctaB     = state.nltAbCtaB     || 'Count me in';
+      return '<div class="nlt-section nlt-section-business">' +
+        '<div class="nlt-section-head">' +
+          '<span class="nlt-section-title">A/B test</span>' +
+          '<span data-tier-badge="business"></span>' +
+        '</div>' +
+        '<div class="nlt-section-sub">Show two versions to your visitors and we\'ll pick the winner automatically.</div>' +
+        '<!-- TierGate modal triggered on save when below-Business creator saves A/B variants -->' +
+        '<div class="nlt-ab-tabs" role="tablist">' +
+          '<button type="button" class="nlt-ab-tab' + (which === 'A' ? ' is-active' : '') + '" role="tab" aria-selected="' + (which === 'A' ? 'true' : 'false') + '" onclick="updateField(\'nltAbTab\', \'A\'); renderForm()">Variant A</button>' +
+          '<button type="button" class="nlt-ab-tab' + (which === 'B' ? ' is-active' : '') + '" role="tab" aria-selected="' + (which === 'B' ? 'true' : 'false') + '" onclick="updateField(\'nltAbTab\', \'B\'); renderForm()">Variant B</button>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label>Heading (' + which + ')</label>' +
+          '<input type="text" value="' + escapeHtml(which === 'A' ? headingA : headingB) + '" ' +
+                 'oninput="updateField(\'nltAbHeading' + which + '\', this.value)" />' +
+        '</div>' +
+        '<div class="field">' +
+          '<label>Button label (' + which + ')</label>' +
+          '<input type="text" value="' + escapeHtml(which === 'A' ? ctaA : ctaB) + '" ' +
+                 'oninput="updateField(\'nltAbCta' + which + '\', this.value)" />' +
+        '</div>' +
+      '</div>';
+    }
+
+    /* Newsletter event handlers — wire-mocked behaviour. */
+    function newsletterUpdateProviderField(prov, key, value) {
+      writeContent(key + '_' + prov, value);
+      bumpSaveStatus();
+      // No re-render needed for free-typing into key; audience selector
+      // stays in its current state until Test connection runs.
+    }
+    function newsletterToggleKeyVisibility(inputId, btn) {
+      var inp = document.getElementById(inputId);
+      if (!inp) return;
+      var hide = inp.type === 'text';
+      inp.type = hide ? 'password' : 'text';
+      btn.textContent = hide ? '👁' : '🙈';
+    }
+    function newsletterTestConnection(prov) {
+      NEWSLETTER_TEST_STATE[prov] = 'testing';
+      renderForm();
+      setTimeout(function () {
+        // Mocked outcome: succeeds if the API key field has anything in it,
+        // otherwise fails with a friendly error.
+        var keyVal = (getContentState()['apiKey_' + prov] || '').trim();
+        NEWSLETTER_TEST_STATE[prov] = keyVal.length >= 8 ? 'success' : 'error';
+        renderForm();
+      }, 750);
+    }
+    function newsletterGsheetsToggle() {
+      writeContent('gsheetsSignedIn', !getContentState().gsheetsSignedIn);
+      renderForm();
+      bumpSaveStatus();
+    }
+    function newsletterCopyEndpoint(btn, url) {
+      try { navigator.clipboard && navigator.clipboard.writeText(url); } catch (e) { /* mockup — silent */ }
+      var orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = orig; }, 1200);
+    }
+
+    /* ------------------------------------------------------------------ */
     /* BLOCK TYPE CATALOG                                                 */
     /*                                                                    */
     /* Each type is a self-contained spec: form fields + preview renderer */
@@ -2840,32 +3527,55 @@
         label: 'Embed',
         icon: '📺',
         category: 'Media',
+        /* FIX-EMB-001 — Embedded block per locked scope (DEC-108/109/111/112).
+           - URL paste with live auto-detect chip.
+           - 12-provider whitelist (no more, no less): Spotify · SoundCloud
+             · Bandcamp · Apple Podcasts · Apple Music · YouTube · Vimeo
+             · TikTok · Twitter/X · Bluesky · Instagram · Loom.
+           - "Safe by construction" — preview iframe is built by tadaify's
+             resolver, NOT raw user URL pass-through (DEC-108).
+           - No tier gating, no tier badge — free for everyone (DEC-111). */
         form: function (state) {
+          var url = state.url || 'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT';
+          var detection = detectEmbedProvider(url);
           return [
-            { kind: 'url',  name: 'url',  label: 'Paste a URL — YouTube, Vimeo, Spotify, SoundCloud, Twitter, Instagram, TikTok',
-              value: state.url || 'https://youtu.be/dQw4w9WgXcQ',
-              help: 'Provider auto-detected. Preview updates instantly.' },
-            { kind: 'select', name: 'provider', label: 'Detected provider',
-              options: [['youtube','YouTube'],['vimeo','Vimeo'],['spotify','Spotify'],['soundcloud','SoundCloud'],['twitter','Twitter'],['instagram','Instagram'],['tiktok','TikTok']],
-              value: state.provider || 'youtube', readonly: true },
-            { kind: 'text', name: 'caption', label: 'Caption (optional)', value: state.caption || '', ai: true }
+            { kind: 'url', name: 'url', label: 'Paste a URL',
+              value: url,
+              help: 'YouTube, Spotify, TikTok, and 9 more — see the full list at the bottom.' },
+            { kind: 'raw', name: 'detectChip', html: renderEmbedDetectChip(detection) },
+            { kind: 'text', name: 'caption', label: 'Caption (optional)', value: state.caption || '', ai: true,
+              help: 'Shown under the embedded card on the public page.' },
+            { kind: 'raw', name: 'providerList', html: renderEmbedProviderListReminder() }
           ];
         },
         preview: function (state) {
-          var prov = state.provider || 'youtube';
-          var icons = { youtube: '▶', vimeo: '▶', spotify: '♫', soundcloud: '♪', twitter: '𝕏', instagram: '📷', tiktok: '🎵' };
-          /* youtube-nocookie + minimal-branding params per DEC-097 §15 / feedback_no_native_video_upload_youtube_nocookie_only.md */
-          if (prov === 'youtube' || prov === 'vimeo') {
-            var src = buildVideoIframeUrl(prov, state.url);
-            return '<div class="preview-embed" style="padding:0;overflow:hidden">' +
-                     '<iframe src="' + escapeHtml(src) + '" ' +
-                       'style="width:100%;aspect-ratio:16/9;border:0;display:block" ' +
-                       'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-                       'allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin">' +
-                     '</iframe>' +
+          /* Resolver pattern (DEC-108): we never pass the raw user URL to
+             an iframe src. We detect the provider, extract the canonical
+             ID, then build a known-good iframe URL from a whitelist. */
+          var url = state.url || '';
+          var detection = detectEmbedProvider(url);
+          if (detection.kind !== 'recognized') {
+            return '<div class="preview-embed-empty">' +
+                     '<div class="pee-icon">🔍</div>' +
+                     '<div class="pee-msg">' +
+                       (detection.kind === 'unsupported'
+                         ? 'Provider not supported — try a Link button instead.'
+                         : 'Paste a URL to see the embed preview.') +
+                     '</div>' +
                    '</div>';
           }
-          return '<div class="preview-embed">' + (icons[prov] || '▶') + ' &nbsp; ' + escapeHtml(prov.toUpperCase()) + ' embed</div>';
+          var src = detection.iframeSrc;
+          if (!src) {
+            return '<div class="preview-embed">' + escapeHtml(detection.providerLabel) + ' embed</div>';
+          }
+          return '<div class="preview-embed-frame" data-provider="' + escapeHtml(detection.providerId) + '">' +
+                   '<iframe src="' + escapeHtml(src) + '" ' +
+                     'style="width:100%;aspect-ratio:16/9;border:0;display:block;border-radius:10px" ' +
+                     'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+                     'allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin">' +
+                   '</iframe>' +
+                   (state.caption ? '<div class="pef-caption">' + escapeHtml(state.caption) + '</div>' : '') +
+                 '</div>';
         },
         analytics: { today: '92', sevenDay: '760', source: 'youtube' }
       },
@@ -3020,25 +3730,60 @@
         label: 'Newsletter signup',
         icon: '✉️',
         category: 'Forms',
+        /* FIX-NLT-001 — Locked MVP scope: 7 providers (6 native + Generic
+           webhook). Substack and Buttondown DEFERRED to post-MVP per
+           feedback_tadaify_newsletter_mvp_scope_locked_2026_04_26.md
+           (DECs 105/116/117/118). All providers Free for all tiers
+           (DEC-119) — no tier badges on provider choice. Schedule
+           visibility (Creator+) and A/B test (Business) sit inline
+           per feedback_no_blur_premium_features.md, gated at SAVE only
+           via TierGate (placeholder comments below). No Simple/Advanced
+           toggle per feedback_tadaify_simple_ui_no_advanced_toggle.md. */
         form: function (state) {
+          var prov = state.provider || 'kit';
           return [
             { kind: 'select', name: 'provider', label: 'Email provider',
-              options: [['mailchimp','Mailchimp'],['convertkit','ConvertKit'],['substack','Substack'],['beehiiv','beehiiv']],
-              value: state.provider || 'mailchimp' },
-            { kind: 'text', name: 'list', label: 'List ID / URL', value: state.list || 'list_alex_main',
-              help: 'Mailchimp: List ID. Substack: publication URL.' },
-            { kind: 'text', name: 'cta',  label: 'Button label', value: state.cta || 'Subscribe', ai: true },
+              options: [
+                ['kit',          'Kit (ConvertKit)'],
+                ['beehiiv',      'Beehiiv'],
+                ['mailerlite',   'MailerLite'],
+                ['mailchimp',    'Mailchimp'],
+                ['klaviyo',      'Klaviyo'],
+                ['google-sheets','Google Sheets'],
+                ['webhook',      'Generic webhook']
+              ],
+              value: prov,
+              help: 'Where new subscribers land. All providers are free on every tadaify plan.' },
+            /* Provider-specific connection panel */
+            { kind: 'raw', name: 'providerPanel', html: renderNewsletterProviderPanel(prov, state) },
+            /* Common form copy — 3 fields with inline ✨ Suggest */
+            { kind: 'text', name: 'heading',   label: 'Form heading',     value: state.heading   || 'Join my list', ai: true,
+              help: 'Big, friendly headline above the email input.' },
+            { kind: 'text', name: 'subhead',   label: 'Subheadline',      value: state.subhead   || 'No spam — one email a week.', ai: true,
+              help: 'One short sentence under the heading. Promise something specific.' },
+            { kind: 'text', name: 'cta',       label: 'Button label',     value: state.cta       || 'Subscribe', ai: true },
             { kind: 'icon-picker', name: 'ctaIcon', label: 'Button icon', value: state.ctaIcon || 'send',
               help: 'Shown to the left of the button label.' },
             { kind: 'text', name: 'placeholder', label: 'Input placeholder', value: state.placeholder || 'you@email.com' },
-            { kind: 'check', name: 'doubleOptIn', label: 'Require double opt-in (recommended)', value: state.doubleOptIn !== false }
+            { kind: 'text', name: 'success',   label: 'Success message',  value: state.success   || 'Thanks! Check your inbox to confirm.', ai: true,
+              help: 'Shown after a visitor signs up.' },
+            /* Schedule visibility — Creator+ tier, visible inline, gated at save */
+            { kind: 'raw', name: 'scheduleVisibility', html: renderNewsletterScheduleVisibilityPanel(state) },
+            /* A/B test variants — Business tier, visible inline, gated at save */
+            { kind: 'raw', name: 'abTest', html: renderNewsletterAbTestPanel(state) }
           ];
         },
         preview: function (state) {
           var ic = renderIconForPreview(state.ctaIcon, 'send');
+          var heading = state.heading || 'Join my list';
+          var subhead = state.subhead || 'No spam — one email a week.';
           return '<div class="preview-form">' +
-                   '<input placeholder="' + escapeHtml(state.placeholder || 'you@email.com') + '"/>' +
-                   '<button>' + ic + (ic ? ' &nbsp; ' : '') + escapeHtml(state.cta || 'Subscribe') + '</button>' +
+                   '<div class="pf-heading">' + escapeHtml(heading) + '</div>' +
+                   '<div class="pf-subhead">' + escapeHtml(subhead) + '</div>' +
+                   '<div class="pf-row">' +
+                     '<input placeholder="' + escapeHtml(state.placeholder || 'you@email.com') + '"/>' +
+                     '<button>' + ic + (ic ? ' &nbsp; ' : '') + escapeHtml(state.cta || 'Subscribe') + '</button>' +
+                   '</div>' +
                  '</div>';
         },
         analytics: { today: '14', sevenDay: '92', source: 'instagram', trending: false }
@@ -3270,7 +4015,16 @@
       'level', 'text', 'align',                            /* heading */
       'style', 'size', 'color',                            /* divider */
       'handles', 'handlesOrder', 'shape',                  /* social */
-      'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', /* newsletter */
+      'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', 'captureName', 'sourceTag', 'heading', 'subhead', 'success',
+      'apiKey_kit', 'listId_kit',
+      'apiKey_beehiiv', 'listId_beehiiv',
+      'apiKey_mailerlite', 'listId_mailerlite',
+      'apiKey_mailchimp', 'listId_mailchimp',
+      'apiKey_klaviyo', 'listId_klaviyo',
+      'gsheetsSignedIn', 'gsheetSheetId', 'gsheetTab',
+      'webhookUrl',
+      'scheduleVisibilityEnabled', 'scheduleStartsAt', 'scheduleEndsAt',
+      'nltAbTab', 'nltAbHeadingA', 'nltAbHeadingB', 'nltAbCtaA', 'nltAbCtaB',  /* newsletter */
       'product', 'showPrice', 'title', 'price', 'image',   /* product (was "shop"; product key kept for legacy) */
       'autoplay', 'loop',                                  /* video (autoplay/loop kept for legacy state migration; new video block uses url+provider above) */
       'sectionIcon', 'items', 'q1', 'a1', 'q2', 'a2',      /* faq (q1..a2 kept for legacy seed migration only) */
@@ -3819,6 +4573,15 @@
                  '<textarea id="' + id + '" rows="6" style="font-family:var(--font-mono);font-size:12px;line-height:1.5" oninput="updateField(\'' + f.name + '\', this.value)">' + escapeHtml(f.value || '') + '</textarea>' +
                  help + '</div>';
         }
+        if (f.kind === 'raw') {
+          /* FIX-NLT-001 / FIX-EMB-001 — escape hatch for sections whose
+             markup is too bespoke to fit a generic field kind (provider-
+             specific connection panels, auto-detect chips, premium-feature
+             callouts). The form() function builds the HTML; we drop it in
+             verbatim. Kept off CONTENT_FIELD_KEYS so it doesn't leak into
+             A/B variants. */
+          return f.html || '';
+        }
         return '';
       }).join('');
       document.getElementById('form-body').innerHTML = html;
@@ -4359,7 +5122,7 @@
     var DEMO_BLOCKS = [
       { type: 'link',     label: 'Listen on Spotify', sub: 'open.spotify.com/artist/...' , clicks: '128 today' },
       { type: 'embed',    label: 'My latest YT drop', sub: 'youtu.be/dQw4w9WgXcQ',          clicks: '92 today'  },
-      { type: 'newsletter', label: 'Join my newsletter', sub: 'Mailchimp · list_alex_main', clicks: '14 today' }
+      { type: 'newsletter', label: 'Join my newsletter', sub: 'Kit · Main signup form', clicks: '14 today' }
     ];
     function renderDemoBlocks() {
       var c = document.getElementById('demo-blocks');
