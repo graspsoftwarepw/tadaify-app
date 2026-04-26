@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public About page render — visitor view at tadaify.com/<handle>/about — F-PAGE-ABOUT-001 #15
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view of the About page composed in app-page-about.html.
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every section renders fully; quote carousel + tag chips are interactive)
+    - No tadaify nav bar on creator pages (creator-public.html convention) — minimal back-link bar instead.
+    - Theme inheritance from shared/tokens.css so the About page feels like a sub-page of the creator's main page.
+
+  Sub-views demoed:
+    - Single page render (default)
+    - Press carousel: dot navigation cycles between 3 cards
+    - Mobile responsive: timeline stacks; carousel becomes scroll-snap horizontal scroll
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About — Alexandra Silva — tadaify.com/alexandra/about</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values come from tokens.css (Indigo Serif).
+       Body background mirrors creator-public.html so the About page
+       feels like a sub-page of the same site.
+       ============================================================ */
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    /* Mockup-only nav at the very top — back to creator page + URL pill.
+       In production this strip is rendered by the visitor's browser as the URL bar; here we replicate it for orientation. */
+    .top-strip {
+      max-width: 980px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a {
+      color: var(--fg-muted);
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono {
+      font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+
+    /* Creator identity row — compact. The Hero section below has the big avatar. */
+    .creator-row {
+      max-width: 980px; margin: 0 auto;
+      padding: 28px 20px 8px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 18px;
+      border: 2px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; }
+    .creator-row .who-handle { font-size: 12.5px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* ── Hero section ── */
+    .about-hero {
+      max-width: 980px; margin: 0 auto;
+      padding: 40px 20px 32px;
+      display: grid; grid-template-columns: 280px 1fr;
+      gap: 36px; align-items: center;
+    }
+    @media (max-width: 760px) {
+      .about-hero { grid-template-columns: 1fr; gap: 20px; padding: 28px 20px 24px; text-align: center; }
+    }
+    .about-hero .hero-photo {
+      width: 280px; height: 280px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 700; font-size: 130px;
+      border: 6px solid #fff; box-shadow: var(--shadow-lg);
+      flex-shrink: 0;
+    }
+    @media (max-width: 760px) {
+      .about-hero .hero-photo {
+        width: 180px; height: 180px; font-size: 86px;
+        margin: 0 auto;
+      }
+    }
+    .about-hero .hero-text h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(36px, 5.5vw, 56px);
+      letter-spacing: -0.02em; margin: 0 0 12px;
+    }
+    .about-hero .hero-text .tagline {
+      font-family: var(--font-display);
+      font-size: clamp(18px, 2.2vw, 22px); font-weight: 500;
+      color: var(--fg-muted); line-height: 1.4; margin: 0 0 18px;
+      max-width: 480px;
+    }
+    @media (max-width: 760px) { .about-hero .hero-text .tagline { margin-left: auto; margin-right: auto; } }
+    .about-hero .social-proof {
+      display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: 13.5px; color: var(--fg-muted);
+    }
+    .about-hero .social-proof b { color: var(--fg); font-weight: 600; }
+    .about-hero .social-proof .sp-dot {
+      width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle);
+    }
+
+    /* ── Section spacing primitive ── */
+    .about-section {
+      max-width: 760px; margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .about-section h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(24px, 3.2vw, 32px);
+      letter-spacing: -0.01em; margin: 0 0 18px;
+    }
+
+    /* ── Bio section (long-form) ── */
+    .bio-section { max-width: 720px; }
+    .bio-text {
+      font-family: var(--font-display);
+      font-size: 19px; line-height: 1.7;
+      color: var(--fg);
+    }
+    .bio-text p + p { margin-top: 18px; }
+    .bio-text em { font-style: italic; color: var(--fg-muted); }
+
+    /* ── Highlights grid ── */
+    .highlights-public {
+      max-width: 980px; margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+    .highlights-grid-public {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 760px) { .highlights-grid-public { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .highlights-grid-public { grid-template-columns: 1fr; } }
+    .hp-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 20px;
+      display: flex; flex-direction: column; gap: 6px;
+      box-shadow: var(--shadow-sm);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .hp-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .hp-card .hp-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 6px;
+    }
+    .hp-card .hp-value {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; color: var(--fg); line-height: 1.2;
+    }
+    .hp-card .hp-caption {
+      font-size: 13.5px; color: var(--fg-muted); line-height: 1.5;
+    }
+
+    /* ── Story timeline (alternating list, desktop) ── */
+    .timeline-public {
+      max-width: 760px; margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .timeline-public h2 { margin-bottom: 26px; }
+    .tl-track {
+      position: relative; padding: 8px 0;
+    }
+    .tl-track::before {
+      content: ""; position: absolute;
+      left: 50%; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(180deg, var(--border-strong), transparent);
+      transform: translateX(-50%);
+    }
+    .tl-row {
+      display: grid; grid-template-columns: 1fr 64px 1fr;
+      gap: 14px; align-items: flex-start;
+      margin-bottom: 22px;
+      position: relative;
+    }
+    .tl-row .tl-marker {
+      grid-column: 2;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--bg-elevated); border: 2px solid var(--brand-primary);
+      color: var(--brand-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 600; font-size: 14px;
+      box-shadow: 0 0 0 6px var(--bg);
+      z-index: 1;
+      margin: 0 auto;
+    }
+    .tl-row .tl-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .tl-row .tl-card h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0 0 4px;
+    }
+    .tl-row .tl-card p {
+      font-size: 14px; color: var(--fg-muted); line-height: 1.55; margin: 0;
+    }
+    .tl-row.tl-left  .tl-card { grid-column: 1; text-align: right; }
+    .tl-row.tl-right .tl-card { grid-column: 3; }
+
+    /* Mobile: collapse timeline to single column, marker on the left */
+    @media (max-width: 720px) {
+      .tl-track::before { left: 28px; }
+      .tl-row {
+        grid-template-columns: 56px 1fr;
+        gap: 12px;
+      }
+      .tl-row .tl-marker { grid-column: 1 !important; margin: 0; }
+      .tl-row .tl-card { grid-column: 2 !important; text-align: left !important; }
+    }
+
+    /* ── Press / quotes carousel ── */
+    .press-section {
+      max-width: 880px; margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .press-section h2 { text-align: center; margin-bottom: 22px; }
+    .qc-track {
+      position: relative; overflow: hidden; padding: 4px 0 8px;
+    }
+    .qc-stage {
+      display: flex;
+      transition: transform .35s cubic-bezier(.2,.8,.2,1);
+    }
+    .qc-slide {
+      min-width: 100%;
+      padding: 0 6px;
+      box-sizing: border-box;
+    }
+    .qc-slide blockquote {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: var(--shadow-sm);
+      margin: 0;
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 19px; line-height: 1.55;
+      color: var(--fg);
+    }
+    .qc-slide blockquote::before {
+      content: "❝";
+      display: block;
+      font-size: 32px;
+      color: var(--brand-warm);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .qc-slide cite {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 18px;
+      font-style: normal;
+      font-size: 13.5px; color: var(--fg-muted); font-weight: 600;
+    }
+    .qc-slide cite .source-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: rgba(0,0,0,0.06); color: var(--fg);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 12px;
+    }
+    .qc-dots {
+      display: flex; justify-content: center; gap: 8px;
+      margin-top: 18px;
+    }
+    .qc-dots button {
+      width: 8px; height: 8px; border-radius: 50%;
+      border: 0; padding: 0;
+      background: var(--bg-sunken); cursor: pointer;
+      transition: all .15s ease;
+    }
+    .qc-dots button.is-active {
+      background: var(--brand-primary);
+      width: 22px; border-radius: 4px;
+    }
+
+    /* On mobile fall back to scroll-snap horizontal scroll */
+    @media (max-width: 600px) {
+      .qc-stage {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        transition: none;
+        transform: none !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .qc-slide { scroll-snap-align: center; }
+      .qc-dots { display: none; }
+    }
+
+    /* ── Contact CTA ── */
+    .cta-section {
+      max-width: 760px; margin: 0 auto;
+      padding: 28px 20px 60px;
+      text-align: center;
+    }
+    .cta-section .cta-eyebrow {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      color: var(--fg-muted); letter-spacing: 0.08em; margin-bottom: 8px;
+    }
+    .cta-section h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(24px, 3vw, 30px);
+      margin: 0 0 18px; letter-spacing: -0.01em;
+    }
+    .cta-button {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 32px;
+      background: var(--brand-primary); color: #fff;
+      font-size: 16px; font-weight: 600;
+      border: 0; border-radius: 999px;
+      cursor: pointer; text-decoration: none;
+      box-shadow: var(--shadow-brand);
+      transition: transform .12s ease, background .12s ease;
+    }
+    .cta-button:hover { background: var(--brand-primary-hover); color: #fff; transform: translateY(-1px); }
+
+    /* ── Footer (mirrors creator-public.html social block) ── */
+    .creator-footer {
+      max-width: 980px; margin: 0 auto;
+      padding: 32px 20px 48px;
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      text-align: center;
+    }
+    .creator-footer .social-stack {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    }
+    .social-icon-pub {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-muted); font-size: 15px; font-weight: 600;
+      transition: all .15s ease;
+    }
+    .social-icon-pub:hover {
+      border-color: var(--brand-primary); color: var(--brand-primary);
+      transform: translateY(-1px);
+    }
+    .creator-footer .powered {
+      font-size: 12px; color: var(--fg-subtle);
+    }
+    .creator-footer .powered a {
+      color: var(--brand-primary); font-weight: 600;
+    }
+
+    /* ── Mockup-only divider ── */
+    .pub-divider {
+      max-width: 760px; margin: 0 auto;
+      border: 0; border-top: 1px solid var(--border);
+    }
+
+    /* Smooth fade-in on load */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up {
+      animation: fade-up 540ms cubic-bezier(.2,.8,.2,1) both;
+    }
+    .fade-up.delay-1 { animation-delay: 80ms; }
+    .fade-up.delay-2 { animation-delay: 160ms; }
+    .fade-up.delay-3 { animation-delay: 240ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-up { animation: none; }
+      .qc-stage { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top strip: orientation only (mockup convention) -->
+  <div class="top-strip">
+    <a href="./creator-public.html">← Back to alexandra</a>
+    <span class="url-mono">tadaify.com/alexandra/<b>about</b></span>
+  </div>
+
+  <!-- Creator identity (compact) -->
+  <div class="creator-row fade-up">
+    <div class="av">A</div>
+    <div class="who">
+      <div class="who-name">Alexandra Silva</div>
+      <div class="who-handle">@alexandra · Strength coach</div>
+    </div>
+    <a href="./creator-public.html" class="back-to-main">All links →</a>
+  </div>
+
+  <!-- ============== HERO SECTION ============== -->
+  <section class="about-hero fade-up delay-1" aria-labelledby="hero-name">
+    <div class="hero-photo" aria-hidden="true">A</div>
+    <div class="hero-text">
+      <h1 id="hero-name">Alexandra Silva</h1>
+      <p class="tagline">Strength coach for women who hate gymtok.</p>
+      <div class="social-proof">
+        <b>@alexandra</b>
+        <span class="sp-dot"></span>
+        <span><b>24k</b> followers</span>
+        <span class="sp-dot"></span>
+        <span>since <b>2018</b></span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="pub-divider" />
+
+  <!-- ============== BIO SECTION ============== -->
+  <section class="about-section bio-section fade-up delay-2" aria-labelledby="bio-h">
+    <h2 id="bio-h">My story</h2>
+    <div class="bio-text">
+      <p>I'm Alexandra. I coach busy women who want to get strong without making the gym their personality.</p>
+      <p>I started lifting at 24 to fix a back I'd wrecked sitting at a desk. Five years later I'd quit my consulting job and was coaching full-time. Today I work with about 40 women a year — most of them mums, founders, or runners who'd hit a wall trying to "just do more cardio."</p>
+      <p>My method is unsexy: heavy basics, real recovery, and exactly enough volume to keep moving forward. <em>No 4 AM cold-plunge content. No 30-day shred programs.</em> Just the boring stuff that actually works for the next ten years.</p>
+    </div>
+  </section>
+
+  <!-- ============== HIGHLIGHTS GRID ============== -->
+  <section class="highlights-public fade-up delay-3" aria-labelledby="highlights-h">
+    <h2 id="highlights-h" style="text-align:center; font-family: var(--font-display); font-weight: 600; font-size: clamp(24px, 3.2vw, 32px); letter-spacing: -0.01em; margin: 0 0 22px;">Highlights</h2>
+    <div class="highlights-grid-public">
+      <div class="hp-card">
+        <div class="hp-icon" aria-hidden="true">💪</div>
+        <div class="hp-value">40 women / year</div>
+        <div class="hp-caption">coached 1:1 since 2020</div>
+      </div>
+      <div class="hp-card">
+        <div class="hp-icon" aria-hidden="true">📚</div>
+        <div class="hp-value">1 book published</div>
+        <div class="hp-caption">Rest Days Are Workouts (2024)</div>
+      </div>
+      <div class="hp-card">
+        <div class="hp-icon" aria-hidden="true">🌍</div>
+        <div class="hp-value">Lisbon, Portugal</div>
+        <div class="hp-caption">working remotely since 2022</div>
+      </div>
+      <div class="hp-card">
+        <div class="hp-icon" aria-hidden="true">📅</div>
+        <div class="hp-value">6 yrs coaching</div>
+        <div class="hp-caption">started 2018, full-time since 2020</div>
+      </div>
+      <div class="hp-card">
+        <div class="hp-icon" aria-hidden="true">🎙</div>
+        <div class="hp-value">40+ podcasts</div>
+        <div class="hp-caption">guest on training & longevity shows</div>
+      </div>
+      <div class="hp-card">
+        <div class="hp-icon" aria-hidden="true">🏋️‍♀️</div>
+        <div class="hp-value">DL 152 kg</div>
+        <div class="hp-caption">current best · trained, not bro-spotted</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== STORY TIMELINE ============== -->
+  <section class="timeline-public" aria-labelledby="timeline-h">
+    <h2 id="timeline-h" style="text-align:center">The road here</h2>
+    <div class="tl-track">
+
+      <div class="tl-row tl-left">
+        <div class="tl-card">
+          <h3>First barbell</h3>
+          <p>Joined a powerlifting gym in Berlin to fix back pain. Stayed for the community.</p>
+        </div>
+        <div class="tl-marker" aria-hidden="true">2018</div>
+      </div>
+
+      <div class="tl-row tl-right">
+        <div class="tl-marker" aria-hidden="true">2020</div>
+        <div class="tl-card">
+          <h3>Quit consulting</h3>
+          <p>Took a sabbatical to certify as a strength coach. Never went back to the office.</p>
+        </div>
+      </div>
+
+      <div class="tl-row tl-left">
+        <div class="tl-card">
+          <h3>Moved to Lisbon</h3>
+          <p>Switched to remote-first coaching. Built the first cohort of online clients.</p>
+        </div>
+        <div class="tl-marker" aria-hidden="true">2022</div>
+      </div>
+
+      <div class="tl-row tl-right">
+        <div class="tl-marker" aria-hidden="true">2024</div>
+        <div class="tl-card">
+          <h3>Published Rest Days Are Workouts</h3>
+          <p>Self-published the book on recovery. Sold out the first run in 6 weeks.</p>
+        </div>
+      </div>
+
+      <div class="tl-row tl-left">
+        <div class="tl-card">
+          <h3>Now</h3>
+          <p>Building Strong Not Skinny — a small group program for busy women.</p>
+        </div>
+        <div class="tl-marker" aria-hidden="true">2026</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============== PRESS / QUOTES CAROUSEL ============== -->
+  <section class="press-section" aria-labelledby="press-h">
+    <h2 id="press-h">In the press</h2>
+    <div class="qc-track">
+      <div class="qc-stage" id="qc-stage" role="region" aria-roledescription="carousel" aria-label="Press quotes">
+        <div class="qc-slide" role="group" aria-roledescription="slide" aria-label="1 of 3">
+          <blockquote>
+            "Alexandra is the rare coach who treats rest as a workout. Her programs are quietly the best I've followed."
+            <cite>
+              <span class="source-icon" aria-hidden="true">FT</span>
+              The Fitness Times — issue 47
+            </cite>
+          </blockquote>
+        </div>
+        <div class="qc-slide" role="group" aria-roledescription="slide" aria-label="2 of 3">
+          <blockquote>
+            "Honest, no-nonsense coaching. She's the one I send my friends to when they ask where to start lifting."
+            <cite>
+              <span class="source-icon" aria-hidden="true" style="background: rgba(245,158,11,0.15); color: var(--brand-warm-dark)">RH</span>
+              Run Happy podcast · @robinhuxley
+            </cite>
+          </blockquote>
+        </div>
+        <div class="qc-slide" role="group" aria-roledescription="slide" aria-label="3 of 3">
+          <blockquote>
+            "The book Rest Days Are Workouts is the antidote to the cult of grind. Required reading for any tired lifter."
+            <cite>
+              <span class="source-icon" aria-hidden="true" style="background: rgba(52,211,153,0.16); color: #047857">SH</span>
+              Strong Habits Newsletter
+            </cite>
+          </blockquote>
+        </div>
+      </div>
+      <div class="qc-dots" role="tablist" aria-label="Carousel dots">
+        <button class="is-active" type="button" role="tab" aria-selected="true"  aria-label="Slide 1" data-slide="0"></button>
+        <button class="" type="button" role="tab" aria-selected="false" aria-label="Slide 2" data-slide="1"></button>
+        <button class="" type="button" role="tab" aria-selected="false" aria-label="Slide 3" data-slide="2"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== CONTACT CTA ============== -->
+  <section class="cta-section" aria-labelledby="cta-h">
+    <div class="cta-eyebrow">Get in touch</div>
+    <h3 id="cta-h">Want to train together?</h3>
+    <a href="./creator-public.html" class="cta-button">
+      Work with me
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </section>
+
+  <!-- ============== FOOTER (mirrors creator-public.html) ============== -->
+  <footer class="creator-footer">
+    <div class="social-stack" aria-label="Social profiles">
+      <a class="social-icon-pub" href="#" aria-label="Instagram">IG</a>
+      <a class="social-icon-pub" href="#" aria-label="TikTok">TT</a>
+      <a class="social-icon-pub" href="#" aria-label="YouTube">YT</a>
+      <a class="social-icon-pub" href="#" aria-label="Substack">SB</a>
+      <a class="social-icon-pub" href="#" aria-label="Spotify">SP</a>
+    </div>
+    <div class="powered">© 2026 Alexandra Silva · made with <a href="./landing.html">tadaify</a></div>
+  </footer>
+
+  <script>
+    // Press carousel — dot navigation. Auto-advance every 7s, pause on hover.
+    (function () {
+      var stage = document.getElementById('qc-stage');
+      if (!stage) return;
+      var dots  = document.querySelectorAll('.qc-dots button');
+      var idx = 0;
+      var timer = null;
+
+      function go(i) {
+        idx = (i + dots.length) % dots.length;
+        // Skip transform on mobile (scroll-snap takes over)
+        if (window.matchMedia('(max-width: 600px)').matches) return;
+        stage.style.transform = 'translateX(' + (-100 * idx) + '%)';
+        Array.prototype.forEach.call(dots, function (d, j) {
+          d.classList.toggle('is-active', j === idx);
+          d.setAttribute('aria-selected', j === idx ? 'true' : 'false');
+        });
+      }
+      function tick() { go(idx + 1); }
+      function start() { stop(); timer = setInterval(tick, 7000); }
+      function stop()  { if (timer) { clearInterval(timer); timer = null; } }
+
+      Array.prototype.forEach.call(dots, function (d) {
+        d.addEventListener('click', function () {
+          go(parseInt(d.getAttribute('data-slide'), 10) || 0);
+          start();
+        });
+      });
+
+      var track = stage.parentNode;
+      track.addEventListener('mouseenter', stop);
+      track.addEventListener('mouseleave', start);
+      track.addEventListener('focusin',    stop);
+      track.addEventListener('focusout',   start);
+
+      // Respect reduced-motion: no auto-advance
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) start();
+    })();
+  </script>
+
+</body>
+</html>
