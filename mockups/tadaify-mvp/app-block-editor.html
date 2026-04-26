@@ -2718,6 +2718,55 @@
     }, true);
 
     /* ------------------------------------------------------------------ */
+    /* VIDEO IFRAME URL CONSTRUCTION                                      */
+    /*                                                                    */
+    /* youtube-nocookie + minimal-branding params per DEC-097 §15 /       */
+    /* feedback_no_native_video_upload_youtube_nocookie_only.md.          */
+    /*                                                                    */
+    /* Single source of truth for every Video / Embed (provider=youtube|  */
+    /* vimeo) iframe in the editor preview AND the public render path.    */
+    /* Mirrored in creator-public.html via the same comment marker.       */
+    /*                                                                    */
+    /* YouTube params:                                                    */
+    /*   rel=0            → no related-video grid at end                  */
+    /*   modestbranding=1 → minimal YouTube logo                          */
+    /*   color=white      → white progress bar (matches dark theme)       */
+    /*   playsinline=1    → iOS plays inline instead of forcing fullscreen*/
+    /* Vimeo params:                                                      */
+    /*   dnt=1            → Do Not Track (privacy)                        */
+    /*   title=0&byline=0&portrait=0 → minimal Vimeo chrome               */
+    /* ------------------------------------------------------------------ */
+    function extractYouTubeId(url) {
+      if (!url) return '';
+      var m;
+      m = url.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);
+      if (m) return m[1];
+      m = url.match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+      if (m) return m[1];
+      m = url.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,})/);
+      if (m) return m[1];
+      return '';
+    }
+    function extractVimeoId(url) {
+      if (!url) return '';
+      var m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      return m ? m[1] : '';
+    }
+    function buildVideoIframeUrl(provider, url) {
+      if (provider === 'youtube') {
+        var ytId = extractYouTubeId(url) || 'dQw4w9WgXcQ';
+        return 'https://www.youtube-nocookie.com/embed/' + ytId +
+               '?rel=0&modestbranding=1&color=white&playsinline=1';
+      }
+      if (provider === 'vimeo') {
+        var vimId = extractVimeoId(url) || '76979871';
+        return 'https://player.vimeo.com/video/' + vimId +
+               '?dnt=1&title=0&byline=0&portrait=0';
+      }
+      return '';
+    }
+
+    /* ------------------------------------------------------------------ */
     /* BLOCK TYPE CATALOG                                                 */
     /*                                                                    */
     /* Each type is a self-contained spec: form fields + preview renderer */
@@ -2805,6 +2854,17 @@
         preview: function (state) {
           var prov = state.provider || 'youtube';
           var icons = { youtube: '▶', vimeo: '▶', spotify: '♫', soundcloud: '♪', twitter: '𝕏', instagram: '📷', tiktok: '🎵' };
+          /* youtube-nocookie + minimal-branding params per DEC-097 §15 / feedback_no_native_video_upload_youtube_nocookie_only.md */
+          if (prov === 'youtube' || prov === 'vimeo') {
+            var src = buildVideoIframeUrl(prov, state.url);
+            return '<div class="preview-embed" style="padding:0;overflow:hidden">' +
+                     '<iframe src="' + escapeHtml(src) + '" ' +
+                       'style="width:100%;aspect-ratio:16/9;border:0;display:block" ' +
+                       'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+                       'allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin">' +
+                     '</iframe>' +
+                   '</div>';
+          }
           return '<div class="preview-embed">' + (icons[prov] || '▶') + ' &nbsp; ' + escapeHtml(prov.toUpperCase()) + ' embed</div>';
         },
         analytics: { today: '92', sevenDay: '760', source: 'youtube' }
@@ -3025,15 +3085,29 @@
         icon: '🎬',
         category: 'Media',
         form: function (state) {
+          /* No native upload — YouTube/Vimeo only per DEC-097 §15 /
+             feedback_no_native_video_upload_youtube_nocookie_only.md */
           return [
-            { kind: 'upload', name: 'src', label: 'Upload video (mp4 / webm · max 50MB)' },
-            { kind: 'text', name: 'caption', label: 'Caption', value: state.caption || 'Behind the scenes', ai: true },
-            { kind: 'check', name: 'autoplay', label: 'Autoplay (muted)', value: state.autoplay === true },
-            { kind: 'check', name: 'loop', label: 'Loop', value: state.loop === true }
+            { kind: 'url', name: 'url', label: 'YouTube or Vimeo URL',
+              value: state.url || 'https://youtu.be/dQw4w9WgXcQ',
+              help: 'Paste a YouTube or Vimeo link. We embed via youtube-nocookie.com (no tracking cookies, minimal branding).' },
+            { kind: 'select', name: 'provider', label: 'Provider',
+              options: [['youtube','YouTube'],['vimeo','Vimeo']],
+              value: state.provider || 'youtube' },
+            { kind: 'text', name: 'caption', label: 'Caption', value: state.caption || 'Behind the scenes', ai: true }
           ];
         },
-        preview: function () {
-          return '<div class="preview-embed">🎬 &nbsp; Video</div>';
+        preview: function (state) {
+          /* youtube-nocookie + minimal-branding params per DEC-097 §15 / feedback_no_native_video_upload_youtube_nocookie_only.md */
+          var prov = state.provider || 'youtube';
+          var src = buildVideoIframeUrl(prov, state.url);
+          return '<div class="preview-embed" style="padding:0;overflow:hidden">' +
+                   '<iframe src="' + escapeHtml(src) + '" ' +
+                     'style="width:100%;aspect-ratio:16/9;border:0;display:block" ' +
+                     'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+                     'allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin">' +
+                   '</iframe>' +
+                 '</div>';
         },
         analytics: { today: '78', sevenDay: '630', source: 'youtube' }
       },
@@ -3122,32 +3196,7 @@
         },
         analytics: { today: '54', sevenDay: '420', source: 'instagram', trending: true }
       },
-      'livestream': {
-        label: 'Live stream',
-        icon: '📡',
-        category: 'Media',
-        form: function (state) {
-          return [
-            { kind: 'select', name: 'platform', label: 'Platform',
-              options: [['twitch','Twitch'],['youtubelive','YouTube Live'],['kick','Kick']], value: state.platform || 'twitch' },
-            { kind: 'text', name: 'channel', label: 'Channel / handle', value: state.channel || 'alexandra-music' },
-            { kind: 'icon-picker', name: 'ctaIcon', label: 'Watch button icon', value: state.ctaIcon || 'play',
-              help: 'Shown next to "Watch live" when the stream is on.' },
-            { kind: 'check', name: 'showWhenOffline', label: 'Show block when offline (with "next stream" countdown)', value: state.showWhenOffline === true }
-          ];
-        },
-        preview: function (state) {
-          var ic = renderIconForPreview(state.ctaIcon, 'play');
-          return '<div class="preview-stream">' +
-                   '<span class="live">● LIVE</span> &nbsp; ' + escapeHtml(state.channel || 'alexandra-music') +
-                   '<div class="v">142 watching · ' + escapeHtml((state.platform || 'twitch').toUpperCase()) + '</div>' +
-                   '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#EF4444;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700">' +
-                     ic + ' Watch live' +
-                   '</div>' +
-                 '</div>';
-        },
-        analytics: { today: '12', sevenDay: '88', source: 'discord' }
-      }
+      // v2 candidate: livestream — see feedback_no_livestream_block_in_tadaify_mvp.md (DEC-099)
     };
 
     /* ------------------------------------------------------------------ */
@@ -3223,11 +3272,11 @@
       'handles', 'handlesOrder', 'shape',                  /* social */
       'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', /* newsletter */
       'product', 'showPrice', 'title', 'price', 'image',   /* product (was "shop"; product key kept for legacy) */
-      'autoplay', 'loop',                                  /* video */
+      'autoplay', 'loop',                                  /* video (autoplay/loop kept for legacy state migration; new video block uses url+provider above) */
       'sectionIcon', 'items', 'q1', 'a1', 'q2', 'a2',      /* faq (q1..a2 kept for legacy seed migration only) */
       'html',                                              /* custom */
-      'target', 'theme',                                   /* countdown */
-      'platform', 'channel', 'showWhenOffline'             /* live */
+      'target', 'theme'                                    /* countdown */
+      /* v2 candidate: 'platform', 'channel', 'showWhenOffline' (live) — see feedback_no_livestream_block_in_tadaify_mvp.md (DEC-099) */
     ];
 
     /* Diff field labels — what shows up in the "What's different" card */
@@ -3388,7 +3437,7 @@
         }
       }
 
-      // A/B section identity chip — visible across all 13 block types
+      // A/B section identity chip — visible across all 12 block types
       // (FIX-004 consistency). Toggles between "available" and "active"
       // states purely from countAbDiffs(). No toggle restored — auto-detect
       // from Variant B edits stays per DEC-093.
