@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — Account tab deep dive (F-APP-SETTINGS-ACCOUNT-001 #33)
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Standalone deep-dive of the Account tab inside /app/settings.
+  Sister mockups: app-settings-billing.html, app-settings-security.html,
+  app-settings-gdpr.html (open in parallel branches).
+
+  Source story: graspsoftwarepw/tadaify-app issues #33
+
+  Scope (over the existing app-settings.html#account stub):
+    - Identity panel — avatar (140px) + crop modal + AI generate, display name with
+      live preview line, handle with prefix + availability check + history (Pro+),
+      bio with counter + ✨ Suggest, pronouns, location with autocomplete,
+      personal website, date of birth (Pro+).
+    - Email panel — primary email + change email modal, recovery email (Pro+),
+      notification preferences (4 toggles).
+    - Profile visibility — public profile toggle, discover opt-in (Creator+).
+    - Sticky save bar with auto-save status + TierGate.checkAndProceed at Save.
+    - Empty state for brand-new user (state=empty in demo toolbar).
+    - Demo toolbar: tier (Free/Creator/Pro/Business) + state (filled/empty/unsaved).
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (one UI; power fields inline empty by default; no Show advanced)
+    - feedback_no_blur_premium_features (recovery email, DOB, handle history, discover — fully visible + interactive on every tier; tier badge inline; gate at Save)
+    - feedback_no_right_side_drawers (avatar crop + change-handle confirm + change-email all CENTERED modals, never drawers)
+    - feedback_mockup_full_feature_vision (every interaction does something — empty state, unsaved state, modals, availability check states all wired)
+    - feedback_sidebar_pages_grouping (canonical sidebar via shared partial, data-active="settings")
+
+  Demo state via URL or toolbar:
+    ?tier=free | creator | pro | business    (default: creator)
+    ?state=filled | empty | unsaved          (default: filled)
+
+  Brand: Indigo Serif palette, Crimson Pro display + Inter sans, ta/da!/ify wordmark.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — Account · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Wordmark */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.success { background: var(--success-bg); color: #065F46; }
+    .chip.warn { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.25); }
+    .chip.danger  { background: var(--danger-bg); color: #991B1B; }
+    .chip.brand   { background: rgba(99,102,241,0.10); color: var(--brand-primary); border: 1px solid rgba(99,102,241,0.22); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: left .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { left: 19px; }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px) { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content shell ── */
+    main.content { padding: 22px 20px 120px; min-width: 0; }
+    @media (min-width: 720px) { main.content { padding: 26px 32px 120px; } }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--fg-muted); }
+    .breadcrumb a:hover { color: var(--brand-primary); }
+    .breadcrumb .sep { color: var(--fg-subtle); }
+    .breadcrumb .current { color: var(--fg); font-weight: 600; }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 26px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 4px; }
+
+    /* ── Settings layout ── */
+    .settings-layout { display: flex; gap: 0; align-items: flex-start; }
+
+    .settings-nav {
+      width: 200px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 82px;
+    }
+    .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; cursor: pointer; text-decoration: none;
+      transition: background .12s ease, color .12s ease;
+    }
+    .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle); }
+    .settings-nav-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary); font-weight: 600;
+    }
+    .settings-nav-item.active svg { color: var(--brand-primary); }
+    .settings-nav-divider { border-top: 1px solid var(--border); margin: 8px 0; }
+    .settings-nav-item .sn-pill {
+      margin-left: auto;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+      white-space: nowrap;
+    }
+    .settings-nav-item .sn-pill.pro-pill {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .settings-nav-item .sn-pill.biz-pill {
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+
+    @media (max-width: 719px) {
+      .settings-layout { flex-direction: column; gap: 0; }
+      .settings-nav {
+        width: 100%; flex-direction: row;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 4px; padding-bottom: 12px; margin-bottom: 4px;
+        position: static;
+      }
+      .settings-nav-item {
+        white-space: nowrap; flex-shrink: 0;
+        padding: 7px 14px; border-radius: 99px;
+        border: 1px solid var(--border); background: var(--bg-elevated);
+        font-size: 13px;
+      }
+      .settings-nav-item.active {
+        background: rgba(99,102,241,0.10);
+        border-color: rgba(99,102,241,0.25);
+      }
+      .settings-nav-item .sn-pill { display: none; }
+      .settings-nav-divider { display: none; }
+    }
+
+    .settings-content {
+      flex: 1; min-width: 0;
+      padding-left: 28px;
+      border-left: 1px solid var(--border);
+      min-height: 400px;
+    }
+    @media (max-width: 719px) {
+      .settings-content { padding-left: 0; border-left: none; padding-top: 12px; }
+    }
+
+    /* ── Section blocks ── */
+    .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .settings-section-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin-bottom: 4px;
+    }
+    .settings-section-lede {
+      font-size: 13px; color: var(--fg-muted);
+      margin: 0 0 16px; line-height: 1.55;
+    }
+
+    /* ── Field rows ── */
+    .field-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .field-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .field-row:first-of-type { padding-top: 0; }
+    .field-label {
+      width: 170px; flex-shrink: 0;
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      padding-top: 6px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .field-label .field-hint {
+      display: block; font-size: 12px; font-weight: 400; color: var(--fg-muted); margin-top: 2px;
+      width: 100%;
+    }
+    .field-body { flex: 1; min-width: 0; }
+    @media (max-width: 599px) {
+      .field-row { flex-direction: column; gap: 6px; }
+      .field-label { width: auto; padding-top: 0; }
+    }
+
+    .field-input {
+      font-family: var(--font-sans); font-size: 14px;
+      padding: 10px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      outline: none; transition: border-color .12s ease, box-shadow .12s ease;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .field-input[readonly] {
+      background: var(--bg-muted); color: var(--fg-muted); cursor: default;
+    }
+    .field-input.has-error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+    }
+    textarea.field-input { resize: vertical; min-height: 84px; line-height: 1.55; }
+    .field-counter {
+      font-size: 11.5px; color: var(--fg-subtle); text-align: right; margin-top: 4px;
+      transition: color .15s ease;
+    }
+    .field-counter.is-amber { color: var(--brand-warm-dark); font-weight: 600; }
+    .field-counter.is-red { color: var(--danger); font-weight: 700; }
+
+    .field-error {
+      display: none; font-size: 12px; color: var(--danger);
+      margin-top: 5px; line-height: 1.4;
+    }
+    .field-error.is-visible { display: block; }
+
+    .with-suggest {
+      display: flex; align-items: stretch; gap: 8px;
+    }
+    .with-suggest > .field-input { flex: 1; }
+    .suggest-btn {
+      flex-shrink: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--brand-primary);
+      font-size: 12.5px; font-weight: 600;
+      padding: 0 12px; border-radius: 9px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .suggest-btn:hover { background: var(--bg-muted); border-color: rgba(99,102,241,0.32); }
+
+    /* ── Avatar (140px hero) ── */
+    .avatar-hero-row {
+      display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+    }
+    .avatar-hero {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 56px;
+      flex-shrink: 0;
+      box-shadow: 0 8px 24px rgba(99,102,241,0.28);
+      position: relative;
+    }
+    .avatar-hero img {
+      width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+      display: block;
+    }
+    .avatar-hero .upload-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: rgba(11,15,30,0.42);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 12px; font-weight: 600;
+      opacity: 0; transition: opacity .15s ease;
+      cursor: pointer;
+    }
+    .avatar-hero:hover .upload-overlay { opacity: 1; }
+
+    .avatar-controls { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+    .avatar-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .avatar-meta { font-size: 12px; color: var(--fg-subtle); margin: 0; }
+    .avatar-preview-strip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted); border-radius: 10px;
+      font-size: 11.5px; color: var(--fg-muted);
+    }
+    .avatar-preview-strip .label { font-weight: 600; color: var(--fg-muted); margin-right: 4px; }
+    .avatar-preview-strip .pv {
+      border-radius: 50%; background: var(--hero-gradient);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .avatar-preview-strip .pv img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-preview-strip .pv-64 { width: 64px; height: 64px; font-size: 26px; }
+    .avatar-preview-strip .pv-32 { width: 32px; height: 32px; font-size: 13px; }
+    .avatar-preview-strip .pv-24 { width: 24px; height: 24px; font-size: 11px; }
+    .avatar-preview-strip .pv-16 { width: 16px; height: 16px; font-size: 8px; }
+
+    /* ── Identity preview ── */
+    .name-preview {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted); margin-top: 6px;
+      padding: 6px 10px;
+      background: var(--bg-muted); border-radius: 7px;
+      width: fit-content; max-width: 100%;
+    }
+    .name-preview .np-label { color: var(--fg-subtle); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .name-preview .np-name { font-weight: 600; color: var(--fg); }
+    .name-preview .np-sep { color: var(--fg-subtle); }
+    .name-preview .np-handle { color: var(--brand-primary); font-family: var(--font-mono); font-size: 12.5px; }
+
+    /* ── Handle input with prefix + status pill ── */
+    .handle-input-wrap {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .handle-input-shell {
+      position: relative; flex: 1; min-width: 240px;
+    }
+    .handle-prefix {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--fg-muted); font-size: 14px; pointer-events: none;
+      font-family: var(--font-sans);
+    }
+    .handle-status-pill {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 11px; font-weight: 600;
+      padding: 3px 8px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      transition: background .15s ease, color .15s ease;
+    }
+    .handle-status-pill.is-ok  { background: rgba(34,197,94,.18); color: #16a34a; }
+    .handle-status-pill.is-err { background: rgba(239,68,68,.15); color: var(--danger); }
+    .handle-status-pill.is-warn { background: rgba(245,158,11,.16); color: var(--brand-warm-dark); }
+
+    .handle-history {
+      margin-top: 10px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .handle-history summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 9px 12px;
+      font-size: 12.5px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px;
+      user-select: none;
+    }
+    .handle-history summary::-webkit-details-marker { display: none; }
+    .handle-history summary::after {
+      content: '▾'; margin-left: auto; font-size: 11px; color: var(--fg-subtle);
+      transition: transform .15s ease;
+    }
+    .handle-history[open] summary::after { transform: rotate(180deg); }
+    .handle-history .hh-list { padding: 4px 12px 12px; }
+    .handle-history .hh-row {
+      display: flex; align-items: center; gap: 10px; padding: 6px 0;
+      font-size: 12.5px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .handle-history .hh-row:last-child { border-bottom: 0; }
+    .handle-history .hh-row .hh-old {
+      font-family: var(--font-mono); color: var(--fg);
+    }
+    .handle-history .hh-row .hh-arrow { color: var(--fg-subtle); }
+    .handle-history .hh-row .hh-new {
+      font-family: var(--font-mono); color: var(--brand-primary); font-weight: 600;
+    }
+    .handle-history .hh-row .hh-when {
+      margin-left: auto; color: var(--fg-muted); font-size: 11.5px;
+    }
+    .handle-history .hh-row .hh-status { font-size: 10.5px; }
+
+    /* ── Email row + verified badge ── */
+    .email-display {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; border-radius: 9px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+    }
+    .email-display .email-text {
+      font-family: var(--font-mono); font-size: 13px; color: var(--fg);
+    }
+    .email-display .email-actions { margin-left: auto; }
+
+    /* ── Toggles list (notification prefs + visibility) ── */
+    .toggle-list { display: flex; flex-direction: column; gap: 0; }
+    .toggle-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .toggle-row:last-child { border-bottom: 0; }
+    .toggle-row:first-child { padding-top: 0; }
+    .toggle-row .tr-text { flex: 1; min-width: 0; }
+    .toggle-row .tr-name {
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .toggle-row .tr-desc {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; margin-top: 3px;
+    }
+
+    /* ── Location autocomplete ── */
+    .autocomplete-shell { position: relative; }
+    .autocomplete-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      box-shadow: 0 12px 32px rgba(17,24,39,0.10);
+      z-index: 30;
+      max-height: 220px; overflow-y: auto;
+      display: none;
+    }
+    .autocomplete-list.is-open { display: block; }
+    .autocomplete-list .ac-item {
+      padding: 9px 12px; font-size: 13.5px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .autocomplete-list .ac-item:last-child { border-bottom: 0; }
+    .autocomplete-list .ac-item:hover { background: var(--bg-muted); }
+    .autocomplete-list .ac-item .ac-flag { font-size: 14px; }
+    .autocomplete-list .ac-item .ac-meta { color: var(--fg-muted); font-size: 11.5px; margin-left: auto; }
+
+    /* ── Sticky save bar ── */
+    .save-bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 22px;
+      display: none;
+      align-items: center; justify-content: space-between;
+      gap: 12px;
+      z-index: 80;
+      box-shadow: 0 -8px 24px rgba(17,24,39,0.06);
+    }
+    .save-bar.is-visible { display: flex; }
+    .save-bar.is-saved { background: rgba(16,185,129,0.06); border-top-color: rgba(16,185,129,0.30); }
+    .save-bar .save-hint {
+      font-size: 12.5px; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .save-bar .save-hint .save-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--brand-warm);
+      box-shadow: 0 0 0 4px rgba(245,158,11,0.18);
+    }
+    .save-bar.is-saved .save-hint .save-dot { background: var(--success); box-shadow: 0 0 0 4px rgba(16,185,129,0.18); }
+    .save-bar.is-saving .save-hint .save-dot { background: var(--brand-primary); }
+
+    @media (min-width: 1100px) {
+      .save-bar { left: 240px; }
+    }
+    @media (min-width: 720px) and (max-width: 1099px) {
+      .save-bar { left: 72px; }
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));
+      border: 1px dashed rgba(99,102,241,0.30);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .empty-state .es-emoji { font-size: 36px; flex-shrink: 0; }
+    .empty-state .es-text { flex: 1; min-width: 0; }
+    .empty-state .es-title { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0 0 4px; }
+    .empty-state .es-sub { font-size: 13px; color: var(--fg-muted); margin: 0 0 8px; line-height: 1.55; }
+    .empty-state .es-arrow { color: var(--brand-primary); font-weight: 600; font-size: 13px; }
+
+    /* ── Modals ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.is-open { display: flex; }
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 26px;
+      width: 100%; max-width: 520px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.18);
+      animation: modalIn .18s ease;
+      position: relative;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal.modal-wide { max-width: 720px; }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 { font-family: var(--font-display); font-size: 22px; margin: 0 0 6px; letter-spacing: -0.005em; }
+    .modal .modal-sub { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 18px; line-height: 1.55; }
+    .modal .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+    .modal .modal-close-x {
+      position: absolute; top: 16px; right: 16px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 20px; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal .modal-close-x:hover { background: var(--bg-muted); color: var(--fg); }
+    .modal-warning {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 13px; color: var(--danger);
+      margin-bottom: 14px; line-height: 1.5;
+    }
+    .modal-info {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.22);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 13px; color: var(--fg);
+      margin-bottom: 14px; line-height: 1.55;
+    }
+
+    /* Crop modal */
+    .crop-stage {
+      width: 100%; aspect-ratio: 1 / 1;
+      max-width: 360px; margin: 0 auto 14px;
+      background: var(--bg-muted); border-radius: 12px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); font-size: 12px;
+    }
+    .crop-stage::after {
+      content: ''; position: absolute;
+      width: 70%; aspect-ratio: 1 / 1;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 9999px rgba(11,15,30,0.55);
+      border: 2px solid rgba(255,255,255,0.55);
+      pointer-events: none;
+    }
+    .crop-stage .crop-img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      background: linear-gradient(135deg, #6366F1, #F59E0B);
+    }
+    .crop-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .crop-controls label { font-size: 12.5px; color: var(--fg-muted); font-weight: 600; min-width: 50px; }
+    .crop-controls input[type=range] { flex: 1; }
+
+    /* AI generate panel inside crop modal */
+    .ai-gen-panel {
+      border: 1px dashed rgba(99,102,241,0.30);
+      background: rgba(99,102,241,0.04);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+    .ai-gen-panel .ag-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand-primary); margin-bottom: 4px; }
+    .ai-gen-panel .ag-sub { font-size: 12px; color: var(--fg-muted); margin: 0 0 8px; }
+    .ai-gen-panel input { width: 100%; }
+
+    /* Tier-banner (kept for parity with app-settings.html) */
+    .tier-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.22);
+      font-size: 13px; line-height: 1.5;
+      color: var(--fg);
+    }
+    body.dark-mode .tier-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.10));
+      border-color: rgba(99,102,241,0.40);
+    }
+    .tier-banner .tb-ico {
+      flex-shrink: 0; font-size: 20px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(245,158,11,0.18);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .tier-banner .tb-text { flex: 1; min-width: 0; }
+    .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
+    .tier-banner .tb-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .tier-banner .btn { flex-shrink: 0; }
+
+    /* ── Demo toolbar ── */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px; z-index: 999;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 600; color: var(--fg-subtle);
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      max-width: 280px;
+    }
+    .demo-toolbar .dt-label {
+      color: var(--fg-subtle); text-transform: uppercase;
+      letter-spacing: .06em; font-size: 10px;
+    }
+    .demo-toolbar .dt-row { display: flex; gap: 4px; flex-wrap: wrap; }
+    .demo-toolbar button {
+      padding: 4px 9px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans); color: var(--fg);
+      transition: background .12s ease, border-color .12s ease, color .12s ease;
+    }
+    .demo-toolbar button.is-active {
+      background: rgba(99,102,241,0.10);
+      border-color: rgba(99,102,241,0.30);
+      color: var(--brand-primary);
+    }
+    .demo-toolbar button:hover { background: var(--bg-muted); }
+
+    /* ── Dark mode overrides ── */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #4B5563;
+      --border:      #1F2937;
+      --border-strong: #374151;
+      --wm-ify: #F3F4F6;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .settings-nav-item { color: #9CA3AF; }
+    body.dark-mode .settings-nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .settings-nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .settings-nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .settings-section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .field-input { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .field-input[readonly] { background: #1A2236; color: #9CA3AF; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .save-bar { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .empty-state { border-color: rgba(99,102,241,0.45); }
+    body.dark-mode .demo-toolbar { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .demo-toolbar button { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .demo-toolbar button.is-active { background: rgba(99,102,241,0.20); border-color: rgba(99,102,241,0.50); color: #A5B4FC; }
+    body.dark-mode .email-display { background: #1A2236; border-color: #1F2937; }
+    body.dark-mode .avatar-preview-strip { background: #1A2236; }
+    body.dark-mode .name-preview { background: #1A2236; }
+    body.dark-mode .handle-history { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .ai-gen-panel { background: rgba(99,102,241,0.10); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP APP BAR
+     ============================================================ -->
+<header class="appbar">
+  <div class="brand">
+    <a href="./app-dashboard.html" class="brand">
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b id="appbar-handle">alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout" id="layout">
+
+  <!-- Canonical sidebar via shared partial -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-settings.html">Settings</a>
+      <span class="sep">/</span>
+      <span class="current">Account</span>
+    </nav>
+
+    <div class="page-head">
+      <div>
+        <h1>Settings</h1>
+        <div class="sub">Identity, email, and how visitors find you.</div>
+      </div>
+    </div>
+
+    <!-- Settings layout: tab nav + content -->
+    <div class="settings-layout">
+
+      <!-- Tab nav (cross-linked to sister deep dives) -->
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a href="./app-settings-account.html" class="settings-nav-item active" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </a>
+        <a href="./app-settings-billing.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a href="./app-settings-security.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security
+        </a>
+        <a href="./app-settings-gdpr.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          GDPR &amp; data
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a href="./app-settings.html#api" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          API keys
+          <span class="sn-pill pro-pill">Pro</span>
+        </a>
+        <a href="./app-settings.html#team" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team
+          <span class="sn-pill biz-pill">Business</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a href="./app-settings.html#danger" class="settings-nav-item" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger)"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger zone
+        </a>
+      </nav>
+
+      <!-- Content -->
+      <div class="settings-content" id="account-pane">
+
+        <!-- Empty state (state=empty only) -->
+        <div class="empty-state" id="empty-state" style="display:none">
+          <div class="es-emoji" aria-hidden="true">👋</div>
+          <div class="es-text">
+            <h3 class="es-title">Welcome! Let's set up your profile</h3>
+            <p class="es-sub">Add a display name, a photo, and a short bio so visitors know who you are. You can change everything later — start with a name.</p>
+            <span class="es-arrow">↓ Start with Display name</span>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             1. IDENTITY
+             ============================================================ -->
+        <section class="settings-section" aria-labelledby="sec-identity">
+          <div class="settings-section-title" id="sec-identity">Identity</div>
+          <p class="settings-section-lede">How you show up across tadaify — to visitors, in emails, in your URL.</p>
+
+          <!-- Profile photo / avatar -->
+          <div class="field-row">
+            <div class="field-label">
+              Profile photo
+              <span class="field-hint">JPG, PNG, GIF, WebP — max 5 MB</span>
+            </div>
+            <div class="field-body">
+              <div class="avatar-hero-row">
+                <div class="avatar-hero" id="avatar-preview" aria-label="Current profile photo">
+                  <span id="avatar-letter">A</span>
+                  <button type="button" class="upload-overlay" onclick="openCropModal()" aria-label="Change photo">
+                    Change photo
+                  </button>
+                </div>
+                <div class="avatar-controls">
+                  <div class="avatar-btn-row">
+                    <button class="btn btn-ghost btn-sm" onclick="openCropModal()">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.4 7A8 8 0 1 0 4 11"/></svg>
+                      Upload photo
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="openCropModal('ai')">
+                      ✨ AI generate
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="removeAvatar()">Remove</button>
+                  </div>
+                  <p class="avatar-meta">Recommended 512×512 px. We'll crop to a square automatically.</p>
+
+                  <div class="avatar-preview-strip" aria-label="Preview at smaller sizes">
+                    <span class="label">Preview:</span>
+                    <span class="pv pv-64" id="pv-64">A</span>
+                    <span class="pv pv-32" id="pv-32">A</span>
+                    <span class="pv pv-24" id="pv-24">A</span>
+                    <span class="pv pv-16" id="pv-16">A</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Display name -->
+          <div class="field-row">
+            <div class="field-label">Display name <span class="field-hint">Shown on your page and in emails. 3–50 chars.</span></div>
+            <div class="field-body">
+              <input class="field-input" type="text" id="field-name" value="Alexandra Silva"
+                     placeholder="Your full name or display name"
+                     oninput="onNameInput()" minlength="3" maxlength="50">
+              <div class="field-error" id="name-error">Name is required.</div>
+              <div class="name-preview">
+                <span class="np-label">Visitors see:</span>
+                <span class="np-name" id="np-name">Alexandra Silva</span>
+                <span class="np-sep">·</span>
+                <span class="np-handle" id="np-handle">@alexandra</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Username (handle) -->
+          <div class="field-row">
+            <div class="field-label">
+              Username (handle)
+              <span class="field-hint">Your public URL slug. 1 change per 30 days.</span>
+            </div>
+            <div class="field-body">
+              <div class="handle-input-wrap">
+                <div class="handle-input-shell">
+                  <span class="handle-prefix">tadaify.com/</span>
+                  <input class="field-input" type="text" id="handle-input" value="alexandra"
+                         oninput="checkHandle(this.value)"
+                         style="padding-left:96px;padding-right:104px"
+                         maxlength="30" autocomplete="off" autocapitalize="off" spellcheck="false">
+                  <span id="handle-status" class="handle-status-pill">current</span>
+                </div>
+                <button class="btn btn-primary btn-sm" id="handle-save-btn" disabled
+                        onclick="openHandleConfirm()">
+                  Save handle
+                </button>
+              </div>
+              <p id="handle-hint" style="font-size:12px;color:var(--fg-muted);margin:8px 0 0;line-height:1.5">
+                Lowercase letters, numbers, and dashes. 3–30 chars. Last changed: <strong>never</strong>.
+              </p>
+
+              <!-- Handle history (Pro+ — fully visible per no-blur rule) -->
+              <details class="handle-history" id="handle-history">
+                <summary>
+                  Handle change history
+                  <span data-tier-badge="pro" data-included="false" style="margin-left:6px"></span>
+                </summary>
+                <div class="hh-list">
+                  <p style="font-size:12px;color:var(--fg-muted);margin:0 0 8px">
+                    Each row tracks an old slug and the redirect window. Useful when you share old links and want to know when they release.
+                  </p>
+                  <div class="hh-row">
+                    <span class="hh-old">@alex</span>
+                    <span class="hh-arrow">→</span>
+                    <span class="hh-new">@alexandra</span>
+                    <span class="hh-when">14 Mar 2026</span>
+                    <span class="chip success hh-status">released</span>
+                  </div>
+                  <div class="hh-row">
+                    <span class="hh-old">@alex-silva</span>
+                    <span class="hh-arrow">→</span>
+                    <span class="hh-new">@alex</span>
+                    <span class="hh-when">2 Aug 2025</span>
+                    <span class="chip success hh-status">released</span>
+                  </div>
+                  <div class="hh-row" style="opacity:0.7;font-style:italic;color:var(--fg-muted);font-size:12px;border-bottom:0">
+                    Saved automatically every time you change your handle. Premium history view shows redirect targets + click-through counts.
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <!-- Bio -->
+          <div class="field-row">
+            <div class="field-label">
+              Bio
+              <span class="field-hint">Appears under your name. Emoji count as 2.</span>
+            </div>
+            <div class="field-body">
+              <div class="with-suggest">
+                <textarea class="field-input" id="field-bio" maxlength="140"
+                          oninput="onBioInput()"
+                          placeholder="Tell visitors who you are…">Photographer, traveller, and content creator based in Lisbon 🇵🇹</textarea>
+                <button type="button" class="suggest-btn" onclick="aiSuggestBio()" title="✨ Suggest 5 alternatives">
+                  ✨ Suggest
+                </button>
+              </div>
+              <div class="field-counter" id="bio-counter"><span id="bio-count">56</span>/140</div>
+            </div>
+          </div>
+
+          <!-- Pronouns -->
+          <div class="field-row">
+            <div class="field-label">Pronouns <span class="field-hint">Optional. Freeform.</span></div>
+            <div class="field-body">
+              <input class="field-input" type="text" id="field-pronouns" value="she/her"
+                     oninput="markDirty()" placeholder="e.g. she/her, they/them, he/him"
+                     maxlength="30" style="max-width:280px">
+            </div>
+          </div>
+
+          <!-- Location with autocomplete -->
+          <div class="field-row">
+            <div class="field-label">Location <span class="field-hint">Optional. Visible on your public page.</span></div>
+            <div class="field-body">
+              <div class="autocomplete-shell">
+                <input class="field-input" type="text" id="field-location" value="Lisbon, Portugal"
+                       autocomplete="off" oninput="onLocationInput(this.value)"
+                       onfocus="showLocationSuggestions()"
+                       onblur="setTimeout(hideLocationSuggestions, 150)"
+                       placeholder="Start typing a city…" style="max-width:380px">
+                <div class="autocomplete-list" id="location-list" role="listbox" aria-label="City suggestions"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal website -->
+          <div class="field-row">
+            <div class="field-label">Personal website <span class="field-hint">Optional. Must start with https://</span></div>
+            <div class="field-body">
+              <input class="field-input" type="url" id="field-website" value="https://alexandra.com"
+                     oninput="onWebsiteInput()" placeholder="https://your-site.com"
+                     style="max-width:380px">
+              <div class="field-error" id="website-error">Please enter a valid https:// URL.</div>
+            </div>
+          </div>
+
+          <!-- Date of birth (Pro+ — fully visible) -->
+          <div class="field-row">
+            <div class="field-label">
+              Date of birth
+              <span data-tier-badge="pro" data-included="false"></span>
+              <span class="field-hint">Optional. Hidden from your public page. Used for age-gated features.</span>
+            </div>
+            <div class="field-body">
+              <input class="field-input" type="date" id="field-dob" value=""
+                     oninput="markPremiumDirty('dob')" max="2008-01-01"
+                     style="max-width:220px">
+              <p style="font-size:11.5px;color:var(--fg-subtle);margin:6px 0 0">
+                We never share your date of birth publicly. Used only for compliance (e.g. age-gated link types).
+              </p>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ============================================================
+             2. EMAIL & NOTIFICATIONS
+             ============================================================ -->
+        <section class="settings-section" aria-labelledby="sec-email">
+          <div class="settings-section-title" id="sec-email">Email &amp; notifications</div>
+          <p class="settings-section-lede">Where we send your sign-in links, alerts, and product updates.</p>
+
+          <!-- Primary email -->
+          <div class="field-row">
+            <div class="field-label">Primary email <span class="field-hint">Used for sign-in and billing receipts.</span></div>
+            <div class="field-body">
+              <div class="email-display">
+                <span class="email-text">alexandra@example.com</span>
+                <span class="chip success" title="Verified — clicked link in inbox">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Verified
+                </span>
+                <div class="email-actions">
+                  <button class="btn btn-ghost btn-sm" onclick="openModal('change-email-modal')">Change email →</button>
+                </div>
+              </div>
+              <p style="font-size:11.5px;color:var(--fg-subtle);margin:6px 0 0">
+                Your current email stays active until you click the verification link in your new inbox.
+              </p>
+            </div>
+          </div>
+
+          <!-- Recovery email (Pro+) -->
+          <div class="field-row">
+            <div class="field-label">
+              Recovery email
+              <span data-tier-badge="pro" data-included="false"></span>
+              <span class="field-hint">Optional. Used if you lose access to your primary email.</span>
+            </div>
+            <div class="field-body">
+              <input class="field-input" type="email" id="field-recovery"
+                     value="" placeholder="recovery@example.com"
+                     oninput="markPremiumDirty('recovery_email')"
+                     style="max-width:380px">
+              <p style="font-size:11.5px;color:var(--fg-subtle);margin:6px 0 0">
+                We'll send a verification link to confirm. Your recovery email is private and never shown publicly.
+              </p>
+            </div>
+          </div>
+
+          <!-- Notification preferences -->
+          <div class="field-row">
+            <div class="field-label">Notification preferences <span class="field-hint">What lands in your inbox.</span></div>
+            <div class="field-body">
+              <div class="toggle-list">
+                <div class="toggle-row">
+                  <div class="tr-text">
+                    <div class="tr-name">Product updates</div>
+                    <div class="tr-desc">New features, design tweaks, and the occasional changelog email. Roughly 1–2 per month.</div>
+                  </div>
+                  <button type="button" class="toggle is-on" role="switch" aria-checked="true"
+                          onclick="toggleNotif(this, 'product')" aria-label="Product updates"></button>
+                </div>
+                <div class="toggle-row">
+                  <div class="tr-text">
+                    <div class="tr-name">Weekly digest</div>
+                    <div class="tr-desc">Mon morning summary — page views, top blocks, new subscribers. Skip if you'd rather check Insights yourself.</div>
+                  </div>
+                  <button type="button" class="toggle is-on" role="switch" aria-checked="true"
+                          onclick="toggleNotif(this, 'digest')" aria-label="Weekly digest"></button>
+                </div>
+                <div class="toggle-row">
+                  <div class="tr-text">
+                    <div class="tr-name">Billing alerts</div>
+                    <div class="tr-desc">Card failures, renewals, and invoice receipts. We recommend keeping this on.</div>
+                  </div>
+                  <button type="button" class="toggle is-on" role="switch" aria-checked="true"
+                          onclick="toggleNotif(this, 'billing')" aria-label="Billing alerts"></button>
+                </div>
+                <div class="toggle-row">
+                  <div class="tr-text">
+                    <div class="tr-name">Security alerts</div>
+                    <div class="tr-desc">Sign-ins from new devices, password changes, recovery email used. Always recommended.</div>
+                  </div>
+                  <button type="button" class="toggle is-on" role="switch" aria-checked="true"
+                          onclick="toggleNotif(this, 'security')" aria-label="Security alerts"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             3. PROFILE VISIBILITY
+             ============================================================ -->
+        <section class="settings-section" aria-labelledby="sec-visibility">
+          <div class="settings-section-title" id="sec-visibility">Profile visibility</div>
+          <p class="settings-section-lede">Control how your name, bio, and location appear to people who land on your page.</p>
+
+          <div class="toggle-list">
+            <div class="toggle-row">
+              <div class="tr-text">
+                <div class="tr-name">Public profile</div>
+                <div class="tr-desc">When on, your display name, bio, and location appear on your visitor pages. When off, only your handle is shown — useful while you're still setting things up.</div>
+              </div>
+              <button type="button" class="toggle is-on" role="switch" aria-checked="true"
+                      onclick="toggleVisibility(this, 'public')" aria-label="Public profile"></button>
+            </div>
+
+            <div class="toggle-row">
+              <div class="tr-text">
+                <div class="tr-name">
+                  Show in tadaify discover
+                  <span data-tier-badge="creator" data-included="true"></span>
+                </div>
+                <div class="tr-desc">Opt into our "discover creators" surface — a curated browse experience visitors find on tadaify.com. Off by default; turning it on takes ~24h to be picked up by the index.</div>
+              </div>
+              <button type="button" class="toggle" role="switch" aria-checked="false"
+                      onclick="toggleVisibility(this, 'discover')" aria-label="Show in tadaify discover"></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cross-link to GDPR -->
+        <p style="font-size:12.5px;color:var(--fg-muted);margin:6px 0 24px">
+          Want to export everything or delete your account?
+          <a href="./app-settings-gdpr.html" style="color:var(--brand-primary);font-weight:600">Go to GDPR &amp; data →</a>
+        </p>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     STICKY SAVE BAR
+     ============================================================ -->
+<div class="save-bar" id="save-bar" role="region" aria-label="Save changes">
+  <span class="save-hint" id="save-hint">
+    <span class="save-dot" aria-hidden="true"></span>
+    <span id="save-hint-text">You have unsaved changes</span>
+  </span>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+    <button class="btn btn-primary btn-sm" id="save-btn" onclick="saveChanges()">Save changes</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS — centered, NEVER drawers
+     ============================================================ -->
+
+<!-- Change email -->
+<div class="modal-backdrop" id="change-email-modal" onclick="closeBackdrop(this, event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ce-title">
+    <button class="modal-close-x" onclick="closeModal('change-email-modal')" aria-label="Close">×</button>
+    <h3 id="ce-title">Change email</h3>
+    <p class="modal-sub">We'll send a verification link to your new address. Your current email stays active until you click the link.</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:12.5px;font-weight:600;color:var(--fg-muted);margin-bottom:5px;display:block">Current email</label>
+        <input class="field-input" type="email" value="alexandra@example.com" readonly>
+      </div>
+      <div>
+        <label style="font-size:12.5px;font-weight:600;color:var(--fg-muted);margin-bottom:5px;display:block">New email</label>
+        <input class="field-input" type="email" placeholder="new@example.com" autocomplete="email" id="ce-new">
+      </div>
+      <div>
+        <label style="font-size:12.5px;font-weight:600;color:var(--fg-muted);margin-bottom:5px;display:block">Confirm your password</label>
+        <input class="field-input" type="password" placeholder="Current password" autocomplete="current-password" id="ce-pwd">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('change-email-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="sendEmailVerification()">Send verification link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change handle confirm -->
+<div class="modal-backdrop" id="change-handle-modal" onclick="closeBackdrop(this, event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ch-title">
+    <button class="modal-close-x" onclick="closeModal('change-handle-modal')" aria-label="Close">×</button>
+    <h3 id="ch-title">Change handle?</h3>
+    <p class="modal-sub">
+      Your tadaify slug changes from <strong>tadaify.com/<span id="handle-old">alexandra</span></strong>
+      to <strong>tadaify.com/<span id="handle-new">—</span></strong>.
+    </p>
+    <div class="modal-warning" style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <strong>What happens to the old URL</strong><br>
+        For 30 days, <code>tadaify.com/<span class="handle-old-mirror">alexandra</span></code> will <strong>301-redirect to your primary page</strong>:
+        <span id="redirect-target-line" style="display:block;margin-top:4px">→ <code>https://alexandra.com/</code> <span style="color:var(--fg-muted);font-size:11.5px">(your active custom domain — primary)</span></span>
+        After 30 days the old slug is released and someone else can claim it.
+      </div>
+      <div style="font-size:12.5px;color:var(--fg-muted);border-top:1px solid var(--border);padding-top:10px">
+        <strong>Custom domains stay bound to your account</strong> — they're not tied to your handle, so
+        <code class="handle-custom-mirror">alexandra.com</code> keeps working with no DNS change.
+        Only the tadaify.com slug needs a redirect.<br><br>
+        You can change your handle again in <strong>30 days</strong>.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('change-handle-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmHandleChange()">Confirm change</button>
+    </div>
+  </div>
+</div>
+
+<!-- Avatar crop modal (centered, NEVER drawer) -->
+<div class="modal-backdrop" id="crop-modal" onclick="closeBackdrop(this, event)">
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="cr-title">
+    <button class="modal-close-x" onclick="closeModal('crop-modal')" aria-label="Close">×</button>
+    <h3 id="cr-title">Crop your photo</h3>
+    <p class="modal-sub">Drag to reposition, scale to zoom. We'll save a square crop at 512×512 px.</p>
+
+    <div class="crop-stage" id="crop-stage" aria-label="Crop preview">
+      <span style="position:absolute;bottom:10px;left:14px;font-size:11px;color:rgba(255,255,255,0.85);font-weight:600;z-index:1">drag · scroll to zoom</span>
+      <div class="crop-img" aria-hidden="true"></div>
+    </div>
+
+    <div class="crop-controls">
+      <label for="crop-zoom">Zoom</label>
+      <input id="crop-zoom" type="range" min="100" max="200" value="120" oninput="onCropZoom(this.value)">
+      <span style="font-size:11.5px;color:var(--fg-muted);min-width:40px;text-align:right" id="crop-zoom-val">120%</span>
+    </div>
+
+    <div class="ai-gen-panel" id="ai-gen-panel" style="display:none">
+      <div class="ag-title">✨ AI generate avatar</div>
+      <p class="ag-sub">Describe yourself in a few words. We'll generate a few options.</p>
+      <input class="field-input" type="text" placeholder="e.g. friendly photographer with curly hair, warm smile, soft light" id="ai-gen-prompt">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary btn-sm" onclick="aiGenerateAvatar()">Generate 4 options</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleAiGen(false)">Back to upload</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('crop-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="applyCrop()">Save photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Suggest bio results modal (lightweight inline) -->
+<div class="modal-backdrop" id="suggest-bio-modal" onclick="closeBackdrop(this, event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sb-title">
+    <button class="modal-close-x" onclick="closeModal('suggest-bio-modal')" aria-label="Close">×</button>
+    <h3 id="sb-title">✨ 5 bio suggestions</h3>
+    <p class="modal-sub">Click one to swap it into your bio. You can keep editing after.</p>
+    <div id="suggest-bio-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('suggest-bio-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEMO TOOLBAR (mockup reviewer only)
+     ============================================================ -->
+<div class="demo-toolbar" aria-hidden="true">
+  <div>
+    <div class="dt-label">Tier</div>
+    <div class="dt-row">
+      <button data-tier="free" onclick="setTier('free')">Free</button>
+      <button data-tier="creator" class="is-active" onclick="setTier('creator')">Creator</button>
+      <button data-tier="pro" onclick="setTier('pro')">Pro</button>
+      <button data-tier="business" onclick="setTier('business')">Business</button>
+    </div>
+  </div>
+  <div>
+    <div class="dt-label">State</div>
+    <div class="dt-row">
+      <button data-state="filled" class="is-active" onclick="setState('filled')">Filled</button>
+      <button data-state="empty" onclick="setState('empty')">Empty (new user)</button>
+      <button data-state="unsaved" onclick="setState('unsaved')">Unsaved</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SHARED PARTIALS + LOGIC
+     ============================================================ -->
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  /* ── Theme toggle ── */
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    try { localStorage.setItem('tadaify-theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); } catch (e) {}
+  }
+  (function () {
+    try {
+      var saved = localStorage.getItem('tadaify-theme');
+      if (saved === 'dark') document.body.classList.add('dark-mode');
+    } catch (e) {}
+  })();
+
+  /* ── Demo state ── */
+  var DEMO_TIER = 'creator';
+  var DEMO_STATE = 'filled';
+  var DEMO_CUSTOM_DOMAIN = 'alexandra.com';
+  var CURRENT_HANDLE = 'alexandra';
+  var CURRENT_NAME = 'Alexandra Silva';
+  var CURRENT_BIO = 'Photographer, traveller, and content creator based in Lisbon 🇵🇹';
+
+  /* ── URL parsing for ?tier= / ?state= ── */
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var t = params.get('tier');
+    var s = params.get('state');
+    if (t && ['free','creator','pro','business'].indexOf(t) !== -1) DEMO_TIER = t;
+    if (s && ['filled','empty','unsaved'].indexOf(s) !== -1) DEMO_STATE = s;
+  })();
+
+  /* ── Tier badges (hydrate placeholder spans) ── */
+  function hydrateTierBadges() {
+    if (!window.TadaifyPartials || !window.TadaifyPartials.renderTierBadge) return;
+    document.querySelectorAll('[data-tier-badge]').forEach(function (el) {
+      var tier = el.getAttribute('data-tier-badge');
+      var included = el.getAttribute('data-included') === 'true';
+      var html = window.TadaifyPartials.renderTierBadge(tier, { included: included });
+      // Replace innerHTML so we keep the host element for re-hydration on tier change
+      el.innerHTML = html.replace(/^<span /, '<span ');
+      // Strip wrapper to keep just the inner badge content (cleaner than nesting)
+      var first = el.firstElementChild;
+      if (first) {
+        // Move first child's classes/attrs onto host? Keep simple: nest is fine.
+      }
+    });
+  }
+
+  /* ── Tier check (premium feature dirty list at Save) ── */
+  var TIER_RANK = (window.TierGate && window.TierGate.TIER_RANK) || { free: 0, creator: 1, pro: 2, business: 3 };
+  var TIER_LABEL = (window.TierGate && window.TierGate.TIER_LABEL) || { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+
+  /* Map premium-field key → { name, requires, meta } */
+  var PREMIUM_FIELDS = {
+    recovery_email:    { name: 'Recovery email',         requires: 'pro',     meta: 'Backup inbox if you lose access to your primary email' },
+    dob:               { name: 'Date of birth',          requires: 'pro',     meta: 'Used for age-gated link types and compliance' },
+    handle_history:    { name: 'Handle change history',  requires: 'pro',     meta: 'Track past slugs + redirect status' },
+    discover:          { name: 'Show in tadaify discover', requires: 'creator', meta: 'Opt into the curated discover surface' }
+  };
+  var premiumDirty = new Set();
+  function markPremiumDirty(key) {
+    premiumDirty.add(key);
+    markDirty();
+  }
+
+  /* ── Dirty / save bar ── */
+  var isDirty = false;
+  var SAVE_BAR_TIMEOUT = null;
+
+  function markDirty() {
+    isDirty = true;
+    var bar = document.getElementById('save-bar');
+    bar.classList.add('is-visible');
+    bar.classList.remove('is-saved', 'is-saving');
+    document.getElementById('save-hint-text').textContent = 'You have unsaved changes';
+    document.getElementById('save-btn').disabled = false;
+    if (SAVE_BAR_TIMEOUT) { clearTimeout(SAVE_BAR_TIMEOUT); SAVE_BAR_TIMEOUT = null; }
+  }
+
+  function saveChanges() {
+    var bar = document.getElementById('save-bar');
+    bar.classList.add('is-saving');
+    document.getElementById('save-hint-text').textContent = 'Saving…';
+    document.getElementById('save-btn').disabled = true;
+
+    // Build features[] from premiumDirty
+    var features = [];
+    premiumDirty.forEach(function (key) {
+      var def = PREMIUM_FIELDS[key];
+      if (def) features.push({ id: key, name: def.name, requires: def.requires, meta: def.meta });
+    });
+
+    var doSave = function () {
+      // Mockup persistence — flip to saved state
+      bar.classList.remove('is-saving');
+      bar.classList.add('is-saved');
+      document.getElementById('save-hint-text').textContent = '✓ Saved · just now';
+      premiumDirty.clear();
+      isDirty = false;
+      // Hide after 3s
+      SAVE_BAR_TIMEOUT = setTimeout(function () {
+        bar.classList.remove('is-visible', 'is-saved');
+      }, 3000);
+    };
+
+    if (features.length && window.TierGate && window.TierGate.checkAndProceed) {
+      window.TierGate.checkAndProceed({
+        currentTier: DEMO_TIER,
+        features: features,
+        onProceed: doSave,
+        onSaveWithout: function () {
+          // Save non-premium subset
+          premiumDirty.clear();
+          doSave();
+        },
+        onUpgrade: function () {
+          window.location.href = './pricing.html';
+        },
+        onCancel: function () {
+          bar.classList.remove('is-saving');
+          document.getElementById('save-hint-text').textContent = 'You have unsaved changes';
+          document.getElementById('save-btn').disabled = false;
+        }
+      });
+    } else {
+      setTimeout(doSave, 500);
+    }
+  }
+
+  function discardChanges() {
+    if (SAVE_BAR_TIMEOUT) { clearTimeout(SAVE_BAR_TIMEOUT); SAVE_BAR_TIMEOUT = null; }
+    document.getElementById('field-name').value = CURRENT_NAME;
+    document.getElementById('field-bio').value = CURRENT_BIO;
+    document.getElementById('field-pronouns').value = 'she/her';
+    document.getElementById('field-website').value = 'https://alexandra.com';
+    onBioInput();
+    onNameInput();
+    premiumDirty.clear();
+    isDirty = false;
+    var bar = document.getElementById('save-bar');
+    bar.classList.remove('is-visible', 'is-saved', 'is-saving');
+  }
+
+  /* ── Display name validation + live preview ── */
+  function onNameInput() {
+    var input = document.getElementById('field-name');
+    var err = document.getElementById('name-error');
+    var preview = document.getElementById('np-name');
+    var v = (input.value || '').trim();
+    if (v.length === 0) {
+      input.classList.add('has-error');
+      err.classList.add('is-visible');
+      preview.textContent = '(name required)';
+      preview.style.color = 'var(--danger)';
+    } else {
+      input.classList.remove('has-error');
+      err.classList.remove('is-visible');
+      preview.textContent = v;
+      preview.style.color = '';
+    }
+    markDirty();
+  }
+
+  /* ── Bio counter (UTF-16 length, emoji = 2) ── */
+  function onBioInput() {
+    var ta = document.getElementById('field-bio');
+    var counter = document.getElementById('bio-counter');
+    var num = document.getElementById('bio-count');
+    var len = ta.value.length;  // UTF-16 code units; emoji = 2
+    num.textContent = len;
+    counter.classList.remove('is-amber', 'is-red');
+    var saveBtn = document.getElementById('save-btn');
+    if (len >= 80 && len <= 140) {
+      counter.classList.add('is-amber');
+    }
+    if (len > 140) {
+      counter.classList.add('is-red');
+      if (saveBtn) saveBtn.disabled = true;
+    } else {
+      if (saveBtn) saveBtn.disabled = !isDirty ? true : false;
+    }
+    markDirty();
+  }
+
+  /* ── Website URL validation ── */
+  function onWebsiteInput() {
+    var input = document.getElementById('field-website');
+    var err = document.getElementById('website-error');
+    var v = (input.value || '').trim();
+    if (v.length === 0) { input.classList.remove('has-error'); err.classList.remove('is-visible'); markDirty(); return; }
+    var ok = /^https:\/\/[^\s]+\.[^\s]+/.test(v);
+    if (!ok) {
+      input.classList.add('has-error');
+      err.classList.add('is-visible');
+    } else {
+      input.classList.remove('has-error');
+      err.classList.remove('is-visible');
+    }
+    markDirty();
+  }
+
+  /* ── Handle availability check (canonical pattern from app-settings.html) ── */
+  var RESERVED_HANDLES = ['admin','api','app','www','support','blog','help','docs','login','register','signin','signup','about','pricing','terms','privacy','legal','contact','tadaify','settings','dashboard','onboarding','mail','email','status','assets','static','public','admin-panel'];
+  var TAKEN_DEMO = ['alex','john','test','demo','taken','sarah','emma','mike'];
+  var EXPIRING_HANDLES = { 'taylor': 22, 'oldalex': 7, 'jess': 3 };
+  var HANDLE_VALID_RE = /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/;
+
+  function checkHandle(value) {
+    var status  = document.getElementById('handle-status');
+    var hint    = document.getElementById('handle-hint');
+    var saveBtn = document.getElementById('handle-save-btn');
+    var npHandle = document.getElementById('np-handle');
+    var v = (value || '').toLowerCase().trim();
+
+    // Update name-preview handle text live
+    if (npHandle) npHandle.textContent = '@' + (v || CURRENT_HANDLE);
+
+    var setState = function(label, tone, msg) {
+      status.textContent = label;
+      status.classList.remove('is-ok', 'is-err', 'is-warn');
+      if (tone === 'ok') status.classList.add('is-ok');
+      else if (tone === 'err') status.classList.add('is-err');
+      else if (tone === 'warn') status.classList.add('is-warn');
+      hint.innerHTML = msg;
+      hint.style.color = (tone === 'err') ? 'var(--danger)' : 'var(--fg-muted)';
+    };
+
+    if (v === CURRENT_HANDLE) {
+      saveBtn.disabled = true;
+      setState('current', 'neutral', 'Lowercase letters, numbers, and dashes. 3–30 chars. Last changed: <strong>never</strong>.');
+      return;
+    }
+    if (v.length < 3) {
+      saveBtn.disabled = true;
+      setState('too short', 'err', 'Minimum 3 characters.');
+      return;
+    }
+    if (!HANDLE_VALID_RE.test(v)) {
+      saveBtn.disabled = true;
+      setState('invalid', 'err', 'Use lowercase letters, numbers, and dashes (no leading/trailing dash).');
+      return;
+    }
+    if (RESERVED_HANDLES.indexOf(v) !== -1) {
+      saveBtn.disabled = true;
+      setState('reserved', 'err', 'This handle is reserved for system use.');
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(EXPIRING_HANDLES, v)) {
+      var days = EXPIRING_HANDLES[v];
+      saveBtn.disabled = true;
+      setState('expiring · ' + days + 'd', 'warn',
+        'Taken — releases in <strong>' + days + ' day' + (days === 1 ? '' : 's') + '</strong>. ' +
+        'Previous owner changed handle; we hold a 30-day redirect so their old links keep working. ' +
+        'Come back after release to claim it.');
+      return;
+    }
+    if (TAKEN_DEMO.indexOf(v) !== -1) {
+      saveBtn.disabled = true;
+      setState('taken', 'err', 'Someone already uses this handle.');
+      return;
+    }
+    saveBtn.disabled = false;
+    setState('available', 'ok',
+      'Available — old slug 301s to your primary page for 30 days, then released. ' +
+      'Custom domain (if any) keeps working unchanged. You can change again in 30 days.');
+  }
+
+  function openHandleConfirm() {
+    var v = document.getElementById('handle-input').value.toLowerCase().trim();
+    document.getElementById('handle-old').textContent = CURRENT_HANDLE;
+    document.getElementById('handle-new').textContent = v;
+    document.querySelectorAll('.handle-old-mirror').forEach(function(el){ el.textContent = CURRENT_HANDLE; });
+    document.querySelectorAll('.handle-custom-mirror').forEach(function(el){ el.textContent = DEMO_CUSTOM_DOMAIN; });
+
+    var hasCustomDomain = (DEMO_TIER !== 'free');
+    var line = document.getElementById('redirect-target-line');
+    if (line) {
+      if (hasCustomDomain) {
+        line.innerHTML = '→ <code>https://' + DEMO_CUSTOM_DOMAIN + '/</code> ' +
+          '<span style="color:var(--fg-muted);font-size:11.5px">(your active custom domain — primary)</span>';
+      } else {
+        line.innerHTML = '→ <code>https://tadaify.com/' + v + '</code> ' +
+          '<span style="color:var(--fg-muted);font-size:11.5px">(no custom domain on file — fallback to new slug)</span>';
+      }
+    }
+    openModal('change-handle-modal');
+  }
+
+  function confirmHandleChange() {
+    var v = document.getElementById('handle-input').value.toLowerCase().trim();
+    CURRENT_HANDLE = v;
+    document.getElementById('appbar-handle').textContent = v;
+    var npHandle = document.getElementById('np-handle');
+    if (npHandle) npHandle.textContent = '@' + v;
+    closeModal('change-handle-modal');
+    // Brief toast feel via save bar
+    var bar = document.getElementById('save-bar');
+    bar.classList.add('is-visible', 'is-saved');
+    bar.classList.remove('is-saving');
+    document.getElementById('save-hint-text').textContent = '✓ Handle changed to @' + v + ' · old slug redirects for 30 days';
+    setTimeout(function () { bar.classList.remove('is-visible', 'is-saved'); }, 4000);
+    // Re-render check (now becomes "current")
+    checkHandle(v);
+  }
+
+  /* ── Email change ── */
+  function sendEmailVerification() {
+    var newEmail = document.getElementById('ce-new').value.trim();
+    if (!newEmail || newEmail.indexOf('@') === -1) {
+      alert('Mockup — please enter a valid email');
+      return;
+    }
+    closeModal('change-email-modal');
+    var bar = document.getElementById('save-bar');
+    bar.classList.add('is-visible', 'is-saved');
+    document.getElementById('save-hint-text').textContent = '✓ Verification email sent to ' + newEmail;
+    setTimeout(function () { bar.classList.remove('is-visible', 'is-saved'); }, 4000);
+  }
+
+  /* ── Notification toggles ── */
+  function toggleNotif(btn, key) {
+    btn.classList.toggle('is-on');
+    var on = btn.classList.contains('is-on');
+    btn.setAttribute('aria-checked', String(on));
+    markDirty();
+  }
+  function toggleVisibility(btn, key) {
+    btn.classList.toggle('is-on');
+    var on = btn.classList.contains('is-on');
+    btn.setAttribute('aria-checked', String(on));
+    if (key === 'discover') {
+      markPremiumDirty('discover');
+    } else {
+      markDirty();
+    }
+  }
+
+  /* ── Avatar crop modal ── */
+  function openCropModal(mode) {
+    toggleAiGen(mode === 'ai');
+    openModal('crop-modal');
+  }
+  function toggleAiGen(show) {
+    document.getElementById('ai-gen-panel').style.display = show ? '' : 'none';
+  }
+  function onCropZoom(v) {
+    document.getElementById('crop-zoom-val').textContent = v + '%';
+    var img = document.querySelector('#crop-stage .crop-img');
+    if (img) img.style.transform = 'scale(' + (parseInt(v, 10) / 100) + ')';
+  }
+  function applyCrop() {
+    closeModal('crop-modal');
+    // Mockup: pretend the avatar updated (use a flat color to suggest a photo replaced the letter)
+    var hero = document.getElementById('avatar-preview');
+    var letter = document.getElementById('avatar-letter');
+    if (hero && letter) {
+      letter.style.display = 'none';
+      hero.style.background = 'linear-gradient(135deg, #6366F1, #F59E0B)';
+    }
+    markDirty();
+    document.getElementById('save-hint-text').textContent = 'Photo updated — Save to apply';
+  }
+  function aiGenerateAvatar() {
+    alert('Mockup — would call the AI avatar generator and show 4 candidate photos to pick from.');
+  }
+  function removeAvatar() {
+    var hero = document.getElementById('avatar-preview');
+    var letter = document.getElementById('avatar-letter');
+    if (hero && letter) {
+      letter.style.display = '';
+      hero.style.background = 'var(--hero-gradient)';
+    }
+    markDirty();
+  }
+
+  /* ── AI Suggest bio ── */
+  var BIO_SUGGESTIONS = [
+    "Lisbon-based photographer chasing soft light and slow mornings.",
+    "I take pictures and travel slowly. Currently in Portugal.",
+    "Photographer · traveller · gentle observer of warm corners.",
+    "Catching light in unfamiliar places — currently rooted in Lisbon 🇵🇹",
+    "Telling small stories with a camera. Photography, words, and the occasional recipe."
+  ];
+  function aiSuggestBio() {
+    var list = document.getElementById('suggest-bio-list');
+    list.innerHTML = BIO_SUGGESTIONS.map(function (s, i) {
+      return '<button type="button" onclick="applyBioSuggestion(' + i + ')" ' +
+        'style="text-align:left;background:var(--bg-muted);border:1px solid var(--border);' +
+        'border-radius:9px;padding:10px 12px;font-family:inherit;font-size:13px;cursor:pointer;line-height:1.5;color:var(--fg)">' +
+        s + '</button>';
+    }).join('');
+    openModal('suggest-bio-modal');
+  }
+  function applyBioSuggestion(i) {
+    var ta = document.getElementById('field-bio');
+    ta.value = BIO_SUGGESTIONS[i];
+    onBioInput();
+    closeModal('suggest-bio-modal');
+  }
+
+  /* ── Location autocomplete (mocked) ── */
+  var CITY_DB = [
+    { name: 'Lisbon, Portugal', flag: '🇵🇹', region: 'Iberia' },
+    { name: 'Lisburn, Northern Ireland', flag: '🇬🇧', region: 'UK' },
+    { name: 'Liverpool, United Kingdom', flag: '🇬🇧', region: 'UK' },
+    { name: 'Lima, Peru', flag: '🇵🇪', region: 'South America' },
+    { name: 'Lyon, France', flag: '🇫🇷', region: 'Europe' },
+    { name: 'London, United Kingdom', flag: '🇬🇧', region: 'UK' },
+    { name: 'Los Angeles, USA', flag: '🇺🇸', region: 'North America' },
+    { name: 'Berlin, Germany', flag: '🇩🇪', region: 'Europe' },
+    { name: 'Barcelona, Spain', flag: '🇪🇸', region: 'Iberia' },
+    { name: 'Buenos Aires, Argentina', flag: '🇦🇷', region: 'South America' },
+    { name: 'Bali, Indonesia', flag: '🇮🇩', region: 'Asia' },
+    { name: 'Tokyo, Japan', flag: '🇯🇵', region: 'Asia' },
+    { name: 'New York, USA', flag: '🇺🇸', region: 'North America' },
+    { name: 'Paris, France', flag: '🇫🇷', region: 'Europe' },
+    { name: 'Porto, Portugal', flag: '🇵🇹', region: 'Iberia' },
+    { name: 'Mexico City, Mexico', flag: '🇲🇽', region: 'North America' }
+  ];
+  function onLocationInput(value) {
+    var v = (value || '').toLowerCase().trim();
+    var list = document.getElementById('location-list');
+    if (v.length < 1) { list.innerHTML = ''; list.classList.remove('is-open'); markDirty(); return; }
+    var matches = CITY_DB.filter(function (c) { return c.name.toLowerCase().indexOf(v) !== -1; }).slice(0, 6);
+    if (matches.length === 0) {
+      list.innerHTML = '<div class="ac-item" style="color:var(--fg-muted);cursor:default">No matches — keep typing or use any text</div>';
+    } else {
+      list.innerHTML = matches.map(function (c) {
+        return '<div class="ac-item" onclick="pickLocation(\'' + c.name.replace(/'/g, "\\'") + '\')">' +
+          '<span class="ac-flag">' + c.flag + '</span>' +
+          '<span>' + c.name + '</span>' +
+          '<span class="ac-meta">' + c.region + '</span>' +
+        '</div>';
+      }).join('');
+    }
+    list.classList.add('is-open');
+    markDirty();
+  }
+  function pickLocation(name) {
+    document.getElementById('field-location').value = name;
+    hideLocationSuggestions();
+    markDirty();
+  }
+  function showLocationSuggestions() {
+    var v = document.getElementById('field-location').value;
+    if (v && v.length > 0) onLocationInput(v);
+  }
+  function hideLocationSuggestions() {
+    document.getElementById('location-list').classList.remove('is-open');
+  }
+
+  /* ── Modal helpers ── */
+  function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('is-open');
+  }
+  function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('is-open');
+  }
+  function closeBackdrop(bd, e) {
+    if (e.target === bd) bd.classList.remove('is-open');
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.is-open').forEach(function (m) { m.classList.remove('is-open'); });
+    }
+  });
+
+  /* ── Demo toolbar handlers ── */
+  function setTier(tier) {
+    DEMO_TIER = tier;
+    document.querySelectorAll('.demo-toolbar [data-tier]').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-tier') === tier);
+    });
+    // Update sidebar tier label (the partial drops a #side-tier element on the .uhandle div)
+    var ut = document.querySelector('.tdf-side .side-user .uhandle');
+    if (ut) ut.textContent = '@' + CURRENT_HANDLE + ' · ' + (TIER_LABEL[tier] || tier);
+    document.body.setAttribute('data-current-tier', tier);
+  }
+
+  function setState(state) {
+    DEMO_STATE = state;
+    document.querySelectorAll('.demo-toolbar [data-state]').forEach(function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-state') === state);
+    });
+    var emptyEl = document.getElementById('empty-state');
+    var saveBar = document.getElementById('save-bar');
+    if (state === 'empty') {
+      // Brand-new user — clear most fields
+      emptyEl.style.display = '';
+      document.getElementById('field-name').value = '';
+      document.getElementById('field-bio').value = '';
+      document.getElementById('field-pronouns').value = '';
+      document.getElementById('field-location').value = '';
+      document.getElementById('field-website').value = '';
+      document.getElementById('field-recovery').value = '';
+      document.getElementById('field-dob').value = '';
+      onNameInput();
+      onBioInput();
+      // Focus the first action
+      setTimeout(function () { document.getElementById('field-name').focus(); }, 80);
+      // Reset dirty + hide save bar
+      premiumDirty.clear();
+      isDirty = false;
+      saveBar.classList.remove('is-visible', 'is-saved', 'is-saving');
+    } else if (state === 'unsaved') {
+      emptyEl.style.display = 'none';
+      // Reset filled values + show save bar
+      document.getElementById('field-name').value = CURRENT_NAME + ' (edit)';
+      document.getElementById('field-bio').value = CURRENT_BIO + ' Plus a small recent edit.';
+      onNameInput();
+      onBioInput();
+      markDirty();
+    } else {
+      // filled
+      emptyEl.style.display = 'none';
+      document.getElementById('field-name').value = CURRENT_NAME;
+      document.getElementById('field-bio').value = CURRENT_BIO;
+      document.getElementById('field-pronouns').value = 'she/her';
+      document.getElementById('field-location').value = 'Lisbon, Portugal';
+      document.getElementById('field-website').value = 'https://alexandra.com';
+      onNameInput();
+      onBioInput();
+      premiumDirty.clear();
+      isDirty = false;
+      saveBar.classList.remove('is-visible', 'is-saved', 'is-saving');
+    }
+  }
+
+  /* ── Init ── */
+  function init() {
+    hydrateTierBadges();
+    setTier(DEMO_TIER);
+    setState(DEMO_STATE);
+    // Initial counter + name preview
+    onBioInput();
+    onNameInput();
+    // Reset dirty state since the above marks dirty
+    if (DEMO_STATE !== 'unsaved') {
+      premiumDirty.clear();
+      isDirty = false;
+      var bar = document.getElementById('save-bar');
+      bar.classList.remove('is-visible', 'is-saved', 'is-saving');
+    }
+  }
+  // Run after the partial has injected the sidebar
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+</body>
+</html>
