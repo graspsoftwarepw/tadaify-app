@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Schedule / Booking page template (creator-facing) — F-PAGE-SCHEDULE-001 #20
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Surfaces the editor a creator sees when they open Pages > Schedule.
+  Pairs with creator-schedule-public.html (visitor view).
+
+  Source story: graspsoftwarepw/tadaify-app issues #20 (F-PAGE-SCHEDULE-001)
+  Issue spec opens with DEC-APIPAGES-01 = C ("standalone scheduler — no
+  OAuth integrations"). Mockup intentionally goes further per the user-locked
+  rule "Mockups visualize FULL feature vision, not current implementation"
+  (feedback_mockup_full_feature_vision): the calendar OAuth section shows
+  the long-term picture. The Manual / Tadaify-only provider is the MVP path
+  and is recommended by default; OAuth providers are visible but flagged
+  "post-MVP" via inline notes so reviewers can read both stories cold.
+
+  Design philosophy:
+    - tadaify is the FRONT-END for the booking. Underlying calendar lives
+      in Google / Apple / Outlook (sync via OAuth) OR inside tadaify itself
+      ("Manual / Tadaify-only" — MVP default).
+    - Booking types are list items, edited via centered modal (per
+      feedback_no_right_side_drawers — NEVER a drawer).
+    - All premium features fully visible + interactive at the form level;
+      tier badge inline; gate happens at Save via window.TierGate
+      (per feedback_no_blur_premium_features).
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator)
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle
+    - feedback_no_blur_premium_features
+    - feedback_no_right_side_drawers
+    - feedback_mockup_full_feature_vision
+    - feedback_sidebar_pages_grouping (canonical sidebar via shared partial)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Schedule page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.scheduled { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .chip.paid      { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .chip.connected { background: var(--success-bg); color: #065F46; }
+    .chip.disconnected { background: rgba(239,68,68,0.12); color: #B91C1C; }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content ── */
+    main.content {
+      padding: 24px 20px 120px;
+      min-width: 0;
+      max-width: 1080px;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    /* Breadcrumb */
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    /* Page header */
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Sections */
+    .section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+    .section-body.has-pad-lg { padding: 22px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 640px) { .field-row, .field-row.three { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* ============================================================
+       Calendar integration — provider list + OAuth status panel
+       ============================================================ */
+    .provider-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 720px) { .provider-grid { grid-template-columns: 1fr; } }
+
+    .provider-card {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      background: var(--bg);
+      cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+      position: relative;
+    }
+    .provider-card:hover { border-color: var(--border-strong); }
+    .provider-card.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .provider-card .pc-mark {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+      background: var(--bg-muted); color: var(--fg);
+    }
+    .provider-card .pc-mark.g { background: linear-gradient(135deg, #4285F4, #34A853); color: #fff; }
+    .provider-card .pc-mark.a { background: linear-gradient(135deg, #1F2937, #4B5563); color: #fff; }
+    .provider-card .pc-mark.o { background: linear-gradient(135deg, #0078D4, #50B0F0); color: #fff; }
+    .provider-card .pc-mark.m { background: linear-gradient(135deg, #FDE68A, #F59E0B); color: #7C2D12; }
+    .provider-card .pc-meta { min-width: 0; flex: 1; }
+    .provider-card .pc-name {
+      font-weight: 600; font-size: 14px; color: var(--fg);
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .provider-card .pc-sub {
+      color: var(--fg-muted); font-size: 12.5px; margin-top: 3px; line-height: 1.45;
+    }
+    .provider-card .pc-radio {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--border-strong); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .12s ease;
+    }
+    .provider-card.is-selected .pc-radio { border-color: var(--brand-primary); }
+    .provider-card.is-selected .pc-radio::after {
+      content: ""; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--brand-primary);
+    }
+    .provider-card .pill-soft {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .provider-card .pill-recommended {
+      background: rgba(16,185,129,0.14); color: #047857;
+    }
+    .provider-card .pill-postmvp {
+      background: rgba(245,158,11,0.14); color: #92400E;
+    }
+
+    .oauth-status {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg);
+      margin-top: 14px;
+    }
+    .oauth-status .os-mark {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, #4285F4, #34A853); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .oauth-status .os-meta { min-width: 0; flex: 1; }
+    .oauth-status .os-row1 {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-weight: 600; font-size: 14px;
+    }
+    .oauth-status .os-row2 {
+      color: var(--fg-muted); font-size: 12.5px; margin-top: 3px;
+    }
+    .oauth-status .os-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ============================================================
+       Working hours grid — day-of-week × start/end
+       ============================================================ */
+    .hours-grid { display: flex; flex-direction: column; gap: 8px; }
+    .hours-row {
+      display: grid; gap: 10px; align-items: center;
+      grid-template-columns: 110px auto 1fr 1fr;
+      padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .hours-row.is-off { opacity: 0.55; }
+    .hours-row .hr-day { font-weight: 600; font-size: 13.5px; }
+    .hours-row .hr-toggle { justify-self: start; }
+    .hours-row .hr-sep {
+      text-align: center; font-size: 12px; color: var(--fg-muted); padding: 0 4px;
+      grid-column: 3 / span 1;
+      display: none;
+    }
+    .hours-row input[type="time"] {
+      padding: 7px 10px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13.5px; outline: 0;
+      min-width: 0;
+    }
+    .hours-row input[type="time"]:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+    }
+    @media (max-width: 640px) {
+      .hours-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .hours-row .hr-day { grid-column: 1 / span 2; }
+      .hours-row .hr-toggle { grid-column: 1 / span 2; justify-self: start; margin-top: 4px; }
+    }
+
+    /* ============================================================
+       Booking-types list (mirrors blog posts-list pattern)
+       ============================================================ */
+    .types-toolbar {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 14px;
+    }
+    .tabs {
+      display: inline-flex; gap: 2px; padding: 3px;
+      background: var(--bg-muted); border-radius: 10px;
+    }
+    .tab {
+      padding: 6px 12px; border: 0; border-radius: 8px;
+      background: transparent; color: var(--fg-muted);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: all .12s ease;
+    }
+    .tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+    .tab .tab-count {
+      margin-left: 6px; font-size: 11px;
+      background: var(--bg-sunken); color: var(--fg-muted);
+      padding: 1px 6px; border-radius: 999px;
+    }
+    .tab.is-active .tab-count { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+
+    .types-list { display: flex; flex-direction: column; gap: 10px; }
+    .type-row {
+      display: grid;
+      grid-template-columns: 96px 1fr auto;
+      gap: 14px; align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+      position: relative;
+    }
+    .type-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .type-row.is-off { opacity: 0.6; }
+    .type-row .tr-thumb {
+      width: 96px; height: 64px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      overflow: hidden; flex-shrink: 0;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    }
+    .type-row .tr-thumb.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); color: #7C2D12; }
+    .type-row .tr-thumb.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .type-row .tr-thumb.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .type-row .tr-thumb.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .type-row .tr-thumb.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+    .type-row .tr-meta { min-width: 0; }
+    .type-row .tr-title {
+      font-weight: 600; font-size: 14.5px; color: var(--fg);
+      margin: 0 0 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .type-row .tr-line {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .type-row .tr-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .type-row .tr-tag {
+      padding: 1px 8px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 11px; font-weight: 500;
+    }
+    .type-row .tr-actions { display: flex; align-items: center; gap: 4px; }
+    .type-row .tr-handle {
+      width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab; flex-shrink: 0;
+    }
+    .type-row .tr-handle svg { width: 14px; height: 14px; }
+    .type-row .tr-grip-col { display: flex; align-items: center; gap: 8px; }
+
+    .kebab-pop {
+      position: absolute; right: 12px; top: 48px; z-index: 5;
+      min-width: 200px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-lg); padding: 4px;
+      display: none;
+    }
+    .kebab-pop.is-open { display: block; }
+    .kebab-pop button {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 8px 10px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--fg);
+      font-size: 13px; text-align: left; cursor: pointer;
+    }
+    .kebab-pop button:hover { background: var(--bg-muted); }
+    .kebab-pop button.danger { color: var(--danger); }
+    .kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+    .kebab-pop button.danger svg { color: var(--danger); }
+    .kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 420px; }
+    .starter-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      width: 100%; max-width: 540px; margin-top: 4px;
+    }
+    @media (max-width: 540px) { .starter-grid { grid-template-columns: 1fr; } }
+    .starter-card {
+      padding: 12px 14px; text-align: left;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 10px; cursor: pointer;
+      transition: border-color .12s ease, transform .12s ease;
+    }
+    .starter-card:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+    .starter-card .sc-name { font-weight: 600; font-size: 13.5px; }
+    .starter-card .sc-sub  { color: var(--fg-muted); font-size: 12px; margin-top: 3px; }
+
+    /* Availability mini-grid (overview month) */
+    .month-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      max-width: 380px;
+    }
+    .month-grid .mg-cell {
+      aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11.5px; font-weight: 500; color: var(--fg-muted);
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .month-grid .mg-cell.is-busy   { background: rgba(245,158,11,0.18); color: #92400E; border-color: rgba(245,158,11,0.4); }
+    .month-grid .mg-cell.is-block  { background: rgba(239,68,68,0.16); color: #B91C1C; border-color: rgba(239,68,68,0.36); }
+    .month-grid .mg-cell.is-empty  { background: transparent; border: 1px dashed var(--border); color: var(--fg-subtle); }
+    .month-grid .mg-cell.is-today  { outline: 2px solid var(--brand-primary); outline-offset: 1px; }
+    .legend-row {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      margin-top: 12px; font-size: 12px; color: var(--fg-muted);
+    }
+    .legend-row .lg-dot {
+      display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px;
+      vertical-align: -1px;
+    }
+    .legend-row .lg-dot.is-free  { background: var(--bg); border: 1px solid var(--border); }
+    .legend-row .lg-dot.is-busy  { background: rgba(245,158,11,0.6); }
+    .legend-row .lg-dot.is-block { background: rgba(239,68,68,0.6); }
+
+    /* Centered modal — booking-type composer (per feedback_no_right_side_drawers) */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(880px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    /* Booking-form fields builder */
+    .field-builder {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .fb-row {
+      display: grid; grid-template-columns: 24px 1fr auto auto auto;
+      gap: 10px; align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fb-row:last-child { border-bottom: 0; }
+    .fb-row .fb-grip { color: var(--fg-subtle); cursor: grab; display: flex; align-items: center; }
+    .fb-row .fb-grip svg { width: 14px; height: 14px; }
+    .fb-row .fb-name { font-weight: 600; font-size: 13.5px; }
+    .fb-row .fb-type {
+      font-size: 11px; color: var(--fg-muted);
+      padding: 2px 7px; border-radius: 999px; background: var(--bg-muted);
+    }
+    .fb-row .fb-required {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+    }
+    .fb-row .fb-required.is-on  { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .fb-row .fb-required.is-off { background: var(--bg-muted); color: var(--fg-muted); }
+    .fb-row .fb-required.locked { opacity: 0.55; cursor: not-allowed; }
+    .fb-add-row {
+      padding: 10px 12px;
+      display: flex; gap: 8px; align-items: center;
+      background: var(--bg-muted);
+      border-top: 1px solid var(--border);
+    }
+    .fb-add-row select {
+      padding: 7px 10px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13px; outline: 0;
+      flex: 1; min-width: 0;
+    }
+
+    /* Inline tier hint (per no-blur-premium pattern) */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+    .tier-hint.is-pro {
+      background: rgba(99,102,241,0.10);
+      border-left-color: var(--brand-primary);
+      color: #4338CA;
+    }
+
+    /* Inline note (post-MVP / informational) */
+    .info-note {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-top: 10px;
+    }
+    .info-note .in-icon {
+      flex-shrink: 0; font-size: 14px; line-height: 1.2;
+    }
+    .info-note b { color: var(--fg); }
+
+    /* Notification provider chips */
+    .provider-chip-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+    }
+    .provider-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg-elevated); color: var(--fg);
+      font-size: 12.5px; font-weight: 500; cursor: pointer;
+    }
+    .provider-chip:hover { border-color: var(--border-strong); }
+    .provider-chip.is-on  { background: rgba(99,102,241,0.10); border-color: var(--brand-primary); color: var(--brand-primary); }
+    .provider-chip .pc-ico { font-size: 13px; }
+
+    /* Stripe Connect status panel */
+    .stripe-panel {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+    }
+    .stripe-panel .sp-mark {
+      width: 38px; height: 38px; border-radius: 9px;
+      background: #635BFF; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 600; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .stripe-panel .sp-meta { flex: 1; min-width: 0; }
+    .stripe-panel .sp-row1 { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .stripe-panel .sp-row2 { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Demo-toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode .provider-card,
+    body.dark-mode .oauth-status,
+    body.dark-mode .hours-row,
+    body.dark-mode .month-grid .mg-cell,
+    body.dark-mode .field-builder,
+    body.dark-mode .stripe-panel,
+    body.dark-mode .info-note,
+    body.dark-mode details.expander {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .provider-card.is-selected { background: rgba(99,102,241,0.10); border-color: var(--brand-primary); }
+    body.dark-mode .hours-row input[type="time"] { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .type-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .starter-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .tab.is-active { background: #141A2D; }
+    body.dark-mode .kebab-pop { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .kebab-pop button { color: #F3F4F6; }
+    body.dark-mode .kebab-pop button:hover { background: #1F2937; }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .stripe-panel { background: #141A2D; }
+    body.dark-mode .provider-chip { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .provider-chip.is-on { background: rgba(99,102,241,0.18); border-color: var(--brand-primary); color: #A5B4FC; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <a href="./creator-schedule-public.html" class="btn btn-ghost btn-sm" data-tip="Open the public booking page in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View booking page
+  </a>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+
+  <!-- Canonical sidebar (Pages active, Schedule sub-page highlighted via JS post-inject) -->
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ========== MAIN ========== -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Schedule</span>
+    </nav>
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">📅</span> Schedule</h1>
+        <p class="sub">Let visitors book your time. Pick session types, set when you're free, and tadaify handles the rest — calendar invites, reminders, payments.</p>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b>book</b>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="window.open('./creator-schedule-public.html', '_blank')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         SECTION 1 — Page settings (title, slug, publish, theme, SEO)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Page settings</h2>
+        <span class="sub">Title, URL, visibility and SEO for the booking page itself.</span>
+      </div>
+      <div class="section-body">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="page-title">Page title <span class="field-hint">shown as &lt;h1&gt; on the public page</span></label>
+            <div class="field-prefix-wrap">
+              <input id="page-title" type="text" value="Book a session" />
+              <button class="field-suffix-action" onclick="alert('Mockup — AI suggests 5 alternative titles like \\'Schedule a call\\', \\'Work with me\\', \\'Coaching sessions\\'')" type="button">✨ Suggest</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">tadaify.com/alexandra/</span>
+              <input id="page-slug" type="text" value="book" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Publish</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Page is live</div>
+                <div class="rt-sub">Visitors can find this booking page at the URL above.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Theme color</label>
+            <div class="swatch-row">
+              <div class="swatch is-selected" style="background: var(--bg);"               data-name="Inherit theme"  onclick="pickSwatch(this)" title="Inherit theme"></div>
+              <div class="swatch"             style="background: #FFFFFF;"                  data-name="White"          onclick="pickSwatch(this)" title="White"></div>
+              <div class="swatch"             style="background: #F8F4EE;"                  data-name="Warm cream"     onclick="pickSwatch(this)" title="Warm cream"></div>
+              <div class="swatch"             style="background: #1F2937;"                  data-name="Slate"          onclick="pickSwatch(this)" title="Slate"></div>
+              <div class="swatch"             style="background: linear-gradient(135deg,#FDE68A,#F59E0B);" data-name="Sunrise" onclick="pickSwatch(this)" title="Sunrise gradient"></div>
+              <div class="swatch"             style="background: linear-gradient(135deg,#6366F1,#8B5CF6);" data-name="Indigo"  onclick="pickSwatch(this)" title="Indigo gradient"></div>
+            </div>
+          </div>
+        </div>
+
+        <details class="expander" style="margin-top:14px">
+          <summary>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7"/><path d="M9 12V7a3 3 0 0 1 6 0v5"/><circle cx="12" cy="17" r="3"/></svg>
+            SEO settings <span class="ex-sub">— meta title, description, social card</span>
+            <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+          </summary>
+          <div class="ex-body">
+            <div class="field">
+              <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
+              <div class="field-prefix-wrap">
+                <input id="seo-title" type="text" value="Book a session with Alexandra Silva — strength coaching" />
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+              <div class="field-prefix-wrap" style="align-items:flex-start">
+                <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Personal coaching for women lifting heavy. 30-min intros are free; 60-min programmes start at $80. Book a slot below — calendar invite arrives in 30 seconds.</textarea>
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+              </div>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 2 — Calendar integration (THE primary functional setup)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Calendar integration</h2>
+        <span class="sub">tadaify is the front-end. Your calendar lives in Google / Apple / Outlook — or right here in tadaify.</span>
+      </div>
+      <div class="section-body">
+
+        <div class="field">
+          <label class="field-label">Where do your appointments live?</label>
+          <div class="provider-grid">
+
+            <button type="button" class="provider-card" data-provider="google" onclick="pickProvider(this)">
+              <span class="pc-mark g" aria-hidden="true">G</span>
+              <span class="pc-meta">
+                <span class="pc-name">Google Calendar <span class="pill-soft pill-postmvp">post-MVP</span></span>
+                <span class="pc-sub">Sync availability + write bookings to your Google Calendar via OAuth.</span>
+              </span>
+              <span class="pc-radio" aria-hidden="true"></span>
+            </button>
+
+            <button type="button" class="provider-card" data-provider="apple" onclick="pickProvider(this)">
+              <span class="pc-mark a" aria-hidden="true"></span>
+              <span class="pc-meta">
+                <span class="pc-name">Apple Calendar <span class="pill-soft pill-postmvp">post-MVP</span></span>
+                <span class="pc-sub">Sync via your Apple ID. Works with iCloud Calendar on macOS + iOS.</span>
+              </span>
+              <span class="pc-radio" aria-hidden="true"></span>
+            </button>
+
+            <button type="button" class="provider-card" data-provider="outlook" onclick="pickProvider(this)">
+              <span class="pc-mark o" aria-hidden="true">O</span>
+              <span class="pc-meta">
+                <span class="pc-name">Outlook / Microsoft 365 <span class="pill-soft pill-postmvp">post-MVP</span></span>
+                <span class="pc-sub">Sync with Outlook.com or your Microsoft 365 work calendar via OAuth.</span>
+              </span>
+              <span class="pc-radio" aria-hidden="true"></span>
+            </button>
+
+            <button type="button" class="provider-card is-selected" data-provider="manual" onclick="pickProvider(this)">
+              <span class="pc-mark m" aria-hidden="true">📅</span>
+              <span class="pc-meta">
+                <span class="pc-name">Manual / Tadaify-only <span class="pill-soft pill-recommended">Recommended for MVP</span></span>
+                <span class="pc-sub">tadaify keeps your availability. Booked slots show as busy here; nothing syncs out.</span>
+              </span>
+              <span class="pc-radio" aria-hidden="true"></span>
+            </button>
+
+          </div>
+
+          <div class="info-note">
+            <span class="in-icon" aria-hidden="true">ℹ️</span>
+            <div>
+              <b>MVP scope:</b> the standalone scheduler ships first (per DEC-APIPAGES-01 = C). Calendar OAuth providers are designed here so you can see the long-term picture; they activate when the integration epic lands. Today, Manual / Tadaify-only handles bookings end-to-end.
+            </div>
+          </div>
+        </div>
+
+        <!-- OAuth status (shown when an OAuth provider is selected — example: Google connected) -->
+        <div class="field" id="oauth-status-wrap" style="display:none">
+          <label class="field-label">Connection status</label>
+          <div class="oauth-status">
+            <div class="os-mark" aria-hidden="true">G</div>
+            <div class="os-meta">
+              <div class="os-row1">
+                Connected as <b>alex@gmail.com</b>
+                <span class="chip connected">✓ Active</span>
+              </div>
+              <div class="os-row2">Last sync: 12 minutes ago · Reading 3 calendars</div>
+            </div>
+            <div class="os-actions">
+              <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — re-runs OAuth')">Reconnect</button>
+              <button class="btn btn-danger-ghost btn-xs" onclick="alert('Mockup — disconnects + falls back to Manual')">Disconnect</button>
+            </div>
+          </div>
+
+          <div class="field-row" style="margin-top:14px">
+            <div class="field">
+              <label class="field-label" for="cfg-cal-read">Read availability from</label>
+              <select class="field-select" id="cfg-cal-read">
+                <option selected>Primary — alex@gmail.com</option>
+                <option>Work — alex@strongnotskinny.coach</option>
+                <option>Personal — family@gmail.com (do not write)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="cfg-cal-write">Write bookings to</label>
+              <select class="field-select" id="cfg-cal-write">
+                <option selected>Primary — alex@gmail.com</option>
+                <option>Coaching — coaching@strongnotskinny.coach</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buffer / timezone -->
+        <div class="field-row three" style="margin-top:14px">
+          <div class="field">
+            <label class="field-label" for="cfg-buffer">Buffer between bookings</label>
+            <select class="field-select" id="cfg-buffer">
+              <option>0 min — back-to-back</option>
+              <option selected>15 min</option>
+              <option>30 min</option>
+              <option>60 min</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cfg-window">Booking window</label>
+            <select class="field-select" id="cfg-window">
+              <option>7 days ahead</option>
+              <option selected>30 days ahead</option>
+              <option>60 days ahead</option>
+              <option>90 days ahead</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cfg-tz">Your timezone <span class="field-hint">auto-detected</span></label>
+            <select class="field-select" id="cfg-tz">
+              <option selected>Europe/Warsaw — auto</option>
+              <option>Europe/London</option>
+              <option>America/New_York</option>
+              <option>America/Los_Angeles</option>
+              <option>Asia/Singapore</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Working hours -->
+        <div class="field" style="margin-top:8px">
+          <label class="field-label">Working hours <span class="field-hint">when bookings are allowed by default</span></label>
+          <div class="hours-grid" id="hours-grid">
+            <div class="hours-row">
+              <div class="hr-day">Monday</div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle Monday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="09:00" />
+              <input type="time" value="17:00" />
+            </div>
+            <div class="hours-row">
+              <div class="hr-day">Tuesday</div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle Tuesday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="09:00" />
+              <input type="time" value="17:00" />
+            </div>
+            <div class="hours-row">
+              <div class="hr-day">Wednesday</div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle Wednesday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="09:00" />
+              <input type="time" value="17:00" />
+            </div>
+            <div class="hours-row">
+              <div class="hr-day">Thursday</div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle Thursday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="09:00" />
+              <input type="time" value="17:00" />
+            </div>
+            <div class="hours-row">
+              <div class="hr-day">Friday</div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle Friday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="09:00" />
+              <input type="time" value="15:00" />
+            </div>
+            <div class="hours-row is-off">
+              <div class="hr-day">Saturday</div>
+              <button class="toggle" type="button" aria-pressed="false" aria-label="Toggle Saturday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="10:00" disabled />
+              <input type="time" value="14:00" disabled />
+            </div>
+            <div class="hours-row is-off">
+              <div class="hr-day">Sunday</div>
+              <button class="toggle" type="button" aria-pressed="false" aria-label="Toggle Sunday" onclick="toggleHoursRow(this)"></button>
+              <input type="time" value="10:00" disabled />
+              <input type="time" value="14:00" disabled />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 3 — Booking types (the main work)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Booking types</h2>
+        <span class="sub">What can visitors book? Each type has its own duration, price and form.</span>
+        <span class="head-spacer"></span>
+        <button class="btn btn-primary btn-sm" onclick="openTypeModal('new')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New booking type
+        </button>
+      </div>
+
+      <div class="section-body has-pad-lg">
+
+        <!-- =====================
+             FILLED STATE (default)
+             ===================== -->
+        <div id="state-filled">
+          <div class="types-toolbar">
+            <div class="tabs" role="tablist">
+              <button class="tab is-active" role="tab" aria-selected="true">All <span class="tab-count">4</span></button>
+              <button class="tab" role="tab">Active <span class="tab-count">3</span></button>
+              <button class="tab" role="tab">Paused <span class="tab-count">1</span></button>
+            </div>
+            <div style="margin-left:auto; font-size:12px; color: var(--fg-muted);">
+              Free plan: <b>2 of 2</b> active types used · <a href="#" onclick="event.preventDefault();alert('Mockup — opens upgrade flow')" style="color:var(--brand-primary); font-weight:600">Upgrade for unlimited →</a>
+            </div>
+          </div>
+
+          <div class="types-list">
+
+            <!-- Type 1 — Free intro, active -->
+            <div class="type-row">
+              <div class="tr-grip-col">
+                <span class="tr-handle" data-tip="Drag to reorder" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <div class="tr-thumb t-emerald" aria-hidden="true">☕</div>
+              </div>
+              <div class="tr-meta">
+                <p class="tr-title">30-min intro call <span class="chip live">Active</span></p>
+                <div class="tr-line">
+                  <span>30 min</span>
+                  <span class="dot"></span>
+                  <span><b>Free</b></span>
+                  <span class="dot"></span>
+                  <span>Most-booked</span>
+                  <span class="dot"></span>
+                  <span class="tr-tag">video call</span>
+                </div>
+              </div>
+              <div class="tr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openTypeModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Booking type options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+                <div class="kebab-pop">
+                  <button onclick="closePops();openTypeModal('edit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Edit</button>
+                  <button onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Duplicate</button>
+                  <button onclick="closePops();alert('Mockup — copies tadaify.com/alexandra/book/intro to clipboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copy direct link</button>
+                  <button onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> View public</button>
+                  <button onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Pause</button>
+                  <hr/>
+                  <button class="danger" onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg> Delete</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Type 2 — Paid 60-min, active -->
+            <div class="type-row">
+              <div class="tr-grip-col">
+                <span class="tr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="tr-thumb t-warm">💪</div>
+              </div>
+              <div class="tr-meta">
+                <p class="tr-title">60-min coaching session <span class="chip live">Active</span> <span class="chip paid">$80</span></p>
+                <div class="tr-line">
+                  <span>60 min</span>
+                  <span class="dot"></span>
+                  <span>Paid via Stripe</span>
+                  <span class="dot"></span>
+                  <span>Free cancel up to 24h</span>
+                  <span class="dot"></span>
+                  <span class="tr-tag">video call</span>
+                </div>
+              </div>
+              <div class="tr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openTypeModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Booking type options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Type 3 — Project review, active -->
+            <div class="type-row">
+              <div class="tr-grip-col">
+                <span class="tr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="tr-thumb t-indigo">📋</div>
+              </div>
+              <div class="tr-meta">
+                <p class="tr-title">Programme check-in (existing clients) <span class="chip live">Active</span> <span class="chip paid">$45</span></p>
+                <div class="tr-line">
+                  <span>45 min</span>
+                  <span class="dot"></span>
+                  <span>Paid via Stripe</span>
+                  <span class="dot"></span>
+                  <span>Hidden — direct link only</span>
+                  <span class="dot"></span>
+                  <span class="tr-tag">video call</span>
+                </div>
+              </div>
+              <div class="tr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openTypeModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Booking type options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Type 4 — Group workshop, paused (Business gate) -->
+            <div class="type-row is-off">
+              <div class="tr-grip-col">
+                <span class="tr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="tr-thumb t-rose">👯</div>
+              </div>
+              <div class="tr-meta">
+                <p class="tr-title">Group strength workshop (max 8) <span class="chip draft">Paused</span> <span class="chip paid">$25/seat</span></p>
+                <div class="tr-line">
+                  <span>90 min · 8 attendees</span>
+                  <span class="dot"></span>
+                  <span style="color: #92400E; font-weight: 600;">🔒 Group bookings — Business plan</span>
+                </div>
+              </div>
+              <div class="tr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openTypeModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Booking type options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- =====================
+             EMPTY STATE (toggle via demo toolbar ?state=empty)
+             ===================== -->
+        <div id="state-empty" style="display:none">
+          <div class="empty-state">
+            <div class="es-emoji" aria-hidden="true">📅</div>
+            <h3>Create your first booking type</h3>
+            <p>A booking type is what visitors pick first — like "30-min intro call" or "60-min coaching". You can change it anytime. Start from a template or build from scratch.</p>
+            <button class="btn btn-primary" onclick="openTypeModal('new')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Build from scratch
+            </button>
+            <div class="starter-grid">
+              <button class="starter-card" type="button" onclick="openTypeModal('new', 'intro')">
+                <div class="sc-name">☕ Free intro call</div>
+                <div class="sc-sub">30 min · free · perfect first touchpoint with new clients.</div>
+              </button>
+              <button class="starter-card" type="button" onclick="openTypeModal('new', 'coaching')">
+                <div class="sc-name">💪 Paid 1-on-1 coaching</div>
+                <div class="sc-sub">60 min · $80 · prefilled with cancellation policy.</div>
+              </button>
+              <button class="starter-card" type="button" onclick="openTypeModal('new', 'consult')">
+                <div class="sc-name">📋 Project consultation</div>
+                <div class="sc-sub">45 min · $45 · adds Topic + Budget questions.</div>
+              </button>
+              <button class="starter-card" type="button" onclick="openTypeModal('new', 'workshop')">
+                <div class="sc-name">👯 Group workshop</div>
+                <div class="sc-sub">90 min · multi-attendee · prompts upgrade to Business.</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 4 — Availability rules (recurring + blackouts)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Availability rules</h2>
+        <span class="sub">Refine the working-hours grid with recurring exceptions and one-off blackouts.</span>
+        <span class="head-spacer"></span>
+        <span class="chip" style="background: rgba(16,185,129,0.14); color: #047857;">✨ Creator+</span>
+      </div>
+      <div class="section-body">
+
+        <div class="field">
+          <label class="field-label">Recurring rules</label>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">No bookings before 10:00 on Tuesdays</div>
+                <div class="rt-sub">Auto-applied on every recurring Tuesday. Visitors won't see 09:00–10:00 slots.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle rule"></button>
+            </div>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Lunch break 12:30–13:30 every weekday</div>
+                <div class="rt-sub">Blocks the slot across Mon–Fri.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle rule"></button>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="align-self:flex-start" onclick="alert('Mockup — opens centered modal: rule builder (day-of-week × time-range)')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add recurring rule
+            </button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:14px">
+          <label class="field-label">One-off blackouts <span class="field-hint">vacations, holidays, unavailable days</span></label>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">May 1 — National holiday</div>
+                <div class="rt-sub">Full day blocked.</div>
+              </div>
+              <button class="iconbtn" aria-label="Remove blackout" data-tip="Remove" onclick="alert('Mockup — removes blackout')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">May 12–18 — Vacation in Sicily 🏖</div>
+                <div class="rt-sub">Full week blocked.</div>
+              </div>
+              <button class="iconbtn" aria-label="Remove blackout" data-tip="Remove" onclick="alert('Mockup — removes blackout')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="align-self:flex-start" onclick="alert('Mockup — opens centered date-range picker')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add blackout
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual month overview -->
+        <div class="field" style="margin-top:14px">
+          <label class="field-label">May 2026 — at a glance</label>
+          <div class="month-grid" id="month-grid">
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">Mo</div>
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">Tu</div>
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">We</div>
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">Th</div>
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">Fr</div>
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">Sa</div>
+            <div class="mg-cell" style="font-weight:600; color: var(--fg-subtle);">Su</div>
+            <!-- Week 1 (Apr 27 - May 3) -->
+            <div class="mg-cell" style="opacity:.4">27</div>
+            <div class="mg-cell" style="opacity:.4">28</div>
+            <div class="mg-cell" style="opacity:.4">29</div>
+            <div class="mg-cell" style="opacity:.4">30</div>
+            <div class="mg-cell is-block">1</div>
+            <div class="mg-cell is-empty">2</div>
+            <div class="mg-cell is-empty">3</div>
+            <!-- Week 2 -->
+            <div class="mg-cell is-busy">4</div>
+            <div class="mg-cell is-busy">5</div>
+            <div class="mg-cell">6</div>
+            <div class="mg-cell is-busy">7</div>
+            <div class="mg-cell">8</div>
+            <div class="mg-cell is-empty">9</div>
+            <div class="mg-cell is-empty">10</div>
+            <!-- Week 3 - vacation -->
+            <div class="mg-cell is-block">11</div>
+            <div class="mg-cell is-block">12</div>
+            <div class="mg-cell is-block">13</div>
+            <div class="mg-cell is-block">14</div>
+            <div class="mg-cell is-block">15</div>
+            <div class="mg-cell is-block">16</div>
+            <div class="mg-cell is-block">17</div>
+            <!-- Week 4 -->
+            <div class="mg-cell is-block">18</div>
+            <div class="mg-cell is-busy is-today">19</div>
+            <div class="mg-cell">20</div>
+            <div class="mg-cell">21</div>
+            <div class="mg-cell">22</div>
+            <div class="mg-cell is-empty">23</div>
+            <div class="mg-cell is-empty">24</div>
+            <!-- Week 5 -->
+            <div class="mg-cell">25</div>
+            <div class="mg-cell">26</div>
+            <div class="mg-cell">27</div>
+            <div class="mg-cell">28</div>
+            <div class="mg-cell">29</div>
+            <div class="mg-cell is-empty">30</div>
+            <div class="mg-cell is-empty">31</div>
+          </div>
+          <div class="legend-row">
+            <span><span class="lg-dot is-free"></span> Free</span>
+            <span><span class="lg-dot is-busy"></span> Has bookings</span>
+            <span><span class="lg-dot is-block"></span> Blocked</span>
+            <span style="color: var(--fg-subtle);">Empty cells = outside working hours.</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 5 — Notifications
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Notifications</h2>
+        <span class="sub">When a booking happens — what gets sent and to whom.</span>
+      </div>
+      <div class="section-body">
+
+        <h3 style="font-family: var(--font-display); font-weight: 600; font-size: 15px; margin: 0 0 10px;">For you (the creator)</h3>
+
+        <div class="row-toggle" style="margin-bottom:8px">
+          <div>
+            <div class="rt-name">Email me when someone books</div>
+            <div class="rt-sub">Sent to <b>alex@strongnotskinny.coach</b>. Includes ICS attachment.</div>
+          </div>
+          <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle creator email"></button>
+        </div>
+
+        <div class="row-toggle" style="margin-bottom:8px">
+          <div>
+            <div class="rt-name">Day-before reminder <span class="chip" style="background: rgba(16,185,129,0.14); color: #047857; margin-left:6px;">✨ Creator+</span></div>
+            <div class="rt-sub">Email summary of all bookings tomorrow, sent at 18:00 your timezone.</div>
+          </div>
+          <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle day-before reminder"></button>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Push to your tools <span class="field-hint">click a provider to enable</span></label>
+          <div class="provider-chip-row">
+            <button class="provider-chip is-on" type="button" onclick="toggleChip(this)">
+              <span class="pc-ico" aria-hidden="true">💬</span> Slack
+            </button>
+            <button class="provider-chip" type="button" onclick="toggleChip(this)">
+              <span class="pc-ico" aria-hidden="true">🎮</span> Discord
+            </button>
+            <button class="provider-chip" type="button" onclick="toggleChip(this)">
+              <span class="pc-ico" aria-hidden="true">📓</span> Notion
+            </button>
+            <button class="provider-chip" type="button" onclick="toggleChip(this)">
+              <span class="pc-ico" aria-hidden="true">🔗</span> Custom webhook
+            </button>
+          </div>
+          <div class="tier-hint is-pro">
+            <span class="th-icon" aria-hidden="true">💡</span>
+            Direct webhook providers (Slack, Discord, Notion, custom URL) are part of <b>Pro</b>. We'll prompt to upgrade at save time if any are enabled.
+          </div>
+        </div>
+
+        <hr style="border:0; border-top: 1px solid var(--border); margin: 16px 0"/>
+
+        <h3 style="font-family: var(--font-display); font-weight: 600; font-size: 15px; margin: 0 0 10px;">For the visitor</h3>
+
+        <div class="row-toggle" style="margin-bottom:8px">
+          <div>
+            <div class="rt-name">Booking confirmation</div>
+            <div class="rt-sub">Sent immediately after booking. Includes ICS attachment + cancellation link.</div>
+          </div>
+          <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle visitor confirmation"></button>
+        </div>
+
+        <details class="expander" style="margin-bottom:10px">
+          <summary>
+            Customize confirmation email subject + body
+            <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+          </summary>
+          <div class="ex-body">
+            <div class="field">
+              <label class="field-label" for="conf-subject">Subject</label>
+              <div class="field-prefix-wrap">
+                <input id="conf-subject" type="text" value="You're booked! — {{booking_type}} with Alexandra on {{date}}" />
+                <button class="field-suffix-action" onclick="alert('Mockup — AI suggests 5 friendly subjects')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="conf-body">Body <span class="field-hint">supports {{name}}, {{date}}, {{time}}, {{cancel_link}}</span></label>
+              <textarea id="conf-body" class="field-area">Hi {{name}},
+
+Thanks for booking — see you {{date}} at {{time}}. The calendar invite is attached.
+
+If anything changes, you can {{cancel_link}}. No charge if you cancel more than 24h before.
+
+— Alexandra</textarea>
+            </div>
+          </div>
+        </details>
+
+        <div class="row-toggle" style="margin-bottom:8px">
+          <div>
+            <div class="rt-name">24-hour reminder <span class="chip" style="background: rgba(16,185,129,0.14); color: #047857; margin-left:6px;">✨ Creator+</span></div>
+            <div class="rt-sub">Polite "see you tomorrow" email.</div>
+          </div>
+          <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle 24h reminder"></button>
+        </div>
+
+        <div class="row-toggle">
+          <div>
+            <div class="rt-name">1-hour reminder <span class="chip" style="background: rgba(99,102,241,0.13); color: #4338CA; margin-left:6px;">✨ Pro+</span></div>
+            <div class="rt-sub">Last-minute heads-up so visitors don't no-show.</div>
+          </div>
+          <button class="toggle" type="button" aria-pressed="false" onclick="toggleSwitch(this)" aria-label="Toggle 1h reminder"></button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 6 — Payments (Stripe Connect)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Payments</h2>
+        <span class="sub">Settings for paid booking types. You connect Stripe once; payouts come straight to you.</span>
+        <span class="head-spacer"></span>
+        <span class="chip" style="background: rgba(16,185,129,0.14); color: #047857;">✨ Creator+</span>
+      </div>
+      <div class="section-body">
+
+        <div class="stripe-panel" style="margin-bottom:14px">
+          <div class="sp-mark" aria-hidden="true">S</div>
+          <div class="sp-meta">
+            <div class="sp-row1">
+              Stripe connected <span class="chip connected">✓ Active</span>
+            </div>
+            <div class="sp-row2">Payouts to <b>alex@strongnotskinny.coach</b> · USD · Daily payouts enabled.</div>
+          </div>
+          <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens Stripe Connect dashboard in new tab')">Open dashboard</button>
+          <button class="btn btn-danger-ghost btn-xs" onclick="alert('Mockup — type-to-confirm Stripe disconnect')">Disconnect</button>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="cfg-currency">Default currency</label>
+            <select class="field-select" id="cfg-currency">
+              <option selected>USD — $</option>
+              <option>EUR — €</option>
+              <option>GBP — £</option>
+              <option>PLN — zł</option>
+              <option>JPY — ¥</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cfg-cancel-policy">Default cancellation refund</label>
+            <select class="field-select" id="cfg-cancel-policy">
+              <option>No refund — final sale</option>
+              <option selected>Free cancel up to 24h before</option>
+              <option>Free cancel up to 48h before</option>
+              <option>Free cancel up to 7 days before</option>
+              <option>Always full refund</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row-toggle" style="margin-top:6px">
+          <div>
+            <div class="rt-name">Require deposit at booking</div>
+            <div class="rt-sub">Visitors pay a percentage upfront, the rest on the day. Reduces no-shows.</div>
+          </div>
+          <button class="toggle" type="button" aria-pressed="false" onclick="toggleSwitch(this)" aria-label="Toggle deposit"></button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     CENTERED MODAL — New / Edit booking type composer
+     (per feedback_no_right_side_drawers — NEVER a drawer)
+     ============================================================ -->
+<div class="modal-backdrop" id="type-modal" role="dialog" aria-modal="true" aria-labelledby="tm-title" hidden>
+  <div class="modal">
+
+    <div class="modal-head">
+      <h3 id="tm-title">New booking type</h3>
+      <span class="head-spacer"></span>
+      <span class="chip draft" id="tm-state-chip">Draft · auto-saving</span>
+      <button class="iconbtn" onclick="closeTypeModal()" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Title + AI suggest -->
+      <div class="field">
+        <label class="field-label" for="tm-title-input">Title <span class="field-hint">what visitors see in the picker</span></label>
+        <div class="field-prefix-wrap">
+          <input id="tm-title-input" type="text" value="60-min coaching session" />
+          <button class="field-suffix-action" onclick="alert('Mockup — AI suggests 5 alternatives like \\'Strength deep-dive\\', \\'Programme review\\', \\'1-on-1 lifting session\\'')" type="button">✨ Suggest</button>
+        </div>
+      </div>
+
+      <!-- Cover image (optional) -->
+      <div class="field">
+        <label class="field-label">Cover image <span class="field-hint">optional · 1200×600 recommended</span></label>
+        <div style="border:1.5px dashed var(--border-strong); border-radius:12px; padding:18px; text-align:center; background: var(--bg); cursor:pointer;" onclick="alert('Mockup — image picker opens')">
+          <div style="font-size:28px;" aria-hidden="true">🖼</div>
+          <div style="font-weight:600; font-size:13.5px; margin-top:4px;">Drop an image, or click to upload</div>
+          <div style="color: var(--fg-muted); font-size:12.5px; margin-top:2px;">Or <a href="#" onclick="event.preventDefault();event.stopPropagation();alert('Mockup — AI generates 4 cover cards')" style="color:var(--brand-primary); font-weight:600">✨ generate one with AI</a></div>
+        </div>
+      </div>
+
+      <!-- Duration + price -->
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="tm-duration">Duration</label>
+          <select class="field-select" id="tm-duration">
+            <option>15 min</option>
+            <option>30 min</option>
+            <option>45 min</option>
+            <option selected>60 min</option>
+            <option>90 min</option>
+            <option>120 min</option>
+            <option>Custom…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Pricing</label>
+          <div class="row-toggle">
+            <div>
+              <div class="rt-name">Free</div>
+              <div class="rt-sub">No payment needed · visitor just confirms.</div>
+            </div>
+            <button class="toggle" type="button" aria-pressed="false" id="tm-free-toggle" aria-label="Toggle free" onclick="toggleSwitch(this);togglePriceFields()"></button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tm-paid-fields">
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="tm-price">Price</label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">$</span>
+              <input id="tm-price" type="number" value="80" min="0" step="1" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="tm-cancel">Cancellation policy <span class="field-hint">overrides default</span></label>
+            <select class="field-select" id="tm-cancel">
+              <option>Inherit default — Free cancel up to 24h</option>
+              <option selected>Free cancel up to 24h before</option>
+              <option>Free cancel up to 48h before</option>
+              <option>No refund — final sale</option>
+            </select>
+          </div>
+        </div>
+        <div class="tier-hint">
+          <span class="th-icon" aria-hidden="true">💡</span>
+          Paid bookings need <b>Creator+</b> + connected Stripe. We'll prompt at save time if you don't have either.
+        </div>
+      </div>
+
+      <!-- Buffer + visibility -->
+      <div class="field-row" style="margin-top:6px">
+        <div class="field">
+          <label class="field-label" for="tm-buffer">Buffer override <span class="field-hint">overrides page-level buffer</span></label>
+          <select class="field-select" id="tm-buffer">
+            <option selected>Inherit — 15 min</option>
+            <option>0 min — back-to-back</option>
+            <option>15 min</option>
+            <option>30 min</option>
+            <option>60 min</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="tm-visibility">Visibility</label>
+          <select class="field-select" id="tm-visibility">
+            <option selected>Public — listed on /book</option>
+            <option>Hidden — direct link only (/book/intro)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Booking form fields builder -->
+      <div class="field">
+        <label class="field-label">Booking form fields <span class="field-hint">what visitors fill in at step 3</span></label>
+        <div class="field-builder">
+          <div class="fb-row">
+            <span class="fb-grip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+            <span class="fb-name">Name</span>
+            <span class="fb-type">text</span>
+            <span class="fb-required is-on locked" data-tip="Always required">Required</span>
+            <button class="iconbtn" data-tip="Always present" disabled aria-label="Built-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+          </div>
+          <div class="fb-row">
+            <span class="fb-grip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+            <span class="fb-name">Email</span>
+            <span class="fb-type">email</span>
+            <span class="fb-required is-on locked" data-tip="Always required">Required</span>
+            <button class="iconbtn" data-tip="Always present" disabled aria-label="Built-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+          </div>
+          <div class="fb-row">
+            <span class="fb-grip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+            <span class="fb-name">Topic — what would you like to focus on?</span>
+            <span class="fb-type">long text</span>
+            <button class="fb-required is-on" type="button" onclick="this.classList.toggle('is-on'); this.classList.toggle('is-off');">Required</button>
+            <button class="iconbtn" data-tip="Remove" aria-label="Remove field" onclick="alert('Mockup — removes field')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="fb-row">
+            <span class="fb-grip" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+            <span class="fb-name">Phone (optional)</span>
+            <span class="fb-type">phone</span>
+            <button class="fb-required is-off" type="button" onclick="this.classList.toggle('is-on'); this.classList.toggle('is-off');">Optional</button>
+            <button class="iconbtn" data-tip="Remove" aria-label="Remove field" onclick="alert('Mockup — removes field')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          </div>
+          <div class="fb-add-row">
+            <select aria-label="Add field type">
+              <option>Add a question…</option>
+              <option>Short text</option>
+              <option>Long text</option>
+              <option>Number</option>
+              <option>Email</option>
+              <option>Phone</option>
+              <option>URL</option>
+              <option>Single choice (radio)</option>
+              <option>Multi choice (checkbox)</option>
+              <option>Date</option>
+              <option>File upload</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — appends a new fb-row above')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="field">
+        <label class="field-label" for="tm-desc">Description <span class="field-hint">shown on the booking page when visitor selects this type</span></label>
+        <textarea id="tm-desc" class="field-area">A focused 60-minute session. Bring your current programme; we'll review form, fix sticking points, and plan the next 4 weeks. Held over Google Meet — link arrives with the calendar invite.</textarea>
+      </div>
+
+      <!-- Confirmation message -->
+      <div class="field">
+        <label class="field-label" for="tm-confirm">Post-booking thank-you <span class="field-hint">shown on the success screen + included in the email</span></label>
+        <textarea id="tm-confirm" class="field-area" style="min-height:70px;">You're booked! 🎉 I'll send a quick prep email the day before with what to bring + the meeting link. Reply to this email any time.</textarea>
+      </div>
+
+      <!-- Active toggle -->
+      <div class="field">
+        <label class="field-label">Status</label>
+        <div class="row-toggle">
+          <div>
+            <div class="rt-name">Active — accepting bookings</div>
+            <div class="rt-sub">When off, this type stays in your list but visitors can't book it.</div>
+          </div>
+          <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)" aria-label="Toggle active"></button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="closeTypeModal()">Cancel</button>
+      <button class="btn btn-danger-ghost btn-sm" onclick="alert('Mockup — type-to-confirm delete (only enabled in Edit mode)')">Delete type</button>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — saved as draft')">Save as draft</button>
+      <button class="btn btn-primary btn-sm" onclick="trySave('publish')">Save &amp; activate →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Demo toolbar — switch state + tier without page reload -->
+<div class="demo-toolbar" aria-hidden="true">
+  <span style="opacity:0.65">Demo</span>
+  <select onchange="setState(this.value)" aria-label="State">
+    <option value="filled" selected>State: filled (4 types)</option>
+    <option value="empty">State: empty</option>
+  </select>
+  <select onchange="setTier(this.value)" aria-label="Tier">
+    <option value="free">Tier: Free</option>
+    <option value="creator" selected>Tier: Creator</option>
+    <option value="pro">Tier: Pro</option>
+    <option value="business">Tier: Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // ----- Demo state machinery -----
+  function urlParam(k, fb) {
+    var u = new URL(location.href);
+    return u.searchParams.get(k) || fb;
+  }
+  function setState(v) {
+    document.body.dataset.state = v;
+    document.getElementById('state-filled').style.display = (v === 'filled') ? '' : 'none';
+    document.getElementById('state-empty').style.display  = (v === 'empty')  ? '' : 'none';
+  }
+  function setTier(v) {
+    document.body.dataset.tier = v;
+    var pill = document.querySelector('.tdf-side .uhandle');
+    if (pill) pill.textContent = '@alexandra · ' + (v.charAt(0).toUpperCase() + v.slice(1));
+  }
+
+  // ----- Toggles -----
+  function toggleSwitch(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  function toggleHoursRow(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var row = btn.closest('.hours-row');
+    if (!row) return;
+    row.classList.toggle('is-off', !on);
+    row.querySelectorAll('input[type="time"]').forEach(function (i) { i.disabled = !on; });
+  }
+  function toggleChip(el) {
+    el.classList.toggle('is-on');
+  }
+
+  // ----- Provider picker -----
+  function pickProvider(el) {
+    document.querySelectorAll('.provider-card.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+    var provider = el.dataset.provider;
+    // Show OAuth status only for OAuth providers
+    var statusWrap = document.getElementById('oauth-status-wrap');
+    if (provider === 'manual') {
+      statusWrap.style.display = 'none';
+    } else {
+      statusWrap.style.display = '';
+      // Update OAuth status mark + text based on provider (mock)
+      var mark = statusWrap.querySelector('.os-mark');
+      var label = { google: 'G', apple: '', outlook: 'O' }[provider] || '';
+      var bg = {
+        google: 'linear-gradient(135deg,#4285F4,#34A853)',
+        apple: 'linear-gradient(135deg,#1F2937,#4B5563)',
+        outlook: 'linear-gradient(135deg,#0078D4,#50B0F0)'
+      }[provider] || '';
+      if (mark) { mark.textContent = label; mark.style.background = bg; }
+    }
+  }
+
+  // ----- Swatch picker -----
+  function pickSwatch(el) {
+    document.querySelectorAll('.swatch.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+  }
+
+  // ----- Theme -----
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  // ----- Type modal -----
+  function openTypeModal(mode, starter) {
+    closePops();
+    var bd = document.getElementById('type-modal');
+    document.getElementById('tm-title').textContent = mode === 'edit' ? 'Edit booking type' : (starter ? 'New booking type — from template' : 'New booking type');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closeTypeModal() {
+    var bd = document.getElementById('type-modal');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+  function togglePriceFields() {
+    // When "Free" toggle is ON we want to dim the paid block; otherwise show it.
+    var freeOn = document.getElementById('tm-free-toggle').classList.contains('is-on');
+    var paid = document.getElementById('tm-paid-fields');
+    paid.style.opacity = freeOn ? '0.45' : '';
+    paid.style.pointerEvents = freeOn ? 'none' : '';
+  }
+
+  // Save → run TierGate.checkAndProceed
+  // (premium fields gate at save per feedback_no_blur_premium_features)
+  function trySave(action) {
+    var tier = document.body.dataset.tier || 'creator';
+    var features = [];
+
+    // Paid booking type — Creator+
+    var freeOn = document.getElementById('tm-free-toggle') && document.getElementById('tm-free-toggle').classList.contains('is-on');
+    if (!freeOn) {
+      features.push({
+        id: 'paid-bookings', name: 'Paid bookings via Stripe', requires: 'creator',
+        meta: 'Charging for sessions requires Creator+ and Stripe Connect.'
+      });
+    }
+
+    if (window.TierGate) {
+      TierGate.checkAndProceed({
+        currentTier: tier,
+        features: features,
+        onProceed:    function () { alert('Mockup — booking type saved (' + action + ')'); closeTypeModal(); },
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onSaveWithout: features.length ? function () { alert('Mockup — saved as Free instead'); closeTypeModal(); } : null,
+        onCancel: function () {}
+      });
+    } else {
+      alert('Mockup — saved (' + action + ')');
+      closeTypeModal();
+    }
+  }
+
+  // ----- Kebab popovers -----
+  function togglePop(btn) {
+    var pop = btn.parentElement.querySelector('.kebab-pop');
+    if (!pop) return;
+    var wasOpen = pop.classList.contains('is-open');
+    closePops();
+    if (!wasOpen) pop.classList.add('is-open');
+  }
+  function closePops() { document.querySelectorAll('.kebab-pop.is-open').forEach(function (p) { p.classList.remove('is-open'); }); }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.tr-actions') && !e.target.closest('.kebab-pop')) closePops();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closePops();
+      var bd = document.getElementById('type-modal');
+      if (bd && bd.classList.contains('is-open')) closeTypeModal();
+    }
+  });
+
+  // ----- Boot from URL -----
+  setState(urlParam('state', 'filled'));
+  var initTier = urlParam('tier', 'creator');
+  if (initTier !== 'creator') setTier(initTier);
+
+  // After partials inject, mark Schedule as the current sub-page under Pages.
+  // The shared partial renders Pages > Home as the only sub-item by default;
+  // for the multi-page demo we add a "Schedule" sub-item dynamically so the
+  // user sees Schedule highlighted under Pages (mirrors app-page-blog.html).
+  setTimeout(function () {
+    var subList = document.querySelector('.tdf-side .nav-sub-list');
+    if (!subList) return;
+    var schedItem = document.createElement('a');
+    schedItem.href = './app-page-schedule.html';
+    schedItem.className = 'nav-sub-item is-current';
+    schedItem.setAttribute('data-tip', 'Schedule');
+    schedItem.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Schedule</span>';
+    var addPage = subList.querySelector('.is-disabled');
+    if (addPage) subList.insertBefore(schedItem, addPage);
+    else subList.appendChild(schedItem);
+    Array.prototype.forEach.call(subList.querySelectorAll('.nav-sub-item.is-current'), function (el) {
+      if (el !== schedItem) el.classList.remove('is-current');
+    });
+  }, 30);
+</script>
+</body>
+</html>
