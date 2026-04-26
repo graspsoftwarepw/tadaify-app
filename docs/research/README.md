@@ -16,6 +16,7 @@ indexed here. Reports are NOT acted upon until the DEC is answered.
 
 | Date | Report | Status |
 |------|--------|--------|
+| 2026-04-26 | [Payment vendor + VAT compliance — Stripe vs Paddle TCO across revenue scales](./payment-vendor-vat-compliance.md) | draft-for-review — DEC-087 / DEC-088 / DEC-089 / DEC-090 / DEC-091 pending |
 | 2026-04-26 | [Insights & analytics metrics feasibility — Cloudflare Workers stack × creator user demand](./insights-metrics-feasibility.md) | **accepted** — PR #40 merged; DEC-081 answered; all DECs (075–083) locked |
 | 2026-04-26 | [Insights implementation context — Phase A scope, marketing pillars, UI copy, Phase B queue](./insights-implementation-context.md) | **living doc** — single source of truth for Insights implementation agent; supersedes volatile /tmp working notes |
 | 2026-04-25 | [Dashboard plagiarism-risk audit vs Linktree](./dashboard-plagiarism-risk-audit.md) | draft-for-review |
