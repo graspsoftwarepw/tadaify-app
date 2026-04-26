@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public FAQ / Help Center page render — creator view at tadaify.com/<handle>/faq — F-PAGE-FAQ-001 #62
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view that renders the FAQ written via app-page-faq.html.
+  Five sub-views demoed in one file via in-page hash routing:
+    #/                  → full FAQ (all sections)
+    #/section/<slug>    → single section deep-link
+    #/q/<slug>          → single question deep-link (auto-expands + scrolls)
+    #/search?q=<query>  → search results across all sections, highlights matched terms
+    #/tag/<slug>        → tag filter view (Pro+ visible state)
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: TOC becomes top-of-page collapsible; search stays sticky;
+  section spacing tightens.
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every link works in-page; search filters live; tag chips filter; deep-links auto-expand)
+    - No tadaify nav bar on creator pages (creator-public.html convention) — minimal back-link bar instead.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FAQ — Alexandra Silva — tadaify.com/alexandra/faq</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values come from tokens.css (Indigo Serif).
+       Body background mirrors creator-public.html so the FAQ feels
+       like a sub-page of the same site.
+       ============================================================ */
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    * { box-sizing: border-box; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Mockup-only top strip (back-link + URL pill). */
+    .top-strip {
+      max-width: 1100px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a {
+      color: var(--fg-muted);
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle); }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+    .top-strip .theme-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 8px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--fg-muted); cursor: pointer;
+    }
+    .top-strip .theme-toggle:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .theme-toggle svg { width: 14px; height: 14px; }
+    .top-strip .theme-icon-moon { display: none; }
+    body.dark-mode .top-strip .theme-icon-sun  { display: none; }
+    body.dark-mode .top-strip .theme-icon-moon { display: inline; }
+
+    /* Creator identity row */
+    .creator-row {
+      max-width: 1100px; margin: 0 auto;
+      padding: 32px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    body.dark-mode .creator-row .av { border-color: #141A2D; }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Page hero */
+    .page-hero {
+      max-width: 1100px; margin: 0 auto;
+      padding: 24px 20px 18px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 52px);
+      letter-spacing: -0.02em; margin: 0;
+    }
+    .page-hero .lede {
+      max-width: 660px; color: var(--fg-muted);
+      font-size: 16.5px; line-height: 1.55; margin-top: 10px;
+    }
+    .page-hero .meta-line {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 18px; font-size: 12.5px; color: var(--fg-muted);
+    }
+    .page-hero .meta-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+
+    /* Sticky search bar */
+    .search-bar-wrap {
+      position: sticky; top: 0; z-index: 30;
+      background:
+        linear-gradient(to bottom, var(--bg) 60%, rgba(255,255,255,0)),
+        var(--bg);
+      padding: 10px 0 14px;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    body.dark-mode .search-bar-wrap {
+      background:
+        linear-gradient(to bottom, #0B0F1E 60%, rgba(11,15,30,0)),
+        #0B0F1E;
+    }
+    .search-bar {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 20px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .search-input-wrap {
+      position: relative; flex: 1; min-width: 220px;
+    }
+    .search-input-wrap svg.search-ico {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; color: var(--fg-subtle);
+    }
+    .search-input-wrap input {
+      width: 100%; padding: 12px 40px 12px 40px;
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 15px; outline: 0;
+      box-shadow: var(--shadow-sm);
+    }
+    .search-input-wrap input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .search-input-wrap .clear-btn {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: var(--bg-muted); border: 0; color: var(--fg-muted);
+      width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      font-size: 14px; line-height: 1;
+    }
+    .search-input-wrap.has-query .clear-btn { display: flex; }
+
+    /* Tag chip bar (Pro feature; rendered by default in this mockup so reviewers see it) */
+    .tag-chip-bar {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 20px 4px;
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .tag-chip {
+      padding: 5px 11px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+      cursor: pointer;
+    }
+    .tag-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .tag-chip.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+    /* Layout = TOC sidebar + content */
+    .faq-layout {
+      max-width: 1100px; margin: 0 auto;
+      padding: 18px 20px 60px;
+      display: grid; grid-template-columns: 1fr; gap: 32px;
+    }
+    @media (min-width: 920px) {
+      .faq-layout { grid-template-columns: 240px 1fr; }
+    }
+
+    /* TOC */
+    .toc {
+      align-self: start;
+    }
+    @media (min-width: 920px) {
+      .toc { position: sticky; top: 88px; }
+    }
+    .toc-toggle {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13.5px; font-weight: 600;
+      cursor: pointer;
+    }
+    .toc-toggle svg { width: 14px; height: 14px; transition: transform .15s ease; }
+    .toc.is-collapsed .toc-toggle svg { transform: rotate(-90deg); }
+    @media (min-width: 920px) { .toc-toggle { display: none; } }
+    .toc-list {
+      list-style: none; padding: 8px 0; margin: 8px 0 0;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .toc.is-collapsed .toc-list { display: none; }
+    @media (min-width: 920px) { .toc.is-collapsed .toc-list { display: flex; } }
+    .toc-list li a {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 12px; border-radius: 8px;
+      font-size: 13.5px; color: var(--fg-muted);
+      border-left: 2px solid transparent;
+      transition: background .12s ease, color .12s ease, border-left-color .12s ease;
+    }
+    .toc-list li a:hover { background: var(--bg-muted); color: var(--fg); }
+    .toc-list li a.is-current {
+      color: var(--brand-primary); background: rgba(99,102,241,0.06);
+      border-left-color: var(--brand-primary);
+    }
+    .toc-list li a .toc-icon { font-size: 14px; }
+    .toc-list li a .toc-count { margin-left: auto; font-size: 11px; color: var(--fg-subtle); }
+    .toc-help {
+      margin-top: 14px; padding: 12px;
+      border: 1px dashed var(--border); border-radius: 10px;
+      font-size: 12px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .toc-help b { color: var(--fg); }
+
+    /* Content area */
+    .faq-content { min-width: 0; }
+
+    /* Section block */
+    .faq-section { scroll-margin-top: 88px; margin-bottom: 36px; }
+    .faq-section h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 26px; letter-spacing: -0.01em;
+      margin: 0 0 6px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .faq-section h2 .h2-icon { font-size: 22px; }
+    .faq-section .sec-intro {
+      color: var(--fg-muted); font-size: 14.5px; line-height: 1.6;
+      max-width: 660px; margin: 0 0 18px;
+    }
+    .faq-section .qa-stack { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Q&A item — uses native <details>/<summary> for keyboard + screen-reader free */
+    details.qa-item {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+      scroll-margin-top: 88px;
+    }
+    details.qa-item[open] {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-sm);
+    }
+    details.qa-item.is-target { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+    details.qa-item > summary {
+      list-style: none; cursor: pointer;
+      padding: 14px 18px;
+      display: flex; align-items: flex-start; gap: 12px;
+      font-weight: 600; font-size: 16px; color: var(--fg);
+      line-height: 1.4;
+    }
+    details.qa-item > summary::-webkit-details-marker { display: none; }
+    details.qa-item > summary .qi-caret {
+      width: 16px; height: 16px; color: var(--fg-subtle);
+      flex-shrink: 0; margin-left: auto;
+      transition: transform .15s ease;
+    }
+    details.qa-item[open] > summary .qi-caret { transform: rotate(180deg); }
+    details.qa-item > summary .qi-q { flex: 1; min-width: 0; }
+    details.qa-item .qi-body {
+      padding: 0 18px 16px 18px;
+      color: var(--fg);
+      font-family: var(--font-display); font-size: 16px; line-height: 1.7;
+    }
+    details.qa-item .qi-body p:first-child { margin-top: 0; }
+    details.qa-item .qi-body p:last-child { margin-bottom: 0; }
+    details.qa-item .qi-body ul { padding-left: 20px; }
+    details.qa-item .qi-body code {
+      font-family: var(--font-mono); font-size: 14px;
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 6px;
+    }
+    details.qa-item .qi-meta-row {
+      padding: 10px 18px 14px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      border-top: 1px dashed var(--border);
+      margin-top: 10px;
+    }
+    details.qa-item .qi-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+    details.qa-item .qi-tag {
+      padding: 2px 9px; border-radius: 999px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 11.5px; font-weight: 600;
+      cursor: pointer;
+    }
+    details.qa-item .qi-tag:hover { background: rgba(99,102,241,0.18); }
+    details.qa-item .qi-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    details.qa-item .qi-helpful {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    details.qa-item .qi-helpful button {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 9px; border-radius: 999px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--fg-muted); font: inherit; font-size: 12px; cursor: pointer;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+    }
+    details.qa-item .qi-helpful button:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    details.qa-item .qi-helpful button.is-active { background: var(--brand-primary); border-color: var(--brand-primary); color: #fff; }
+    details.qa-item .qi-helpful svg { width: 12px; height: 12px; }
+    details.qa-item .qi-deeplink {
+      background: transparent; border: 0; color: var(--fg-subtle);
+      cursor: pointer; padding: 4px; border-radius: 6px;
+    }
+    details.qa-item .qi-deeplink:hover { background: var(--bg-muted); color: var(--fg); }
+    details.qa-item .qi-deeplink svg { width: 13px; height: 13px; }
+    /* Highlighted match (search) */
+    .hi-match { background: rgba(245,158,11,0.30); padding: 0 2px; border-radius: 3px; font-weight: 600; }
+
+    /* Search results banner / no-match state */
+    .search-banner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 20px 4px;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .search-banner b { color: var(--fg); font-weight: 600; }
+    .no-match {
+      max-width: 720px; margin: 24px auto;
+      padding: 28px 24px; text-align: center;
+      border: 1.5px dashed var(--border-strong); border-radius: 14px;
+      background: var(--bg-elevated);
+    }
+    .no-match h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0 0 6px;
+    }
+    .no-match p { color: var(--fg-muted); font-size: 14px; margin: 0 0 14px; }
+    .no-match .nm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* Footer CTA */
+    .still-questions {
+      max-width: 720px; margin: 32px auto 0;
+      padding: 28px 24px; text-align: center;
+      border: 1px solid var(--border); border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(99,102,241,0.05), rgba(245,158,11,0.05)),
+        var(--bg-elevated);
+    }
+    .still-questions h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0 0 6px;
+    }
+    .still-questions p { color: var(--fg-muted); font-size: 14px; margin: 0 0 14px; }
+    .still-questions .sq-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 11px 20px; border-radius: 999px;
+      background: var(--brand-primary); color: #fff;
+      font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer;
+      border: 0;
+    }
+    .still-questions .sq-cta:hover { background: var(--brand-primary-hover); }
+
+    /* Footer (mirrors creator-public.html social block) */
+    .creator-footer {
+      max-width: 1100px; margin: 60px auto 32px;
+      padding: 24px 20px 0;
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 16px; align-items: center;
+      text-align: center;
+      color: var(--fg-muted); font-size: 13px;
+    }
+    .creator-footer .socials { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .creator-footer .socials a {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-muted); transition: color .12s ease, border-color .12s ease;
+    }
+    .creator-footer .socials a:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+    .creator-footer .socials svg { width: 16px; height: 16px; }
+    .creator-footer .made-with { font-size: 12px; color: var(--fg-subtle); }
+    .creator-footer .made-with a { color: var(--brand-primary); font-weight: 600; }
+
+    /* Mockup-only sub-view picker (anchor strip — disappears in prod) */
+    .subview-strip {
+      position: fixed; bottom: 14px; left: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg); max-width: calc(100vw - 28px);
+    }
+    .subview-strip span.label { opacity: 0.65; padding-right: 4px; }
+    .subview-strip a {
+      padding: 3px 9px; border-radius: 999px;
+      background: rgba(255,255,255,0.10); color: #fff;
+      font-size: 11px; cursor: pointer;
+      transition: background .12s ease;
+    }
+    .subview-strip a:hover { background: rgba(255,255,255,0.20); }
+    .subview-strip a.is-current { background: var(--brand-primary); }
+
+    /* Hidden-by-route helper */
+    [data-route-only] { display: none; }
+    body[data-route="default"]    [data-route-only="default"]    { display: block; }
+    body[data-route="section"]    [data-route-only="section"]    { display: block; }
+    body[data-route="question"]   [data-route-only="question"]   { display: block; }
+    body[data-route="search"]     [data-route-only="search"]     { display: block; }
+    body[data-route="tag"]        [data-route-only="tag"]        { display: block; }
+
+    @media (prefers-reduced-motion: reduce) {
+      details.qa-item, details.qa-item .qi-caret { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-route="default" data-tagging="enabled">
+
+<!-- Mockup-only top strip -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Back to creator page</a>
+  <span class="url-mono">tadaify.com/alexandra/<b>faq</b></span>
+  <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Toggle theme">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+
+<!-- Creator identity row -->
+<div class="creator-row">
+  <div class="av" aria-hidden="true">A</div>
+  <div class="who">
+    <div class="who-name">Alexandra Silva</div>
+    <div class="who-handle">@alexandra · Strong Not Skinny</div>
+  </div>
+  <a href="./creator-public.html" class="back-to-main">← Main page</a>
+</div>
+
+<!-- Page hero -->
+<header class="page-hero">
+  <h1 id="page-title">FAQ</h1>
+  <p class="lede" id="page-lede">Answers to the questions I get every week — about training plans, refunds, coaching calls, and how to access your downloads.</p>
+  <div class="meta-line">
+    <span>47 questions</span><span class="dot"></span>
+    <span>6 sections</span><span class="dot"></span>
+    <span>Last updated <b>Apr 24, 2026</b></span>
+  </div>
+</header>
+
+<!-- Sticky search bar -->
+<div class="search-bar-wrap">
+  <div class="search-bar">
+    <div class="search-input-wrap" id="search-input-wrap">
+      <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search the Help Center…" oninput="onSearchInput(this.value)" aria-label="Search FAQ" />
+      <button class="clear-btn" onclick="clearSearch()" aria-label="Clear search">×</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tag chip bar (Pro feature; rendered by default in this mockup so reviewers see it) -->
+<div class="tag-chip-bar" id="tag-chip-bar">
+  <button class="tag-chip" onclick="setTagFilter('')">All tags</button>
+  <button class="tag-chip" onclick="setTagFilter('login')">login</button>
+  <button class="tag-chip" onclick="setTagFilter('downloads')">downloads</button>
+  <button class="tag-chip" onclick="setTagFilter('refund')">refund</button>
+  <button class="tag-chip" onclick="setTagFilter('booking')">booking</button>
+  <button class="tag-chip" onclick="setTagFilter('payment')">payment</button>
+  <button class="tag-chip" onclick="setTagFilter('policy')">policy</button>
+  <button class="tag-chip" onclick="setTagFilter('shipping')">shipping</button>
+  <button class="tag-chip" onclick="setTagFilter('sizing')">sizing</button>
+  <button class="tag-chip" onclick="setTagFilter('premium')">premium</button>
+</div>
+
+<!-- Search results banner — only visible when search is active -->
+<div class="search-banner" id="search-banner" style="display:none">
+  Showing <b id="search-count">0</b> matches for "<b id="search-query"></b>"
+</div>
+
+<!-- ========== LAYOUT (TOC + content) ========== -->
+<div class="faq-layout">
+
+  <!-- TOC -->
+  <aside class="toc" id="toc" aria-label="Table of contents">
+    <button class="toc-toggle" onclick="document.getElementById('toc').classList.toggle('is-collapsed')" aria-label="Toggle table of contents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      Sections (6)
+    </button>
+    <ul class="toc-list" id="toc-list">
+      <li><a href="#section-account"  class="toc-link is-current"><span class="toc-icon">🔑</span> Account &amp; access <span class="toc-count">8</span></a></li>
+      <li><a href="#section-billing"  class="toc-link"><span class="toc-icon">💳</span> Billing &amp; refunds <span class="toc-count">12</span></a></li>
+      <li><a href="#section-coaching" class="toc-link"><span class="toc-icon">🎯</span> 1:1 coaching <span class="toc-count">7</span></a></li>
+      <li><a href="#section-shipping" class="toc-link"><span class="toc-icon">📦</span> Shipping &amp; delivery <span class="toc-count">9</span></a></li>
+      <li><a href="#section-product"  class="toc-link"><span class="toc-icon">🧰</span> Product details <span class="toc-count">6</span></a></li>
+      <li><a href="#section-legal"    class="toc-link"><span class="toc-icon">⚖️</span> Legal &amp; policy <span class="toc-count">5</span></a></li>
+    </ul>
+    <div class="toc-help">
+      Can't find what you need?<br/>
+      Try <b>Cmd/Ctrl + F</b> on the page, or use the search above. Every answer has a permalink — click the <b>🔗</b> icon to share a single Q&amp;A.
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div class="faq-content" id="faq-content">
+
+    <!-- ============== SECTION: Account & access ============== -->
+    <section class="faq-section" id="section-account" data-section="account">
+      <h2><span class="h2-icon" aria-hidden="true">🔑</span> Account &amp; access</h2>
+      <p class="sec-intro">Everything about logging in, downloads, and getting back into your training plan.</p>
+
+      <div class="qa-stack">
+
+        <details class="qa-item" id="q-reset-password" data-tags="login">
+          <summary>
+            <span class="qi-q">How do I reset my password?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>Go to <a href="#" style="color:var(--brand-primary)">tadaify.com/login</a> and click "Forgot password". You'll get a reset link by email within 60 seconds. The link is valid for 1 hour.</p>
+            <p>If the email never arrives, check spam first — Gmail occasionally filters reset emails. Still missing? DM me and I'll send a manual reset.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('login')">login</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful" data-question="reset-password">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)" aria-label="Yes, helpful">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><rect x="2" y="9" width="20" height="12" rx="2"/></svg>
+                  Yes
+                </button>
+                <button onclick="markHelpful(this, false)" aria-label="No, not helpful">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate(180deg)"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><rect x="2" y="9" width="20" height="12" rx="2"/></svg>
+                  No
+                </button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-reset-password')" data-tip="Copy permalink" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <details class="qa-item" id="q-download-pdf" data-tags="downloads,post-purchase">
+          <summary>
+            <span class="qi-q">Where can I download the training PDF after I bought it?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>After checkout you'll get an email from <code>no-reply@tadaify.com</code> with your download link. The link is also pinned in your account at tadaify.com/alexandra/account.</p>
+            <p>Heads up:</p>
+            <ul>
+              <li>The link expires after 30 days, but you can re-generate it from your account.</li>
+              <li>The PDF is watermarked with your email — please don't share it publicly.</li>
+            </ul>
+            <p>If the email never arrived, check spam first, then DM me — I'll resend within an hour.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('downloads')">downloads</span>
+              <span class="qi-tag" onclick="setTagFilter('post-purchase')">post-purchase</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-download-pdf')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <details class="qa-item" id="q-share-account" data-tags="policy,login">
+          <summary>
+            <span class="qi-q">Can I share my account with my workout partner?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>Account sharing isn't allowed — each plan is licensed per person. If you'd like to train together, the second account is 50% off with code <code>TRAIN2GETHER</code> at checkout.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('policy')">policy</span>
+              <span class="qi-tag" onclick="setTagFilter('login')">login</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-share-account')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ============== SECTION: Billing & refunds ============== -->
+    <section class="faq-section" id="section-billing" data-section="billing">
+      <h2><span class="h2-icon" aria-hidden="true">💳</span> Billing &amp; refunds</h2>
+      <p class="sec-intro">30-day money-back guarantee. Stripe handles all payments — your card details never touch my server.</p>
+
+      <div class="qa-stack">
+
+        <details class="qa-item" id="q-refund-policy" data-tags="refund,policy">
+          <summary>
+            <span class="qi-q">What's your refund policy?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>You get <b>30 days</b> from purchase to ask for a full refund — no questions asked. Just reply to your purchase confirmation email and I'll refund you within 24 hours.</p>
+            <p>The only exception is custom 1:1 plans — once I've delivered the personalised plan PDF, refunds are partial (50%).</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('refund')">refund</span>
+              <span class="qi-tag" onclick="setTagFilter('policy')">policy</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-refund-policy')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <details class="qa-item" id="q-double-charge" data-tags="billing">
+          <summary>
+            <span class="qi-q">Why was I charged twice this month?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>That's unusual. Most often it's an authorisation hold (especially on prepaid cards) that drops off in 3-5 business days, not an actual charge — Stripe shows both as "pending" briefly.</p>
+            <p>If you see two completed charges after 5 days, send me your order numbers and I'll refund the duplicate within 24 hours.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('billing')">billing</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-double-charge')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <details class="qa-item" id="q-payment-plans" data-tags="payment">
+          <summary>
+            <span class="qi-q">Do you offer payment plans for the 12-week program?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>Yes — at checkout you can split into 3 monthly payments via Stripe (no extra fees). For 6+ payments, message me directly and I'll set up a custom plan.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('payment')">payment</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-payment-plans')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ============== SECTION: 1:1 coaching ============== -->
+    <section class="faq-section" id="section-coaching" data-section="coaching">
+      <h2><span class="h2-icon" aria-hidden="true">🎯</span> 1:1 coaching calls</h2>
+      <p class="sec-intro">Booking, rescheduling, what to bring, and how recordings work.</p>
+
+      <div class="qa-stack">
+
+        <details class="qa-item" id="q-book-call" data-tags="booking">
+          <summary>
+            <span class="qi-q">How do I book my onboarding call?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>After purchase you'll get an email with a Cal.com link to my schedule. Pick any 45-minute slot in the next 14 days. If nothing works, reply to that email and I'll open extra slots.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('booking')">booking</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-book-call')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <details class="qa-item" id="q-reschedule" data-tags="booking">
+          <summary>
+            <span class="qi-q">Can I reschedule a call last-minute?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>Up to 24 hours before, just hit "Reschedule" in the Cal.com confirmation email — no fee. Inside 24 hours I'll do my best to swap, but I can't always promise.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('booking')">booking</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-reschedule')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ============== SECTION: Shipping & delivery ============== -->
+    <section class="faq-section" id="section-shipping" data-section="shipping">
+      <h2><span class="h2-icon" aria-hidden="true">📦</span> Shipping &amp; delivery</h2>
+      <p class="sec-intro">Times, tracking, and the regions I currently ship to.</p>
+
+      <div class="qa-stack">
+
+        <details class="qa-item" id="q-shipping-times" data-tags="shipping">
+          <summary>
+            <span class="qi-q">How long does shipping take?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>EU: 3-5 business days. UK: 5-7. US/Canada: 7-12. Rest of world: up to 21. You'll get a tracking link the moment your label is printed.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('shipping')">shipping</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-shipping-times')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ============== SECTION: Product details ============== -->
+    <section class="faq-section" id="section-product" data-section="product">
+      <h2><span class="h2-icon" aria-hidden="true">🧰</span> Product details</h2>
+      <p class="sec-intro">Sizing, materials, and how to take care of your gear.</p>
+
+      <div class="qa-stack">
+
+        <details class="qa-item" id="q-sizing" data-tags="sizing">
+          <summary>
+            <span class="qi-q">How do I pick the right size?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>Each product page has a size chart with chest / waist / hip in cm and inches. If you're between sizes, size up — the cut is on the fitted side.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('sizing')">sizing</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-sizing')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ============== SECTION: Legal & policy ============== -->
+    <section class="faq-section" id="section-legal" data-section="legal">
+      <h2><span class="h2-icon" aria-hidden="true">⚖️</span> Legal &amp; policy</h2>
+      <p class="sec-intro">Privacy, terms, and how I handle your data.</p>
+
+      <div class="qa-stack">
+
+        <details class="qa-item" id="q-data-handling" data-tags="policy,premium">
+          <summary>
+            <span class="qi-q">What data do you collect, and where is it stored?</span>
+            <svg class="qi-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="qi-body">
+            <p>I store the bare minimum: your name, email, purchases, and any messages you send me. Everything is on EU servers (Supabase Frankfurt). I never sell your data.</p>
+            <p>You can request a full export or deletion at any time by emailing <a href="#" style="color:var(--brand-primary)">privacy@strongnotskinny.com</a>. GDPR + UK GDPR rights apply.</p>
+          </div>
+          <div class="qi-meta-row">
+            <div class="qi-tags">
+              <span class="qi-tag" onclick="setTagFilter('policy')">policy</span>
+              <span class="qi-tag" onclick="setTagFilter('premium')">premium</span>
+            </div>
+            <div class="qi-actions">
+              <div class="qi-helpful">
+                <span>Was this helpful?</span>
+                <button onclick="markHelpful(this, true)">Yes</button>
+                <button onclick="markHelpful(this, false)">No</button>
+              </div>
+              <button class="qi-deeplink" onclick="copyDeepLink('q-data-handling')" aria-label="Copy permalink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- No-match block — only visible during a search with zero results -->
+    <div class="no-match" id="no-match" style="display:none">
+      <h3>No matches for "<span id="no-match-query"></span>"</h3>
+      <p>Try a different keyword, or message me directly — I'll add an answer if it's a common one.</p>
+      <div class="nm-actions">
+        <button class="sq-cta" onclick="alert('Mockup — opens Contact page')" style="background:var(--brand-primary); color:#fff; padding:9px 18px; border-radius:999px; border:0; font-weight:600; cursor:pointer">Message Alexandra →</button>
+        <button onclick="clearSearch()" style="background:transparent; border:1px solid var(--border-strong); padding:9px 18px; border-radius:999px; font-weight:600; cursor:pointer; color:var(--fg)">Clear search</button>
+      </div>
+    </div>
+
+    <!-- Footer CTA -->
+    <div class="still-questions">
+      <h3>Still have questions?</h3>
+      <p>Send me a message — I usually reply within a day.</p>
+      <button class="sq-cta" onclick="alert('Mockup — links to Contact page (separate page template)')">
+        Contact Alexandra →
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer (mirrors creator-public.html social block) -->
+<footer class="creator-footer">
+  <div class="socials" aria-label="Social links">
+    <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+    <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></a>
+    <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg></a>
+    <a href="#" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+  </div>
+  <p class="made-with">Made with <a href="./landing.html">tadaify</a> — your bio link, your best first impression.</p>
+</footer>
+
+<!-- Mockup-only sub-view picker -->
+<div class="subview-strip" aria-hidden="true">
+  <span class="label">View:</span>
+  <a href="#/" data-route-target="default" class="is-current" onclick="goRoute('default')">Default</a>
+  <a href="#/section/billing" data-route-target="section" onclick="goRoute('section', 'billing')">Single section</a>
+  <a href="#/q/refund-policy" data-route-target="question" onclick="goRoute('question', 'refund-policy')">Single question</a>
+  <a href="#/search?q=refund" data-route-target="search" onclick="goRoute('search', 'refund')">Search results</a>
+  <a href="#/tag/booking" data-route-target="tag" onclick="goRoute('tag', 'booking')">Tag filter</a>
+</div>
+
+<script>
+  // ----- Hash routing -----
+  function parseHash() {
+    var h = (location.hash || '').replace(/^#/, '');
+    if (!h || h === '/') return { route: 'default' };
+    var m;
+    if ((m = h.match(/^\/section\/([^\/?]+)$/)))  return { route: 'section',  slug: m[1] };
+    if ((m = h.match(/^\/q\/([^\/?]+)$/)))        return { route: 'question', slug: m[1] };
+    if ((m = h.match(/^\/search\?q=(.+)$/)))      return { route: 'search',   query: decodeURIComponent(m[1]) };
+    if ((m = h.match(/^\/tag\/([^\/?]+)$/)))      return { route: 'tag',      slug: m[1] };
+    return { route: 'default' };
+  }
+
+  function applyRoute() {
+    var r = parseHash();
+    document.body.dataset.route = r.route;
+    var subviewLinks = document.querySelectorAll('.subview-strip a');
+    subviewLinks.forEach(function (a) {
+      a.classList.toggle('is-current', a.dataset.routeTarget === r.route);
+    });
+
+    // Reset highlights / filters first
+    clearAllSectionFilter();
+    clearAllTagFilter();
+    clearAllQuestionTarget();
+    var input = document.getElementById('search-input');
+    var inputWrap = document.getElementById('search-input-wrap');
+    var banner = document.getElementById('search-banner');
+    var noMatch = document.getElementById('no-match');
+    if (banner) banner.style.display = 'none';
+    if (noMatch) noMatch.style.display = 'none';
+
+    if (r.route === 'default') {
+      if (input) input.value = '';
+      inputWrap && inputWrap.classList.remove('has-query');
+      // Apply default-expand state: First section open
+      document.querySelectorAll('.faq-section').forEach(function (sec, i) {
+        sec.style.display = '';
+        sec.querySelectorAll('details.qa-item').forEach(function (det, j) {
+          det.open = (i === 0 && j === 0);
+        });
+      });
+    } else if (r.route === 'section') {
+      // Show only the matching section
+      document.querySelectorAll('.faq-section').forEach(function (sec) {
+        sec.style.display = (sec.dataset.section === r.slug) ? '' : 'none';
+      });
+      var sec = document.querySelector('.faq-section[data-section="' + r.slug + '"]');
+      if (sec) {
+        sec.querySelectorAll('details.qa-item').forEach(function (det) { det.open = true; });
+        setTimeout(function () { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+      }
+      setTocCurrent(r.slug);
+    } else if (r.route === 'question') {
+      // Highlight + auto-expand the question
+      var det = document.getElementById('q-' + r.slug);
+      if (det) {
+        // Show only the section that contains it, plus expand
+        var parent = det.closest('.faq-section');
+        document.querySelectorAll('.faq-section').forEach(function (sec) {
+          sec.style.display = (sec === parent) ? '' : 'none';
+        });
+        det.open = true;
+        det.classList.add('is-target');
+        setTimeout(function () { det.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+        setTocCurrent(parent ? parent.dataset.section : '');
+      }
+    } else if (r.route === 'search') {
+      if (input) { input.value = r.query || ''; }
+      inputWrap && inputWrap.classList.toggle('has-query', !!r.query);
+      runSearch(r.query || '');
+    } else if (r.route === 'tag') {
+      runTagFilter(r.slug);
+    }
+  }
+
+  function goRoute(route, slugOrQuery) {
+    if (route === 'default')  location.hash = '#/';
+    if (route === 'section')  location.hash = '#/section/'  + slugOrQuery;
+    if (route === 'question') location.hash = '#/q/'        + slugOrQuery;
+    if (route === 'search')   location.hash = '#/search?q=' + encodeURIComponent(slugOrQuery);
+    if (route === 'tag')      location.hash = '#/tag/'      + slugOrQuery;
+  }
+
+  function setTocCurrent(slug) {
+    document.querySelectorAll('.toc-link').forEach(function (a) {
+      a.classList.toggle('is-current', a.getAttribute('href') === '#section-' + slug);
+    });
+  }
+
+  function clearAllSectionFilter() {
+    document.querySelectorAll('.faq-section').forEach(function (sec) { sec.style.display = ''; });
+  }
+  function clearAllTagFilter() {
+    document.querySelectorAll('.tag-chip.is-active').forEach(function (c) { c.classList.remove('is-active'); });
+    document.querySelectorAll('details.qa-item').forEach(function (d) { d.style.display = ''; });
+  }
+  function clearAllQuestionTarget() {
+    document.querySelectorAll('details.qa-item.is-target').forEach(function (d) { d.classList.remove('is-target'); });
+  }
+
+  // ----- Search (live filter) -----
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+  function highlightTerm(haystack, term) {
+    if (!term) return escapeHtml(haystack);
+    var re = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+    return escapeHtml(haystack).replace(re, '<span class="hi-match">$1</span>');
+  }
+
+  // Cache original question text for re-highlighting
+  var __originals = null;
+  function captureOriginals() {
+    if (__originals) return;
+    __originals = {};
+    document.querySelectorAll('details.qa-item').forEach(function (det) {
+      var qEl = det.querySelector('.qi-q');
+      if (qEl) __originals[det.id] = qEl.textContent;
+    });
+  }
+
+  function onSearchInput(value) {
+    var inputWrap = document.getElementById('search-input-wrap');
+    inputWrap.classList.toggle('has-query', !!value);
+    runSearch(value);
+  }
+
+  function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-input-wrap').classList.remove('has-query');
+    document.getElementById('search-banner').style.display = 'none';
+    document.getElementById('no-match').style.display = 'none';
+    runSearch('');
+  }
+
+  function runSearch(query) {
+    captureOriginals();
+    query = (query || '').trim();
+    var matches = 0;
+    var banner = document.getElementById('search-banner');
+    var noMatch = document.getElementById('no-match');
+
+    document.querySelectorAll('details.qa-item').forEach(function (det) {
+      var qOrig = __originals[det.id] || '';
+      var bodyText = (det.querySelector('.qi-body') || {}).textContent || '';
+      var hay = (qOrig + ' ' + bodyText).toLowerCase();
+      var match = !query || hay.indexOf(query.toLowerCase()) !== -1;
+      det.style.display = match ? '' : 'none';
+      if (match) {
+        matches += query ? 1 : 0;
+        var qEl = det.querySelector('.qi-q');
+        if (qEl) qEl.innerHTML = query ? highlightTerm(qOrig, query) : escapeHtml(qOrig);
+        if (query) det.open = true;
+      }
+    });
+
+    // Hide empty sections
+    document.querySelectorAll('.faq-section').forEach(function (sec) {
+      var anyVisible = Array.from(sec.querySelectorAll('details.qa-item')).some(function (d) { return d.style.display !== 'none'; });
+      sec.style.display = (query && !anyVisible) ? 'none' : '';
+    });
+
+    if (query) {
+      banner.style.display = '';
+      document.getElementById('search-count').textContent = matches;
+      document.getElementById('search-query').textContent = query;
+      if (matches === 0) {
+        noMatch.style.display = '';
+        document.getElementById('no-match-query').textContent = query;
+      } else {
+        noMatch.style.display = 'none';
+      }
+    } else {
+      banner.style.display = 'none';
+      noMatch.style.display = 'none';
+    }
+  }
+
+  // ----- Tag filter -----
+  function setTagFilter(tag) {
+    if (!tag) {
+      clearAllTagFilter();
+      goRoute('default');
+      return;
+    }
+    goRoute('tag', tag);
+  }
+
+  function runTagFilter(tag) {
+    document.querySelectorAll('.tag-chip').forEach(function (c) {
+      c.classList.toggle('is-active', c.textContent.trim() === tag);
+    });
+    document.querySelectorAll('details.qa-item').forEach(function (d) {
+      var tags = (d.dataset.tags || '').split(',').map(function (t) { return t.trim(); });
+      var match = tags.indexOf(tag) !== -1;
+      d.style.display = match ? '' : 'none';
+      if (match) d.open = true;
+    });
+    document.querySelectorAll('.faq-section').forEach(function (sec) {
+      var anyVisible = Array.from(sec.querySelectorAll('details.qa-item')).some(function (x) { return x.style.display !== 'none'; });
+      sec.style.display = anyVisible ? '' : 'none';
+    });
+  }
+
+  // ----- Helpful feedback -----
+  function markHelpful(btn, yes) {
+    var group = btn.closest('.qi-helpful');
+    if (!group) return;
+    group.querySelectorAll('button.is-active').forEach(function (b) { b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+    // Replace the prompt with thanks
+    var label = group.querySelector('span');
+    if (label) label.textContent = yes ? 'Thanks for the feedback!' : 'Thanks — I\'ll improve this answer.';
+  }
+
+  // ----- Deep-link copy -----
+  function copyDeepLink(qid) {
+    var url = location.origin + location.pathname + '#/q/' + qid.replace(/^q-/, '');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { alert('Mockup — copied permalink:\n' + url); }, function () { alert('Mockup — would copy:\n' + url); });
+    } else {
+      alert('Mockup — would copy:\n' + url);
+    }
+  }
+
+  // ----- TOC scroll-spy (only when on default route) -----
+  function setupScrollSpy() {
+    if (!('IntersectionObserver' in window)) return;
+    var obs = new IntersectionObserver(function (entries) {
+      if (document.body.dataset.route !== 'default' && document.body.dataset.route !== 'tag') return;
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          var id = e.target.id;
+          var slug = id.replace(/^section-/, '');
+          setTocCurrent(slug);
+        }
+      });
+    }, { rootMargin: '-100px 0px -60% 0px', threshold: 0 });
+    document.querySelectorAll('.faq-section').forEach(function (s) { obs.observe(s); });
+  }
+
+  // ----- Boot -----
+  window.addEventListener('hashchange', applyRoute);
+  applyRoute();
+  setupScrollSpy();
+
+  // Auto-collapse TOC on small viewports
+  if (window.matchMedia('(max-width: 919px)').matches) {
+    document.getElementById('toc').classList.add('is-collapsed');
+  }
+</script>
+</body>
+</html>
