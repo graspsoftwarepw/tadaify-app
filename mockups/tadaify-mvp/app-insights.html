@@ -1042,41 +1042,30 @@
       flex: 1;
       padding: 12px 0;
     }
+    /* Power-feature preview — ALWAYS fully visible per feedback_no_blur_premium_features
+       (locked 2026-04-26). No blur, no overlay, no opacity hack. The user sees the real
+       feature in action; tier requirement is signalled by the .tdf-tier-badge in the card
+       head and the .lc-cta-footer below the preview. */
     .locked-card .lc-preview {
-      filter: blur(0);
       opacity: 1;
-      transition: filter .2s ease, opacity .2s ease;
+      transition: none;
     }
-    .locked-card[data-locked="true"] .lc-preview {
-      filter: blur(2.5px);
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    .locked-card .lc-cta-overlay {
+    .lc-cta-footer {
       display: none;
-      position: absolute; inset: 0;
-      align-items: center; justify-content: center;
-      flex-direction: column; gap: 8px;
-      text-align: center;
-      padding: 16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg-elevated) 90%);
+      align-items: center; gap: 10px;
+      padding: 10px 12px;
+      margin-top: 4px;
+      border-radius: 10px;
+      background: var(--bg-muted);
+      border: 1px dashed var(--border-strong);
+      font-size: 12.5px; color: var(--fg-muted);
+      line-height: 1.45;
     }
-    body.dark-mode .locked-card .lc-cta-overlay {
-      background: linear-gradient(180deg, rgba(20,26,45,0) 0%, var(--bg-elevated) 90%);
-    }
-    .locked-card[data-locked="true"] .lc-cta-overlay { display: flex; }
-    .lc-cta-overlay .lc-lock-icon {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(245,158,11,0.15);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-    .lc-cta-overlay .lc-cta-msg {
-      font-size: 13px; color: var(--fg-muted); margin: 0;
-      max-width: 280px; line-height: 1.55;
-    }
-    .lc-cta-overlay .lc-cta-msg strong { color: var(--fg); font-weight: 600; }
+    body.dark-mode .lc-cta-footer { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.30); }
+    .locked-card[data-locked="true"] .lc-cta-footer { display: flex; }
+    .lc-cta-footer .lc-cta-msg { flex: 1; min-width: 0; }
+    .lc-cta-footer .lc-cta-msg strong { color: var(--fg); font-weight: 600; }
+    .lc-cta-footer .btn { flex-shrink: 0; white-space: nowrap; }
 
     /* Faux preview content inside locked cards */
     .faux-row {
@@ -1265,7 +1254,7 @@
     body.dark-mode .compare-toggle { background: #141A2D; border-color: #374151; }
     body.dark-mode .updated-chip { color: #9CA3AF; }
     body.dark-mode .sources-method { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.25); }
-    body.dark-mode .lc-cta-overlay { background: linear-gradient(180deg, rgba(20,26,45,0) 0%, #141A2D 90%); }
+    /* (legacy .lc-cta-overlay rule removed 2026-04-26 — replaced with non-blurring .lc-cta-footer) */
     body.dark-mode .demo-toolbar button { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
     body.dark-mode .demo-toolbar button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
   </style>
@@ -1305,80 +1294,8 @@
 <div class="layout">
 
   <!-- ====== PRIMARY SIDEBAR (canon) ====== -->
-  <aside class="side" aria-label="Primary navigation">
-    <div class="side-user">
-      <div class="av">A</div>
-      <div class="utxt">
-        <div class="uname">Alexandra Silva</div>
-        <div class="uhandle" id="side-tier">@alexandra · Pro</div>
-      </div>
-      <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
-    </div>
-
-    <!-- GROUP 1: Pages (parent always expanded) — canonical -->
-    <div class="nav-group">
-      <a href="./app-dashboard.html?tab=page" class="nav-item nav-pages-parent">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span class="label">Pages</span>
-        <span class="nav-count">1</span>
-        <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-      <div class="nav-sub-list">
-        <a href="./app-dashboard.html?tab=page" class="nav-sub-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>Home</span>
-        </a>
-        <button class="nav-sub-item is-disabled" aria-disabled="true" title="Multi-page coming Q+1 — DEC-MULTIPAGE-01">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>Add page</span>
-          <span class="nav-sub-pill">soon</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <!-- GROUP 2: Design + Domain -->
-    <div class="nav-group" style="padding-top:0">
-      <a href="./app-dashboard.html?tab=design" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
-        <span class="label">Design</span>
-      </a>
-      <a href="./app-domain.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span class="label">Domain</span>
-      </a>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <!-- GROUP 3: Insights ACTIVE + Shop -->
-    <div class="nav-group" style="padding-top:0">
-      <a href="./app-insights.html" class="nav-item active" aria-current="page">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
-        <span class="label">Insights</span>
-      </a>
-      <button class="nav-item" onclick="alert('Mockup — Shop coming Q+1')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
-        <span class="label">Shop</span>
-        <span class="nav-count">0</span>
-      </button>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <!-- GROUP 4: Settings + Help -->
-    <div class="nav-group" style="padding-top:0">
-      <a href="./app-settings.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        <span class="label">Settings</span>
-      </a>
-      <button class="nav-item" onclick="alert('Mockup — Help & docs')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
-        <span class="label">Help &amp; docs</span>
-      </button>
-    </div>
-  </aside>
+  <!-- ====== PRIMARY SIDEBAR (canonical, injected via shared/partials.js) ====== -->
+  <div data-partial="app-sidebar" data-active="insights" data-tier="pro" data-handle="alexandra" data-username="Alexandra Silva"></div>
 
   <!-- ====== MAIN CONTENT ====== -->
   <main class="content">
@@ -2205,9 +2122,8 @@
             <span class="saved-view-chip"><span class="sv-dot" style="background:var(--brand-secondary)"></span> Coaching funnel</span>
             <span class="saved-view-chip" style="background:var(--bg-elevated);border-style:dashed;color:var(--fg-muted)">+ Save current view</span>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>You already have all your data.</strong> Saved views lets you bookmark your favourite cross-tab combinations.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Pro.</strong> The preview above is real — drop in any saved view as soon as you upgrade.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Pro →</a>
           </div>
         </div>
@@ -2226,9 +2142,8 @@
             <div class="faux-row"><span class="faux-pic">B</span><span class="faux-name">Stripe checkout — "Start training today"</span><span class="faux-num">241</span></div>
             <div class="faux-row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><span class="faux-pic" style="background:rgba(16,185,129,0.15);color:#059669">✓</span><span class="faux-name" style="color:#059669;font-weight:600">Variant B winning · 95% confidence</span><span class="faux-num">+30%</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>A/B testing — Business tier.</strong> Auto-pick winners, no significance math needed.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> The preview above is the real auto-pick UI — your test runs as soon as you upgrade.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2247,9 +2162,8 @@
             <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">When:</span><span class="saved-view-chip">Monday 9:00 (Europe/Lisbon)</span></div>
             <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">Include:</span><span class="saved-view-chip">KPIs</span><span class="saved-view-chip">Top blocks</span><span class="saved-view-chip">Traffic sources</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Scheduled email digests — Business tier.</strong> Hands-off weekly summary delivered to any inbox.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> Set the recipients and schedule above — your first digest sends Monday after upgrade.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2271,9 +2185,8 @@
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-muted)"><span>← Apr 22, 21:00</span><span style="margin-left:auto">Apr 22, 22:00 →</span></div>
             <div style="display:flex;gap:6px;font-size:11.5px;color:var(--fg-muted)"><span class="saved-view-chip">▶ Play</span><span class="saved-view-chip">1× speed</span><span class="saved-view-chip">+ Mark moment</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Replay scrubber — Business tier.</strong> See your traffic happen, second by second.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> The scrubber above is live — pick any past hour and replay second-by-second.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2292,9 +2205,8 @@
             <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">mark@example.com → 7 visits, 1 coaching</span><span class="faux-num">$49</span></div>
             <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">amelia@example.com → 12 visits, 3 purchases</span><span class="faux-num">$381</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Identity stitching — Business tier.</strong> Bridge anonymous traffic with your email list — privacy-first.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> The matched-visitor list above is what you'll see once your newsletter links are tracked.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2313,9 +2225,8 @@
             <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-03.parquet · 1.4 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
             <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-02.parquet · 1.0 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Parquet R2 archive — Business tier.</strong> Bring your own warehouse, query every event you've ever logged.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> Your monthly snapshots will land here — downloadable Parquet, queryable from your warehouse.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2350,6 +2261,7 @@
   </div>
 </div>
 
+<script src="./shared/partials.js"></script>
 <script src="./shared/tokens.js"></script>
 <script>
   /* =====================================================================

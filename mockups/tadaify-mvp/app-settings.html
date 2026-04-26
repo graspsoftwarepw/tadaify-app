@@ -641,9 +641,37 @@
     .rate-info svg { width: 15px; height: 15px; color: var(--fg-subtle); flex-shrink: 0; }
 
     /* Locked state for gated features */
-    .locked-state {
-      padding: 28px 0; text-align: center;
+    /* Tier banner — sits ABOVE the (always-visible) feature UI per
+       feedback_no_blur_premium_features (locked 2026-04-26). The feature UI
+       below stays fully rendered and explorable; gating happens when the user
+       clicks the section's primary action (Generate key, Invite member). */
+    .tier-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.22);
+      font-size: 13px; line-height: 1.5;
+      color: var(--fg);
     }
+    body.dark-mode .tier-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.10));
+      border-color: rgba(99,102,241,0.40);
+    }
+    .tier-banner .tb-ico {
+      flex-shrink: 0; font-size: 20px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(245,158,11,0.18);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .tier-banner .tb-text { flex: 1; min-width: 0; }
+    .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
+    .tier-banner .tb-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .tier-banner .btn { flex-shrink: 0; }
+    /* Legacy locked-state — kept for backward compatibility but no longer used as a
+       full-section replacement; if any other tab uses it, it's now informational only. */
+    .locked-state { padding: 28px 0; text-align: center; }
     .locked-state .ls-icon { font-size: 36px; margin-bottom: 10px; }
     .locked-state .ls-title { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin-bottom: 6px; }
     .locked-state .ls-sub { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 16px; }
@@ -814,81 +842,8 @@
      ============================================================ -->
 <div class="layout" id="layout">
 
-  <!-- ====== PRIMARY SIDEBAR ====== -->
-  <aside class="side" aria-label="Primary navigation">
-    <div class="side-user">
-      <div class="av">A</div>
-      <div class="utxt">
-        <div class="uname">Alexandra Silva</div>
-        <div class="uhandle">@alexandra · Creator</div>
-      </div>
-      <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
-    </div>
-
-    <!-- GROUP 1: Pages (parent always expanded — no JS toggle on Settings page) -->
-    <div class="nav-group">
-      <a href="./app-dashboard.html?tab=page" class="nav-item nav-pages-parent" data-tip="Pages">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span class="label">Pages</span>
-        <span class="nav-count">1</span>
-        <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-      <div class="nav-sub-list">
-        <a href="./app-dashboard.html?tab=page" class="nav-sub-item" data-tip="Home">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>Home</span>
-        </a>
-        <button class="nav-sub-item is-disabled" aria-disabled="true" data-tip="Multi-page coming Q+1 — DEC-MULTIPAGE-01">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>Add page</span>
-          <span class="nav-pill" style="margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--bg-muted);color:var(--fg-subtle);white-space:nowrap">soon</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <!-- GROUP 2: Design + Domain -->
-    <div class="nav-group" style="padding-top:0">
-      <a href="./app-dashboard.html?tab=design" class="nav-item" data-tip="Design">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
-        <span class="label">Design</span>
-      </a>
-      <a href="./app-domain.html" class="nav-item" data-tip="Custom domain">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span class="label">Domain</span>
-      </a>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <!-- GROUP 3: Insights + Shop (placeholders) -->
-    <div class="nav-group" style="padding-top:0">
-      <button class="nav-item" data-tip="Insights — coming soon" onclick="alert('Mockup — Insights coming Q+1')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
-        <span class="label">Insights</span>
-      </button>
-      <button class="nav-item" data-tip="Shop — coming soon" onclick="alert('Mockup — Shop coming Q+1')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
-        <span class="label">Shop</span>
-        <span class="nav-count">0</span>
-      </button>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <!-- GROUP 4: Settings ACTIVE + Help -->
-    <div class="nav-group" style="padding-top:0">
-      <a href="./app-settings.html" class="nav-item active" aria-current="page" data-tip="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        <span class="label">Settings</span>
-      </a>
-      <button class="nav-item" data-tip="Help &amp; docs" onclick="alert('Mockup — Help & docs')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
-        <span class="label">Help &amp; docs</span>
-      </button>
-    </div>
-  </aside>
+  <!-- ====== PRIMARY SIDEBAR (canonical, injected via shared/partials.js) ====== -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
 
   <!-- ====== MAIN CONTENT ====== -->
   <main class="content">
@@ -1361,22 +1316,25 @@
              ================================================== -->
         <div class="settings-pane" id="pane-api">
 
-          <!-- Tier gate (shown when not on Pro — toggle via demo toolbar) -->
-          <div id="api-locked" class="settings-section" style="display:none">
-            <div class="locked-state">
-              <div class="ls-icon">🔑</div>
-              <div class="ls-title">Creator API is a Pro feature</div>
-              <div class="ls-sub">Programmatically manage your tadaify page, read analytics, and connect Claude / GPT via MCP server.</div>
-              <button class="btn btn-primary" onclick="alert('Mockup — would open upgrade modal linking to pricing.html')">Upgrade to Pro →</button>
+          <!-- Tier banner: only renders for tiers below Pro. Per
+               feedback_no_blur_premium_features (2026-04-26) the feature UI
+               below stays FULLY VISIBLE — the user explores it freely; gating
+               happens at click of "Generate new key". -->
+          <div id="api-tier-banner" class="tier-banner" role="note" style="display:none">
+            <span class="tb-ico" aria-hidden="true">🔑</span>
+            <div class="tb-text">
+              <div class="tb-title">Creator API unlocks on Pro</div>
+              <div class="tb-sub">Browse the integration below — when you click <strong>Generate new key</strong> we'll prompt to upgrade. Programmatic page management, analytics, and Claude / GPT MCP server.</div>
             </div>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Pro →</a>
           </div>
 
-          <!-- API keys list (shown when on Pro) -->
+          <!-- API keys area — always visible regardless of tier (gates at action-click) -->
           <div id="api-unlocked">
             <div class="settings-section">
               <div class="settings-section-title with-action">
                 API keys
-                <button class="btn btn-primary btn-sm" onclick="document.getElementById('new-key-modal').classList.add('open')">Generate new key</button>
+                <button class="btn btn-primary btn-sm" onclick="gateAction('api', 'pro', function(){ document.getElementById('new-key-modal').classList.add('open'); })">Generate new key</button>
               </div>
 
               <div class="api-key-row">
@@ -1465,24 +1423,24 @@
              ================================================== -->
         <div class="settings-pane" id="pane-team">
 
-          <!-- Tier gate (shown when not on Business) -->
-          <div id="team-locked" style="display:none">
-            <div class="settings-section">
-              <div class="locked-state">
-                <div class="ls-icon">👥</div>
-                <div class="ls-title">Team seats are a Business feature</div>
-                <div class="ls-sub">Invite editors and admins to manage your pages together. Includes audit log and role-based access.</div>
-                <button class="btn btn-primary" onclick="alert('Mockup — would open upgrade modal')">Upgrade to Business →</button>
-              </div>
+          <!-- Tier banner: only renders for tiers below Business. Team UI stays
+               fully visible and interactive; gating happens when the user clicks
+               "Invite member" or attempts to change a role. -->
+          <div id="team-tier-banner" class="tier-banner" role="note" style="display:none">
+            <span class="tb-ico" aria-hidden="true">👥</span>
+            <div class="tb-text">
+              <div class="tb-title">Team seats unlock on Business</div>
+              <div class="tb-sub">Explore the seat list, roles, and audit log below — when you click <strong>Invite member</strong> we'll prompt to upgrade. Includes role-based access, audit log, and SSO.</div>
             </div>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
 
-          <!-- Team view (shown when on Business) -->
+          <!-- Team view — always visible regardless of tier (gates at action-click) -->
           <div id="team-unlocked">
             <div class="settings-section">
               <div class="settings-section-title with-action">
                 Seats
-                <button class="btn btn-primary btn-sm" onclick="document.getElementById('invite-modal').classList.add('open')">Invite member</button>
+                <button class="btn btn-primary btn-sm" onclick="gateAction('team', 'business', function(){ document.getElementById('invite-modal').classList.add('open'); })">Invite member</button>
               </div>
               <div class="seats-bar-wrap">
                 <div class="seats-label">
@@ -1756,6 +1714,7 @@
   </div>
 </div>
 
+<script src="./shared/partials.js"></script>
 <script src="./shared/tokens.js"></script>
 <script>
   /* ── Theme ── */
@@ -1839,29 +1798,30 @@
     document.getElementById('delete-account-modal').classList.remove('open');
   }
 
-  /* ── Tier switcher (demo toolbar) ── */
+  /* ── Tier switcher (demo toolbar) ──
+     Per feedback_no_blur_premium_features (2026-04-26): the API keys + Team
+     UIs stay FULLY VISIBLE for every tier. The only thing that changes when
+     `tier` drops below the requirement is that an inline tier banner appears
+     above the section, and the section's primary action button delegates to
+     gateAction() which raises the upgrade modal at click time. */
+  var TIER_RANK = (window.TierGate && window.TierGate.TIER_RANK) || { free: 0, creator: 1, pro: 2, business: 3 };
+  var TIER_LABEL = (window.TierGate && window.TierGate.TIER_LABEL) || { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+
   function setTier(tier) {
     DEMO_TIER = tier;
-    var apiLocked   = document.getElementById('api-locked');
-    var apiUnlocked = document.getElementById('api-unlocked');
-    var teamLocked  = document.getElementById('team-locked');
-    var teamUnlocked = document.getElementById('team-unlocked');
-    var handleEl = document.getElementById('handle-text');
+    document.body.setAttribute('data-current-tier', tier);
 
-    // API keys: locked on Free + Creator, unlocked on Pro + Business
-    var apiOn = (tier === 'pro' || tier === 'business');
-    if (apiLocked)   apiLocked.style.display   = apiOn ? 'none'  : 'block';
-    if (apiUnlocked) apiUnlocked.style.display  = apiOn ? 'block' : 'none';
+    var apiBanner  = document.getElementById('api-tier-banner');
+    var teamBanner = document.getElementById('team-tier-banner');
 
-    // Team: locked on Free + Creator + Pro, unlocked on Business
-    var teamOn = (tier === 'business');
-    if (teamLocked)   teamLocked.style.display   = teamOn ? 'none'  : 'block';
-    if (teamUnlocked) teamUnlocked.style.display  = teamOn ? 'block' : 'none';
+    // API keys gate at Pro
+    if (apiBanner) apiBanner.style.display = (TIER_RANK[tier] < TIER_RANK.pro) ? 'flex' : 'none';
+    // Team gate at Business
+    if (teamBanner) teamBanner.style.display = (TIER_RANK[tier] < TIER_RANK.business) ? 'flex' : 'none';
 
     // Update handle pill tier label
-    var tierLabels = { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
     var userHandleEl = document.querySelector('.side-user .uhandle');
-    if (userHandleEl) userHandleEl.textContent = '@alexandra · ' + (tierLabels[tier] || tier);
+    if (userHandleEl) userHandleEl.textContent = '@alexandra · ' + (TIER_LABEL[tier] || tier);
 
     // Re-render toolbar buttons
     var btns = document.querySelectorAll('[aria-hidden="true"] button');
@@ -1871,6 +1831,33 @@
       b.style.borderColor = 'var(--border)';
     });
   }
+
+  /* ── Gate at action time. If the user's tier covers the requirement, run ok();
+     otherwise raise the shared TierGate upgrade modal. ── */
+  function gateAction(featureId, requires, ok) {
+    var current = (typeof DEMO_TIER === 'string' ? DEMO_TIER : 'creator');
+    if (TIER_RANK[current] >= TIER_RANK[requires]) { ok(); return; }
+    var FEATURE_META = {
+      api:  { name: 'Creator API key',  meta: 'Programmatic page management + Claude / GPT MCP server' },
+      team: { name: 'Team seat invite', meta: 'Role-based access, audit log, SSO' }
+    };
+    var f = FEATURE_META[featureId] || { name: 'This action', meta: '' };
+    if (window.TierGate && window.TierGate.checkAndProceed) {
+      window.TierGate.checkAndProceed({
+        currentTier: current,
+        features: [{ id: featureId, name: f.name, requires: requires, meta: f.meta }],
+        onProceed: ok,
+        onUpgrade: function () {
+          // Mockup — would open Stripe Checkout / Customer Portal flow
+          window.location.href = './pricing.html';
+        }
+      });
+    } else {
+      // Fallback if shared partials script failed to load
+      alert(f.name + ' requires ' + (TIER_LABEL[requires] || requires) + '. Upgrade to continue.');
+    }
+  }
+  window.gateAction = gateAction;
 
   /* ── Handle availability check (mockup demo, no network) ── */
   var RESERVED_HANDLES = ['admin','api','app','www','support','blog','help','docs','login','register','signin','signup','about','pricing','terms','privacy','legal','contact','tadaify','settings','dashboard','onboarding','mail','email','status','assets','static','public','admin-panel'];
@@ -1994,6 +1981,9 @@
       });
     }
   });
+
+  /* ── Init: apply current DEMO_TIER so the API + Team tier banners reflect it. ── */
+  setTier(DEMO_TIER || 'creator');
 </script>
 </body>
 </html>
