@@ -1,0 +1,3229 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Admin panel — /admin (F-ADMIN-PANEL-001)
+  created_at: 2026-04-26
+  author: orchestrator
+  status: draft-for-review
+
+  Founder's daily ops surface. 8 sections in a single shell:
+    Overview · Users · Registration · Maintenance · Moderation · Legal · Health · Audit
+
+  Visual canon:
+    - Distinct admin sidebar (NOT creator nav)
+    - Sober colour treatment (table-heavy, brand colour only on CTAs)
+    - Role chip in header: Super-admin / Admin / Read-only
+    - Demo toolbar bottom-right switches role for testing
+    - Centered modals only (no right-side drawers)
+    - file:// loadable, all inline
+
+  Integrations referenced (not implemented in mockup):
+    F-WAITLIST-001 (#55) — registration cap + waitlist queue
+    F-LEGAL-002    (#5)  — ToS/PP versioning
+    F-LEGAL-003    (#6)  — record acceptance
+    F-COMPLIANCE-001 (#7) — GDPR audit
+    Orchestrator standard: Maintenance Mode (app_settings.maintenance JSONB)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    [hidden] { display: none !important; }
+
+    /* ===========================================================
+       Wordmark
+       =========================================================== */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: #6366F1; }
+    .wm .da  { color: #F59E0B; }
+    .wm .ify { color: var(--fg); }
+    body.dark-mode .wm .ify { color: #F3F4F6; }
+
+    /* ===========================================================
+       Atoms — chips, buttons, toggles
+       =========================================================== */
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1.4;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap; border: 1px solid transparent;
+    }
+    .chip.success { background: rgba(16,185,129,0.12); color: #047857; border-color: rgba(16,185,129,0.25); }
+    .chip.danger  { background: rgba(239,68,68,0.10); color: #991B1B; border-color: rgba(239,68,68,0.22); }
+    .chip.warn    { background: rgba(245,158,11,0.12); color: #92400E; border-color: rgba(245,158,11,0.25); }
+    .chip.info    { background: rgba(59,130,246,0.10); color: #1D4ED8; border-color: rgba(59,130,246,0.22); }
+    .chip.tier-pro      { background: rgba(245,158,11,0.13); color: #92400E; border-color: rgba(245,158,11,0.30); }
+    .chip.tier-business { background: rgba(99,102,241,0.13); color: #4338CA; border-color: rgba(99,102,241,0.30); }
+    .chip.tier-creator  { background: rgba(16,185,129,0.10); color: #047857; border-color: rgba(16,185,129,0.22); }
+    .chip.tier-free     { background: var(--bg-muted); color: var(--fg-muted); }
+    body.dark-mode .chip.tier-pro      { background: rgba(245,158,11,0.22); color: #FCD34D; border-color: rgba(245,158,11,0.50); }
+    body.dark-mode .chip.tier-business { background: rgba(99,102,241,0.22); color: #A5B4FC; border-color: rgba(99,102,241,0.50); }
+    body.dark-mode .chip.tier-creator  { background: rgba(16,185,129,0.20); color: #6EE7B7; border-color: rgba(16,185,129,0.45); }
+    body.dark-mode .chip.success { background: rgba(16,185,129,0.20); color: #6EE7B7; border-color: rgba(16,185,129,0.45); }
+    body.dark-mode .chip.danger  { background: rgba(239,68,68,0.22); color: #FCA5A5; border-color: rgba(239,68,68,0.50); }
+    body.dark-mode .chip.warn    { background: rgba(245,158,11,0.22); color: #FCD34D; border-color: rgba(245,158,11,0.50); }
+    body.dark-mode .chip.info    { background: rgba(59,130,246,0.22); color: #93C5FD; border-color: rgba(59,130,246,0.50); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 13.5px;
+      border-radius: 9px; padding: 8px 14px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all .12s ease;
+      line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger  { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: rgba(239,68,68,0.4); }
+    .btn-danger-ghost:hover { background: rgba(239,68,68,0.06); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-sm  { padding: 5px 10px; font-size: 12.5px; border-radius: 7px; }
+    .btn-xs  { padding: 3px 8px;  font-size: 11.5px; border-radius: 6px; }
+    .btn-lg  { padding: 11px 18px; font-size: 14.5px; border-radius: 10px; }
+    .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+    body.dark-mode .btn-ghost { background: #141A2D; color: #F3F4F6; border-color: #374151; }
+    body.dark-mode .btn-ghost:hover { background: #1F2937; }
+    body.dark-mode .btn-danger-ghost { background: #141A2D; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 7px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 15px; height: 15px; }
+
+    /* Toggle switch */
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      transition: left .15s ease;
+    }
+    .toggle.on { background: var(--brand-primary); }
+    .toggle.on::after { left: 19px; }
+    .toggle.toggle-danger.on { background: var(--danger); }
+    .toggle:disabled, .toggle[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+
+    .toggle-lg { width: 56px; height: 30px; }
+    .toggle-lg::after { width: 24px; height: 24px; top: 3px; left: 3px; }
+    .toggle-lg.on::after { left: 29px; }
+
+    /* Inputs */
+    .input {
+      font-family: var(--font-sans); font-size: 13.5px;
+      padding: 8px 11px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      outline: none; transition: border-color .12s ease, box-shadow .12s ease;
+      width: 100%;
+    }
+    .input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+    }
+    .input-sm { font-size: 12.5px; padding: 6px 9px; border-radius: 7px; }
+    body.dark-mode .input { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; padding-right: 28px; cursor: pointer; }
+
+    .checkbox {
+      width: 16px; height: 16px; border-radius: 4px;
+      border: 1.5px solid var(--border-strong);
+      background: var(--bg-elevated);
+      cursor: pointer; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all .1s ease;
+    }
+    .checkbox.on { background: var(--brand-primary); border-color: var(--brand-primary); }
+    .checkbox.on::after {
+      content: ""; width: 9px; height: 5px;
+      border: 2px solid #fff; border-top: 0; border-right: 0;
+      transform: rotate(-45deg) translate(1px, -1px);
+    }
+
+    /* ===========================================================
+       Top app bar
+       =========================================================== */
+    .appbar {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+      min-height: 54px;
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 19px; }
+    .appbar .brand-tag {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--fg-muted);
+      padding: 3px 8px; border-radius: 6px;
+      background: var(--bg-muted);
+      margin-left: 4px;
+    }
+    body.dark-mode .appbar .brand-tag { background: #1F2937; color: #9CA3AF; }
+    .appbar .spacer { flex: 1; }
+    .appbar .global-search {
+      position: relative; max-width: 380px; flex: 1;
+      display: none;
+    }
+    @media (min-width: 720px) { .appbar .global-search { display: block; } }
+    .appbar .global-search svg {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--fg-subtle);
+    }
+    .appbar .global-search input {
+      width: 100%; padding: 7px 10px 7px 32px; font-size: 13px;
+      border: 1px solid var(--border); background: var(--bg-muted);
+      border-radius: 8px; outline: none; color: var(--fg);
+    }
+    .appbar .global-search input:focus { border-color: var(--brand-primary); background: var(--bg-elevated); }
+    .appbar .global-search kbd {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      font-family: var(--font-mono); font-size: 10px; color: var(--fg-subtle);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      padding: 1px 5px; border-radius: 4px;
+    }
+
+    .role-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 700; line-height: 1.3;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .role-chip .rc-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+    }
+    .role-chip.role-super    { background: rgba(99,102,241,0.13); color: #4338CA; border-color: rgba(99,102,241,0.30); }
+    .role-chip.role-admin    { background: rgba(16,185,129,0.13); color: #047857; border-color: rgba(16,185,129,0.30); }
+    .role-chip.role-readonly { background: var(--bg-muted); color: var(--fg-muted); border-color: var(--border-strong); }
+    body.dark-mode .role-chip.role-super    { background: rgba(99,102,241,0.22); color: #A5B4FC; border-color: rgba(99,102,241,0.50); }
+    body.dark-mode .role-chip.role-admin    { background: rgba(16,185,129,0.22); color: #6EE7B7; border-color: rgba(16,185,129,0.45); }
+    body.dark-mode .role-chip.role-readonly { background: #1F2937; color: #9CA3AF; border-color: #374151; }
+
+    .admin-email {
+      font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+      display: none;
+    }
+    @media (min-width: 980px) { .admin-email { display: inline; } }
+
+    .impersonation-banner {
+      background: linear-gradient(90deg, rgba(245,158,11,0.16), rgba(245,158,11,0.08));
+      border-bottom: 1px solid rgba(245,158,11,0.35);
+      color: #92400E;
+      padding: 8px 16px; font-size: 12.5px; font-weight: 600;
+      display: none; align-items: center; gap: 10px; justify-content: center;
+    }
+    .impersonation-banner.show { display: flex; }
+    body.dark-mode .impersonation-banner { color: #FCD34D; }
+
+    /* ===========================================================
+       Layout — sidebar + content
+       =========================================================== */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px) { .layout { grid-template-columns: 64px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 232px 1fr; } }
+
+    /* Admin sidebar */
+    aside.adm-side {
+      display: none;
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      padding: 16px 10px; flex-direction: column; gap: 6px;
+      position: sticky; top: 54px; align-self: start;
+      height: calc(100vh - 54px); overflow-y: auto;
+    }
+    @media (min-width: 720px) { aside.adm-side { display: flex; } }
+
+    .adm-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 4px;
+    }
+    .adm-user .av {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #4338CA, #6366F1);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 14px;
+      flex-shrink: 0;
+    }
+    .adm-user .utxt { min-width: 0; flex: 1; }
+    .adm-user .uname { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); color: var(--fg); }
+    .adm-user .urole { font-size: 11px; margin-top: 2px; }
+    body.dark-mode .adm-user { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .adm-user .uname { color: #F3F4F6; }
+
+    .adm-nav-section-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--fg-subtle);
+      padding: 10px 10px 4px;
+    }
+
+    .adm-nav-item {
+      display: flex; align-items: center; gap: 11px;
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg);
+      text-align: left; transition: background .12s ease, color .12s ease;
+      cursor: pointer; text-decoration: none;
+    }
+    .adm-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-muted); }
+    .adm-nav-item:hover { background: var(--bg-muted); }
+    .adm-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+    .adm-nav-item.active svg { color: var(--brand-primary); }
+    .adm-nav-item .nav-count {
+      margin-left: auto;
+      font-size: 10.5px; font-weight: 700;
+      padding: 1px 6px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .adm-nav-item .nav-count.warn   { background: rgba(245,158,11,0.18); color: #92400E; }
+    .adm-nav-item .nav-count.danger { background: rgba(239,68,68,0.16); color: #991B1B; }
+    .adm-nav-item.danger { color: var(--danger); }
+    .adm-nav-item.danger svg { color: var(--danger); }
+
+    .adm-nav-divider { border-top: 1px solid var(--border); margin: 6px 4px; }
+
+    .status-pill-mini {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 600;
+      color: var(--success);
+    }
+    .status-pill-mini::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 2px rgba(16,185,129,0.18);
+      animation: pulseDot 1.6s ease-in-out infinite;
+    }
+    .status-pill-mini.warn { color: var(--warning); }
+    .status-pill-mini.warn::before { background: var(--warning); box-shadow: 0 0 0 2px rgba(245,158,11,0.18); }
+    .status-pill-mini.danger { color: var(--danger); }
+    .status-pill-mini.danger::before { background: var(--danger); box-shadow: 0 0 0 2px rgba(239,68,68,0.18); }
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.15); opacity: 0.7; }
+    }
+
+    /* Compact sidebar 720-1099 */
+    @media (min-width: 720px) and (max-width: 1099px) {
+      aside.adm-side { padding: 14px 6px; }
+      .adm-user .utxt { display: none; }
+      .adm-nav-section-label { display: none; }
+      .adm-nav-item { justify-content: center; padding: 9px 4px; gap: 0; position: relative; }
+      .adm-nav-item .label, .adm-nav-item .nav-count, .adm-nav-item .status-pill-mini { display: none; }
+      .adm-nav-item svg { width: 18px; height: 18px; }
+      .adm-nav-item.has-badge::after {
+        content: ''; position: absolute; top: 4px; right: 6px;
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--danger);
+      }
+    }
+    body.dark-mode aside.adm-side { background: #141A2D; border-right-color: #1F2937; }
+    body.dark-mode .adm-nav-item { color: #E5E7EB; }
+    body.dark-mode .adm-nav-item:hover { background: #1F2937; }
+    body.dark-mode .adm-nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .adm-nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .adm-nav-divider { border-top-color: #1F2937; }
+    body.dark-mode .adm-nav-item .nav-count { background: #1F2937; color: #9CA3AF; }
+
+    /* ===========================================================
+       Main content
+       =========================================================== */
+    main.adm-main {
+      padding: 22px 18px 80px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) { main.adm-main { padding: 24px 28px 80px; } }
+    @media (min-width: 1280px) { main.adm-main { padding: 26px 36px 100px; max-width: 1480px; } }
+
+    .pane { display: none; }
+    .pane.active { display: block; }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 26px; margin: 0; letter-spacing: -0.01em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13px; margin-top: 4px; }
+    .page-head .head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ===========================================================
+       Cards / tiles
+       =========================================================== */
+    .card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    body.dark-mode .card { background: #141A2D; border-color: #1F2937; }
+    .card-h {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .card-h h2 {
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin: 0;
+    }
+    .card-h .h-actions { display: flex; gap: 6px; align-items: center; }
+    .card-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: -6px; margin-bottom: 10px; }
+
+    /* KPI tile */
+    .kpi-row {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      margin-bottom: 18px;
+    }
+    @media (min-width: 700px)  { .kpi-row { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    @media (min-width: 1100px) { .kpi-row { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+    @media (min-width: 1380px) { .kpi-row { grid-template-columns: repeat(7, minmax(0,1fr)); } }
+
+    .kpi {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 12px 14px 11px;
+      transition: border-color .15s ease;
+    }
+    .kpi:hover { border-color: var(--border-strong); }
+    body.dark-mode .kpi { background: #141A2D; border-color: #1F2937; }
+    .kpi-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .kpi-num {
+      font-family: var(--font-display);
+      font-weight: 600; font-size: 26px; line-height: 1.05;
+      color: var(--fg); letter-spacing: -0.02em;
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .kpi-num .kpi-suffix { font-size: 13px; color: var(--fg-muted); font-weight: 400; font-family: var(--font-sans); }
+    .kpi-delta {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 600;
+      padding: 1px 6px; border-radius: 999px;
+      margin-top: 4px;
+    }
+    .kpi-delta.up   { background: rgba(16,185,129,0.10); color: #059669; }
+    .kpi-delta.down { background: rgba(239,68,68,0.10);  color: var(--danger); }
+    .kpi-delta.flat { background: var(--bg-muted); color: var(--fg-muted); }
+    .kpi-foot { font-size: 10.5px; color: var(--fg-subtle); margin-top: 6px; }
+    .kpi.kpi-status { display: flex; align-items: center; gap: 12px; }
+    .kpi.kpi-status .ks-ico {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(16,185,129,0.12); color: var(--success);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .kpi.kpi-status .ks-ico.warn { background: rgba(245,158,11,0.14); color: var(--warning); }
+    .kpi.kpi-status .ks-ico.danger { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .kpi.kpi-status .ks-text .ks-title { font-weight: 600; font-size: 13.5px; }
+    .kpi.kpi-status .ks-text .ks-sub { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* ===========================================================
+       Tables
+       =========================================================== */
+    .tbl-wrap {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      border-radius: 10px;
+    }
+    table.tbl {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px;
+      min-width: 720px;
+    }
+    table.tbl thead th {
+      text-align: left; font-size: 10.5px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--fg-subtle); font-weight: 700;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-muted);
+      white-space: nowrap;
+      position: sticky; top: 0; z-index: 1;
+    }
+    table.tbl thead th.sortable { cursor: pointer; user-select: none; }
+    table.tbl thead th.sortable:hover { color: var(--fg); }
+    table.tbl thead th.sortable .sort-arrow { display: inline-block; margin-left: 3px; opacity: 0.4; font-size: 9px; }
+    table.tbl thead th.sortable.sorted-asc  .sort-arrow,
+    table.tbl thead th.sortable.sorted-desc .sort-arrow { opacity: 1; color: var(--brand-primary); }
+    table.tbl tbody td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--fg);
+    }
+    table.tbl tbody tr:hover td { background: var(--bg-muted); }
+    table.tbl tbody tr.is-selected td { background: rgba(99,102,241,0.06); }
+    table.tbl tbody tr.is-suspended td { opacity: 0.65; }
+    table.tbl tbody tr:last-child td { border-bottom: 0; }
+    body.dark-mode table.tbl thead th { background: #1A2236; color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode table.tbl tbody td { border-bottom-color: #1F2937; color: #E5E7EB; }
+    body.dark-mode table.tbl tbody tr:hover td { background: #1F2937; }
+    body.dark-mode table.tbl tbody tr.is-selected td { background: rgba(99,102,241,0.16); }
+
+    .row-mini {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .row-mini .av {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 12px;
+      flex-shrink: 0;
+    }
+    .row-mini .av-2 { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .row-mini .av-3 { background: linear-gradient(135deg, #10B981, #047857); }
+    .row-mini .av-4 { background: linear-gradient(135deg, #EC4899, #BE185D); }
+    .row-mini .av-5 { background: linear-gradient(135deg, #06B6D4, #0E7490); }
+    .row-mini .av-6 { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+    .row-mini .rm-text { min-width: 0; }
+    .row-mini .rm-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-mini .rm-handle { font-size: 11.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+
+    /* Action menu (per-row dropdown) */
+    .action-menu-wrap { position: relative; display: inline-block; }
+    .action-menu-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .action-menu-btn:hover { background: var(--bg-muted); color: var(--fg); }
+    .action-menu {
+      position: absolute; right: 0; top: calc(100% + 4px);
+      z-index: 20;
+      min-width: 200px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(11,15,30,0.16);
+      padding: 5px;
+      display: none;
+    }
+    .action-menu.open { display: block; }
+    .action-menu button, .action-menu a {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 7px 9px; border-radius: 7px;
+      font-size: 13px; color: var(--fg);
+      background: transparent; border: 0;
+      text-align: left; cursor: pointer;
+    }
+    .action-menu button:hover, .action-menu a:hover { background: var(--bg-muted); }
+    .action-menu button.danger { color: var(--danger); }
+    .action-menu button.danger:hover { background: rgba(239,68,68,0.08); }
+    .action-menu .menu-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+    .action-menu svg { width: 13px; height: 13px; color: var(--fg-muted); flex-shrink: 0; }
+    .action-menu button.danger svg { color: var(--danger); }
+    body.dark-mode .action-menu { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .action-menu button:hover, body.dark-mode .action-menu a:hover { background: #1F2937; }
+    body.dark-mode .action-menu .menu-divider { border-top-color: #1F2937; }
+
+    /* ===========================================================
+       Filters bar
+       =========================================================== */
+    .filters {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      padding: 10px 12px; background: var(--bg-muted);
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    body.dark-mode .filters { background: #1A2236; border-color: #1F2937; }
+    .filters .search-input { position: relative; flex: 1; min-width: 200px; }
+    .filters .search-input svg {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--fg-subtle);
+    }
+    .filters .search-input input { padding-left: 30px; }
+    .filters .input { width: auto; min-width: 130px; }
+    .filters .filter-clear {
+      font-size: 12px; color: var(--fg-muted);
+      background: transparent; border: 0; padding: 4px 8px; border-radius: 6px;
+    }
+    .filters .filter-clear:hover { background: var(--bg-elevated); color: var(--fg); }
+
+    .bulk-bar {
+      display: none; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 10px;
+      font-size: 12.5px;
+      margin-bottom: 12px;
+    }
+    .bulk-bar.show { display: flex; }
+    .bulk-bar .bb-count { font-weight: 600; color: var(--brand-primary); }
+    .bulk-bar .bb-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+    body.dark-mode .bulk-bar { background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.45); }
+
+    /* ===========================================================
+       Modals (centered)
+       =========================================================== */
+    .mb {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .mb.open { display: flex; }
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%; max-width: 540px;
+      max-height: 88vh; overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.30);
+      animation: mIn .16s ease;
+      position: relative;
+    }
+    .modal.modal-lg  { max-width: 720px; }
+    .modal.modal-xl  { max-width: 920px; }
+    @keyframes mIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    .modal-h {
+      padding: 18px 22px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-h h3 { font-family: var(--font-display); font-size: 19px; margin: 0; line-height: 1.3; }
+    .modal-h .modal-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 4px; line-height: 1.5; }
+    .modal-body { padding: 16px 22px; }
+    .modal-foot {
+      padding: 12px 22px; border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+    }
+    .modal-x {
+      position: absolute; top: 14px; right: 14px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 22px; line-height: 1; width: 28px; height: 28px;
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-x:hover { background: var(--bg-muted); color: var(--fg); }
+    body.dark-mode .modal-h, body.dark-mode .modal-foot { border-color: #1F2937; }
+
+    .warning-box {
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 9px; padding: 10px 13px;
+      font-size: 12.5px; color: #991B1B;
+      line-height: 1.5;
+      display: flex; gap: 9px; align-items: flex-start;
+    }
+    body.dark-mode .warning-box { color: #FCA5A5; background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.40); }
+    .warning-box svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    .info-box {
+      background: rgba(59,130,246,0.07);
+      border: 1px solid rgba(59,130,246,0.22);
+      border-radius: 9px; padding: 10px 13px;
+      font-size: 12.5px; color: #1E40AF;
+      line-height: 1.5;
+      display: flex; gap: 9px; align-items: flex-start;
+    }
+    body.dark-mode .info-box { color: #93C5FD; background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.40); }
+    .info-box svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===========================================================
+       User detail modal — sections
+       =========================================================== */
+    .ud-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 700px) { .ud-grid { grid-template-columns: 1fr 1fr; } }
+    .ud-section {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    body.dark-mode .ud-section { border-color: #1F2937; }
+    .ud-section h4 {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--fg-subtle); margin: 0 0 8px;
+    }
+    .ud-row {
+      display: flex; justify-content: space-between; gap: 8px;
+      font-size: 12.5px; padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .ud-row:last-child { border-bottom: 0; }
+    .ud-row .ud-k { color: var(--fg-muted); }
+    .ud-row .ud-v { font-weight: 600; color: var(--fg); font-family: var(--font-mono); }
+    body.dark-mode .ud-row { border-bottom-color: #1F2937; }
+
+    /* ===========================================================
+       Maintenance section
+       =========================================================== */
+    .maint-hero {
+      display: flex; gap: 16px; align-items: center;
+      padding: 18px 20px; border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .maint-hero.is-on {
+      background: linear-gradient(135deg, rgba(239,68,68,0.10), rgba(239,68,68,0.04));
+      border-color: rgba(239,68,68,0.35);
+    }
+    body.dark-mode .maint-hero { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .maint-hero.is-on { background: linear-gradient(135deg, rgba(239,68,68,0.20), rgba(239,68,68,0.08)); border-color: rgba(239,68,68,0.50); }
+    .maint-hero .mh-status {
+      flex-shrink: 0;
+      width: 72px; height: 72px; border-radius: 18px;
+      background: rgba(16,185,129,0.12); color: var(--success);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    .maint-hero.is-on .mh-status {
+      background: rgba(239,68,68,0.16); color: var(--danger);
+    }
+    .maint-hero.is-on .mh-status::after {
+      content: ''; position: absolute;
+      width: 72px; height: 72px; border-radius: 18px;
+      box-shadow: 0 0 0 0 rgba(239,68,68,0.4);
+      animation: pulseRing 1.6s ease-out infinite;
+    }
+    @keyframes pulseRing {
+      0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      100% { box-shadow: 0 0 0 22px rgba(239,68,68,0); }
+    }
+    .maint-hero .mh-text { flex: 1; }
+    .maint-hero .mh-title { font-family: var(--font-display); font-size: 24px; font-weight: 600; line-height: 1.2; }
+    .maint-hero .mh-sub { font-size: 13px; color: var(--fg-muted); margin-top: 4px; }
+    .maint-hero .mh-toggle { flex-shrink: 0; }
+
+    .preset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .preset-btn {
+      padding: 7px 14px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: all .12s ease;
+    }
+    .preset-btn:hover { background: var(--bg-muted); border-color: var(--brand-primary); }
+    .preset-btn.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    body.dark-mode .preset-btn { background: #141A2D; color: #F3F4F6; border-color: #374151; }
+    body.dark-mode .preset-btn:hover { background: #1F2937; }
+
+    .countdown {
+      font-family: var(--font-mono); font-size: 22px; font-weight: 600;
+      color: var(--danger); letter-spacing: 0.04em;
+    }
+
+    /* ===========================================================
+       Charts (inline SVG)
+       =========================================================== */
+    .chart-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px 12px;
+    }
+    body.dark-mode .chart-shell { background: #141A2D; border-color: #1F2937; }
+    .chart-canvas { width: 100%; height: 180px; margin-top: 6px; position: relative; }
+    .chart-canvas svg { display: block; width: 100%; height: 100%; }
+
+    /* ===========================================================
+       Two-column grid for Overview
+       =========================================================== */
+    .two-col { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 1100px) { .two-col { grid-template-columns: 2fr 1fr; } }
+
+    /* Events feed */
+    .feed-row {
+      display: flex; gap: 10px; padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px; align-items: flex-start;
+    }
+    .feed-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .feed-row .fr-ico {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+    }
+    .feed-row .fr-ico.pos { background: rgba(16,185,129,0.12); color: var(--success); }
+    .feed-row .fr-ico.neg { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .feed-row .fr-ico.warn { background: rgba(245,158,11,0.14); color: var(--warning); }
+    .feed-row .fr-ico.info { background: rgba(59,130,246,0.10); color: var(--info); }
+    .feed-row .fr-text { flex: 1; min-width: 0; }
+    .feed-row .fr-title { color: var(--fg); }
+    .feed-row .fr-meta { font-size: 11px; color: var(--fg-subtle); margin-top: 2px; font-family: var(--font-mono); }
+    body.dark-mode .feed-row { border-bottom-color: #1F2937; }
+
+    /* Quick actions */
+    .qa-grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+    .qa-btn {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 12px; border-radius: 9px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      font-size: 12.5px; font-weight: 600; color: var(--fg);
+      cursor: pointer; text-align: left;
+      transition: all .12s ease;
+    }
+    .qa-btn:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
+    .qa-btn svg { width: 15px; height: 15px; color: var(--brand-primary); flex-shrink: 0; }
+    body.dark-mode .qa-btn { background: #0B0F1E; border-color: #1F2937; color: #E5E7EB; }
+    body.dark-mode .qa-btn:hover { background: #1F2937; }
+
+    /* ===========================================================
+       Health section — service grid
+       =========================================================== */
+    .svc-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .svc-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex; gap: 12px; align-items: center;
+    }
+    body.dark-mode .svc-card { background: #141A2D; border-color: #1F2937; }
+    .svc-card .svc-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px transparent;
+    }
+    .svc-card .svc-dot.green  { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.16); }
+    .svc-card .svc-dot.yellow { background: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,0.16); }
+    .svc-card .svc-dot.red    { background: var(--danger);  box-shadow: 0 0 0 3px rgba(239,68,68,0.16); }
+    .svc-card .svc-text { flex: 1; min-width: 0; }
+    .svc-card .svc-name { font-weight: 600; font-size: 13px; }
+    .svc-card .svc-meta { font-size: 11px; color: var(--fg-muted); margin-top: 2px; font-family: var(--font-mono); }
+    .svc-card .svc-link { color: var(--fg-subtle); }
+    .svc-card .svc-link:hover { color: var(--fg); }
+    .svc-card .svc-link svg { width: 13px; height: 13px; }
+
+    /* Error log row */
+    .err-row {
+      display: grid; gap: 8px;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+    }
+    .err-row:last-child { border-bottom: 0; }
+    .err-row .er-msg { font-family: var(--font-mono); color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .err-row .er-count { font-weight: 700; color: var(--danger); padding: 1px 7px; border-radius: 999px; background: rgba(239,68,68,0.10); font-size: 11px; }
+    .err-row .er-time { font-size: 11px; color: var(--fg-subtle); white-space: nowrap; }
+    body.dark-mode .err-row { border-bottom-color: #1F2937; }
+
+    /* ===========================================================
+       Legal — diff
+       =========================================================== */
+    .diff-grid {
+      display: grid; gap: 0;
+      grid-template-columns: 1fr;
+      border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      font-family: var(--font-mono); font-size: 12px;
+    }
+    @media (min-width: 760px) { .diff-grid { grid-template-columns: 1fr 1fr; } }
+    body.dark-mode .diff-grid { border-color: #1F2937; }
+    .diff-side { padding: 12px 14px; min-height: 180px; }
+    .diff-side + .diff-side { border-top: 1px solid var(--border); }
+    @media (min-width: 760px) {
+      .diff-side + .diff-side { border-top: 0; border-left: 1px solid var(--border); }
+    }
+    body.dark-mode .diff-side + .diff-side { border-color: #1F2937; }
+    .diff-side h5 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-subtle); font-weight: 700; font-family: var(--font-sans); }
+    .diff-line { padding: 2px 6px; border-radius: 4px; line-height: 1.6; }
+    .diff-line.add { background: rgba(16,185,129,0.10); color: #047857; }
+    .diff-line.rem { background: rgba(239,68,68,0.08); color: #991B1B; text-decoration: line-through; }
+    body.dark-mode .diff-line.add { background: rgba(16,185,129,0.20); color: #6EE7B7; }
+    body.dark-mode .diff-line.rem { background: rgba(239,68,68,0.20); color: #FCA5A5; }
+
+    /* ===========================================================
+       Tabs (within Audit)
+       =========================================================== */
+    .seg-tabs {
+      display: inline-flex; gap: 2px; padding: 3px;
+      background: var(--bg-muted); border-radius: 8px;
+    }
+    .seg-tabs button {
+      padding: 5px 12px; font-size: 12px; font-weight: 600;
+      background: transparent; border: 0; border-radius: 6px;
+      color: var(--fg-muted); cursor: pointer;
+    }
+    .seg-tabs button.active { background: var(--bg-elevated); color: var(--brand-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    body.dark-mode .seg-tabs { background: #1F2937; }
+    body.dark-mode .seg-tabs button.active { background: #0B0F1E; color: #A5B4FC; }
+
+    /* ===========================================================
+       Empty states
+       =========================================================== */
+    .empty {
+      padding: 32px 20px; text-align: center;
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+    }
+    body.dark-mode .empty { background: #141A2D; border-color: #374151; }
+    .empty .em-ico { font-size: 32px; margin-bottom: 8px; opacity: 0.7; }
+    .empty .em-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .empty .em-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 4px; }
+
+    /* ===========================================================
+       Cohort table (waitlist)
+       =========================================================== */
+    .cohort-row {
+      display: grid; gap: 8px;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      padding: 9px 12px; font-size: 12.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cohort-row:last-child { border-bottom: 0; }
+    .cohort-row .ch-h { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-subtle); font-weight: 700; }
+    .cohort-row.is-head { background: var(--bg-muted); border-radius: 8px 8px 0 0; }
+    .cohort-row .ch-bar {
+      width: 100%; height: 5px; background: var(--bg-sunken);
+      border-radius: 999px; overflow: hidden; margin-top: 2px;
+    }
+    .cohort-row .ch-bar .ch-fill { height: 100%; background: var(--brand-primary); border-radius: 999px; }
+    body.dark-mode .cohort-row { border-bottom-color: #1F2937; }
+    body.dark-mode .cohort-row.is-head { background: #1A2236; }
+
+    /* ===========================================================
+       Email preview
+       =========================================================== */
+    .email-preview {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+    }
+    body.dark-mode .email-preview { background: #141A2D; border-color: #1F2937; }
+    .email-preview .ep-h {
+      padding: 9px 14px; background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+      display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px;
+    }
+    body.dark-mode .email-preview .ep-h { background: #1A2236; border-bottom-color: #1F2937; }
+    .email-preview .ep-h b { color: var(--fg); }
+    .email-preview .ep-body {
+      padding: 18px 20px; font-size: 13px; line-height: 1.55;
+      max-height: 280px; overflow-y: auto;
+    }
+    .email-preview .ep-body h2 { font-family: var(--font-display); font-size: 22px; margin: 0 0 10px; }
+    .email-preview .ep-cta {
+      display: inline-block; padding: 10px 18px;
+      background: var(--brand-primary); color: #fff;
+      border-radius: 8px; font-weight: 600; font-size: 13px;
+      margin: 12px 0;
+    }
+
+    /* ===========================================================
+       Read-only banner
+       =========================================================== */
+    .ro-banner {
+      display: none; align-items: center; gap: 9px;
+      padding: 9px 12px; margin-bottom: 14px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      border-radius: 9px; font-size: 12.5px; color: var(--fg-muted);
+    }
+    body[data-role="readonly"] .ro-banner { display: flex; }
+    body[data-role="readonly"] .ro-disable {
+      pointer-events: none; opacity: 0.55;
+    }
+    body[data-role="readonly"] .ro-hide-write { display: none !important; }
+    body.dark-mode .ro-banner { background: #1A2236; border-color: #1F2937; }
+
+    /* ===========================================================
+       Demo toolbar
+       =========================================================== */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px; z-index: 150;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 600; color: var(--fg-subtle);
+      display: flex; flex-direction: column; gap: 6px;
+      box-shadow: 0 8px 24px rgba(11,15,30,0.18);
+      max-width: calc(100vw - 32px);
+    }
+    body.dark-mode .demo-toolbar { background: #141A2D; border-color: #1F2937; }
+    .demo-toolbar .dt-label { text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; }
+    .demo-toolbar .dt-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+    .demo-toolbar button {
+      padding: 4px 10px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg);
+      font-size: 11px; font-weight: 600; color: var(--fg);
+      font-family: var(--font-sans); cursor: pointer;
+    }
+    .demo-toolbar button.is-active {
+      background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
+    }
+    .demo-toolbar .dt-tip { font-size: 10px; color: var(--fg-subtle); font-weight: 500; max-width: 240px; }
+    @media (max-width: 599px) {
+      .demo-toolbar { bottom: 8px; right: 8px; padding: 8px 10px; }
+      .demo-toolbar .dt-tip { display: none; }
+    }
+    body.dark-mode .demo-toolbar button { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+
+    /* ===========================================================
+       Print-friendly tweaks (founder might export to PDF)
+       =========================================================== */
+    @media print {
+      .appbar, aside.adm-side, .demo-toolbar, .filters .filter-clear,
+      .action-menu-btn { display: none !important; }
+      main.adm-main { padding: 0; }
+      .pane { display: block !important; }
+    }
+
+    /* ===========================================================
+       Dark mode body
+       =========================================================== */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #6B7280;
+      --border:      #1F2937;
+      --border-strong: #374151;
+    }
+    body.dark-mode .appbar { background: #0F1424; border-bottom-color: #1F2937; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+  </style>
+</head>
+<body data-role="super">
+
+<!-- ============================================================
+     IMPERSONATION BANNER (hidden by default — toggled via "Login as user")
+     ============================================================ -->
+<div class="impersonation-banner" id="imp-banner">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+  <span>Impersonating <b id="imp-user">@alex_morgan</b> — every action is logged. <a href="#" onclick="exitImpersonation();return false" style="text-decoration:underline">Exit impersonation</a></span>
+</div>
+
+<!-- ============================================================
+     APP BAR
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:9px">
+      <span class="wm" style="font-size:20px"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+    </a>
+    <span class="brand-tag">Admin</span>
+  </div>
+
+  <div class="global-search" role="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" placeholder="Search users, handles, emails, page IDs…" id="global-search" oninput="globalSearch(this.value)">
+    <kbd>⌘K</kbd>
+  </div>
+
+  <div class="spacer"></div>
+
+  <span class="role-chip role-super" id="role-chip" title="Your admin role">
+    <span class="rc-dot"></span><span id="role-label">Super-admin</span>
+  </span>
+  <span class="admin-email">founder@tadaify.com</span>
+
+  <button class="iconbtn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg id="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT — admin sidebar + main
+     ============================================================ -->
+<div class="layout">
+  <aside class="adm-side" aria-label="Admin navigation">
+    <div class="adm-user">
+      <div class="av">F</div>
+      <div class="utxt">
+        <div class="uname">founder@tadaify.com</div>
+        <div class="urole"><span class="role-chip role-super" id="side-role-chip" style="font-size:9.5px;padding:2px 7px"><span class="rc-dot"></span><span id="side-role-label">Super-admin</span></span></div>
+      </div>
+    </div>
+
+    <div class="adm-nav-section-label">Operations</div>
+    <a href="#overview" data-section="overview" class="adm-nav-item active" onclick="showPane('overview',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      <span class="label">Overview</span>
+    </a>
+    <a href="#users" data-section="users" class="adm-nav-item" onclick="showPane('users',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="label">Users</span>
+      <span class="nav-count">847</span>
+    </a>
+    <a href="#registration" data-section="registration" class="adm-nav-item has-badge" onclick="showPane('registration',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      <span class="label">Registration</span>
+      <span class="nav-count warn">247</span>
+    </a>
+    <a href="#maintenance" data-section="maintenance" class="adm-nav-item" onclick="showPane('maintenance',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span class="label">Maintenance</span>
+    </a>
+    <a href="#moderation" data-section="moderation" class="adm-nav-item has-badge" onclick="showPane('moderation',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="label">Moderation</span>
+      <span class="nav-count danger">3</span>
+    </a>
+    <a href="#legal" data-section="legal" class="adm-nav-item" onclick="showPane('legal',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      <span class="label">Legal</span>
+    </a>
+    <a href="#health" data-section="health" class="adm-nav-item" onclick="showPane('health',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="label">Health</span>
+      <span class="status-pill-mini" id="health-pill">All green</span>
+    </a>
+    <a href="#audit" data-section="audit" class="adm-nav-item" onclick="showPane('audit',this);return false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span class="label">Audit log</span>
+    </a>
+
+    <div class="adm-nav-divider"></div>
+
+    <a href="./app-dashboard.html" class="adm-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      <span class="label">Creator dashboard</span>
+    </a>
+    <a href="./login.html" class="adm-nav-item danger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span class="label">Sign out</span>
+    </a>
+  </aside>
+
+  <main class="adm-main">
+    <!-- read-only banner shown when role=readonly -->
+    <div class="ro-banner">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      You have <b>read-only</b> admin access. Mutating actions are disabled. Ask a Super-admin to make changes.
+    </div>
+
+
+    <!-- =====================================================
+         PANE — USERS
+         ===================================================== -->
+    <section class="pane" id="pane-users">
+      <div id="users-pane">
+      <div class="page-head">
+        <div>
+          <h1>Users <span style="font-family:var(--font-sans); font-size:14px; color:var(--fg-muted); font-weight:500">847 total · 312 paying</span></h1>
+          <div class="sub">Search, filter, and manage every creator on tadaify.</div>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would download users-2026-04-26.csv')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-primary btn-sm ro-disable" onclick="openModal('modal-comp-upgrade')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Comp upgrade
+          </button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="search-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input" id="user-search" type="search" placeholder="Search by handle, email, or name…" oninput="filterUsers(this.value)">
+        </div>
+        <select class="input">
+          <option>All tiers</option><option>Free</option><option>Creator</option><option>Pro</option><option>Business</option>
+        </select>
+        <select class="input">
+          <option>All statuses</option><option>Active</option><option>Suspended</option><option>Deleted</option>
+        </select>
+        <select class="input">
+          <option>Signup: any</option><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option>
+        </select>
+        <select class="input">
+          <option>Domain: any</option><option>Has custom domain</option><option>No custom domain</option>
+        </select>
+        <select class="input">
+          <option>Stripe: any</option><option>Has customer</option><option>No customer</option>
+        </select>
+        <button class="filter-clear" onclick="clearUserFilters()">Clear</button>
+      </div>
+
+      <div class="bulk-bar" id="bulk-bar">
+        <span>Selected: <b class="bb-count" id="bulk-count">0</b></span>
+        <div class="bb-actions">
+          <button class="btn btn-ghost btn-xs ro-hide-write" onclick="alert('Mockup — would bulk send custom email')">Send email</button>
+          <button class="btn btn-ghost btn-xs ro-hide-write" onclick="alert('Mockup — would bulk suspend')">Suspend</button>
+          <button class="btn btn-ghost btn-xs ro-hide-write" onclick="alert('Mockup — would bulk unsuspend')">Unsuspend</button>
+          <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would export selected to CSV')">Export selected</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:34px"><div class="checkbox" onclick="selectAll(this)"></div></th>
+                <th class="sortable sorted-desc" onclick="sortBy(this)">Creator <span class="sort-arrow">▼</span></th>
+                <th>Email</th>
+                <th class="sortable" onclick="sortBy(this)">Tier <span class="sort-arrow">▼</span></th>
+                <th class="sortable" onclick="sortBy(this)">Signup <span class="sort-arrow">▼</span></th>
+                <th class="sortable" onclick="sortBy(this)">Last active <span class="sort-arrow">▼</span></th>
+                <th>Status</th>
+                <th class="sortable" onclick="sortBy(this)" style="text-align:right">MRR <span class="sort-arrow">▼</span></th>
+                <th style="width:48px"></th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" onclick="openUserDetail('Maya Chen','maya_creates','maya@example.com','Pro')" style="cursor:pointer">
+                    <div class="av">M</div>
+                    <div class="rm-text"><div class="rm-name">Maya Chen</div><div class="rm-handle">@maya_creates</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">maya@example.com</span></td>
+                <td><span class="chip tier-pro">Pro</span></td>
+                <td>2026-01-12</td>
+                <td><span style="color:var(--fg-muted)">2m ago</span></td>
+                <td><span class="chip success">Active</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600">$9.00</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)" aria-label="Actions">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+                    </button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Maya Chen','maya_creates','maya@example.com','Pro');closeAllMenus();return false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View profile
+                      </a>
+                      <button onclick="loginAsUser('maya_creates')" class="ro-hide-write">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        Login as user
+                      </button>
+                      <button onclick="alert('Mockup — would send password-reset email');closeAllMenus()" class="ro-hide-write">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Force password reset
+                      </button>
+                      <button onclick="alert('Mockup — would open compose-email modal');closeAllMenus()" class="ro-hide-write">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Send custom email
+                      </button>
+                      <div class="menu-divider"></div>
+                      <button onclick="alert('Mockup — would refund last $9 charge via Stripe');closeAllMenus()" class="ro-hide-write">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                        Refund last payment
+                      </button>
+                      <button onclick="openModal('modal-comp-upgrade');closeAllMenus()" class="ro-hide-write">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Comp upgrade tier
+                      </button>
+                      <div class="menu-divider"></div>
+                      <button onclick="alert('Mockup — would suspend account');closeAllMenus()" class="ro-hide-write">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        Suspend account
+                      </button>
+                      <a href="#audit" onclick="closeAllMenus();showPane('audit',document.querySelector('.adm-nav-item[data-section=audit]'));return false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        View audit log
+                      </a>
+                      <button class="danger ro-hide-write" onclick="document.getElementById('hd-handle').textContent='@maya_creates';openModal('modal-hard-delete');closeAllMenus()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                        Hard delete
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" onclick="openUserDetail('Lukas Berg','lukas_b','lukas@example.com','Free')" style="cursor:pointer">
+                    <div class="av av-2">L</div>
+                    <div class="rm-text"><div class="rm-name">Lukas Berg</div><div class="rm-handle">@lukas_b</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">lukas@example.com</span></td>
+                <td><span class="chip tier-free">Free</span></td>
+                <td>2026-04-22</td>
+                <td><span style="color:var(--fg-muted)">23m ago</span></td>
+                <td><span class="chip warn">Reported (4)</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); color:var(--fg-muted)">—</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Lukas Berg','lukas_b','lukas@example.com','Free');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                      <a href="#moderation" onclick="closeAllMenus();showPane('moderation',document.querySelector('.adm-nav-item[data-section=moderation]'));return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>View reports</a>
+                      <button class="ro-hide-write" onclick="alert('Mockup — would suspend');closeAllMenus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Suspend account</button>
+                      <button class="danger ro-hide-write" onclick="document.getElementById('hd-handle').textContent='@lukas_b';openModal('modal-hard-delete');closeAllMenus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/></svg>Hard delete</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr class="is-suspended">
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('DJ Captain','dance_captain','dj@example.com','Free')">
+                    <div class="av av-3">D</div>
+                    <div class="rm-text"><div class="rm-name">DJ Captain</div><div class="rm-handle">@dance_captain</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">dj@example.com</span></td>
+                <td><span class="chip tier-free">Free</span></td>
+                <td>2025-11-08</td>
+                <td><span style="color:var(--fg-subtle)">1h 12m ago</span></td>
+                <td><span class="chip danger">Suspended</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); color:var(--fg-muted)">—</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('DJ Captain','dance_captain','dj@example.com','Free');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                      <button class="ro-hide-write" onclick="alert('Mockup — would unsuspend');closeAllMenus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Unsuspend account</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('Nina Foodie','nina_food','nina@example.com','Creator')">
+                    <div class="av av-4">N</div>
+                    <div class="rm-text"><div class="rm-name">Nina Foodie</div><div class="rm-handle">@nina_food</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">nina@example.com</span></td>
+                <td><span class="chip tier-creator">Creator</span></td>
+                <td>2026-02-04</td>
+                <td><span style="color:var(--fg-muted)">5h ago</span></td>
+                <td><span class="chip success">Active</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600">$5.00</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Nina Foodie','nina_food','nina@example.com','Creator');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                      <button class="ro-hide-write" onclick="loginAsUser('nina_food')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="10 17 15 12 10 7"/></svg>Login as user</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('Yuki Park','yuki_p','yuki@example.com','Business')">
+                    <div class="av av-5">Y</div>
+                    <div class="rm-text"><div class="rm-name">Yuki Park</div><div class="rm-handle">@yuki_p</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">yuki@example.com</span></td>
+                <td><span class="chip tier-business">Business</span></td>
+                <td>2025-09-18</td>
+                <td><span style="color:var(--fg-muted)">11h ago</span></td>
+                <td><span class="chip success">Active</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600">$49.00</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Yuki Park','yuki_p','yuki@example.com','Business');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                      <button class="ro-hide-write" onclick="alert('Mockup — would refund last $49');closeAllMenus()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/></svg>Refund last payment</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('Chris Helder','chris_h','chris@example.com','Creator')">
+                    <div class="av av-6">C</div>
+                    <div class="rm-text"><div class="rm-name">Chris Helder</div><div class="rm-handle">@chris_h</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">chris@example.com</span></td>
+                <td><span class="chip tier-creator">Creator</span></td>
+                <td>2026-03-01</td>
+                <td><span style="color:var(--fg-muted)">3d ago</span></td>
+                <td><span class="chip info">Domain pending</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600">$5.00</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Chris Helder','chris_h','chris@example.com','Creator');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('Sea Traveller','sea_traveller','sea@example.com','Pro')">
+                    <div class="av">S</div>
+                    <div class="rm-text"><div class="rm-name">Sea Traveller</div><div class="rm-handle">@sea_traveller</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">sea@example.com</span></td>
+                <td><span class="chip tier-pro">Pro</span></td>
+                <td>2026-04-21</td>
+                <td><span style="color:var(--fg-muted)">2h ago</span></td>
+                <td><span class="chip success">Active</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600">$9.00</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Sea Traveller','sea_traveller','sea@example.com','Pro');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('Dev Lab','dev_lab','dev@example.com','Free')">
+                    <div class="av av-2">D</div>
+                    <div class="rm-text"><div class="rm-name">Dev Lab</div><div class="rm-handle">@dev_lab</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">dev@example.com</span></td>
+                <td><span class="chip tier-free">Free</span></td>
+                <td>2026-04-26</td>
+                <td><span style="color:var(--fg-muted)">12m ago</span></td>
+                <td><span class="chip success">Active</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); color:var(--fg-muted)">—</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Dev Lab','dev_lab','dev@example.com','Free');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox" onclick="rowSelect(this)"></div></td>
+                <td>
+                  <div class="row-mini" style="cursor:pointer" onclick="openUserDetail('Alex Morgan','alex_morgan','alex@example.com','Business')">
+                    <div class="av av-6">A</div>
+                    <div class="rm-text"><div class="rm-name">Alex Morgan</div><div class="rm-handle">@alex_morgan</div></div>
+                  </div>
+                </td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">alex@example.com</span></td>
+                <td><span class="chip tier-business">Business</span></td>
+                <td>2025-08-04</td>
+                <td><span style="color:var(--fg-muted)">15m ago</span></td>
+                <td><span class="chip success">Active</span></td>
+                <td style="text-align:right; font-family:var(--font-mono); font-weight:600">$49.00</td>
+                <td>
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+                    <div class="action-menu">
+                      <a href="#" onclick="openUserDetail('Alex Morgan','alex_morgan','alex@example.com','Business');closeAllMenus();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>View profile</a>
+                      <button class="ro-hide-write" onclick="loginAsUser('alex_morgan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="10 17 15 12 10 7"/></svg>Login as user</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:11px 14px; border-top:1px solid var(--border); font-size:12.5px; color:var(--fg-muted); flex-wrap:wrap; gap:8px">
+          <div>Showing <b style="color:var(--fg)">9</b> of <b style="color:var(--fg)">847</b> creators</div>
+          <div style="display:flex; gap:5px; align-items:center">
+            <button class="btn btn-ghost btn-xs" disabled>← Prev</button>
+            <button class="btn btn-ghost btn-xs">1</button>
+            <button class="btn btn-primary btn-xs">2</button>
+            <button class="btn btn-ghost btn-xs">3</button>
+            <span>…</span>
+            <button class="btn btn-ghost btn-xs">95</button>
+            <button class="btn btn-ghost btn-xs">Next →</button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — REGISTRATION & WAITLIST  (#55 F-WAITLIST-001)
+         ===================================================== -->
+    <section class="pane" id="pane-registration">
+      <div class="page-head">
+        <div>
+          <h1>Registration & waitlist</h1>
+          <div class="sub">Cap registrations · manage the waitlist queue · run cohort campaigns. Per <a href="https://github.com/graspsoftwarepw/tadaify-app/issues/55" target="_blank" style="color:var(--brand-primary); text-decoration:underline">#55 F-WAITLIST-001</a>.</div>
+        </div>
+      </div>
+
+      <!-- State summary -->
+      <div class="kpi-row" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr))">
+        <div class="kpi">
+          <div class="kpi-label">Cap</div>
+          <div class="kpi-num">1,000</div>
+          <div class="kpi-foot">Set 2026-03-04 by founder@</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Used</div>
+          <div class="kpi-num">847 <span class="kpi-suffix">· 84.7%</span></div>
+          <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin-top:6px"><div style="width:84.7%; height:100%; background:var(--brand-primary)"></div></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Slots free</div>
+          <div class="kpi-num">153</div>
+          <div class="kpi-foot">~18d at current rate</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Waitlist</div>
+          <div class="kpi-num" style="color:var(--warning)">247</div>
+          <div class="kpi-foot">oldest: 12d 4h</div>
+        </div>
+      </div>
+
+      <!-- Cap controls -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h">
+          <h2>Registration controls</h2>
+          <span class="chip success" id="reg-state-label">Open (cap-gated)</span>
+        </div>
+        <div style="display:grid; gap:14px; grid-template-columns: 1fr; align-items:center">
+          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap">
+            <label style="font-size:13px; font-weight:600; min-width:120px">Hard cap</label>
+            <input class="input ro-disable" type="number" value="1000" min="0" style="width:140px">
+            <button class="btn btn-primary btn-sm ro-hide-write" onclick="alert('Mockup — would update cap to N (writes audit row)')">Update cap</button>
+            <span style="font-size:11.5px; color:var(--fg-muted); margin-left:auto">When 0, all signups go to waitlist regardless.</span>
+          </div>
+          <hr style="border:0; border-top:1px solid var(--border)">
+          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap">
+            <label style="font-size:13px; font-weight:600; min-width:120px">Pause registration</label>
+            <button class="toggle ro-disable" onclick="pauseRegistration(this)" aria-label="Pause registration"></button>
+            <span style="font-size:12.5px; color:var(--fg-muted)">When paused, new signups go directly to waitlist regardless of cap.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Promote bulk -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h"><h2>Promote from waitlist</h2></div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+          <span style="font-size:13px">Promote</span>
+          <input class="input" id="promote-n" type="number" value="14" min="1" max="247" style="width:100px">
+          <span style="font-size:13px">oldest waitlist members.</span>
+          <button class="btn btn-primary btn-sm ro-hide-write" onclick="promoteN()">Promote N now</button>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would preview the email + recipients')">Preview email</button>
+        </div>
+        <div class="info-box" style="margin-top:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Promoting consumes <b>N slots</b> from the cap. Slots free will drop from 153 to <b id="slots-after">139</b>.</span>
+        </div>
+      </div>
+
+      <!-- Cohort telemetry -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h">
+          <h2>Cohort telemetry</h2>
+          <span style="font-size:11px; color:var(--fg-muted)">activation = added 1+ block in first 24h</span>
+        </div>
+        <div class="cohort-row is-head">
+          <div class="ch-h">Cohort</div>
+          <div class="ch-h">Signups</div>
+          <div class="ch-h">Activation</div>
+          <div class="ch-h">7d retention</div>
+        </div>
+        <div class="cohort-row">
+          <div><b>Apr 26 (today)</b><div style="color:var(--fg-muted); font-size:11.5px">14 promoted</div></div>
+          <div>14<div class="ch-bar"><div class="ch-fill" style="width:14%"></div></div></div>
+          <div>—<div style="font-size:11px; color:var(--fg-muted)">in flight</div></div>
+          <div>—</div>
+        </div>
+        <div class="cohort-row">
+          <div><b>Apr 19</b><div style="color:var(--fg-muted); font-size:11.5px">21 promoted</div></div>
+          <div>21<div class="ch-bar"><div class="ch-fill" style="width:21%"></div></div></div>
+          <div>76% (16/21)<div class="ch-bar"><div class="ch-fill" style="width:76%; background:var(--success)"></div></div></div>
+          <div>71% (15/21)</div>
+        </div>
+        <div class="cohort-row">
+          <div><b>Apr 12 (PH)</b><div style="color:var(--fg-muted); font-size:11.5px">47 organic</div></div>
+          <div>47<div class="ch-bar"><div class="ch-fill" style="width:47%"></div></div></div>
+          <div>89% (42/47)<div class="ch-bar"><div class="ch-fill" style="width:89%; background:var(--success)"></div></div></div>
+          <div>83% (39/47)</div>
+        </div>
+        <div class="cohort-row">
+          <div><b>Apr 5</b><div style="color:var(--fg-muted); font-size:11.5px">12 promoted</div></div>
+          <div>12<div class="ch-bar"><div class="ch-fill" style="width:12%"></div></div></div>
+          <div>67% (8/12)<div class="ch-bar"><div class="ch-fill" style="width:67%; background:var(--warning)"></div></div></div>
+          <div>50% (6/12)</div>
+        </div>
+        <div class="cohort-row">
+          <div><b>Mar 29</b><div style="color:var(--fg-muted); font-size:11.5px">9 promoted</div></div>
+          <div>9<div class="ch-bar"><div class="ch-fill" style="width:9%"></div></div></div>
+          <div>56% (5/9)<div class="ch-bar"><div class="ch-fill" style="width:56%; background:var(--warning)"></div></div></div>
+          <div>33% (3/9)</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="card" style="padding:0; overflow:hidden">
+            <div class="card-h" style="padding:14px 18px 6px"><h2>Waitlist queue · 247 waiting</h2><span style="font-size:12px; color:var(--fg-muted)">drag rows to reorder</span></div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th style="width:34px">#</th>
+                    <th>Person</th>
+                    <th>Email</th>
+                    <th>Signed up</th>
+                    <th>Confirmed</th>
+                    <th>Waiting</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><b>1</b></td>
+                    <td><div class="row-mini"><div class="av av-2">P</div><div class="rm-text"><div class="rm-name">Priya Singh</div><div class="rm-handle">@priya_arts</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">priya@example.com</span></td>
+                    <td>Apr 14</td>
+                    <td><span class="chip success">✓ confirmed</span></td>
+                    <td><b>12d 4h</b></td>
+                    <td>
+                      <div style="display:flex; gap:4px">
+                        <button class="btn btn-success btn-xs ro-hide-write" onclick="alert('Mockup — promote single')">Promote</button>
+                        <button class="iconbtn ro-hide-write" title="Move to top"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><div class="row-mini"><div class="av av-3">T</div><div class="rm-text"><div class="rm-name">Tom Reyes</div><div class="rm-handle">@tom_r</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">tom.reyes@example.com</span></td>
+                    <td>Apr 14</td>
+                    <td><span class="chip success">✓ confirmed</span></td>
+                    <td>11d 23h</td>
+                    <td><button class="btn btn-success btn-xs ro-hide-write" onclick="alert('Mockup — promote single')">Promote</button></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><div class="row-mini"><div class="av">M</div><div class="rm-text"><div class="rm-name">Marie Lefèvre</div><div class="rm-handle">@m_lefevre</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">marie@example.com</span></td>
+                    <td>Apr 14</td>
+                    <td><span class="chip warn">unconfirmed</span></td>
+                    <td>11d 22h</td>
+                    <td>
+                      <div style="display:flex; gap:4px">
+                        <button class="btn btn-ghost btn-xs ro-hide-write" onclick="alert('Mockup — resend email')">Resend</button>
+                        <button class="iconbtn ro-hide-write" title="Remove from waitlist"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td><div class="row-mini"><div class="av av-4">J</div><div class="rm-text"><div class="rm-name">Jin Watanabe</div><div class="rm-handle">@jin_w</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">jin@example.com</span></td>
+                    <td>Apr 15</td>
+                    <td><span class="chip success">✓ confirmed</span></td>
+                    <td>10d 8h</td>
+                    <td><button class="btn btn-success btn-xs ro-hide-write">Promote</button></td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td><div class="row-mini"><div class="av av-5">B</div><div class="rm-text"><div class="rm-name">Bea Costa</div><div class="rm-handle">@bea_costa</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">bea@example.com</span></td>
+                    <td>Apr 15</td>
+                    <td><span class="chip success">✓ confirmed</span></td>
+                    <td>10d 6h</td>
+                    <td><button class="btn btn-success btn-xs ro-hide-write">Promote</button></td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td><div class="row-mini"><div class="av av-6">R</div><div class="rm-text"><div class="rm-name">Ruth Marin</div><div class="rm-handle">@r_marin</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">ruth@example.com</span></td>
+                    <td>Apr 16</td>
+                    <td><span class="chip success">✓ confirmed</span></td>
+                    <td>9d 11h</td>
+                    <td><button class="btn btn-success btn-xs ro-hide-write">Promote</button></td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td><div class="row-mini"><div class="av av-2">K</div><div class="rm-text"><div class="rm-name">Karim Bakr</div><div class="rm-handle">@karim_b</div></div></div></td>
+                    <td><span style="font-family:var(--font-mono); font-size:12px">karim@example.com</span></td>
+                    <td>Apr 17</td>
+                    <td><span class="chip success">✓ confirmed</span></td>
+                    <td>8d 4h</td>
+                    <td><button class="btn btn-success btn-xs ro-hide-write">Promote</button></td>
+                  </tr>
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:16px; color:var(--fg-muted); font-size:12.5px"><b>240 more</b> · scroll within table or paginate · <a href="#" style="color:var(--brand-primary)">view all</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card-h" style="margin-bottom:6px"><h2 style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-subtle)">Email previews</h2></div>
+          <div style="display:flex; gap:8px; margin-bottom:8px">
+            <button class="btn btn-primary btn-xs">You're in!</button>
+            <button class="btn btn-ghost btn-xs">7d reminder</button>
+            <button class="btn btn-ghost btn-xs">Final day</button>
+          </div>
+          <div class="email-preview">
+            <div class="ep-h">
+              <div><b>From:</b> hello@tadaify.com</div>
+              <div><b>To:</b> {email}</div>
+              <div><b>Subject:</b> You're in! Claim your handle</div>
+            </div>
+            <div class="ep-body">
+              <h2>You're in! 🎉</h2>
+              <p>Hey {first_name},</p>
+              <p>A spot opened up. Your tadaify handle is reserved for the next <b>72 hours</b>. Click below to set up your page in under 5 minutes.</p>
+              <span class="ep-cta">Claim my handle →</span>
+              <p style="font-size:12px; color:var(--fg-muted); margin-top:14px">If you don't claim within 72 hours, your spot rotates to the next person. We'll send one reminder before that happens.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — MAINTENANCE
+         ===================================================== -->
+    <section class="pane" id="pane-maintenance">
+      <div class="page-head">
+        <div>
+          <h1>Maintenance mode</h1>
+          <div class="sub">Take the app offline for non-admin users. Admins continue to see the dashboard. Stored in <code style="font-family:var(--font-mono); font-size:12px; color:var(--fg-muted); background:var(--bg-muted); padding:1px 5px; border-radius:4px">app_settings.maintenance</code>.</div>
+        </div>
+      </div>
+
+      <div class="maint-hero" id="maint-hero">
+        <div class="mh-status" id="maint-icon" style="position:relative">✓</div>
+        <div class="mh-text">
+          <div class="mh-title" id="maint-status-text">Online</div>
+          <div class="mh-sub" id="maint-sub">All users have full access. Toggle ON to take the app offline for non-admin users.</div>
+        </div>
+        <div class="mh-toggle">
+          <button class="toggle toggle-lg toggle-danger ro-disable" id="maint-toggle" onclick="toggleMaint()" aria-label="Toggle maintenance mode"></button>
+        </div>
+      </div>
+
+      <div id="countdown-row" style="display:none; margin-top:14px" class="card">
+        <div class="card-h"><h2>Estimated time remaining</h2></div>
+        <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap">
+          <div class="countdown" id="countdown">00:00</div>
+          <div style="font-size:12.5px; color:var(--fg-muted)">Users see this countdown on the maintenance screen.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h2>Configure maintenance window</h2></div>
+        <div style="display:grid; gap:14px">
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Reason (shown to users)</label>
+            <input class="input ro-disable" id="maint-reason" type="text" placeholder="e.g. Database maintenance — back online soon" value="Scheduled database maintenance — performance improvements">
+            <div style="font-size:11px; color:var(--fg-muted); margin-top:4px">This text appears verbatim on the maintenance screen, with markdown rendered.</div>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Duration preset</label>
+            <div class="preset-row">
+              <button class="preset-btn ro-disable" data-min="15" onclick="setPreset(15,this)">15 min</button>
+              <button class="preset-btn ro-disable" data-min="30" onclick="setPreset(30,this)">30 min</button>
+              <button class="preset-btn ro-disable" data-min="60" onclick="setPreset(60,this)">1 hour</button>
+              <button class="preset-btn ro-disable" data-min="120" onclick="setPreset(120,this)">2 hours</button>
+              <button class="preset-btn ro-disable" onclick="document.getElementById('maint-end-input').focus()">Custom…</button>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Estimated end (UTC)</label>
+            <input class="input ro-disable" id="maint-end-input" type="datetime-local" value="2026-04-26T15:00">
+          </div>
+
+          <div class="warning-box ro-disable">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>
+              <b>Heads up.</b> Toggling ON immediately blocks all non-admin sessions. In-flight Stripe checkouts complete (Webhooks are not blocked). Public creator pages return a static maintenance HTML.
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <button class="btn btn-primary ro-hide-write" onclick="alert('Mockup — would write to app_settings.maintenance and broadcast realtime update')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Save changes
+            </button>
+            <button class="btn btn-ghost" onclick="alert('Mockup — would broadcast manual notification to all admin sessions')">Notify admins</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">
+          <h2>History</h2>
+          <span style="font-size:11.5px; color:var(--fg-muted)">last 90 days</span>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Duration</th>
+                <th>Reason</th>
+                <th>Started by</th>
+                <th>Affected users</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span style="font-family:var(--font-mono); font-size:12px">2026-04-12 03:14 UTC</span></td>
+                <td>22m</td>
+                <td>D1 emergency vacuum + index rebuild</td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td>
+                <td>~80 (3am UTC traffic)</td>
+              </tr>
+              <tr>
+                <td><span style="font-family:var(--font-mono); font-size:12px">2026-03-28 21:00 UTC</span></td>
+                <td>1h 04m</td>
+                <td>Migration to Workers Analytics Engine v2</td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td>
+                <td>~340</td>
+              </tr>
+              <tr>
+                <td><span style="font-family:var(--font-mono); font-size:12px">2026-02-15 19:00 UTC</span></td>
+                <td>30m</td>
+                <td>Stripe webhook secret rotation</td>
+                <td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td>
+                <td>~120</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h2>CLI fallback</h2><span style="font-size:11.5px; color:var(--fg-muted)">if the admin panel itself is unreachable</span></div>
+        <div style="font-family:var(--font-mono); font-size:12px; background:#0B0F1E; color:#E2E8F0; padding:14px 16px; border-radius:9px; line-height:1.6; overflow-x:auto">
+<span style="color:#6B7280">-- Direct database fallback (psql or Supabase MCP read-only sql)</span><br>
+<span style="color:#93C5FD">UPDATE</span> app_settings<br>
+&nbsp;&nbsp;&nbsp;<span style="color:#93C5FD">SET</span> value = <span style="color:#86EFAC">'{"enabled":true,"started_at":"2026-04-26T14:30Z","estimated_end":"2026-04-26T15:00Z","reason":"DB maintenance"}'</span><br>
+&nbsp;&nbsp;<span style="color:#93C5FD">WHERE</span> key = <span style="color:#86EFAC">'maintenance'</span>;
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — MODERATION
+         ===================================================== -->
+    <section class="pane" id="pane-moderation">
+      <div class="page-head">
+        <div>
+          <h1>Content moderation</h1>
+          <div class="sub">Review reports against creator pages. Take down, warn, suspend, or dismiss.</div>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would open ToS reference')">View ToS rules</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr))">
+        <div class="kpi"><div class="kpi-label">Open reports</div><div class="kpi-num" style="color:var(--danger)">3</div><div class="kpi-foot">oldest: 23m ago</div></div>
+        <div class="kpi"><div class="kpi-label">Resolved (7d)</div><div class="kpi-num">12</div><div class="kpi-foot">avg time: 2.4h</div></div>
+        <div class="kpi"><div class="kpi-label">Take-downs (30d)</div><div class="kpi-num">4</div><div class="kpi-foot">2 spam · 1 NSFW · 1 IP</div></div>
+        <div class="kpi"><div class="kpi-label">Suspensions (30d)</div><div class="kpi-num">2</div><div class="kpi-foot">repeat offenders</div></div>
+      </div>
+
+      <div class="filters">
+        <div class="search-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input" type="search" placeholder="Search by handle or reporter…">
+        </div>
+        <select class="input">
+          <option>All states</option><option>Open</option><option>Resolved</option><option>Dismissed</option>
+        </select>
+        <select class="input">
+          <option>All reasons</option><option>Spam</option><option>Abuse / harassment</option><option>NSFW</option><option>Illegal</option><option>Copyright (DMCA)</option><option>Other</option>
+        </select>
+        <select class="input">
+          <option>Sort: oldest first</option><option>Newest first</option><option>Most reports</option>
+        </select>
+      </div>
+
+      <!-- Inbox: 3 open reports -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h"><h2>Inbox · 3 open</h2></div>
+
+        <div style="border:1px solid var(--border); border-radius:11px; padding:14px 16px; margin-bottom:10px" data-row="r1">
+          <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap">
+            <div class="row-mini" style="min-width:200px"><div class="av av-2">L</div><div class="rm-text"><div class="rm-name">@lukas_b · "Get rich crypto"</div><div class="rm-handle">tadaify.com/lukas_b</div></div></div>
+            <div style="flex:1; min-width:240px">
+              <div style="font-size:13px; line-height:1.5">
+                <span class="chip danger">4 reports</span>
+                <span class="chip warn">spam</span>
+                <span style="margin-left:8px; color:var(--fg-muted); font-size:12px">First report: 23m ago · most recent: 4m ago</span>
+              </div>
+              <div style="font-size:13px; margin-top:6px">
+                <b>Reporter notes:</b> "Page links to a crypto ponzi", "Same scam I saw on TikTok", "Promotes a fake giveaway", "Bot-like behaviour"
+              </div>
+            </div>
+            <div class="mod-actions" style="display:flex; gap:6px; flex-wrap:wrap">
+              <button class="btn btn-danger btn-sm ro-hide-write" onclick="takeDownReport(this.closest('[data-row]'),'lukas_b','spam')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                Take down
+              </button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would suspend creator')">Suspend creator</button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would issue warning')">Warn</button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="dismissReport(this.closest('[data-row]'))">Not violating</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would open page preview in new tab')">Preview page ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border); border-radius:11px; padding:14px 16px; margin-bottom:10px" data-row="r2">
+          <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap">
+            <div class="row-mini" style="min-width:200px"><div class="av av-3">G</div><div class="rm-text"><div class="rm-name">@gym_results · "Lose 30lbs"</div><div class="rm-handle">tadaify.com/gym_results</div></div></div>
+            <div style="flex:1; min-width:240px">
+              <div style="font-size:13px; line-height:1.5">
+                <span class="chip warn">2 reports</span>
+                <span class="chip danger">copyright (DMCA)</span>
+                <span style="margin-left:8px; color:var(--fg-muted); font-size:12px">First report: 1h 4m ago</span>
+              </div>
+              <div style="font-size:13px; margin-top:6px">
+                <b>Reporter notes:</b> "Uses my workout video without permission" — DMCA notice attached, valid signature.
+              </div>
+            </div>
+            <div class="mod-actions" style="display:flex; gap:6px; flex-wrap:wrap">
+              <button class="btn btn-danger btn-sm ro-hide-write" onclick="takeDownReport(this.closest('[data-row]'),'gym_results','copyright (DMCA)')">Take down (DMCA)</button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would request counter-notice')">Counter-notice</button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would view DMCA PDF')">View notice ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border); border-radius:11px; padding:14px 16px" data-row="r3">
+          <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap">
+            <div class="row-mini" style="min-width:200px"><div class="av av-4">F</div><div class="rm-text"><div class="rm-name">@fashion_alert</div><div class="rm-handle">tadaify.com/fashion_alert</div></div></div>
+            <div style="flex:1; min-width:240px">
+              <div style="font-size:13px; line-height:1.5">
+                <span class="chip">1 report</span>
+                <span class="chip">other</span>
+                <span style="margin-left:8px; color:var(--fg-muted); font-size:12px">2h 18m ago</span>
+              </div>
+              <div style="font-size:13px; margin-top:6px">
+                <b>Reporter note:</b> "Bio claims to be a verified celebrity but is impersonating @realfashionalert"
+              </div>
+            </div>
+            <div class="mod-actions" style="display:flex; gap:6px; flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would escalate to legal review')">Escalate to legal</button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would request ID verification')">Request ID</button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="dismissReport(this.closest('[data-row]'))">Not violating</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-h"><h2>Take-down history · last 30 days</h2></div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr><th>When</th><th>Page</th><th>Reason</th><th>Reviewer</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span style="font-family:var(--font-mono); font-size:12px">Apr 24 14:08</span></td><td>@spam_drop_22</td><td><span class="chip warn">spam</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td></tr>
+                <tr><td><span style="font-family:var(--font-mono); font-size:12px">Apr 18 09:42</span></td><td>@nsfw_acc_4</td><td><span class="chip danger">NSFW</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td></tr>
+                <tr><td><span style="font-family:var(--font-mono); font-size:12px">Apr 12 18:11</span></td><td>@dance_remix_pro</td><td><span class="chip danger">copyright</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td></tr>
+                <tr><td><span style="font-family:var(--font-mono); font-size:12px">Apr 03 11:27</span></td><td>@phish_login</td><td><span class="chip warn">spam</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h2>Repeat offenders</h2></div>
+          <div style="font-size:12.5px; color:var(--fg-muted); margin-bottom:8px">Creators with ≥2 ToS violations in 90d.</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="display:flex; gap:10px; align-items:center; padding:10px; border:1px solid var(--border); border-radius:9px">
+              <div class="row-mini" style="flex:1"><div class="av av-3">D</div><div class="rm-text"><div class="rm-name">@dance_captain</div><div class="rm-handle">3 violations · last: today</div></div></div>
+              <span class="chip danger">Suspended</span>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; padding:10px; border:1px solid var(--border); border-radius:9px">
+              <div class="row-mini" style="flex:1"><div class="av av-2">L</div><div class="rm-text"><div class="rm-name">@lukas_b</div><div class="rm-handle">2 violations · last: 23m ago</div></div></div>
+              <span class="chip warn">Active</span>
+            </div>
+          </div>
+          <div class="empty" style="margin-top:14px; padding:18px 12px">
+            <div class="em-ico">✓</div>
+            <div class="em-title" style="font-size:14px">Mostly quiet</div>
+            <div class="em-sub">Only 2 repeat offenders in the last 90 days.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — LEGAL  (#5 F-LEGAL-002 + #6 F-LEGAL-003)
+         ===================================================== -->
+    <section class="pane" id="pane-legal">
+      <div class="page-head">
+        <div>
+          <h1>Legal versioning</h1>
+          <div class="sub">Publish ToS / Privacy policy revisions. Force re-acceptance when material changes apply. Per <a href="https://github.com/graspsoftwarepw/tadaify-app/issues/5" target="_blank" style="color:var(--brand-primary); text-decoration:underline">#5 F-LEGAL-002</a> and <a href="https://github.com/graspsoftwarepw/tadaify-app/issues/6" target="_blank" style="color:var(--brand-primary); text-decoration:underline">#6 F-LEGAL-003</a>.</div>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-primary btn-sm ro-hide-write" onclick="openModal('modal-publish-legal')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Publish new version
+          </button>
+        </div>
+      </div>
+
+      <!-- Current versions -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-h">
+            <h2>Terms of service</h2>
+            <span class="chip success">Live</span>
+          </div>
+          <div style="font-size:14px; line-height:1.6">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px"><b>Version v3.3</b><span style="font-family:var(--font-mono); color:var(--fg-muted); font-size:12px">tos-v3.3</span></div>
+            <div style="font-size:12.5px; color:var(--fg-muted)">Effective <b>2026-02-18</b> · 67 days live · published by founder@</div>
+            <div style="margin-top:10px; padding:10px; background:var(--bg-muted); border-radius:8px">
+              <div style="display:flex; justify-content:space-between; font-size:12.5px"><span>Acceptance</span><b style="color:var(--success)">98.4%</b></div>
+              <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin:6px 0 4px"><div style="width:98.4%; height:100%; background:var(--success)"></div></div>
+              <div style="font-size:11px; color:var(--fg-muted)">833 of 847 active users · 14 on previous version</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would open ToS preview')">View live</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would download v3.3.md')">Download MD</button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would view all acceptances')">Acceptances</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h2>Privacy policy</h2>
+            <span class="chip success">Live</span>
+          </div>
+          <div style="font-size:14px; line-height:1.6">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px"><b>Version v2.1</b><span style="font-family:var(--font-mono); color:var(--fg-muted); font-size:12px">pp-v2.1</span></div>
+            <div style="font-size:12.5px; color:var(--fg-muted)">Effective <b>2025-12-01</b> · 146 days live · published by founder@</div>
+            <div style="margin-top:10px; padding:10px; background:var(--bg-muted); border-radius:8px">
+              <div style="display:flex; justify-content:space-between; font-size:12.5px"><span>Acceptance</span><b style="color:var(--success)">100%</b></div>
+              <div style="height:6px; background:var(--bg-sunken); border-radius:99px; overflow:hidden; margin:6px 0 4px"><div style="width:100%; height:100%; background:var(--success)"></div></div>
+              <div style="font-size:11px; color:var(--fg-muted)">847 of 847 active users · cookieless analytics described in §3</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm">View live</button>
+            <button class="btn btn-ghost btn-sm">Download MD</button>
+            <button class="btn btn-ghost btn-sm">Acceptances</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drafts -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h">
+          <h2>Drafts · 1 pending review</h2>
+          <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would create new draft')">+ New draft</button>
+        </div>
+        <div style="border:1px solid var(--border); border-radius:11px; padding:14px 16px">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:600; font-size:14px">ToS v3.4 — refund policy clarifications</div>
+              <div style="font-size:12px; color:var(--fg-muted); margin-top:3px"><span style="font-family:var(--font-mono)">tos-v3.4-draft</span> · last edited 2h ago by founder@</div>
+              <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
+                <span class="chip warn">Material change</span>
+                <span class="chip">3 sections modified</span>
+                <span class="chip">+ §7.4 added</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('legal-diff').scrollIntoView({behavior:'smooth'})">View diff</button>
+              <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would open editor')">Edit draft</button>
+              <button class="btn btn-primary btn-sm ro-hide-write" onclick="openModal('modal-publish-legal')">Publish</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diff preview -->
+      <div class="card" id="legal-diff" style="margin-top:16px">
+        <div class="card-h">
+          <h2>Diff preview · v3.3 → v3.4</h2>
+          <div style="font-size:11.5px; color:var(--fg-muted)"><span style="color:var(--success)">+12 lines</span> · <span style="color:var(--danger)">−4 lines</span></div>
+        </div>
+        <div class="diff-grid">
+          <div class="diff-side">
+            <h5>v3.3 — currently live</h5>
+            <div class="diff-line">§7.3 — Refunds are issued at our sole discretion.</div>
+            <div class="diff-line rem">No automatic refunds outside the 14-day cool-off period.</div>
+            <div class="diff-line">Subscriptions cancel at end of billing period.</div>
+            <div class="diff-line"></div>
+            <div class="diff-line">§8 — Termination of account.</div>
+          </div>
+          <div class="diff-side">
+            <h5>v3.4 — proposed</h5>
+            <div class="diff-line">§7.3 — Refunds are issued at our sole discretion.</div>
+            <div class="diff-line add">If a service outage exceeds 4 hours in a billing cycle, you may request a pro-rated refund within 30 days.</div>
+            <div class="diff-line">Subscriptions cancel at end of billing period.</div>
+            <div class="diff-line add">§7.4 — Service-credit policy. Outages between 1-4 hours grant a service-credit equal to 1/30 of the current month's fee, applied to the next invoice automatically.</div>
+            <div class="diff-line">§8 — Termination of account.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Past versions -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h2>Version history</h2></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Version</th><th>Kind</th><th>Effective</th><th>Days live</th><th>Forced re-acceptance?</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>v3.3</b></td><td>ToS</td><td>2026-02-18</td><td>67 (current)</td><td>Yes — Stripe checkout terms</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td>v3.2</td><td>ToS</td><td>2025-11-01</td><td>109</td><td>No</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td>v3.1</td><td>ToS</td><td>2025-08-14</td><td>79</td><td>Yes — GDPR clarification</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td><b>v2.1</b></td><td>PP</td><td>2025-12-01</td><td>146 (current)</td><td>Yes — cookieless analytics §3</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+              <tr><td>v2.0</td><td>PP</td><td>2025-06-22</td><td>162</td><td>Yes — initial</td><td><button class="btn btn-ghost btn-xs">View</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — HEALTH
+         ===================================================== -->
+    <section class="pane" id="pane-health">
+      <div class="page-head">
+        <div>
+          <h1>System health</h1>
+          <div class="sub">Live status of every backing service · last check: 12s ago · auto-refresh 30s</div>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would re-run all health checks')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Re-check all
+          </button>
+        </div>
+      </div>
+
+      <!-- Service grid -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h"><h2>Services · 7/7 healthy</h2></div>
+        <div class="svc-grid">
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">Cloudflare Workers</div><div class="svc-meta">142ms p95 · 0.04% errors</div></div><a class="svc-link" href="https://www.cloudflarestatus.com/" target="_blank" title="Status page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">D1 (Cloudflare)</div><div class="svc-meta">8.4ms p95 · 0% errors</div></div><a class="svc-link" href="#" title="Status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">Workers Analytics Engine</div><div class="svc-meta">events/s: 47 · 0% drops</div></div><a class="svc-link" href="#" title="Status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">R2 (object storage)</div><div class="svc-meta">12ms p95 · 0.01% errors</div></div><a class="svc-link" href="#" title="Status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">Supabase (auth + RLS)</div><div class="svc-meta">38ms p95 · 0.02% errors</div></div><a class="svc-link" href="https://status.supabase.com" target="_blank" title="Status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">Stripe (payments)</div><div class="svc-meta">192ms p95 · webhook lag 1.2s</div></div><a class="svc-link" href="https://status.stripe.com" target="_blank" title="Status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot green"></div><div class="svc-text"><div class="svc-name">Resend (email)</div><div class="svc-meta">delivery 99.7% · bounce 0.3%</div></div><a class="svc-link" href="https://status.resend.com" target="_blank" title="Status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/></svg></a></div>
+          <div class="svc-card"><div class="svc-dot yellow"></div><div class="svc-text"><div class="svc-name">Cloudflare for SaaS</div><div class="svc-meta">6 domains pending SSL</div></div><a class="svc-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/></svg></a></div>
+        </div>
+      </div>
+
+      <!-- Live traffic -->
+      <div class="two-col">
+        <section class="chart-shell">
+          <div class="card-h">
+            <div>
+              <h2 style="font-size:14px; font-weight:600; text-transform:none; letter-spacing:0; color:var(--fg); margin:0">Requests / sec</h2>
+              <div class="card-sub" style="margin-top:2px">Last 60 minutes · sampled at 10s</div>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:18px; color:var(--brand-primary); font-weight:600">342<span style="font-size:11px; color:var(--fg-muted); font-weight:400">/sec</span></div>
+          </div>
+          <div class="chart-canvas">
+            <svg viewBox="0 0 800 180" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="grad-rps" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#6366F1" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <g stroke="rgba(156,163,175,0.18)" stroke-dasharray="3 4" stroke-width="1">
+                <line x1="40" y1="40" x2="780" y2="40"/>
+                <line x1="40" y1="90" x2="780" y2="90"/>
+                <line x1="40" y1="140" x2="780" y2="140"/>
+              </g>
+              <g font-family="Inter" font-size="9" fill="#9CA3AF">
+                <text x="34" y="44" text-anchor="end">500</text>
+                <text x="34" y="94" text-anchor="end">250</text>
+                <text x="34" y="144" text-anchor="end">0</text>
+              </g>
+              <path d="M 60,90 L 80,84 L 100,72 L 120,80 L 140,76 L 160,82 L 180,68 L 200,72 L 220,60 L 240,68 L 260,56 L 280,52 L 300,60 L 320,68 L 340,72 L 360,84 L 380,76 L 400,68 L 420,72 L 440,80 L 460,76 L 480,68 L 500,72 L 520,80 L 540,76 L 560,68 L 580,72 L 600,76 L 620,80 L 640,72 L 660,68 L 680,72 L 700,76 L 720,68 L 720,150 L 60,150 Z" fill="url(#grad-rps)"/>
+              <path d="M 60,90 L 80,84 L 100,72 L 120,80 L 140,76 L 160,82 L 180,68 L 200,72 L 220,60 L 240,68 L 260,56 L 280,52 L 300,60 L 320,68 L 340,72 L 360,84 L 380,76 L 400,68 L 420,72 L 440,80 L 460,76 L 480,68 L 500,72 L 520,80 L 540,76 L 560,68 L 580,72 L 600,76 L 620,80 L 640,72 L 660,68 L 680,72 L 700,76 L 720,68" fill="none" stroke="#6366F1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </section>
+
+        <section class="chart-shell">
+          <div class="card-h">
+            <div>
+              <h2 style="font-size:14px; font-weight:600; text-transform:none; letter-spacing:0; color:var(--fg); margin:0">Error rate</h2>
+              <div class="card-sub" style="margin-top:2px">5xx + 4xx auth failures</div>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:18px; color:var(--success); font-weight:600">0.04<span style="font-size:11px; color:var(--fg-muted); font-weight:400">%</span></div>
+          </div>
+          <div class="chart-canvas">
+            <svg viewBox="0 0 800 180" preserveAspectRatio="none">
+              <g stroke="rgba(156,163,175,0.18)" stroke-dasharray="3 4" stroke-width="1">
+                <line x1="40" y1="40" x2="780" y2="40"/>
+                <line x1="40" y1="90" x2="780" y2="90"/>
+                <line x1="40" y1="140" x2="780" y2="140"/>
+              </g>
+              <g font-family="Inter" font-size="9" fill="#9CA3AF">
+                <text x="34" y="44" text-anchor="end">1.0%</text>
+                <text x="34" y="94" text-anchor="end">0.5%</text>
+                <text x="34" y="144" text-anchor="end">0%</text>
+              </g>
+              <path d="M 60,140 L 100,138 L 140,142 L 180,138 L 220,134 L 260,140 L 300,138 L 340,128 L 380,108 L 420,124 L 460,138 L 500,140 L 540,138 L 580,140 L 620,138 L 660,142 L 700,140 L 720,142" fill="none" stroke="#10B981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="380" cy="108" r="3.5" fill="#F59E0B" stroke="#fff" stroke-width="1.5"/>
+              <text x="380" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#F59E0B" font-weight="700">spike (Stripe webhook)</text>
+            </svg>
+          </div>
+        </section>
+      </div>
+
+      <!-- Recent errors -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h2>Recent errors · last 24h</h2><span style="font-size:12px; color:var(--fg-muted)">grouped by message · 3 distinct</span></div>
+        <div class="err-row">
+          <div class="er-msg" title="POST /api/stripe/webhook — Invalid signature on event evt_3K8jX (idempotency conflict)">POST /api/stripe/webhook — Invalid signature on event evt_3K8jX</div>
+          <div class="er-count">12</div>
+          <div class="er-time">14m ago</div>
+        </div>
+        <div class="err-row">
+          <div class="er-msg" title="GET /api/page/{handle}/blocks — D1 timeout after 5s on handle 'crypto_alpha_xxx_long_handle_test'">GET /api/page/{handle}/blocks — D1 timeout after 5s</div>
+          <div class="er-count">3</div>
+          <div class="er-time">1h 8m ago</div>
+        </div>
+        <div class="err-row">
+          <div class="er-msg" title="POST /api/auth/signup — Resend 429 rate-limit (back-off)">POST /api/auth/signup — Resend 429 rate-limit</div>
+          <div class="er-count">2</div>
+          <div class="er-time">3h 22m ago</div>
+        </div>
+      </div>
+
+      <!-- Latency p95 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h2>Latency by endpoint · p95 last hour</h2></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Endpoint</th><th style="text-align:right">RPM</th><th style="text-align:right">p50</th><th style="text-align:right">p95</th><th style="text-align:right">p99</th><th style="text-align:right">Errors</th></tr></thead>
+            <tbody>
+              <tr><td><span style="font-family:var(--font-mono); font-size:12px">GET /:handle</span></td><td style="text-align:right">14,820</td><td style="text-align:right">28ms</td><td style="text-align:right">142ms</td><td style="text-align:right">312ms</td><td style="text-align:right; color:var(--success)">0.01%</td></tr>
+              <tr><td><span style="font-family:var(--font-mono); font-size:12px">POST /api/click/track</span></td><td style="text-align:right">8,144</td><td style="text-align:right">12ms</td><td style="text-align:right">38ms</td><td style="text-align:right">94ms</td><td style="text-align:right; color:var(--success)">0%</td></tr>
+              <tr><td><span style="font-family:var(--font-mono); font-size:12px">GET /app/dashboard</span></td><td style="text-align:right">1,288</td><td style="text-align:right">62ms</td><td style="text-align:right">218ms</td><td style="text-align:right">524ms</td><td style="text-align:right; color:var(--success)">0.02%</td></tr>
+              <tr><td><span style="font-family:var(--font-mono); font-size:12px">POST /api/auth/signup</span></td><td style="text-align:right">12</td><td style="text-align:right">340ms</td><td style="text-align:right">820ms</td><td style="text-align:right">1.4s</td><td style="text-align:right; color:var(--warning)">0.16%</td></tr>
+              <tr><td><span style="font-family:var(--font-mono); font-size:12px">POST /api/stripe/webhook</span></td><td style="text-align:right">186</td><td style="text-align:right">88ms</td><td style="text-align:right">192ms</td><td style="text-align:right">408ms</td><td style="text-align:right; color:var(--warning)">6.4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — AUDIT LOG
+         ===================================================== -->
+    <section class="pane" id="pane-audit">
+      <div class="page-head">
+        <div>
+          <h1>Audit log</h1>
+          <div class="sub">Every admin action is recorded here. Insert-only · never deletable · 90-day rolling retention then archived.</div>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="search-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input" type="search" placeholder="Search by actor email, target handle, or action…">
+        </div>
+        <select class="input">
+          <option>All actors</option><option>founder@tadaify.com</option><option>System</option>
+        </select>
+        <select class="input">
+          <option>All time</option><option>Today</option><option>Last 7 days</option><option>Last 30 days</option><option>Custom…</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; align-items:center">
+        <span style="font-size:11.5px; color:var(--fg-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em">Type</span>
+        <div class="seg-tabs">
+          <button class="active" data-kind="all" onclick="audSeg(this)">All <span style="color:var(--fg-muted)">· 1,247</span></button>
+          <button data-kind="user" onclick="audSeg(this)">User actions</button>
+          <button data-kind="settings" onclick="audSeg(this)">Settings</button>
+          <button data-kind="legal" onclick="audSeg(this)">Legal</button>
+          <button data-kind="moderation" onclick="audSeg(this)">Moderation</button>
+          <button data-kind="impersonation" onclick="audSeg(this)">Impersonations</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th class="sortable sorted-desc" onclick="sortBy(this)">When (UTC) <span class="sort-arrow">▼</span></th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Detail</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody">
+              <tr data-kind="user"><td><span style="font-family:var(--font-mono); font-size:12px">14:32:08</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip warn">user.suspend</span></td><td>@dance_captain</td><td><a href="#" style="color:var(--brand-primary)">view diff</a> · "ToS §4.2 violation"</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="settings"><td><span style="font-family:var(--font-mono); font-size:12px">14:18:52</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip info">waitlist.promote</span></td><td>14 users</td><td>oldest 14 of 247 · email queued</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="user"><td><span style="font-family:var(--font-mono); font-size:12px">14:12:14</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip">user.tier_comp</span></td><td>@maya_creates</td><td>Free → Pro · 1 month · reason: "PH winner"</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="moderation"><td><span style="font-family:var(--font-mono); font-size:12px">13:42:08</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip danger">page.takedown</span></td><td>tadaify.com/spam_drop_22</td><td>spam · 5 reports · auto-flag</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="impersonation"><td><span style="font-family:var(--font-mono); font-size:12px">12:08:51</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip warn">user.impersonate.start</span></td><td>@chris_h</td><td>support ticket #1284 — domain pending</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="impersonation"><td><span style="font-family:var(--font-mono); font-size:12px">12:14:32</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip">user.impersonate.end</span></td><td>@chris_h</td><td>duration: 5m 41s</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="settings"><td><span style="font-family:var(--font-mono); font-size:12px">11:58:14</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip info">settings.cap.update</span></td><td>app_settings.cap</td><td>900 → 1000</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="user"><td><span style="font-family:var(--font-mono); font-size:12px">11:32:19</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip danger">user.refund</span></td><td>@nina_food</td><td>Stripe ch_3X9 · $5.00 · "duplicate charge"</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="legal"><td><span style="font-family:var(--font-mono); font-size:12px">10:14:08</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip">legal.draft.create</span></td><td>tos-v3.4-draft</td><td>3 sections modified · §7.4 added</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="settings"><td><span style="font-family:var(--font-mono); font-size:12px">Apr 25 22:18</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip warn">maintenance.toggle</span></td><td>app_settings.maintenance</td><td>OFF · session: 22m · DB vacuum</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="user"><td><span style="font-family:var(--font-mono); font-size:12px">Apr 25 18:42</span></td><td><span style="font-family:var(--font-mono); font-size:12px">founder@</span></td><td><span class="chip danger">user.hard_delete</span></td><td>@former_user_x</td><td>type-to-confirm passed · cascade: 47 rows</td><td><span style="font-family:var(--font-mono); font-size:11px">82.139.x.x</span></td></tr>
+              <tr data-kind="user"><td><span style="font-family:var(--font-mono); font-size:12px">Apr 25 14:08</span></td><td><span style="font-family:var(--font-mono); font-size:12px">System</span></td><td><span class="chip">user.signup</span></td><td>@dev_lab</td><td>cap available · auto-promoted</td><td><span style="font-family:var(--font-mono); font-size:11px">—</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:11px 14px; border-top:1px solid var(--border); font-size:12.5px; color:var(--fg-muted); flex-wrap:wrap; gap:8px">
+          <div>Showing <b style="color:var(--fg)">12</b> of <b style="color:var(--fg)">1,247</b> entries</div>
+          <div style="display:flex; gap:5px; align-items:center">
+            <button class="btn btn-ghost btn-xs" disabled>← Prev</button>
+            <button class="btn btn-primary btn-xs">1</button>
+            <button class="btn btn-ghost btn-xs">2</button>
+            <button class="btn btn-ghost btn-xs">3</button>
+            <span>…</span>
+            <button class="btn btn-ghost btn-xs">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>The audit log is <b>insert-only</b>. No admin — including super-admins — can DELETE or UPDATE rows. The DB enforces this with a trigger that raises on UPDATE/DELETE. Compliance reviewers can request the full archive via legal@tadaify.com.</span>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
+         PANE — OVERVIEW
+         ===================================================== -->
+    <section class="pane active" id="pane-overview">
+      <div class="page-head">
+        <div>
+          <h1>Overview</h1>
+          <div class="sub">tadaify operations · Saturday, April 26 2026 · 14:32 UTC</div>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would refresh KPIs from D1 + WAE')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+          <button class="btn btn-primary btn-sm ro-disable" onclick="openModal('modal-event')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Log custom event
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI ROW (7 tiles) -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Total creators</div>
+          <div class="kpi-num">847</div>
+          <span class="kpi-delta up">▲ 23</span>
+          <div class="kpi-foot">+23 last 7d</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Active subs</div>
+          <div class="kpi-num">312</div>
+          <span class="kpi-delta up">▲ 4.1%</span>
+          <div class="kpi-foot">36.8% paid ratio</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">MRR</div>
+          <div class="kpi-num">$4,184<span class="kpi-suffix">/mo</span></div>
+          <span class="kpi-delta up">▲ 8.2%</span>
+          <div class="kpi-foot">$50.2k ARR run-rate</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Churn (30d)</div>
+          <div class="kpi-num">2.1<span class="kpi-suffix">%</span></div>
+          <span class="kpi-delta down">▼ 0.4pp</span>
+          <div class="kpi-foot">7 cancels last 30d</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Signups today</div>
+          <div class="kpi-num">14</div>
+          <span class="kpi-delta up">▲ 6 vs avg</span>
+          <div class="kpi-foot">8.2 daily 30d avg</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Support open</div>
+          <div class="kpi-num">5</div>
+          <span class="kpi-delta flat">2 SLA breach</span>
+          <div class="kpi-foot">oldest: 3d 4h</div>
+        </div>
+        <div class="kpi kpi-status">
+          <div class="ks-ico">✓</div>
+          <div class="ks-text">
+            <div class="ks-title">All systems green</div>
+            <div class="ks-sub">7/7 services healthy</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Left col: charts -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <section class="chart-shell">
+            <div class="card-h">
+              <div>
+                <h2 style="font-size:14px; font-weight:600; text-transform:none; letter-spacing:0; color:var(--fg); margin:0">Daily signups</h2>
+                <div class="card-sub" style="margin-top:2px">Last 30 days · spike on Apr 12 was the Product Hunt launch.</div>
+              </div>
+              <div class="seg-tabs">
+                <button class="active" data-range="30d" onclick="audSeg(this)">30d</button>
+                <button data-range="90d" onclick="audSeg(this)">90d</button>
+                <button data-range="1y" onclick="audSeg(this)">1y</button>
+              </div>
+            </div>
+            <div class="chart-canvas">
+              <svg viewBox="0 0 800 180" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="grad-sign" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#6366F1" stop-opacity="0.30"/>
+                    <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <g stroke="rgba(156,163,175,0.18)" stroke-dasharray="3 4" stroke-width="1">
+                  <line x1="40" y1="30" x2="780" y2="30"/>
+                  <line x1="40" y1="80" x2="780" y2="80"/>
+                  <line x1="40" y1="130" x2="780" y2="130"/>
+                </g>
+                <g font-family="Inter" font-size="9" fill="#9CA3AF">
+                  <text x="34" y="34" text-anchor="end">30</text>
+                  <text x="34" y="84" text-anchor="end">15</text>
+                  <text x="34" y="134" text-anchor="end">0</text>
+                </g>
+                <!-- 30 daily bars-as-area; spike around day 12 (PH launch) -->
+                <path d="M 60,120 L 80,118 L 100,115 L 120,112 L 140,108 L 160,110 L 180,105 L 200,100 L 220,108 L 240,98 L 260,92 L 280,40 L 300,68 L 320,78 L 340,85 L 360,90 L 380,95 L 400,92 L 420,88 L 440,90 L 460,86 L 480,82 L 500,84 L 520,80 L 540,78 L 560,75 L 580,72 L 600,70 L 620,68 L 640,65 L 660,60 L 660,150 L 60,150 Z" fill="url(#grad-sign)"/>
+                <path d="M 60,120 L 80,118 L 100,115 L 120,112 L 140,108 L 160,110 L 180,105 L 200,100 L 220,108 L 240,98 L 260,92 L 280,40 L 300,68 L 320,78 L 340,85 L 360,90 L 380,95 L 400,92 L 420,88 L 440,90 L 460,86 L 480,82 L 500,84 L 520,80 L 540,78 L 560,75 L 580,72 L 600,70 L 620,68 L 640,65 L 660,60" fill="none" stroke="#6366F1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="280" cy="40" r="4.5" fill="#6366F1" stroke="#fff" stroke-width="2"/>
+                <text x="280" y="28" text-anchor="middle" font-family="Inter" font-size="9" fill="#6366F1" font-weight="700">PH launch · 47</text>
+                <g font-family="Inter" font-size="9" fill="#9CA3AF" text-anchor="middle">
+                  <text x="60"  y="170">Mar 27</text>
+                  <text x="240" y="170">Apr 5</text>
+                  <text x="420" y="170">Apr 12</text>
+                  <text x="600" y="170">Apr 19</text>
+                  <text x="660" y="170">Apr 26</text>
+                </g>
+              </svg>
+            </div>
+          </section>
+
+          <section class="chart-shell">
+            <div class="card-h">
+              <div>
+                <h2 style="font-size:14px; font-weight:600; text-transform:none; letter-spacing:0; color:var(--fg); margin:0">MRR growth</h2>
+                <div class="card-sub" style="margin-top:2px">Monthly recurring revenue · last 12 months.</div>
+              </div>
+              <div class="seg-tabs">
+                <button class="active">12m</button>
+                <button>All</button>
+              </div>
+            </div>
+            <div class="chart-canvas">
+              <svg viewBox="0 0 800 180" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="grad-mrr" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#10B981" stop-opacity="0.32"/>
+                    <stop offset="100%" stop-color="#10B981" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <g stroke="rgba(156,163,175,0.18)" stroke-dasharray="3 4" stroke-width="1">
+                  <line x1="40" y1="30" x2="780" y2="30"/>
+                  <line x1="40" y1="80" x2="780" y2="80"/>
+                  <line x1="40" y1="130" x2="780" y2="130"/>
+                </g>
+                <g font-family="Inter" font-size="9" fill="#9CA3AF">
+                  <text x="34" y="34" text-anchor="end">$5k</text>
+                  <text x="34" y="84" text-anchor="end">$2.5k</text>
+                  <text x="34" y="134" text-anchor="end">$0</text>
+                </g>
+                <path d="M 60,148 L 120,142 L 180,136 L 240,128 L 300,118 L 360,108 L 420,98 L 480,86 L 540,76 L 600,62 L 660,52 L 720,40 L 720,150 L 60,150 Z" fill="url(#grad-mrr)"/>
+                <path d="M 60,148 L 120,142 L 180,136 L 240,128 L 300,118 L 360,108 L 420,98 L 480,86 L 540,76 L 600,62 L 660,52 L 720,40" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <g fill="#10B981">
+                  <circle cx="60" cy="148" r="3"/>
+                  <circle cx="180" cy="136" r="3"/>
+                  <circle cx="300" cy="118" r="3"/>
+                  <circle cx="420" cy="98" r="3"/>
+                  <circle cx="540" cy="76" r="3"/>
+                  <circle cx="660" cy="52" r="3"/>
+                  <circle cx="720" cy="40" r="4" stroke="#fff" stroke-width="2"/>
+                </g>
+                <text x="720" y="32" text-anchor="end" font-family="Inter" font-size="10" fill="#10B981" font-weight="700">$4,184</text>
+                <g font-family="Inter" font-size="9" fill="#9CA3AF" text-anchor="middle">
+                  <text x="60"  y="170">May '25</text>
+                  <text x="240" y="170">Aug '25</text>
+                  <text x="420" y="170">Nov '25</text>
+                  <text x="600" y="170">Feb '26</text>
+                  <text x="720" y="170">Apr '26</text>
+                </g>
+              </svg>
+            </div>
+          </section>
+
+          <!-- Tier breakdown -->
+          <div class="card">
+            <div class="card-h"><h2>Tier mix · paying</h2></div>
+            <div style="display:flex; gap:14px; flex-wrap:wrap">
+              <div style="flex:1; min-width:180px">
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px"><span>Creator · $5/mo</span><b>184</b></div>
+                <div style="height:8px; border-radius:99px; background:var(--bg-sunken); overflow:hidden"><div style="width:59%; height:100%; background:#10B981"></div></div>
+                <div style="font-size:11px; color:var(--fg-muted); margin-top:3px">59% · $920/mo</div>
+              </div>
+              <div style="flex:1; min-width:180px">
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px"><span>Pro · $9/mo</span><b>108</b></div>
+                <div style="height:8px; border-radius:99px; background:var(--bg-sunken); overflow:hidden"><div style="width:35%; height:100%; background:#F59E0B"></div></div>
+                <div style="font-size:11px; color:var(--fg-muted); margin-top:3px">35% · $972/mo</div>
+              </div>
+              <div style="flex:1; min-width:180px">
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px"><span>Business · $49/mo</span><b>20</b></div>
+                <div style="height:8px; border-radius:99px; background:var(--bg-sunken); overflow:hidden"><div style="width:6%; height:100%; background:#6366F1"></div></div>
+                <div style="font-size:11px; color:var(--fg-muted); margin-top:3px">6% · $980/mo</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right col: events feed + quick actions -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card">
+            <div class="card-h"><h2>Quick actions</h2></div>
+            <div class="qa-grid">
+              <button class="qa-btn" onclick="showPane('registration', document.querySelector('.adm-nav-item[data-section=registration]'))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                <span>View waitlist<br><span style="font-weight:400; color:var(--fg-muted); font-size:11px">247 in queue</span></span>
+              </button>
+              <button class="qa-btn ro-disable" onclick="showPane('maintenance', document.querySelector('.adm-nav-item[data-section=maintenance]'))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                <span>Maintenance<br><span style="font-weight:400; color:var(--success); font-size:11px">Online</span></span>
+              </button>
+              <button class="qa-btn" onclick="showPane('moderation', document.querySelector('.adm-nav-item[data-section=moderation]'))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Moderation<br><span style="font-weight:400; color:var(--danger); font-size:11px">3 reports</span></span>
+              </button>
+              <button class="qa-btn" onclick="showPane('audit', document.querySelector('.adm-nav-item[data-section=audit]'))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Audit log<br><span style="font-weight:400; color:var(--fg-muted); font-size:11px">last 24h: 47</span></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h">
+              <h2>Recent events</h2>
+              <button class="btn btn-ghost btn-xs" onclick="showPane('audit', document.querySelector('.adm-nav-item[data-section=audit]'))">View all →</button>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico pos">+</div>
+              <div class="fr-text">
+                <div class="fr-title"><b>@maya_creates</b> upgraded to <span class="chip tier-pro">Pro</span></div>
+                <div class="fr-meta">2m ago · +$9 MRR · Stripe sub_K3jX</div>
+              </div>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico info">i</div>
+              <div class="fr-text">
+                <div class="fr-title">14 users promoted from waitlist</div>
+                <div class="fr-meta">12m ago · by founder@tadaify.com</div>
+              </div>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico warn">!</div>
+              <div class="fr-text">
+                <div class="fr-title">Page <b>tadaify.com/lukas_b</b> reported for spam</div>
+                <div class="fr-meta">23m ago · auto-flagged · 4 reports total</div>
+              </div>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico pos">$</div>
+              <div class="fr-text">
+                <div class="fr-title">8 successful Stripe payments processed</div>
+                <div class="fr-meta">42m ago · $94 collected</div>
+              </div>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico neg">×</div>
+              <div class="fr-text">
+                <div class="fr-title"><b>@dance_captain</b> account suspended (ToS violation)</div>
+                <div class="fr-meta">1h 12m ago · by founder@tadaify.com</div>
+              </div>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico info">↗</div>
+              <div class="fr-text">
+                <div class="fr-title">CloudFlare Workers · 1.2M requests this hour</div>
+                <div class="fr-meta">1h 28m ago · p95: 142ms · errors: 0.04%</div>
+              </div>
+            </div>
+            <div class="feed-row">
+              <div class="fr-ico pos">+</div>
+              <div class="fr-text">
+                <div class="fr-title">5 new signups</div>
+                <div class="fr-meta">2h ago · 3 from organic, 2 from referral</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h2>Open support tickets</h2></div>
+            <div style="font-size:13px">
+              <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border)">
+                <div><b>Domain SSL stuck pending</b><div style="font-size:11px; color:var(--fg-muted)">@chris_h · 3d 4h ago</div></div>
+                <span class="chip danger">SLA breach</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border)">
+                <div><b>Stripe webhook missing</b><div style="font-size:11px; color:var(--fg-muted)">@nina_food · 2d 8h ago</div></div>
+                <span class="chip warn">SLA close</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border)">
+                <div>Cannot delete account<div style="font-size:11px; color:var(--fg-muted)">@yuki_p · 11h ago</div></div>
+                <span class="chip">Open</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border)">
+                <div>Refund request<div style="font-size:11px; color:var(--fg-muted)">@dev_lab · 6h ago</div></div>
+                <span class="chip">Open</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:7px 0">
+                <div>Custom domain not loading<div style="font-size:11px; color:var(--fg-muted)">@sea_traveller · 2h ago</div></div>
+                <span class="chip">Open</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Demo toolbar -->
+<div class="demo-toolbar" aria-hidden="true">
+  <div class="dt-label">Demo · viewing as</div>
+  <div class="dt-btns">
+    <button data-role="super" class="is-active" onclick="setRole('super')">Super-admin</button>
+    <button data-role="admin" onclick="setRole('admin')">Admin</button>
+    <button data-role="readonly" onclick="setRole('readonly')">Read-only</button>
+  </div>
+  <div class="dt-tip">Switch role to test which controls are gated. Read-only admins see everything but cannot mutate.</div>
+</div>
+
+<!-- ============================================================
+     MODAL — User detail (centered)
+     ============================================================ -->
+<div class="mb" id="modal-user-detail">
+  <div class="modal modal-lg">
+    <button class="modal-x" onclick="closeModal('modal-user-detail')">×</button>
+    <div class="modal-h">
+      <div style="display:flex; gap:14px; align-items:center">
+        <div class="row-mini" style="gap:12px">
+          <div class="av" id="ud-av" style="width:46px; height:46px; font-size:19px">M</div>
+          <div>
+            <h3 id="ud-name" style="margin:0">Maya Chen</h3>
+            <div style="font-size:13px; color:var(--fg-muted); margin-top:2px"><span id="ud-handle" style="font-family:var(--font-mono)">@maya_creates</span> · <span class="chip tier-pro" id="ud-tier" style="margin-left:4px">Pro</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="ud-grid">
+        <div class="ud-section">
+          <h4>Account</h4>
+          <div class="ud-row"><span class="ud-k">Email</span><span class="ud-v" id="ud-email">maya@example.com</span></div>
+          <div class="ud-row"><span class="ud-k">Signup</span><span class="ud-v">2026-01-12</span></div>
+          <div class="ud-row"><span class="ud-k">Last active</span><span class="ud-v">2m ago</span></div>
+          <div class="ud-row"><span class="ud-k">User ID</span><span class="ud-v" style="font-size:11px">usr_K7zX9p</span></div>
+          <div class="ud-row"><span class="ud-k">Status</span><span class="ud-v"><span class="chip success">Active</span></span></div>
+        </div>
+        <div class="ud-section">
+          <h4>Billing</h4>
+          <div class="ud-row"><span class="ud-k">Stripe customer</span><span class="ud-v" style="font-size:11px">cus_K3jXp</span></div>
+          <div class="ud-row"><span class="ud-k">Subscription</span><span class="ud-v">Pro · monthly</span></div>
+          <div class="ud-row"><span class="ud-k">MRR contribution</span><span class="ud-v">$9.00</span></div>
+          <div class="ud-row"><span class="ud-k">Lifetime value</span><span class="ud-v">$36.00</span></div>
+          <div class="ud-row"><span class="ud-k">Next billing</span><span class="ud-v">2026-05-12</span></div>
+        </div>
+        <div class="ud-section">
+          <h4>Page activity</h4>
+          <div class="ud-row"><span class="ud-k">Blocks</span><span class="ud-v">14</span></div>
+          <div class="ud-row"><span class="ud-k">Custom domain</span><span class="ud-v">— none</span></div>
+          <div class="ud-row"><span class="ud-k">Pageviews (30d)</span><span class="ud-v">2,007</span></div>
+          <div class="ud-row"><span class="ud-k">Clicks (30d)</span><span class="ud-v">847</span></div>
+          <div class="ud-row"><span class="ud-k">Public URL</span><span class="ud-v"><a href="./creator-public.html" target="_blank" style="color:var(--brand-primary)">tadaify.com/maya_creates ↗</a></span></div>
+        </div>
+        <div class="ud-section">
+          <h4>Compliance</h4>
+          <div class="ud-row"><span class="ud-k">ToS accepted</span><span class="ud-v">v3.3 · 2026-02-19</span></div>
+          <div class="ud-row"><span class="ud-k">PP accepted</span><span class="ud-v">v2.1 · 2026-01-12</span></div>
+          <div class="ud-row"><span class="ud-k">Reports against</span><span class="ud-v">0</span></div>
+          <div class="ud-row"><span class="ud-k">Reports filed</span><span class="ud-v">2 (both dismissed)</span></div>
+          <div class="ud-row"><span class="ud-k">GDPR exports</span><span class="ud-v">1 (Mar 4)</span></div>
+        </div>
+      </div>
+
+      <div class="ud-section" style="margin-top:14px">
+        <h4>Recent activity</h4>
+        <div class="feed-row" style="padding:6px 0"><div class="fr-ico pos">+</div><div class="fr-text"><div class="fr-title">Upgraded Free → Pro</div><div class="fr-meta">2m ago · Stripe sub_K3jX</div></div></div>
+        <div class="feed-row" style="padding:6px 0"><div class="fr-ico info">i</div><div class="fr-text"><div class="fr-title">Added Stripe block</div><div class="fr-meta">14m ago · "Buy my preset pack"</div></div></div>
+        <div class="feed-row" style="padding:6px 0"><div class="fr-ico info">i</div><div class="fr-text"><div class="fr-title">Edited bio</div><div class="fr-meta">38m ago</div></div></div>
+        <div class="feed-row" style="padding:6px 0"><div class="fr-ico info">↗</div><div class="fr-text"><div class="fr-title">Logged in</div><div class="fr-meta">12h ago · Lisbon, PT · Safari iOS</div></div></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm ro-hide-write" onclick="loginAsUser('maya_creates');closeModal('modal-user-detail')">Login as user</button>
+      <button class="btn btn-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would send custom email')">Send email</button>
+      <button class="btn btn-ghost btn-sm" onclick="showPane('audit', document.querySelector('.adm-nav-item[data-section=audit]'));closeModal('modal-user-detail')">View audit log</button>
+      <button class="btn btn-danger-ghost btn-sm ro-hide-write" onclick="alert('Mockup — would suspend')">Suspend</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-user-detail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Take-down confirmation
+     ============================================================ -->
+<div class="mb" id="modal-takedown">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal('modal-takedown')">×</button>
+    <div class="modal-h">
+      <h3>Take down this page?</h3>
+      <div class="modal-sub"><b id="td-handle">@lukas_b</b> · reason: <span id="td-reason">spam</span></div>
+    </div>
+    <div class="modal-body">
+      <div class="warning-box" style="margin-bottom:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>Taking down a page is reversible (the user can appeal), but the public URL returns <b>410 Gone</b> immediately. The user receives an email explaining the decision.</div>
+      </div>
+      <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Reason shown to user (required)</label>
+      <textarea class="input" rows="3" placeholder="Plain-language explanation, ~50-200 chars">Page violated ToS §4.2 — links to a known scam site. Repeat offenders may be permanently suspended.</textarea>
+      <div style="margin-top:10px; display:flex; gap:8px; align-items:center">
+        <div class="checkbox" onclick="tg(this)"></div>
+        <label style="font-size:13px">Also suspend the creator's account (3+ violations rule)</label>
+      </div>
+      <div style="margin-top:6px; display:flex; gap:8px; align-items:center">
+        <div class="checkbox on" onclick="tg(this)"></div>
+        <label style="font-size:13px">Send notification email to creator</label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-takedown')">Cancel</button>
+      <button class="btn btn-danger" id="td-confirm">Take down now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Hard delete (type-to-confirm)
+     ============================================================ -->
+<div class="mb" id="modal-hard-delete">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal('modal-hard-delete')">×</button>
+    <div class="modal-h">
+      <h3 style="color:var(--danger)">Hard-delete account</h3>
+      <div class="modal-sub">This is irreversible. All user data, blocks, analytics, and Stripe subscriptions will be cancelled and purged.</div>
+    </div>
+    <div class="modal-body">
+      <div class="warning-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>
+          <b>Deletes immediately:</b> Stripe subscriptions cancelled, <code style="font-family:var(--font-mono); font-size:11px">delete_user_data()</code> RPC runs (cascade across 12 tables), Auth row removed. Audit log retains the record forever.<br><br>
+          <b>Use only when:</b> GDPR Article 17 erasure request, ToS violation requires hard removal, or duplicate test account.
+        </div>
+      </div>
+      <p style="margin-top:14px; font-size:13px">Type the handle <b id="hd-handle" style="font-family:var(--font-mono)">@lukas_b</b> below to confirm.</p>
+      <input class="input" id="hd-input" type="text" placeholder="lukas_b" oninput="checkHardDelete(this)" autocomplete="off">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-hard-delete')">Cancel</button>
+      <button class="btn btn-danger" id="hd-confirm" disabled onclick="alert('Mockup — would call delete_user_data() + cancel Stripe + delete auth row');closeModal('modal-hard-delete')">Hard-delete forever</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Comp upgrade tier
+     ============================================================ -->
+<div class="mb" id="modal-comp-upgrade">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal('modal-comp-upgrade')">×</button>
+    <div class="modal-h">
+      <h3>Comp upgrade tier</h3>
+      <div class="modal-sub">Grant a paid tier without charging the user. Recorded in audit log with reason.</div>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px">
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">User</label>
+        <input class="input" type="text" placeholder="Search by handle…" value="@maya_creates">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">New tier</label>
+          <select class="input"><option>Pro</option><option>Business</option><option>Creator</option></select>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Duration</label>
+          <select class="input"><option>1 month</option><option>3 months</option><option>6 months</option><option>1 year</option><option>Lifetime</option></select>
+        </div>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Reason (audit)</label>
+        <input class="input" type="text" placeholder="e.g. PH winner, beta tester, support comp" value="Product Hunt #1 winner">
+      </div>
+      <div class="info-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>
+        <span>If the user has an active paid sub, the comp grants additional months on top — Stripe billing pauses for the comp duration, then resumes.</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-comp-upgrade')">Cancel</button>
+      <button class="btn btn-primary" onclick="alert('Mockup — would grant comp + write audit row');closeModal('modal-comp-upgrade')">Grant comp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Publish legal version
+     ============================================================ -->
+<div class="mb" id="modal-publish-legal">
+  <div class="modal modal-lg">
+    <button class="modal-x" onclick="closeModal('modal-publish-legal')">×</button>
+    <div class="modal-h">
+      <h3>Publish ToS v3.4</h3>
+      <div class="modal-sub">This will replace v3.3 as the live document. Existing acceptances remain unless you force re-acceptance.</div>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Effective date (UTC)</label>
+          <input class="input" type="datetime-local" value="2026-04-27T00:00">
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Notification</label>
+          <select class="input"><option>Banner + email (recommended)</option><option>Banner only</option><option>Silent (no notification)</option></select>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; padding:11px; border:1px solid var(--border); border-radius:9px">
+        <button class="toggle" id="force-reaccept" onclick="tg(this)" aria-label="Force re-acceptance"></button>
+        <div>
+          <div style="font-weight:600; font-size:13.5px">Force re-acceptance from all 847 active users</div>
+          <div style="font-size:12px; color:var(--fg-muted); margin-top:2px">Every user sees an acceptance modal on next page load. Sessions remain valid but actions are blocked until accepted. Use only for material changes (refund policy, jurisdiction, data sharing).</div>
+        </div>
+      </div>
+      <div class="warning-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+        <div>Once published, this version is immutable. Future changes require a new version number.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-publish-legal')">Cancel</button>
+      <button class="btn btn-ghost" onclick="alert('Mockup — would save as draft revision')">Save as draft</button>
+      <button class="btn btn-primary" onclick="publishLegal()">Publish v3.4</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Custom event
+     ============================================================ -->
+<div class="mb" id="modal-event">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal('modal-event')">×</button>
+    <div class="modal-h">
+      <h3>Log custom event</h3>
+      <div class="modal-sub">For ad-hoc operational events (deploy, incident, milestone) — appears in the events feed and audit log.</div>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:12px">
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Type</label>
+        <select class="input"><option>Deploy</option><option>Incident start</option><option>Incident resolved</option><option>Milestone</option><option>Other</option></select>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Title</label>
+        <input class="input" type="text" placeholder="e.g. Deployed v1.4.2 — insights tab fix">
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--fg-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em">Description (optional)</label>
+        <textarea class="input" rows="3" placeholder="Markdown supported"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-event')">Cancel</button>
+      <button class="btn btn-primary" onclick="alert('Mockup — would write custom event to audit log');closeModal('modal-event')">Log event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Theme + role + pane switching
+   ============================================================ */
+function toggleTheme() {
+  document.body.classList.toggle('dark-mode');
+  var dark = document.body.classList.contains('dark-mode');
+  document.getElementById('ic-sun').style.display = dark ? 'none' : '';
+  document.getElementById('ic-moon').style.display = dark ? '' : 'none';
+}
+
+function setRole(role) {
+  document.body.setAttribute('data-role', role);
+  var labelMap = { super: 'Super-admin', admin: 'Admin', readonly: 'Read-only' };
+  document.getElementById('role-label').textContent = labelMap[role];
+  document.getElementById('side-role-label').textContent = labelMap[role];
+  // recolor chip
+  var chip = document.getElementById('role-chip');
+  var sideChip = document.getElementById('side-role-chip');
+  ['role-super','role-admin','role-readonly'].forEach(function(c){ chip.classList.remove(c); sideChip.classList.remove(c); });
+  chip.classList.add('role-' + role);
+  sideChip.classList.add('role-' + role);
+  // demo toolbar active
+  document.querySelectorAll('.demo-toolbar button[data-role]').forEach(function(b){
+    b.classList.toggle('is-active', b.getAttribute('data-role') === role);
+  });
+}
+
+function showPane(name, el) {
+  document.querySelectorAll('.pane').forEach(function(p){ p.classList.remove('active'); });
+  var p = document.getElementById('pane-' + name);
+  if (p) p.classList.add('active');
+  document.querySelectorAll('.adm-nav-item').forEach(function(a){ a.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  // close any open menus
+  closeAllMenus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // update hash
+  history.replaceState(null, '', '#' + name);
+}
+
+window.addEventListener('DOMContentLoaded', function(){
+  var hash = (location.hash || '#overview').replace('#','');
+  var nav = document.querySelector('.adm-nav-item[data-section="' + hash + '"]');
+  if (nav) showPane(hash, nav);
+});
+
+/* ============================================================
+   Action menu — per-row dropdown
+   ============================================================ */
+function toggleMenu(btn) {
+  var menu = btn.nextElementSibling;
+  var wasOpen = menu.classList.contains('open');
+  closeAllMenus();
+  if (!wasOpen) menu.classList.add('open');
+}
+function closeAllMenus() {
+  document.querySelectorAll('.action-menu.open').forEach(function(m){ m.classList.remove('open'); });
+}
+document.addEventListener('click', function(e){
+  if (!e.target.closest('.action-menu-wrap')) closeAllMenus();
+});
+
+/* ============================================================
+   Modal helpers
+   ============================================================ */
+function openModal(id, ctx) {
+  var m = document.getElementById(id);
+  if (!m) return;
+  m.classList.add('open');
+  if (ctx) populateModal(id, ctx);
+  document.addEventListener('keydown', escClose);
+}
+function closeModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+  document.removeEventListener('keydown', escClose);
+}
+function escClose(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.mb.open').forEach(function(m){ m.classList.remove('open'); });
+  }
+}
+document.addEventListener('click', function(e){
+  if (e.target.classList.contains('mb')) e.target.classList.remove('open');
+});
+
+function populateModal(id, ctx) {
+  // Hook for per-modal context — used by user detail / take-down / publish-legal
+  if (id === 'modal-user-detail' && ctx) {
+    document.getElementById('ud-handle').textContent = '@' + ctx.handle;
+    document.getElementById('ud-email').textContent = ctx.email;
+    document.getElementById('ud-tier').textContent = ctx.tier;
+    document.getElementById('ud-name').textContent = ctx.name;
+    document.getElementById('ud-av').textContent = (ctx.name||'?').charAt(0).toUpperCase();
+  }
+  if (id === 'modal-takedown' && ctx) {
+    document.getElementById('td-handle').textContent = '@' + ctx.handle;
+    document.getElementById('td-reason').textContent = ctx.reason;
+  }
+}
+
+/* ============================================================
+   Bulk select (Users)
+   ============================================================ */
+function rowSelect(cb) {
+  var tr = cb.closest('tr');
+  cb.classList.toggle('on');
+  tr.classList.toggle('is-selected', cb.classList.contains('on'));
+  updateBulkBar();
+}
+function selectAll(headerCb) {
+  headerCb.classList.toggle('on');
+  var on = headerCb.classList.contains('on');
+  document.querySelectorAll('#users-tbody .checkbox').forEach(function(c){
+    c.classList.toggle('on', on);
+    c.closest('tr').classList.toggle('is-selected', on);
+  });
+  updateBulkBar();
+}
+function updateBulkBar() {
+  var n = document.querySelectorAll('#users-tbody .checkbox.on').length;
+  var bar = document.getElementById('bulk-bar');
+  bar.classList.toggle('show', n > 0);
+  document.getElementById('bulk-count').textContent = n;
+}
+
+/* ============================================================
+   Sortable headers (mockup — swaps arrow only)
+   ============================================================ */
+function sortBy(th) {
+  var current = th.classList.contains('sorted-asc') ? 'asc' : (th.classList.contains('sorted-desc') ? 'desc' : 'none');
+  th.parentElement.querySelectorAll('th').forEach(function(t){ t.classList.remove('sorted-asc','sorted-desc'); });
+  th.classList.add(current === 'asc' ? 'sorted-desc' : 'sorted-asc');
+}
+
+/* ============================================================
+   Maintenance toggle + presets
+   ============================================================ */
+var maintState = { on: false, endsAt: null, reason: '' };
+function toggleMaint(force) {
+  var t = document.getElementById('maint-toggle');
+  var on = (typeof force === 'boolean') ? force : !t.classList.contains('on');
+  t.classList.toggle('on', on);
+  maintState.on = on;
+  document.getElementById('maint-hero').classList.toggle('is-on', on);
+  document.getElementById('maint-status-text').textContent = on ? 'Maintenance ACTIVE' : 'Online';
+  document.getElementById('maint-sub').textContent = on
+    ? 'Regular users see the Maintenance screen. You and other admins continue to see the dashboard.'
+    : 'All users have full access. Toggle ON to take the app offline for non-admin users.';
+  document.getElementById('maint-icon').textContent = on ? '⚠' : '✓';
+  document.getElementById('countdown-row').style.display = on ? '' : 'none';
+  if (on && !maintState.endsAt) setPreset(30, document.querySelector('.preset-btn[data-min="30"]'));
+}
+function setPreset(min, btn) {
+  document.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('is-active'); });
+  if (btn) btn.classList.add('is-active');
+  var ends = new Date(Date.now() + min*60*1000);
+  maintState.endsAt = ends;
+  document.getElementById('maint-end-input').value = ends.toISOString().slice(0,16);
+  updateCountdown();
+}
+function updateCountdown() {
+  if (!maintState.on || !maintState.endsAt) return;
+  var diff = Math.max(0, maintState.endsAt - new Date());
+  var m = Math.floor(diff/60000);
+  var s = Math.floor((diff%60000)/1000);
+  document.getElementById('countdown').textContent = (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+}
+setInterval(updateCountdown, 1000);
+
+/* ============================================================
+   Waitlist promote (mockup)
+   ============================================================ */
+function promoteN() {
+  var n = parseInt(document.getElementById('promote-n').value, 10) || 0;
+  if (n <= 0) { alert('Mockup — would prompt for N'); return; }
+  if (!confirm('Promote ' + n + ' users from waitlist? This sends "you\'re in" emails to the oldest ' + n + ' positions.')) return;
+  alert('Mockup — would call promote_n_from_waitlist(' + n + ')');
+}
+function pauseRegistration(t) {
+  t.classList.toggle('on');
+  var paused = t.classList.contains('on');
+  document.getElementById('reg-state-label').textContent = paused ? 'Paused (everyone joins waitlist)' : 'Open (cap-gated)';
+}
+
+/* ============================================================
+   Moderation — take down + dismiss
+   ============================================================ */
+function takeDownReport(rowEl, handle, reason) {
+  openModal('modal-takedown', { handle: handle, reason: reason });
+  document.getElementById('td-confirm').onclick = function() {
+    rowEl.style.opacity = '0.4';
+    rowEl.querySelector('.mod-actions').innerHTML = '<span class="chip danger">Taken down · 2s ago</span>';
+    closeModal('modal-takedown');
+  };
+}
+function dismissReport(rowEl) {
+  rowEl.style.opacity = '0.4';
+  rowEl.querySelector('.mod-actions').innerHTML = '<span class="chip success">Dismissed · not violating</span>';
+}
+
+/* ============================================================
+   Legal — publish + diff
+   ============================================================ */
+function publishLegal() {
+  var force = document.getElementById('force-reaccept').classList.contains('on');
+  if (force && !confirm('Force re-acceptance from ALL 847 active users? They will see an acceptance modal on their next page load. Continue?')) return;
+  alert('Mockup — would publish v3.4 + ' + (force ? 'invalidate all sessions' : 'leave existing acceptances intact'));
+  closeModal('modal-publish-legal');
+}
+
+/* ============================================================
+   User detail — open modal
+   ============================================================ */
+function openUserDetail(name, handle, email, tier) {
+  openModal('modal-user-detail', { name: name, handle: handle, email: email, tier: tier });
+}
+function loginAsUser(handle) {
+  if (!confirm('Login as @' + handle + '? Every action you take is logged. Continue?')) return;
+  document.getElementById('imp-user').textContent = '@' + handle;
+  document.getElementById('imp-banner').classList.add('show');
+  closeAllMenus();
+  alert('Mockup — would set impersonation cookie + redirect to / as user');
+}
+function exitImpersonation() {
+  document.getElementById('imp-banner').classList.remove('show');
+}
+
+/* ============================================================
+   Hard delete user — type-to-confirm
+   ============================================================ */
+function checkHardDelete(input) {
+  var btn = document.getElementById('hd-confirm');
+  btn.disabled = (input.value !== document.getElementById('hd-handle').textContent.replace('@',''));
+}
+
+/* ============================================================
+   Toggle helpers
+   ============================================================ */
+function tg(el) { el.classList.toggle('on'); }
+function tgC(el) { el.classList.toggle('on'); }
+
+/* ============================================================
+   Search (mockup — filters table rows by query)
+   ============================================================ */
+function filterUsers(q) {
+  q = (q||'').toLowerCase().trim();
+  document.querySelectorAll('#users-tbody tr').forEach(function(tr){
+    var t = tr.textContent.toLowerCase();
+    tr.style.display = (q === '' || t.indexOf(q) >= 0) ? '' : 'none';
+  });
+}
+function globalSearch(q) {
+  // Quick demo: just routes to Users tab + filters
+  if (q && q.length >= 2) {
+    var nav = document.querySelector('.adm-nav-item[data-section="users"]');
+    showPane('users', nav);
+    document.getElementById('user-search').value = q;
+    filterUsers(q);
+  }
+}
+function clearUserFilters() {
+  document.getElementById('user-search').value = '';
+  document.querySelectorAll('#users-pane .input').forEach(function(i){ if (i.tagName === 'SELECT') i.selectedIndex = 0; });
+  filterUsers('');
+}
+
+/* ============================================================
+   Audit — segmented filter + CSV export (mockup)
+   ============================================================ */
+function audSeg(btn) {
+  btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var kind = btn.getAttribute('data-kind');
+  document.querySelectorAll('#audit-tbody tr').forEach(function(tr){
+    if (kind === 'all') { tr.style.display = ''; return; }
+    tr.style.display = (tr.getAttribute('data-kind') === kind) ? '' : 'none';
+  });
+}
+function exportCSV() {
+  alert('Mockup — would download admin-audit-' + new Date().toISOString().slice(0,10) + '.csv (1,247 rows in current filter)');
+}
+</script>
+
+</body>
+</html>
