@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — Security tab deep dive (F-APP-SETTINGS-SECURITY-001 #35)
+  created_at: 2026-04-26
+  author: orchestrator
+  status: draft-for-review
+
+  Source story: graspsoftwarepw/tadaify-app#35
+  Sister tabs (sibling deep-dives, separate PRs):
+    - app-settings-account.html   (#33)
+    - app-settings-billing.html   (#34)
+    - app-settings-gdpr.html      (#36)
+
+  Locked memory rules applied:
+    - feedback_tadaify_simple_ui_no_advanced_toggle  (no Advanced/Power toggles)
+    - feedback_no_blur_premium_features              (security is FREE for all
+      tiers — no blur, no gating; tier badge is informational only)
+    - feedback_no_right_side_drawers                 (Change-password, Setup-2FA,
+      Backup-codes, Disconnect-confirm are CENTERED MODALS, never drawers)
+    - feedback_mockup_full_feature_vision            (full feature surface
+      including OAuth providers, recommendations rail, suspicious-activity
+      detection — even though some are post-MVP)
+    - feedback_sidebar_pages_grouping                (Pages parent accordion
+      with Home as first sub-page, via shared sidebar partial)
+
+  Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark
+  ta/da!/ify, Motion v10 logo, light/dark mode toggle.
+
+  Sub-tab nav: Account | Billing | Security (active) | GDPR & data
+  Cross-link to sister deep-dive pages by file name (graceful fallback
+  to app-settings.html#<pane> if the deep-dive doesn't exist yet).
+
+  Acceptance criteria coverage (from issue body):
+    AC-1  Password change happy path                       → §Change password
+    AC-2  Min 12 chars rejected                             → §Change password
+    AC-3  Mismatch rejected                                 → §Change password
+    AC-4  Wrong current rejected                            → §Change password
+    AC-5  TOTP enrol valid code activates                   → §Setup 2FA modal
+    AC-6  TOTP wrong code rejected                          → §Setup 2FA modal
+    AC-7  Backup codes one-time + Save-prompt-on-close      → §Backup codes modal
+    AC-8  Regenerate confirm                                → §Backup codes regen
+    AC-9  Active sessions w/ This-session badge             → §Active sessions
+    AC-10 Per-session sign-out                              → §Active sessions
+    AC-11 Sign-out all-others confirmation                  → §Active sessions
+    AC-12 Login history with ✅/⚠ icons + 30d cutoff       → §Login history
+
+  Edge cases mapped:
+    ECN-01 Backup codes close-without-save protective prompt
+    ECN-02 Lost device recovery — Contact-support pre-filled link
+    ECN-03 Simultaneous sessions — both shown
+    ECN-04 Brute-force lockout — banner state
+    ECN-05 90d session prune — meta on stale rows
+    ECN-06 TOTP clock skew — note in 2FA modal
+    ECN-07 Password change with 2FA on — note in change-password modal
+    ECN-08 Regenerate-immediately-after-enrol — confirm-modal copy
+    ECN-09 Disable 2FA cleanup — note in disable confirm
+    ECN-10 Mid-prune render — soft footnote on history
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security · Settings — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* -----------------------------------------------------------------
+       Wordmark & atoms (mirrors app-settings.html for visual continuity)
+       ----------------------------------------------------------------- */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.success { background: var(--success-bg); color: #065F46; }
+    .chip.warn    { background: rgba(245,158,11,0.15); color: #92400E; border: 1px solid rgba(245,158,11,0.3); }
+    .chip.danger  { background: var(--danger-bg); color: #991B1B; }
+    .chip.info    { background: rgba(99,102,241,0.10); color: var(--brand-primary); border: 1px solid rgba(99,102,241,0.25); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger  { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* -----------------------------------------------------------------
+       Top app bar (canonical)
+       ----------------------------------------------------------------- */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* -----------------------------------------------------------------
+       Layout grid
+       ----------------------------------------------------------------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* -----------------------------------------------------------------
+       Main content shell
+       ----------------------------------------------------------------- */
+    main.content {
+      padding: 28px 20px 80px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 60px; } }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 4px; }
+
+    .page-head .breadcrumbs {
+      font-size: 12.5px; color: var(--fg-subtle); display: flex; align-items: center; gap: 6px;
+      margin-bottom: 6px;
+    }
+    .page-head .breadcrumbs a { color: var(--fg-muted); }
+    .page-head .breadcrumbs a:hover { color: var(--brand-primary); }
+    .page-head .breadcrumbs svg { width: 11px; height: 11px; opacity: 0.6; }
+
+    /* -----------------------------------------------------------------
+       Settings tab nav (matches app-settings.html visual)
+       ----------------------------------------------------------------- */
+    .settings-tabs {
+      display: flex; gap: 4px;
+      padding: 4px; border-radius: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      margin-bottom: 24px;
+    }
+    .settings-tab {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+      background: transparent; border: 0; cursor: pointer; white-space: nowrap;
+      transition: background .12s ease, color .12s ease;
+      text-decoration: none;
+    }
+    .settings-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .settings-tab:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-tab.active {
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+    }
+    .settings-tab.active svg { color: var(--brand-primary); }
+
+    /* -----------------------------------------------------------------
+       Two-column shell: main column + recommendations rail
+       ----------------------------------------------------------------- */
+    .sec-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    @media (min-width: 1180px) {
+      .sec-grid { grid-template-columns: minmax(0, 1fr) 320px; }
+    }
+
+    .sec-col-main { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+    .sec-col-side { display: flex; flex-direction: column; gap: 18px; }
+
+    /* -----------------------------------------------------------------
+       Section card
+       ----------------------------------------------------------------- */
+    .sec {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+    .sec-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 14px; margin-bottom: 14px;
+    }
+    .sec-head .sec-title {
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle);
+    }
+    .sec-head .sec-meta {
+      font-family: var(--font-sans); font-size: 12px; color: var(--fg-muted);
+      margin-top: 4px;
+    }
+    .sec-head .sec-meta b { color: var(--fg); font-weight: 600; }
+
+    .sec-h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 18px; margin: 0; color: var(--fg);
+      letter-spacing: -0.01em;
+    }
+    .sec-sub { font-size: 13px; color: var(--fg-muted); margin-top: 4px; line-height: 1.5; }
+
+    /* Field row (inherits app-settings) */
+    .field-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .field-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .field-row:first-child { padding-top: 0; }
+    .field-label {
+      width: 170px; flex-shrink: 0;
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      padding-top: 2px;
+    }
+    .field-label .field-hint {
+      display: block; font-size: 12px; font-weight: 400; color: var(--fg-muted); margin-top: 2px;
+    }
+    .field-body { flex: 1; min-width: 0; }
+    @media (max-width: 599px) {
+      .field-row { flex-direction: column; gap: 6px; }
+      .field-label { width: auto; }
+    }
+
+    /* Inputs */
+    .field-input {
+      font-family: var(--font-sans); font-size: 14px;
+      padding: 9px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      outline: none; transition: border-color .12s ease, box-shadow .12s ease;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .field-input.has-error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.13); }
+    .field-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
+    .field-help  { font-size: 11.5px; color: var(--fg-subtle); margin-top: 6px; line-height: 1.45; }
+
+    /* Password input with show/hide toggle */
+    .pw-wrap { position: relative; }
+    .pw-wrap .field-input { padding-right: 38px; font-family: var(--font-mono); letter-spacing: 0.05em; }
+    .pw-wrap .pw-eye {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 6px; border: 0;
+      background: transparent; color: var(--fg-muted); cursor: pointer;
+    }
+    .pw-wrap .pw-eye:hover { background: var(--bg-muted); color: var(--fg); }
+    .pw-wrap .pw-eye svg { width: 15px; height: 15px; }
+
+    /* Strength meter */
+    .pw-strength { margin-top: 10px; }
+    .pw-bars { display: flex; gap: 4px; margin-bottom: 6px; }
+    .pw-bars .bar {
+      flex: 1; height: 5px; border-radius: 3px;
+      background: var(--bg-sunken); transition: background .15s ease;
+    }
+    .pw-bars[data-level="1"] .bar:nth-child(-n+1) { background: var(--danger); }
+    .pw-bars[data-level="2"] .bar:nth-child(-n+2) { background: #F59E0B; }
+    .pw-bars[data-level="3"] .bar:nth-child(-n+3) { background: #10B981; }
+    .pw-bars[data-level="4"] .bar:nth-child(-n+4) { background: #047857; }
+    .pw-strength-label { font-size: 12px; color: var(--fg-muted); }
+    .pw-strength-label .lab-val { font-weight: 600; color: var(--fg); }
+
+    /* Requirement checklist */
+    .pw-reqs {
+      list-style: none; padding: 10px 12px; margin: 10px 0 0;
+      background: var(--bg-muted); border-radius: 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .pw-reqs li {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .pw-reqs li .req-ico {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--bg); color: var(--fg-subtle);
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+    .pw-reqs li.is-met { color: var(--fg); }
+    .pw-reqs li.is-met .req-ico { background: var(--success); color: #fff; }
+
+    /* -----------------------------------------------------------------
+       Status badge (Disabled / Enabled / Needs setup)
+       ----------------------------------------------------------------- */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-pill.is-on  { background: var(--success-bg); color: #065F46; }
+    .status-pill.is-on .dot { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .status-pill.is-off { background: var(--danger-bg); color: #991B1B; }
+    .status-pill.is-off .dot { background: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
+
+    /* -----------------------------------------------------------------
+       Banner (security alert / suspicious activity / password reminder)
+       ----------------------------------------------------------------- */
+    .banner {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px; border-radius: 12px;
+      margin-bottom: 18px;
+      font-size: 13px; line-height: 1.5;
+    }
+    .banner .b-ico {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .banner .b-text { flex: 1; min-width: 0; }
+    .banner .b-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
+    .banner .b-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .banner .btn { flex-shrink: 0; align-self: center; }
+    .banner.warn {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.28);
+    }
+    .banner.warn .b-ico { background: rgba(245,158,11,0.20); color: #92400E; }
+    .banner.danger {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.22);
+    }
+    .banner.danger .b-ico { background: rgba(239,68,68,0.18); color: #991B1B; }
+    .banner.info {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.20);
+    }
+    .banner.info .b-ico { background: rgba(99,102,241,0.16); color: var(--brand-primary); }
+
+    /* -----------------------------------------------------------------
+       Sessions
+       ----------------------------------------------------------------- */
+    .sess-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .sess-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .sess-row:first-child { padding-top: 0; }
+    .sess-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 19px;
+    }
+    .sess-info { flex: 1; min-width: 0; }
+    .sess-info .s-device {
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .sess-info .s-meta {
+      font-size: 12px; color: var(--fg-muted); margin-top: 3px;
+      font-family: var(--font-sans);
+    }
+    .sess-info .s-meta .mono { font-family: var(--font-mono); font-size: 11.5px; }
+    .sess-info .s-meta .dot { color: var(--fg-subtle); margin: 0 4px; }
+    .sess-info .s-stale { color: var(--brand-warm-dark, #92400E); font-weight: 600; }
+    .sess-current-pill {
+      font-size: 10px; font-weight: 700;
+      color: var(--brand-primary);
+      background: rgba(99,102,241,0.12);
+      padding: 2px 8px; border-radius: 99px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .sess-row .btn-xs { align-self: center; flex-shrink: 0; }
+
+    /* -----------------------------------------------------------------
+       Login history table
+       ----------------------------------------------------------------- */
+    .log-toolbar {
+      display: flex; align-items: center; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .log-tabs { display: inline-flex; gap: 2px; background: var(--bg-muted); border-radius: 8px; padding: 2px; }
+    .log-tab {
+      padding: 6px 12px; border-radius: 6px; border: 0; background: transparent;
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted); cursor: pointer;
+    }
+    .log-tab.active { background: var(--bg-elevated); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+    .log-search {
+      flex: 1; min-width: 160px;
+      position: relative;
+    }
+    .log-search input {
+      width: 100%; padding: 7px 10px 7px 32px;
+      border-radius: 8px; border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      font-family: var(--font-sans); font-size: 13px; outline: none;
+    }
+    .log-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--fg-subtle); }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0,1fr) auto auto;
+      gap: 10px; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .log-row:last-child { border-bottom: 0; }
+    .log-row .lr-icon { font-size: 15px; text-align: center; }
+    .log-row .lr-event { color: var(--fg); }
+    .log-row .lr-event .lr-meta { display: block; font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+    .log-row .lr-meta .mono { font-family: var(--font-mono); }
+    .log-row .lr-method {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .log-row .lr-method.m-totp     { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+    .log-row .lr-method.m-password { background: var(--bg-muted); color: var(--fg-muted); }
+    .log-row .lr-method.m-magic    { background: rgba(16,185,129,0.10); color: #047857; }
+    .log-row .lr-method.m-oauth    { background: rgba(245,158,11,0.10); color: #92400E; }
+    .log-row .lr-time { color: var(--fg-muted); font-size: 12px; white-space: nowrap; text-align: right; }
+
+    .log-row.is-failed { background: linear-gradient(90deg, rgba(239,68,68,0.04), transparent 60%); border-radius: 6px; padding-left: 6px; padding-right: 6px; }
+
+    .log-foot {
+      margin-top: 12px;
+      padding-top: 12px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-subtle);
+    }
+    .log-foot .lf-link { color: var(--brand-primary); cursor: pointer; }
+    .log-foot .lf-link:hover { text-decoration: underline; }
+
+    /* -----------------------------------------------------------------
+       Connected accounts (OAuth providers)
+       ----------------------------------------------------------------- */
+    .oauth-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .oauth-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--bg);
+    }
+    .oauth-card .o-ico {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 18px;
+      background: var(--bg-muted);
+    }
+    .oauth-card .o-ico.g  { background: #FFF; border: 1px solid var(--border); }
+    .oauth-card .o-ico.gh { background: #0B0F1E; color: #fff; }
+    .oauth-card .o-ico.ap { background: #0B0F1E; color: #fff; }
+    .oauth-card .o-info { flex: 1; min-width: 0; }
+    .oauth-card .o-name { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+    .oauth-card .o-meta { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+    .oauth-card.is-disconnected .o-meta { color: var(--fg-subtle); font-style: italic; }
+
+    /* -----------------------------------------------------------------
+       Recommendations rail
+       ----------------------------------------------------------------- */
+    .rec-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 18px;
+    }
+    .rec-card .rec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px; gap: 8px;
+    }
+    .rec-card .rec-title {
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle);
+    }
+    .rec-card .rec-score {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11.5px; font-weight: 700; padding: 3px 9px;
+      border-radius: 99px;
+      background: rgba(245,158,11,0.13);
+      color: #92400E;
+      border: 1px solid rgba(245,158,11,0.30);
+    }
+    .rec-card .rec-score.is-good {
+      background: rgba(16,185,129,0.13); color: #047857;
+      border-color: rgba(16,185,129,0.30);
+    }
+    .rec-list { display: flex; flex-direction: column; gap: 8px; }
+    .rec-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg);
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .rec-item:hover { border-color: var(--border-strong); }
+    .rec-item.is-done { opacity: 0.55; }
+    .rec-item .rec-prio {
+      width: 6px; height: 6px; border-radius: 50%; margin-top: 7px; flex-shrink: 0;
+    }
+    .rec-item.prio-high .rec-prio { background: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
+    .rec-item.prio-med  .rec-prio { background: #F59E0B; box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+    .rec-item.prio-low  .rec-prio { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .rec-item .rec-body { flex: 1; min-width: 0; }
+    .rec-item .rec-name { font-size: 13px; font-weight: 600; color: var(--fg); }
+    .rec-item .rec-desc { font-size: 12px; color: var(--fg-muted); margin-top: 2px; line-height: 1.45; }
+    .rec-item .rec-cta {
+      margin-top: 8px;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 600; color: var(--brand-primary);
+      background: transparent; border: 0; padding: 0; cursor: pointer;
+    }
+    .rec-item .rec-cta:hover { text-decoration: underline; }
+
+    /* "Auto-saved" status strip (security-tab equivalent of save-bar — there's no batch save here) */
+    .auto-status {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 99px;
+      background: var(--success-bg); color: #065F46;
+      font-size: 12px; font-weight: 600;
+      margin-top: 4px;
+    }
+    .auto-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.16); }
+
+    /* -----------------------------------------------------------------
+       Modal scaffolding (centered, NEVER drawer per locked rule)
+       ----------------------------------------------------------------- */
+    .modal-bd {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-bd.open { display: flex; }
+    .modal-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px 20px;
+      width: 100%; max-width: 480px;
+      max-height: 92vh; overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.18);
+      animation: modalIn .18s ease;
+      position: relative;
+    }
+    .modal-card.wide { max-width: 720px; }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-card h3 {
+      font-family: var(--font-display); font-size: 22px; margin: 0 0 6px;
+      font-weight: 600; letter-spacing: -0.01em;
+    }
+    .modal-card .modal-sub { font-size: 13px; color: var(--fg-muted); margin: 0 0 16px; line-height: 1.55; }
+    .modal-card .modal-sub b { color: var(--fg); font-weight: 600; }
+    .modal-card .modal-actions {
+      display: flex; gap: 10px; justify-content: flex-end;
+      margin-top: 18px; flex-wrap: wrap;
+    }
+    .modal-close-x {
+      position: absolute; top: 14px; right: 14px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 22px; line-height: 1; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close-x:hover { background: var(--bg-muted); color: var(--fg); }
+
+    .modal-warning {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.22);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12.5px; color: #991B1B; line-height: 1.55;
+      margin: 12px 0;
+    }
+    .modal-info {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.20);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12.5px; color: var(--fg); line-height: 1.55;
+      margin: 12px 0;
+    }
+
+    /* TOTP setup modal stepper */
+    .stepper {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 14px; margin: 0 -24px 16px;
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .step-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; color: var(--fg-subtle);
+      padding: 4px 10px; border-radius: 99px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .step-pill.is-current {
+      color: var(--brand-primary);
+      border-color: rgba(99,102,241,0.40);
+      background: rgba(99,102,241,0.08);
+    }
+    .step-pill.is-done { color: #047857; border-color: rgba(16,185,129,0.30); background: rgba(16,185,129,0.08); }
+    .step-pill .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--bg-muted); color: inherit;
+      font-size: 10px;
+    }
+    .step-pill.is-current .step-num { background: var(--brand-primary); color: #fff; }
+    .step-pill.is-done .step-num { background: var(--success); color: #fff; }
+    .step-arrow { color: var(--fg-subtle); font-size: 11px; }
+
+    .qr-row {
+      display: grid; grid-template-columns: 160px 1fr; gap: 18px; align-items: start;
+      margin: 12px 0 4px;
+    }
+    @media (max-width: 540px) { .qr-row { grid-template-columns: 1fr; } }
+    .qr-tile {
+      width: 160px; height: 160px;
+      background: #fff; border: 1px solid var(--border-strong);
+      border-radius: 10px; padding: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qr-tile svg { width: 100%; height: 100%; }
+    .qr-info ol { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--fg-muted); line-height: 1.6; }
+    .qr-info ol li { margin-bottom: 4px; }
+    .qr-secret-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 10px;
+      font-family: var(--font-mono); font-size: 12px;
+      padding: 6px 10px; background: var(--bg-muted); border-radius: 7px;
+      color: var(--fg);
+    }
+    .qr-secret-row code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; }
+    .qr-secret-row .btn-xs { flex-shrink: 0; }
+
+    .totp-input {
+      letter-spacing: 0.5em; text-align: center;
+      font-family: var(--font-mono); font-size: 22px; font-weight: 600;
+      padding: 12px 14px;
+    }
+
+    /* Backup codes grid (one-time display) */
+    .codes-grid {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      margin: 12px 0;
+    }
+    .codes-grid code {
+      display: block; padding: 10px 12px; border-radius: 8px;
+      background: var(--bg-muted); color: var(--fg);
+      font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+      letter-spacing: 0.05em; text-align: center;
+      border: 1px dashed var(--border-strong);
+    }
+    .codes-actions {
+      display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px;
+    }
+    .codes-ack {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 9px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg);
+      margin-top: 12px;
+    }
+    .codes-ack input { width: 16px; height: 16px; }
+
+    /* -----------------------------------------------------------------
+       Demo state: no-2FA banner / suspicious banner — show/hide via JS
+       ----------------------------------------------------------------- */
+    .conditional { display: none; }
+    body[data-state="no-2fa"] .when-no-2fa { display: flex; }
+    body[data-state="suspicious"] .when-suspicious { display: flex; }
+    body[data-state="suspicious"] .log-row.is-failed { background: rgba(239,68,68,0.10); }
+
+    body[data-state="no-2fa"]    #totp-status .status-pill.is-on  { display: none; }
+    body[data-state="no-2fa"]    #totp-status .status-pill.is-off { display: inline-flex; }
+    body[data-state="filled"]    #totp-status .status-pill.is-on  { display: inline-flex; }
+    body[data-state="filled"]    #totp-status .status-pill.is-off { display: none; }
+    body[data-state="suspicious"] #totp-status .status-pill.is-on  { display: inline-flex; }
+    body[data-state="suspicious"] #totp-status .status-pill.is-off { display: none; }
+
+    body[data-state="filled"]    #totp-actions .btn-when-on  { display: inline-flex; }
+    body[data-state="filled"]    #totp-actions .btn-when-off { display: none; }
+    body[data-state="suspicious"] #totp-actions .btn-when-on  { display: inline-flex; }
+    body[data-state="suspicious"] #totp-actions .btn-when-off { display: none; }
+    body[data-state="no-2fa"]    #totp-actions .btn-when-on  { display: none; }
+    body[data-state="no-2fa"]    #totp-actions .btn-when-off { display: inline-flex; }
+
+    body[data-state="no-2fa"]    .rec-2fa { display: flex; }
+    body[data-state="filled"]    .rec-2fa { display: none; }
+    body[data-state="suspicious"] .rec-2fa { display: none; }
+
+    /* -----------------------------------------------------------------
+       Dark mode overrides
+       ----------------------------------------------------------------- */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #4B5563;
+      --border:      #1F2937;
+      --border-strong: #374151;
+      --wm-ify:      #F3F4F6;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .sec, body.dark-mode .rec-card, body.dark-mode .modal-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .field-input { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .pw-reqs { background: #0B0F1E; }
+    body.dark-mode .pw-reqs li .req-ico { background: #1A2236; }
+    body.dark-mode .oauth-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .oauth-card .o-ico.g { background: #F9FAFB; }
+    body.dark-mode .qr-tile { background: #F9FAFB; }
+    body.dark-mode .codes-grid code { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .codes-ack { background: #0B0F1E; }
+    body.dark-mode .stepper { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .step-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .log-tab.active { background: #141A2D; }
+    body.dark-mode .qr-secret-row { background: #0B0F1E; }
+    body.dark-mode .modal-warning { background: rgba(239,68,68,0.10); color: #FCA5A5; border-color: rgba(239,68,68,0.30); }
+    body.dark-mode .modal-info { background: rgba(99,102,241,0.10); color: #C7D2FE; border-color: rgba(99,102,241,0.30); }
+    body.dark-mode .auto-status { background: rgba(16,185,129,0.16); color: #6EE7B7; }
+    body.dark-mode .settings-tabs { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .settings-tab.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .settings-tab.active svg { color: #A5B4FC; }
+    body.dark-mode .log-row.is-failed { background: linear-gradient(90deg, rgba(239,68,68,0.14), transparent 60%); }
+  </style>
+</head>
+<body data-state="filled" data-current-tier="creator">
+
+<!-- ============================================================
+     TOP APP BAR
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout">
+  <!-- Canonical sidebar partial (Pages parent + Home first sub-page) -->
+  <div data-partial="app-sidebar"
+       data-active="settings"
+       data-tier="creator"
+       data-handle="alexandra"
+       data-username="Alexandra Silva"></div>
+
+  <main class="content">
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <div class="breadcrumbs" aria-label="Breadcrumbs">
+          <a href="./app-dashboard.html?tab=page">Home</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="./app-settings.html">Settings</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Security</span>
+        </div>
+        <h1>Security</h1>
+        <div class="sub">Password, two-factor authentication, active sessions, login history, and connected accounts.</div>
+      </div>
+      <div class="auto-status" title="Security changes apply immediately — there's no batch save here.">
+        <span class="dot" aria-hidden="true"></span>
+        All changes saved automatically
+      </div>
+    </div>
+
+    <!-- Sub-tab nav: Account / Billing / Security (active) / GDPR -->
+    <nav class="settings-tabs" aria-label="Settings sections">
+      <a class="settings-tab" href="./app-settings-account.html"
+         onclick="if(!fileExists(this.href)){event.preventDefault();window.location.href='./app-settings.html#account';}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Account
+      </a>
+      <a class="settings-tab" href="./app-settings-billing.html"
+         onclick="if(!fileExists(this.href)){event.preventDefault();window.location.href='./app-settings.html#billing';}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Billing
+      </a>
+      <a class="settings-tab active" href="./app-settings-security.html" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Security
+      </a>
+      <a class="settings-tab" href="./app-settings-gdpr.html"
+         onclick="if(!fileExists(this.href)){event.preventDefault();window.location.href='./app-settings.html#gdpr';}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        GDPR &amp; data
+      </a>
+      <a class="settings-tab" href="./app-settings.html"
+         style="margin-left:auto" title="All settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        All settings
+      </a>
+    </nav>
+
+    <!-- Conditional banners (state-driven) -->
+    <div class="banner warn conditional when-no-2fa">
+      <div class="b-ico" aria-hidden="true">🛡️</div>
+      <div class="b-text">
+        <div class="b-title">Two-factor authentication is off</div>
+        <div class="b-sub">Adding an authenticator app is the single biggest thing you can do to protect your account. Takes about 90 seconds.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('totp-setup-modal')">Enable 2FA</button>
+    </div>
+
+    <div class="banner danger conditional when-suspicious">
+      <div class="b-ico" aria-hidden="true">⚠️</div>
+      <div class="b-text">
+        <div class="b-title">3 failed sign-in attempts in the last 24 hours</div>
+        <div class="b-sub">From <span style="font-family:var(--font-mono);font-size:12px">85.214.38.12</span> (Berlin, Germany). Your account stayed locked for 15 min after the 5-failure threshold. If this wasn't you, change your password and review sessions.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('login-history').scrollIntoView({behavior:'smooth'})">Review history</button>
+    </div>
+
+    <!-- ====================== TWO-COLUMN GRID ====================== -->
+    <div class="sec-grid">
+      <div class="sec-col-main">
+
+        <!-- ========================= PASSWORD ========================= -->
+        <section class="sec" id="password-section" aria-labelledby="password-h">
+          <div class="sec-head">
+            <div>
+              <div class="sec-title">Password</div>
+              <h2 class="sec-h3" id="password-h" style="margin-top:6px">Sign-in password</h2>
+              <p class="sec-sub">Used when you sign in with email + password. We hash with bcrypt cost-10 server-side; we never store the plaintext.</p>
+            </div>
+            <div style="text-align:right">
+              <div class="chip warn" title="Reminder shows after 90 days">
+                Last changed <b style="margin-left:4px">47 days ago</b>
+              </div>
+              <div style="font-size:11.5px;color:var(--fg-subtle);margin-top:4px">Reminder at 90 days</div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Change password
+              <span class="field-hint">Opens a centered modal to change in one step</span>
+            </div>
+            <div class="field-body">
+              <button class="btn btn-primary btn-sm" onclick="openModal('change-password-modal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Change password
+              </button>
+              <p class="field-help">All other devices are signed out automatically when your password changes (this session stays active).</p>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Sign out everywhere
+              <span class="field-hint">Without changing your password</span>
+            </div>
+            <div class="field-body">
+              <button class="btn btn-ghost btn-sm" onclick="confirm('Mockup — would call supabase.auth.signOut({ scope: \\'others\\' }) and refresh the sessions list.') && alert('Mockup — sessions list would refresh.')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign out all other sessions
+              </button>
+              <p class="field-help">Useful if you signed in on a friend's laptop and forgot to log out. Your current session keeps working.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================= 2FA ========================= -->
+        <section class="sec" id="twofa-section" aria-labelledby="twofa-h">
+          <div class="sec-head">
+            <div>
+              <div class="sec-title">Two-factor authentication</div>
+              <h2 class="sec-h3" id="twofa-h" style="margin-top:6px">Authenticator app (TOTP)</h2>
+              <p class="sec-sub">Time-based one-time codes from Google Authenticator, 1Password, Authy, Bitwarden, or any RFC-6238 app. Allows ±30 s clock skew (ECN-06).</p>
+            </div>
+            <div id="totp-status">
+              <span class="status-pill is-on"><span class="dot" aria-hidden="true"></span>Enabled</span>
+              <span class="status-pill is-off"><span class="dot" aria-hidden="true"></span>Disabled</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Authenticator
+              <span class="field-hint">RFC-6238 TOTP, 6 digits / 30 s</span>
+            </div>
+            <div class="field-body" id="totp-actions" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+              <button class="btn btn-primary btn-sm btn-when-off" onclick="openModal('totp-setup-modal'); resetTotpStepper();">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Set up authenticator
+              </button>
+              <span class="btn-when-on" style="font-size:13px;color:var(--fg-muted);display:inline-flex;align-items:center;gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><polyline points="20 6 9 17 4 12"/></svg>
+                Enrolled <b style="color:var(--fg)">Mar 9, 2026</b> · last used <b style="color:var(--fg)">today 09:14</b>
+              </span>
+              <button class="btn btn-danger-ghost btn-sm btn-when-on" onclick="openModal('disable-2fa-modal')">Disable 2FA</button>
+            </div>
+          </div>
+
+          <div class="field-row btn-when-on" id="backup-codes-row">
+            <div class="field-label">Backup codes
+              <span class="field-hint">Single-use, bypass 2FA if you lose your device</span>
+            </div>
+            <div class="field-body">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span class="chip success">8 of 10 unused</span>
+                <button class="btn btn-ghost btn-sm" onclick="openModal('backup-codes-view-modal')">View remaining</button>
+                <button class="btn btn-ghost btn-sm" onclick="openModal('regenerate-codes-modal')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  Regenerate (invalidates old)
+                </button>
+              </div>
+              <p class="field-help">2 used so far — if you used them on a known device, you're good. If they're missing and you didn't use them, regenerate immediately.</p>
+            </div>
+          </div>
+
+          <div class="field-row btn-when-on">
+            <div class="field-label">Recovery method
+              <span class="field-hint">If both authenticator and backup codes are lost</span>
+            </div>
+            <div class="field-body">
+              <div style="font-size:13px;color:var(--fg)">Email <b>alexandra@example.com</b> — verified Apr 12, 2026</div>
+              <p class="field-help">If you lose access, contact <a href="mailto:support@tadaify.com?subject=TOTP%20account%20recovery" style="color:var(--brand-primary)">support@tadaify.com</a> from this verified email. We never auto-recover 2FA — security trade-off (ECN-02).</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================= ACTIVE SESSIONS ========================= -->
+        <section class="sec" id="sessions-section" aria-labelledby="sessions-h">
+          <div class="sec-head">
+            <div>
+              <div class="sec-title">Active sessions</div>
+              <h2 class="sec-h3" id="sessions-h" style="margin-top:6px">Where you're signed in</h2>
+              <p class="sec-sub">Sessions auto-prune after 90 days of inactivity (ECN-05). Click any device's <b>Sign out</b> to revoke access immediately — that browser will receive 401 on its next request.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="openModal('signout-all-modal')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sign out all other sessions
+            </button>
+          </div>
+
+          <div class="sess-row">
+            <div class="sess-icon" aria-hidden="true">💻</div>
+            <div class="sess-info">
+              <div class="s-device">
+                MacBook Pro 16" — Safari 17.4
+                <span class="sess-current-pill">This session</span>
+              </div>
+              <div class="s-meta">
+                Lisbon, Portugal
+                <span class="dot">·</span><span class="mono">212.18.4.22</span>
+                <span class="dot">·</span>Last seen <b style="color:var(--fg)">just now</b>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-xs" disabled title="Can't sign out the session you're using">Sign out</button>
+          </div>
+
+          <div class="sess-row">
+            <div class="sess-icon" aria-hidden="true">📱</div>
+            <div class="sess-info">
+              <div class="s-device">iPhone 15 Pro — Safari Mobile 17.4</div>
+              <div class="s-meta">
+                Lisbon, Portugal
+                <span class="dot">·</span><span class="mono">212.18.4.22</span>
+                <span class="dot">·</span>Last seen 2 hours ago
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-xs" onclick="signOutSession(this, 'iPhone 15 Pro')">Sign out</button>
+          </div>
+
+          <div class="sess-row">
+            <div class="sess-icon" aria-hidden="true">💻</div>
+            <div class="sess-info">
+              <div class="s-device">MacBook Air M2 — Chrome 124 <span class="chip">Same Wi-Fi</span></div>
+              <div class="s-meta">
+                Lisbon, Portugal
+                <span class="dot">·</span><span class="mono">212.18.4.22</span>
+                <span class="dot">·</span>Last seen yesterday 18:42
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-xs" onclick="signOutSession(this, 'MacBook Air M2')">Sign out</button>
+          </div>
+
+          <div class="sess-row">
+            <div class="sess-icon" aria-hidden="true">🖥️</div>
+            <div class="sess-info">
+              <div class="s-device">Windows 11 — Chrome 124</div>
+              <div class="s-meta">
+                Berlin, Germany
+                <span class="dot">·</span><span class="mono">85.214.38.12</span>
+                <span class="dot">·</span><span class="s-stale">Last seen 27 days ago — will auto-expire in 63 days</span>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-xs" onclick="signOutSession(this, 'Windows 11 / Berlin')">Sign out</button>
+          </div>
+
+          <div class="sess-row">
+            <div class="sess-icon" aria-hidden="true">📱</div>
+            <div class="sess-info">
+              <div class="s-device">iPad Pro 11" — Safari Mobile 16.6</div>
+              <div class="s-meta">
+                Lagos, Portugal
+                <span class="dot">·</span><span class="mono">213.13.205.7</span>
+                <span class="dot">·</span>Last seen 5 days ago
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-xs" onclick="signOutSession(this, 'iPad Pro 11')">Sign out</button>
+          </div>
+        </section>
+
+        <!-- ========================= LOGIN HISTORY ========================= -->
+        <section class="sec" id="login-history" aria-labelledby="history-h">
+          <div class="sec-head">
+            <div>
+              <div class="sec-title">Login history</div>
+              <h2 class="sec-h3" id="history-h" style="margin-top:6px">Last 30 days</h2>
+              <p class="sec-sub">Read-only audit log of every sign-in event. Older entries are pruned automatically (ECN-10). Suspicious? Tell us — we'll investigate.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="window.location.href='mailto:support@tadaify.com?subject=Suspicious%20activity%20on%20my%20account&body=I%20see%20unfamiliar%20activity%20in%20my%20login%20history.%20Please%20investigate.%20My%20handle%3A%20alexandra'">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Suspicious activity?
+            </button>
+          </div>
+
+          <div class="log-toolbar">
+            <div class="log-tabs" role="tablist">
+              <button class="log-tab active" role="tab" aria-selected="true" onclick="filterHistory(this, 'all')">All <span style="opacity:0.6">12</span></button>
+              <button class="log-tab" role="tab" aria-selected="false" onclick="filterHistory(this, 'success')">Successful <span style="opacity:0.6">10</span></button>
+              <button class="log-tab" role="tab" aria-selected="false" onclick="filterHistory(this, 'fail')">Failed <span style="opacity:0.6">2</span></button>
+            </div>
+            <div class="log-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Search by IP, device, or location…" oninput="searchHistory(this.value)">
+            </div>
+          </div>
+
+          <div id="history-rows">
+            <!-- 12 rows -->
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in
+                <span class="lr-meta">MacBook Pro · Safari 17 · Lisbon, PT · <span class="mono">212.18.4.22</span></span>
+              </div>
+              <span class="lr-method m-totp">Password + 2FA</span>
+              <div class="lr-time">Today 09:14</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in
+                <span class="lr-meta">iPhone 15 Pro · Safari Mobile · Lisbon, PT · <span class="mono">212.18.4.22</span></span>
+              </div>
+              <span class="lr-method m-magic">Magic link</span>
+              <div class="lr-time">Yesterday 21:02</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">🔐</div>
+              <div class="lr-event">2FA enabled
+                <span class="lr-meta">MacBook Pro · Safari · Lisbon, PT</span>
+              </div>
+              <span class="lr-method m-totp">TOTP enrol</span>
+              <div class="lr-time">Mar 9, 14:32</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in
+                <span class="lr-meta">MacBook Pro · Safari 17 · Lisbon, PT · <span class="mono">212.18.4.22</span></span>
+              </div>
+              <span class="lr-method m-password">Password</span>
+              <div class="lr-time">Apr 22, 08:40</div>
+            </div>
+
+            <div class="log-row is-failed" data-kind="fail">
+              <div class="lr-icon">⚠️</div>
+              <div class="lr-event">Failed sign-in attempt
+                <span class="lr-meta">Unknown device · Berlin, DE · <span class="mono">85.214.38.12</span> · wrong password</span>
+              </div>
+              <span class="lr-method m-password">Password</span>
+              <div class="lr-time">Apr 20, 03:17</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">🔑</div>
+              <div class="lr-event">Password changed
+                <span class="lr-meta">MacBook Pro · Safari · Lisbon, PT · all other sessions revoked</span>
+              </div>
+              <span class="lr-method m-password">Password</span>
+              <div class="lr-time">Mar 9, 14:18</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in
+                <span class="lr-meta">iPad Pro · Safari Mobile · Lagos, PT · <span class="mono">213.13.205.7</span></span>
+              </div>
+              <span class="lr-method m-oauth">Google OAuth</span>
+              <div class="lr-time">Apr 19, 19:11</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in
+                <span class="lr-meta">Windows 11 · Chrome 124 · Berlin, DE · <span class="mono">85.214.38.12</span></span>
+              </div>
+              <span class="lr-method m-password">Password</span>
+              <div class="lr-time">Apr 18, 22:55</div>
+            </div>
+
+            <div class="log-row is-failed" data-kind="fail">
+              <div class="lr-icon">⚠️</div>
+              <div class="lr-event">Failed sign-in attempt
+                <span class="lr-meta">Unknown device · Berlin, DE · <span class="mono">85.214.38.12</span> · invalid 2FA code</span>
+              </div>
+              <span class="lr-method m-totp">Password + 2FA</span>
+              <div class="lr-time">Apr 18, 22:51</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">🚪</div>
+              <div class="lr-event">Signed out — manual
+                <span class="lr-meta">MacBook Air · Chrome · Lisbon, PT · <span class="mono">212.18.4.22</span></span>
+              </div>
+              <span class="lr-method m-password">—</span>
+              <div class="lr-time">Apr 16, 17:30</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in
+                <span class="lr-meta">MacBook Pro · Safari 17 · Lisbon, PT · <span class="mono">212.18.4.22</span></span>
+              </div>
+              <span class="lr-method m-magic">Magic link</span>
+              <div class="lr-time">Apr 14, 10:08</div>
+            </div>
+
+            <div class="log-row" data-kind="success">
+              <div class="lr-icon">✅</div>
+              <div class="lr-event">Signed in via Google
+                <span class="lr-meta">MacBook Pro · Safari 17 · Lisbon, PT · <span class="mono">212.18.4.22</span></span>
+              </div>
+              <span class="lr-method m-oauth">Google OAuth</span>
+              <div class="lr-time">Apr 12, 09:00</div>
+            </div>
+          </div>
+
+          <div class="log-foot">
+            <span>Showing last 30 days · Older entries pruned automatically (ECN-10).</span>
+            <button class="lf-link" onclick="alert('Mockup — would download a CSV of all visible rows.')">Download as CSV</button>
+          </div>
+        </section>
+
+        <!-- ========================= CONNECTED ACCOUNTS ========================= -->
+        <section class="sec" aria-labelledby="oauth-h">
+          <div class="sec-head">
+            <div>
+              <div class="sec-title">Connected accounts</div>
+              <h2 class="sec-h3" id="oauth-h" style="margin-top:6px">Sign in with…</h2>
+              <p class="sec-sub">Use a connected account as an alternative way to sign in. You can disconnect at any time as long as you have a password set.</p>
+            </div>
+          </div>
+
+          <div class="oauth-grid">
+            <div class="oauth-card">
+              <div class="o-ico g">G</div>
+              <div class="o-info">
+                <div class="o-name">Google</div>
+                <div class="o-meta">Connected as <b style="color:var(--fg)">alexandra@gmail.com</b></div>
+              </div>
+              <button class="btn btn-ghost btn-xs" onclick="confirmDisconnect('Google')">Disconnect</button>
+            </div>
+            <div class="oauth-card is-disconnected">
+              <div class="o-ico gh">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.69.08-.69 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.99 10.99 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.07.78 2.16v3.2c0 .31.21.68.79.56 4.57-1.52 7.86-5.83 7.86-10.91C23.5 5.65 18.35.5 12 .5z"/></svg>
+              </div>
+              <div class="o-info">
+                <div class="o-name">GitHub</div>
+                <div class="o-meta">Not connected</div>
+              </div>
+              <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would start GitHub OAuth flow.')">Connect</button>
+            </div>
+            <div class="oauth-card is-disconnected">
+              <div class="o-ico ap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.04c-.03-2.96 2.42-4.39 2.53-4.46-1.38-2.02-3.53-2.3-4.29-2.33-1.83-.18-3.57 1.07-4.5 1.07-.93 0-2.36-1.05-3.88-1.02-2 .03-3.84 1.16-4.86 2.95-2.07 3.59-.53 8.91 1.49 11.83.99 1.43 2.16 3.03 3.7 2.97 1.49-.06 2.05-.96 3.85-.96s2.31.96 3.88.93c1.6-.03 2.61-1.45 3.59-2.89 1.13-1.66 1.59-3.27 1.61-3.35-.04-.02-3.09-1.18-3.12-4.74zM14.42 3.27c.82-1 1.37-2.37 1.22-3.74-1.18.05-2.6.79-3.45 1.78-.76.88-1.43 2.29-1.25 3.62 1.31.1 2.66-.66 3.48-1.66z"/></svg>
+              </div>
+              <div class="o-info">
+                <div class="o-name">Apple</div>
+                <div class="o-meta">Not connected</div>
+              </div>
+              <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would start Sign in with Apple flow.')">Connect</button>
+            </div>
+          </div>
+          <p class="field-help" style="margin-top:14px">Disconnecting a provider doesn't sign you out — it just removes that sign-in option for next time.</p>
+        </section>
+
+      </div>
+
+      <!-- =================== RECOMMENDATIONS RAIL =================== -->
+      <aside class="sec-col-side" aria-label="Security recommendations">
+
+        <div class="rec-card">
+          <div class="rec-head">
+            <div class="rec-title">Security score</div>
+            <span class="rec-score is-good">82 / 100 · Good</span>
+          </div>
+          <div style="font-size:12.5px;color:var(--fg-muted);line-height:1.5;margin-bottom:14px">
+            Based on password age, 2FA, recent sessions, and connected accounts. Updated live.
+          </div>
+          <div class="rec-list">
+            <div class="rec-item rec-2fa prio-high" id="rec-enable-2fa">
+              <span class="rec-prio" aria-hidden="true"></span>
+              <div class="rec-body">
+                <div class="rec-name">Enable two-factor authentication</div>
+                <div class="rec-desc">Single biggest jump in account safety. Costs you 90 seconds, blocks 99% of credential-stuffing attacks.</div>
+                <button class="rec-cta" onclick="openModal('totp-setup-modal'); resetTotpStepper();">
+                  Set up now →
+                </button>
+              </div>
+            </div>
+
+            <div class="rec-item prio-med">
+              <span class="rec-prio" aria-hidden="true"></span>
+              <div class="rec-body">
+                <div class="rec-name">Update your password</div>
+                <div class="rec-desc">Last changed 47 days ago — still healthy. We'll remind you again at 90 days.</div>
+                <button class="rec-cta" onclick="openModal('change-password-modal')">
+                  Change now →
+                </button>
+              </div>
+            </div>
+
+            <div class="rec-item prio-low">
+              <span class="rec-prio" aria-hidden="true"></span>
+              <div class="rec-body">
+                <div class="rec-name">Review your active sessions</div>
+                <div class="rec-desc">5 active sessions on 4 devices. The Berlin Windows session has been idle for 27 days — consider signing it out.</div>
+                <button class="rec-cta" onclick="document.getElementById('sessions-section').scrollIntoView({behavior:'smooth'})">
+                  Review →
+                </button>
+              </div>
+            </div>
+
+            <div class="rec-item prio-low is-done">
+              <span class="rec-prio" aria-hidden="true"></span>
+              <div class="rec-body">
+                <div class="rec-name">Connect a backup sign-in method</div>
+                <div class="rec-desc">Google connected — you can recover access even without your password.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rec-card">
+          <div class="rec-head">
+            <div class="rec-title">About this tab</div>
+          </div>
+          <p style="font-size:12.5px;color:var(--fg-muted);line-height:1.55;margin:0 0 10px">
+            Security settings are <b style="color:var(--fg)">free for every tier</b> — Free, Creator, Pro, and Business get the same features.
+            We never charge for staying safe.
+          </p>
+          <p style="font-size:11.5px;color:var(--fg-subtle);line-height:1.5;margin:0">
+            Powered by Supabase Auth (MFA module RFC-6238). Backup codes hashed with bcrypt cost-12. Login audit pruned at 30 days, sessions at 90 days.
+          </p>
+        </div>
+
+      </aside>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================
+     MODALS — every editor opens a CENTERED MODAL (never a drawer)
+     ============================================================ -->
+
+<!-- Change password modal -->
+<div class="modal-bd" id="change-password-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cp-title">
+    <button class="modal-close-x" onclick="closeModal('change-password-modal')" aria-label="Close">×</button>
+    <h3 id="cp-title">Change password</h3>
+    <p class="modal-sub">All other devices will be signed out automatically — this session stays. If 2FA is on, it stays on (ECN-07).</p>
+
+    <div class="field-row">
+      <div class="field-label" style="width:130px">Current password</div>
+      <div class="field-body">
+        <div class="pw-wrap">
+          <input class="field-input" type="password" id="pw-current" autocomplete="current-password" placeholder="Your current password">
+          <button class="pw-eye" onclick="togglePwEye('pw-current', this)" aria-label="Show / hide password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="field-error" id="pw-current-err" style="display:none">Current password is incorrect.</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-label" style="width:130px">New password</div>
+      <div class="field-body">
+        <div class="pw-wrap">
+          <input class="field-input" type="password" id="pw-new" autocomplete="new-password" placeholder="Min. 12 characters" oninput="updatePwStrength(); validateNewPw();">
+          <button class="pw-eye" onclick="togglePwEye('pw-new', this)" aria-label="Show / hide password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="pw-strength">
+          <div class="pw-bars" id="pw-bars" data-level="0"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+          <div class="pw-strength-label">Strength: <span class="lab-val" id="pw-label">—</span></div>
+        </div>
+        <ul class="pw-reqs" id="pw-reqs">
+          <li data-req="len"  ><span class="req-ico">✓</span>At least 12 characters</li>
+          <li data-req="mix"  ><span class="req-ico">✓</span>Mixes letters and numbers</li>
+          <li data-req="case" ><span class="req-ico">✓</span>Has lowercase and uppercase</li>
+          <li data-req="uncommon"><span class="req-ico">✓</span>Not a common pattern (no <code style="font-family:var(--font-mono);font-size:11px">password</code>, <code style="font-family:var(--font-mono);font-size:11px">123456</code>, your handle…)</li>
+        </ul>
+        <div class="field-error" id="pw-new-err" style="display:none">Minimum 12 characters.</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-label" style="width:130px">Confirm</div>
+      <div class="field-body">
+        <div class="pw-wrap">
+          <input class="field-input" type="password" id="pw-confirm" autocomplete="new-password" placeholder="Repeat new password" oninput="validateConfirm();">
+          <button class="pw-eye" onclick="togglePwEye('pw-confirm', this)" aria-label="Show / hide password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="field-error" id="pw-confirm-err" style="display:none">Passwords don't match.</div>
+      </div>
+    </div>
+
+    <div class="modal-info">
+      <b>Heads up:</b> All other active sessions will be signed out as soon as you save. You'll stay signed in here.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('change-password-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="cp-save-btn" onclick="savePassword(this)" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save password
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 2FA Setup modal (3 steps) -->
+<div class="modal-bd" id="totp-setup-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="totp-title">
+    <button class="modal-close-x" onclick="confirmCloseTotp()" aria-label="Close">×</button>
+    <h3 id="totp-title">Set up two-factor authentication</h3>
+    <p class="modal-sub">A 6-digit code from your authenticator app, in addition to your password. Adds about 5 seconds to sign-in.</p>
+
+    <div class="stepper" id="totp-stepper" aria-label="Setup steps">
+      <span class="step-pill is-current" data-step="1"><span class="step-num">1</span>Scan QR</span>
+      <span class="step-arrow">→</span>
+      <span class="step-pill" data-step="2"><span class="step-num">2</span>Verify code</span>
+      <span class="step-arrow">→</span>
+      <span class="step-pill" data-step="3"><span class="step-num">3</span>Backup codes</span>
+    </div>
+
+    <!-- Step 1: scan QR -->
+    <div class="totp-step" data-step="1">
+      <div class="qr-row">
+        <div class="qr-tile" aria-label="QR code preview">
+          <!-- Decorative QR-style SVG (not a real code) -->
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="100" height="100" fill="#fff"/>
+            <g fill="#0B0F1E">
+              <rect x="6" y="6" width="22" height="22"/><rect x="11" y="11" width="12" height="12" fill="#fff"/><rect x="14" y="14" width="6" height="6"/>
+              <rect x="72" y="6" width="22" height="22"/><rect x="77" y="11" width="12" height="12" fill="#fff"/><rect x="80" y="14" width="6" height="6"/>
+              <rect x="6" y="72" width="22" height="22"/><rect x="11" y="77" width="12" height="12" fill="#fff"/><rect x="14" y="80" width="6" height="6"/>
+              <rect x="34" y="8" width="4" height="4"/><rect x="42" y="8" width="4" height="4"/><rect x="50" y="8" width="4" height="4"/><rect x="58" y="8" width="4" height="4"/>
+              <rect x="34" y="16" width="4" height="4"/><rect x="46" y="16" width="4" height="4"/><rect x="58" y="16" width="4" height="4"/>
+              <rect x="38" y="24" width="4" height="4"/><rect x="46" y="24" width="4" height="4"/><rect x="54" y="24" width="4" height="4"/><rect x="62" y="24" width="4" height="4"/>
+              <rect x="34" y="32" width="4" height="4"/><rect x="42" y="32" width="4" height="4"/><rect x="50" y="32" width="4" height="4"/><rect x="58" y="32" width="4" height="4"/><rect x="66" y="32" width="4" height="4"/><rect x="74" y="32" width="4" height="4"/><rect x="82" y="32" width="4" height="4"/>
+              <rect x="8" y="34" width="4" height="4"/><rect x="16" y="34" width="4" height="4"/><rect x="24" y="34" width="4" height="4"/>
+              <rect x="38" y="40" width="4" height="4"/><rect x="46" y="40" width="4" height="4"/><rect x="54" y="40" width="4" height="4"/><rect x="62" y="40" width="4" height="4"/><rect x="74" y="40" width="4" height="4"/><rect x="82" y="40" width="4" height="4"/>
+              <rect x="8" y="42" width="4" height="4"/><rect x="20" y="42" width="4" height="4"/><rect x="28" y="42" width="4" height="4"/>
+              <rect x="34" y="48" width="4" height="4"/><rect x="42" y="48" width="4" height="4"/><rect x="58" y="48" width="4" height="4"/><rect x="66" y="48" width="4" height="4"/><rect x="74" y="48" width="4" height="4"/>
+              <rect x="8" y="50" width="4" height="4"/><rect x="16" y="50" width="4" height="4"/><rect x="24" y="50" width="4" height="4"/>
+              <rect x="38" y="56" width="4" height="4"/><rect x="50" y="56" width="4" height="4"/><rect x="62" y="56" width="4" height="4"/><rect x="70" y="56" width="4" height="4"/><rect x="82" y="56" width="4" height="4"/>
+              <rect x="34" y="64" width="4" height="4"/><rect x="46" y="64" width="4" height="4"/><rect x="54" y="64" width="4" height="4"/><rect x="66" y="64" width="4" height="4"/><rect x="78" y="64" width="4" height="4"/>
+              <rect x="34" y="72" width="4" height="4"/><rect x="42" y="72" width="4" height="4"/><rect x="58" y="72" width="4" height="4"/><rect x="74" y="72" width="4" height="4"/><rect x="86" y="72" width="4" height="4"/>
+              <rect x="38" y="80" width="4" height="4"/><rect x="50" y="80" width="4" height="4"/><rect x="62" y="80" width="4" height="4"/><rect x="74" y="80" width="4" height="4"/><rect x="82" y="80" width="4" height="4"/>
+              <rect x="34" y="88" width="4" height="4"/><rect x="46" y="88" width="4" height="4"/><rect x="58" y="88" width="4" height="4"/><rect x="70" y="88" width="4" height="4"/><rect x="82" y="88" width="4" height="4"/>
+            </g>
+          </svg>
+        </div>
+        <div class="qr-info">
+          <ol>
+            <li>Open your authenticator app (Google Authenticator, 1Password, Authy, Bitwarden…).</li>
+            <li>Tap <b>+ Add</b> or <b>Scan QR code</b>.</li>
+            <li>Point your phone's camera at the code on the left.</li>
+            <li>Or paste the secret manually if your app doesn't scan QR.</li>
+          </ol>
+          <div class="qr-secret-row" title="Manual setup secret (base32)">
+            <code id="totp-secret">JBSWY3DPEHPK3PXPJBSWY3DP EHPK</code>
+            <button class="btn btn-ghost btn-xs" onclick="copyText('JBSWY3DPEHPK3PXPJBSWY3DPEHPK', this)">Copy</button>
+          </div>
+          <p style="font-size:11.5px;color:var(--fg-subtle);margin:8px 0 0;line-height:1.5">
+            Account label in your app: <b style="color:var(--fg)">tadaify (alexandra@example.com)</b>
+          </p>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('totp-setup-modal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="totpStep(2)">I scanned it — next →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: verify -->
+    <div class="totp-step" data-step="2" style="display:none">
+      <p style="font-size:13px;color:var(--fg);margin:8px 0 12px">
+        Enter the 6-digit code currently shown in your authenticator app to confirm pairing.
+      </p>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="field-input totp-input"
+             id="totp-code" placeholder="000000"
+             oninput="this.value=this.value.replace(/\D/g,'').slice(0,6); document.getElementById('totp-verify-btn').disabled = this.value.length !== 6;">
+      <div class="field-error" id="totp-code-err" style="display:none">Invalid code — try again. Codes refresh every 30 seconds.</div>
+      <p style="font-size:11.5px;color:var(--fg-subtle);margin:10px 0 0;line-height:1.5">
+        Allows a ±30 s clock skew (RFC-6238) — if it keeps failing, check that your phone's clock is on automatic time.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="totpStep(1)">← Back</button>
+        <button class="btn btn-primary btn-sm" id="totp-verify-btn" disabled onclick="verifyTotp()">Verify and enable</button>
+      </div>
+    </div>
+
+    <!-- Step 3: backup codes -->
+    <div class="totp-step" data-step="3" style="display:none">
+      <div class="modal-warning">
+        <b>Save these codes now.</b> They will not be shown again.
+        Each one signs you in once if you lose access to your authenticator.
+      </div>
+      <div class="codes-grid" id="codes-grid">
+        <code>4P9C-WK2L</code><code>JX7V-Q3RM</code>
+        <code>HG1A-D8YN</code><code>T6BS-LF2K</code>
+        <code>9MC3-XZ7P</code><code>RW8E-N5VT</code>
+        <code>K2HJ-PQ6Y</code><code>BX4U-S9LM</code>
+        <code>FD7T-G3WA</code><code>YN1Q-VB6E</code>
+      </div>
+      <div class="codes-actions">
+        <button class="btn btn-ghost btn-sm" onclick="copyAllCodes(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy all
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadCodes()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download as backup-codes.txt
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">Print</button>
+      </div>
+      <label class="codes-ack">
+        <input type="checkbox" id="codes-ack" onchange="document.getElementById('codes-done-btn').disabled = !this.checked">
+        I've saved these codes somewhere safe (password manager, printed paper, encrypted note).
+      </label>
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-sm" id="codes-done-btn" disabled onclick="finishTotpSetup()">2FA enabled — done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View remaining backup codes (8 of 10 unused) -->
+<div class="modal-bd" id="backup-codes-view-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close-x" onclick="closeModal('backup-codes-view-modal')" aria-label="Close">×</button>
+    <h3>Remaining backup codes</h3>
+    <p class="modal-sub">8 of 10 unused. Used codes are masked. To see fresh codes, regenerate (which invalidates these).</p>
+    <div class="codes-grid">
+      <code>4P9C-WK2L</code><code style="opacity:0.4;text-decoration:line-through">used</code>
+      <code>HG1A-D8YN</code><code>T6BS-LF2K</code>
+      <code>9MC3-XZ7P</code><code>RW8E-N5VT</code>
+      <code>K2HJ-PQ6Y</code><code style="opacity:0.4;text-decoration:line-through">used</code>
+      <code>FD7T-G3WA</code><code>YN1Q-VB6E</code>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('backup-codes-view-modal'); openModal('regenerate-codes-modal')">Regenerate</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('backup-codes-view-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Regenerate backup codes confirm -->
+<div class="modal-bd" id="regenerate-codes-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close-x" onclick="closeModal('regenerate-codes-modal')" aria-label="Close">×</button>
+    <h3>Regenerate backup codes?</h3>
+    <p class="modal-sub">This invalidates your existing 10 codes immediately. New codes will be shown <b>once</b> — save them right away (ECN-08).</p>
+    <div class="modal-warning">
+      Any code you've written down or stored will stop working after you confirm.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('regenerate-codes-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('regenerate-codes-modal'); openModal('totp-setup-modal'); totpStep(3);">Yes — generate new codes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Disable 2FA confirm -->
+<div class="modal-bd" id="disable-2fa-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close-x" onclick="closeModal('disable-2fa-modal')" aria-label="Close">×</button>
+    <h3>Disable two-factor authentication?</h3>
+    <p class="modal-sub">Your account will be protected by your password alone. We strongly recommend keeping 2FA on.</p>
+    <div class="modal-warning">
+      Disabling will also delete all unused backup codes (ECN-09). You can always re-enable later.
+    </div>
+    <div class="field-row">
+      <div class="field-label" style="width:140px">Confirm password</div>
+      <div class="field-body">
+        <input class="field-input" type="password" placeholder="Your current password" autocomplete="current-password">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-label" style="width:140px">Recovery email</div>
+      <div class="field-body">
+        <input class="field-input" type="email" placeholder="alexandra@example.com">
+        <p class="field-help">Type your verified recovery email to confirm you have access.</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('disable-2fa-modal')">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="alert('Mockup — would call supabase.auth.mfa.unenroll() and write a login_audit row.'); closeModal('disable-2fa-modal');">Disable 2FA</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sign out all others confirm -->
+<div class="modal-bd" id="signout-all-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close-x" onclick="closeModal('signout-all-modal')" aria-label="Close">×</button>
+    <h3>Sign out all other sessions?</h3>
+    <p class="modal-sub">Every device except this one will be signed out immediately. They'll need to enter your password (and 2FA, if enabled) to sign back in.</p>
+    <div class="modal-info">
+      Your iPhone, MacBook Air, Windows 11, and iPad Pro sessions will end. <b>This MacBook Pro stays signed in.</b>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('signout-all-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="alert('Mockup — would call supabase.auth.signOut({ scope: \\'others\\' }) and refresh the sessions list.'); closeModal('signout-all-modal');">Yes — sign out everywhere else</button>
+    </div>
+  </div>
+</div>
+
+<!-- Disconnect OAuth confirm -->
+<div class="modal-bd" id="disconnect-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close-x" onclick="closeModal('disconnect-modal')" aria-label="Close">×</button>
+    <h3>Disconnect <span id="dc-provider">Google</span>?</h3>
+    <p class="modal-sub">You'll no longer be able to sign in with this provider. Make sure you have a working password before disconnecting.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('disconnect-modal')">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="alert('Mockup — would call DELETE /auth/v1/identities/<id>.'); closeModal('disconnect-modal');">Disconnect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save-prompt-on-close (ECN-01) -->
+<div class="modal-bd" id="codes-close-warn-modal" onclick="closeOnBackdrop(event, this)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close-x" onclick="closeModal('codes-close-warn-modal')" aria-label="Close">×</button>
+    <h3>Have you saved your backup codes?</h3>
+    <p class="modal-sub">If you lose access to your authenticator without backup codes, you'll need to email support to recover your account.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('codes-close-warn-modal')">Wait — let me save them</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('codes-close-warn-modal'); closeModal('totp-setup-modal'); finishTotpSetup();">I've saved them — close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEMO TOOLBAR (mockup reviewer only — hidden from real UX)
+     ============================================================ -->
+<div aria-hidden="true" style="position:fixed;bottom:16px;right:16px;z-index:999">
+  <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:11px;font-weight:600;color:var(--fg-subtle);display:flex;flex-direction:column;gap:6px;box-shadow:0 8px 24px rgba(17,24,39,0.12);min-width:240px">
+    <div style="color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.06em;font-size:10px">Mockup demo</div>
+
+    <div style="font-size:10.5px;color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Tier (security is identical)</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button onclick="setTier('free')"     class="tier-btn">Free</button>
+      <button onclick="setTier('creator')"  class="tier-btn is-active">Creator</button>
+      <button onclick="setTier('pro')"      class="tier-btn">Pro</button>
+      <button onclick="setTier('business')" class="tier-btn">Business</button>
+    </div>
+
+    <div style="font-size:10.5px;color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.04em;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">State</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button onclick="setState('filled')"     class="state-btn is-active">Filled (default)</button>
+      <button onclick="setState('no-2fa')"     class="state-btn">No 2FA</button>
+      <button onclick="setState('suspicious')" class="state-btn">Suspicious activity</button>
+    </div>
+
+    <div style="font-size:10.5px;color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.04em;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">Quick open</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button onclick="openModal('change-password-modal')" class="state-btn">Password</button>
+      <button onclick="openModal('totp-setup-modal'); resetTotpStepper()" class="state-btn">2FA setup</button>
+      <button onclick="openModal('backup-codes-view-modal')" class="state-btn">Backup codes</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tier-btn, .state-btn {
+    padding: 3px 9px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--bg); font-size: 11px; font-weight: 600; cursor: pointer;
+    font-family: var(--font-sans); color: var(--fg);
+  }
+  .tier-btn.is-active, .state-btn.is-active {
+    background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
+  }
+  body.dark-mode .tier-btn, body.dark-mode .state-btn { background: #0B0F1E; color: #F3F4F6; border-color: #1F2937; }
+  body.dark-mode .tier-btn.is-active, body.dark-mode .state-btn.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+</style>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  /* ── Theme ── */
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  /* ── Sister-tab fallback (deep-dive may not exist yet) ── */
+  function fileExists(_url) {
+    /* Mockup-only — assume yes; in production the router handles it. */
+    return true;
+  }
+
+  /* ── Modals ── */
+  function openModal(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('open');
+    /* trap focus on first focusable */
+    setTimeout(function () {
+      var f = el.querySelector('input, button:not(.modal-close-x)');
+      if (f) f.focus();
+    }, 60);
+  }
+  function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  }
+  function closeOnBackdrop(event, el) {
+    if (event.target === el) {
+      /* Special handling: TOTP step 3 → confirm save (ECN-01) */
+      if (el.id === 'totp-setup-modal' && currentTotpStep === 3) {
+        openModal('codes-close-warn-modal');
+        return;
+      }
+      el.classList.remove('open');
+    }
+  }
+  function confirmCloseTotp() {
+    if (currentTotpStep === 3) { openModal('codes-close-warn-modal'); return; }
+    closeModal('totp-setup-modal');
+  }
+
+  /* ── Esc closes top-most modal ── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var open = document.querySelectorAll('.modal-bd.open');
+    if (!open.length) return;
+    var top = open[open.length - 1];
+    if (top.id === 'totp-setup-modal' && currentTotpStep === 3) {
+      openModal('codes-close-warn-modal'); return;
+    }
+    top.classList.remove('open');
+  });
+
+  /* ── Password show/hide ── */
+  function togglePwEye(inputId, btn) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    input.type = (input.type === 'password') ? 'text' : 'password';
+    btn.style.color = (input.type === 'text') ? 'var(--brand-primary)' : 'var(--fg-muted)';
+  }
+
+  /* ── Password strength (simple zxcvbn-ish heuristic for demo) ── */
+  var COMMON = ['password','123456','qwerty','letmein','admin','welcome','alexandra','tadaify'];
+  function scorePassword(v) {
+    if (!v) return 0;
+    var score = 0;
+    if (v.length >= 12) score += 1;
+    if (v.length >= 16) score += 1;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score += 1;
+    if (/\d/.test(v) && /[^a-zA-Z\d]/.test(v)) score += 1;
+    var lc = v.toLowerCase();
+    var common = COMMON.some(function (c) { return lc.indexOf(c) !== -1; });
+    if (common) score = Math.max(0, score - 2);
+    return Math.min(4, score);
+  }
+  function updatePwStrength() {
+    var v = document.getElementById('pw-new').value;
+    var score = scorePassword(v);
+    var bars = document.getElementById('pw-bars');
+    var label = document.getElementById('pw-label');
+    bars.setAttribute('data-level', String(score));
+    var labels = ['—', 'Weak', 'Fair', 'Good', 'Strong'];
+    label.textContent = labels[score] || '—';
+    label.style.color = (score === 0) ? 'var(--fg-muted)'
+                       : (score === 1) ? 'var(--danger)'
+                       : (score === 2) ? '#92400E'
+                       : (score === 3) ? '#047857'
+                       : '#047857';
+
+    /* Update requirement checklist */
+    var lc = v.toLowerCase();
+    setReq('len',      v.length >= 12);
+    setReq('mix',      /[a-zA-Z]/.test(v) && /\d/.test(v));
+    setReq('case',     /[a-z]/.test(v) && /[A-Z]/.test(v));
+    setReq('uncommon', v.length > 0 && !COMMON.some(function (c) { return lc.indexOf(c) !== -1; }));
+  }
+  function setReq(name, met) {
+    var li = document.querySelector('.pw-reqs li[data-req="' + name + '"]');
+    if (!li) return;
+    li.classList.toggle('is-met', !!met);
+    li.querySelector('.req-ico').textContent = met ? '✓' : '·';
+  }
+
+  function validateNewPw() {
+    var v = document.getElementById('pw-new').value;
+    var err = document.getElementById('pw-new-err');
+    var ok = v.length >= 12;
+    err.style.display = (v.length > 0 && v.length < 12) ? 'block' : 'none';
+    document.getElementById('pw-new').classList.toggle('has-error', v.length > 0 && v.length < 12);
+    refreshSaveBtn();
+    if (document.getElementById('pw-confirm').value) validateConfirm();
+  }
+  function validateConfirm() {
+    var n = document.getElementById('pw-new').value;
+    var c = document.getElementById('pw-confirm').value;
+    var err = document.getElementById('pw-confirm-err');
+    var match = (n === c);
+    err.style.display = (c.length > 0 && !match) ? 'block' : 'none';
+    document.getElementById('pw-confirm').classList.toggle('has-error', c.length > 0 && !match);
+    refreshSaveBtn();
+  }
+  function refreshSaveBtn() {
+    var cur = document.getElementById('pw-current').value;
+    var n = document.getElementById('pw-new').value;
+    var c = document.getElementById('pw-confirm').value;
+    var btn = document.getElementById('cp-save-btn');
+    btn.disabled = !(cur && n.length >= 12 && n === c);
+  }
+  document.getElementById('pw-current').addEventListener('input', refreshSaveBtn);
+
+  function savePassword(btn) {
+    /* Mockup — simulate "current password incorrect" if current === 'wrong' */
+    var cur = document.getElementById('pw-current').value;
+    if (cur.toLowerCase() === 'wrong') {
+      document.getElementById('pw-current-err').style.display = 'block';
+      document.getElementById('pw-current').classList.add('has-error');
+      return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg> Saving…';
+    setTimeout(function () {
+      alert('Mockup — password updated. All other sessions signed out.');
+      closeModal('change-password-modal');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Save password';
+    }, 600);
+  }
+
+  /* ── TOTP stepper ── */
+  var currentTotpStep = 1;
+  function totpStep(n) {
+    currentTotpStep = n;
+    document.querySelectorAll('.totp-step').forEach(function (s) {
+      s.style.display = (Number(s.getAttribute('data-step')) === n) ? '' : 'none';
+    });
+    document.querySelectorAll('#totp-stepper .step-pill').forEach(function (p) {
+      var step = Number(p.getAttribute('data-step'));
+      p.classList.toggle('is-current', step === n);
+      p.classList.toggle('is-done',    step <  n);
+    });
+  }
+  function resetTotpStepper() {
+    currentTotpStep = 1;
+    totpStep(1);
+    var code = document.getElementById('totp-code'); if (code) { code.value = ''; }
+    var btn = document.getElementById('totp-verify-btn'); if (btn) btn.disabled = true;
+    document.getElementById('totp-code-err').style.display = 'none';
+    var ack = document.getElementById('codes-ack'); if (ack) { ack.checked = false; }
+    var done = document.getElementById('codes-done-btn'); if (done) done.disabled = true;
+  }
+  function verifyTotp() {
+    var code = document.getElementById('totp-code').value;
+    /* Mockup — accept any code except the literal "000000" (used for AC-6) */
+    if (code === '000000') {
+      document.getElementById('totp-code-err').style.display = 'block';
+      document.getElementById('totp-code').classList.add('has-error');
+      return;
+    }
+    document.getElementById('totp-code-err').style.display = 'none';
+    document.getElementById('totp-code').classList.remove('has-error');
+    totpStep(3);
+  }
+  function finishTotpSetup() {
+    closeModal('totp-setup-modal');
+    setState('filled');
+    alert('Mockup — 2FA enabled. Login_audit row written: totp_enabled.');
+  }
+
+  /* ── Codes utilities ── */
+  function copyAllCodes(btn) {
+    var codes = Array.from(document.querySelectorAll('#codes-grid code')).map(function (c) { return c.textContent; }).join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(codes);
+    var orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied';
+    setTimeout(function () { btn.innerHTML = orig; }, 1200);
+  }
+  function downloadCodes() {
+    var codes = Array.from(document.querySelectorAll('#codes-grid code')).map(function (c) { return c.textContent; }).join('\n');
+    var blob = new Blob(['tadaify backup codes — alexandra@example.com\nGenerated ' + new Date().toISOString() + '\n\n' + codes + '\n'], { type: 'text/plain' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'tadaify-backup-codes.txt';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 100);
+  }
+  function copyText(text, btn) {
+    if (navigator.clipboard) navigator.clipboard.writeText(text);
+    var orig = btn.innerHTML;
+    btn.innerHTML = '✓';
+    setTimeout(function () { btn.innerHTML = orig; }, 1000);
+  }
+
+  /* ── Sessions ── */
+  function signOutSession(btn, label) {
+    if (!confirm('Sign out ' + label + '?\n\nThis will end that session immediately. They will receive 401 on the next request.')) return;
+    var row = btn.closest('.sess-row');
+    row.style.opacity = '0.4';
+    row.style.transition = 'opacity .2s ease';
+    setTimeout(function () { row.remove(); }, 200);
+  }
+
+  /* ── Disconnect provider ── */
+  function confirmDisconnect(provider) {
+    document.getElementById('dc-provider').textContent = provider;
+    openModal('disconnect-modal');
+  }
+
+  /* ── Login history filter ── */
+  function filterHistory(btn, kind) {
+    document.querySelectorAll('.log-tab').forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    document.querySelectorAll('#history-rows .log-row').forEach(function (r) {
+      var k = r.getAttribute('data-kind');
+      var show = (kind === 'all') || (k === kind);
+      r.style.display = show ? '' : 'none';
+    });
+  }
+  function searchHistory(q) {
+    q = (q || '').toLowerCase().trim();
+    document.querySelectorAll('#history-rows .log-row').forEach(function (r) {
+      var t = r.textContent.toLowerCase();
+      r.style.display = (!q || t.indexOf(q) !== -1) ? '' : 'none';
+    });
+  }
+
+  /* ── Demo toolbar: tier + state switchers ── */
+  function setTier(tier) {
+    document.body.setAttribute('data-current-tier', tier);
+    document.querySelectorAll('.tier-btn').forEach(function (b) { b.classList.remove('is-active'); });
+    var btn = Array.from(document.querySelectorAll('.tier-btn')).find(function (b) { return b.textContent.toLowerCase() === tier; });
+    if (btn) btn.classList.add('is-active');
+    /* Update sidebar tier label */
+    var u = document.querySelector('.side-user .uhandle');
+    if (u) {
+      var label = ({free:'Free', creator:'Creator', pro:'Pro', business:'Business'})[tier] || tier;
+      u.textContent = '@alexandra · ' + label;
+    }
+  }
+  function setState(s) {
+    document.body.setAttribute('data-state', s);
+    document.querySelectorAll('.state-btn').forEach(function (b) { b.classList.remove('is-active'); });
+    var labelMap = { 'filled': 'Filled (default)', 'no-2fa': 'No 2FA', 'suspicious': 'Suspicious activity' };
+    var btn = Array.from(document.querySelectorAll('.state-btn')).find(function (b) { return b.textContent === labelMap[s]; });
+    if (btn) btn.classList.add('is-active');
+  }
+
+  /* ── Spinner keyframe ── */
+  var sp = document.createElement('style');
+  sp.textContent = '.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}';
+  document.head.appendChild(sp);
+</script>
+</body>
+</html>
