@@ -3122,32 +3122,7 @@
         },
         analytics: { today: '54', sevenDay: '420', source: 'instagram', trending: true }
       },
-      'livestream': {
-        label: 'Live stream',
-        icon: '📡',
-        category: 'Media',
-        form: function (state) {
-          return [
-            { kind: 'select', name: 'platform', label: 'Platform',
-              options: [['twitch','Twitch'],['youtubelive','YouTube Live'],['kick','Kick']], value: state.platform || 'twitch' },
-            { kind: 'text', name: 'channel', label: 'Channel / handle', value: state.channel || 'alexandra-music' },
-            { kind: 'icon-picker', name: 'ctaIcon', label: 'Watch button icon', value: state.ctaIcon || 'play',
-              help: 'Shown next to "Watch live" when the stream is on.' },
-            { kind: 'check', name: 'showWhenOffline', label: 'Show block when offline (with "next stream" countdown)', value: state.showWhenOffline === true }
-          ];
-        },
-        preview: function (state) {
-          var ic = renderIconForPreview(state.ctaIcon, 'play');
-          return '<div class="preview-stream">' +
-                   '<span class="live">● LIVE</span> &nbsp; ' + escapeHtml(state.channel || 'alexandra-music') +
-                   '<div class="v">142 watching · ' + escapeHtml((state.platform || 'twitch').toUpperCase()) + '</div>' +
-                   '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#EF4444;color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700">' +
-                     ic + ' Watch live' +
-                   '</div>' +
-                 '</div>';
-        },
-        analytics: { today: '12', sevenDay: '88', source: 'discord' }
-      }
+      // v2 candidate: livestream — see feedback_no_livestream_block_in_tadaify_mvp.md (DEC-099)
     };
 
     /* ------------------------------------------------------------------ */
@@ -3388,7 +3363,7 @@
         }
       }
 
-      // A/B section identity chip — visible across all 13 block types
+      // A/B section identity chip — visible across all 12 block types
       // (FIX-004 consistency). Toggles between "available" and "active"
       // states purely from countAbDiffs(). No toggle restored — auto-detect
       // from Variant B edits stays per DEC-093.
