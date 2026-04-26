@@ -532,6 +532,326 @@
     body.dark-mode .ipk-tile:hover { background: #1F2937; }
     body.dark-mode .ipk-tile.is-selected { background: rgba(165,180,252,0.16); border-color: #A5B4FC; box-shadow: 0 0 0 2px rgba(165,180,252,0.22) inset; }
 
+    /* =========================================================================
+       Social cards — addable, removable, draggable per-platform cards used by
+       the "Social icons row" block type. Each card pairs a handle input with a
+       per-platform icon-style picker (5-7 styles per major brand).
+       ========================================================================= */
+    .social-cards-field { gap: 10px; }
+    .social-cards-toolbar {
+      position: relative;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .add-social-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 8px;
+      font-family: var(--font-sans); font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.10);
+      transition: filter .12s, transform .08s;
+    }
+    .add-social-btn:hover { filter: brightness(1.06); }
+    .add-social-btn:active { transform: scale(0.97); }
+    .add-social-btn[aria-expanded="true"] { background: var(--brand-primary); filter: brightness(0.92); }
+    .add-social-btn svg { display: block; }
+    .social-cards-count {
+      font-size: 11.5px; color: var(--fg-subtle);
+    }
+    .add-social-pop {
+      position: absolute; top: 100%; left: 0; z-index: 30;
+      margin-top: 6px;
+      width: min(420px, 100%);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.18);
+      max-height: 380px;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    body.dark-mode .add-social-pop { background: #141A2D; border-color: #1F2937; box-shadow: 0 14px 36px rgba(0,0,0,0.5); }
+    .add-social-search {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    body.dark-mode .add-social-search { border-color: #1F2937; }
+    .add-social-search svg {
+      width: 14px; height: 14px; color: var(--fg-subtle); flex-shrink: 0;
+    }
+    .add-social-search input {
+      flex: 1;
+      background: transparent; border: 0; outline: none;
+      font-family: var(--font-sans); font-size: 13px;
+      color: var(--fg);
+    }
+    .add-social-search input::placeholder { color: var(--fg-subtle); }
+    .add-social-list {
+      flex: 1; overflow-y: auto;
+      padding: 4px;
+    }
+    .add-social-row {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      background: transparent; border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-sans); font-size: 13px;
+      color: var(--fg);
+      text-align: left;
+      transition: background .10s;
+    }
+    .add-social-row:hover { background: var(--bg-muted); }
+    body.dark-mode .add-social-row:hover { background: #1F2937; }
+    .add-social-row-glyph {
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .add-social-row-name { flex: 1; font-weight: 500; }
+    .add-social-row-cta {
+      font-size: 11px; color: var(--brand-primary); font-weight: 600;
+      padding: 3px 8px; background: rgba(99,102,241,0.10);
+      border-radius: 99px;
+    }
+    .add-social-empty, .add-social-already {
+      padding: 14px 14px; font-size: 12.5px; color: var(--fg-subtle);
+      text-align: center;
+    }
+    .add-social-already {
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--fg-subtle);
+      padding: 8px 12px;
+      background: var(--bg-muted);
+    }
+    body.dark-mode .add-social-already { border-color: #1F2937; background: #0B0F1E; }
+
+    .social-cards-list {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .social-empty {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 22px 16px;
+      background: var(--bg);
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .social-empty-icon {
+      color: var(--fg-subtle);
+    }
+    .social-empty-title { font-size: 13px; font-weight: 600; color: var(--fg); }
+    .social-empty-copy {
+      font-size: 12px; color: var(--fg-muted);
+      line-height: 1.5;
+      max-width: 360px;
+    }
+    .social-empty-copy strong { color: var(--fg); font-weight: 600; }
+
+    .social-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px 8px 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      transition: border-color .12s, box-shadow .12s, opacity .12s, transform .12s;
+      position: relative;
+    }
+    .social-card.is-dragging { opacity: 0.45; }
+    .social-card.is-drag-over {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+    }
+    .social-card-drag {
+      width: 18px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle);
+      cursor: grab;
+      padding: 6px 0;
+    }
+    .social-card-drag:active { cursor: grabbing; }
+    .social-card-drag:hover { color: var(--fg); }
+    .social-card-style-trigger { position: relative; flex-shrink: 0; }
+    .social-style-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 6px 4px 4px;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      cursor: pointer; font-family: var(--font-sans);
+      transition: border-color .12s;
+      color: var(--fg-muted);
+    }
+    .social-style-btn:hover { border-color: var(--border-focus); }
+    .social-style-btn[aria-expanded="true"] {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.18);
+    }
+    .social-style-btn svg.ipk-chev { display: block; }
+    body.dark-mode .social-style-btn { background: #0B0F1E; border-color: #1F2937; }
+
+    .social-style-pop {
+      position: absolute; top: 100%; left: 0; z-index: 40;
+      margin-top: 6px;
+      min-width: 260px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.18);
+      padding: 10px;
+    }
+    body.dark-mode .social-style-pop { background: #141A2D; border-color: #1F2937; box-shadow: 0 14px 36px rgba(0,0,0,0.5); }
+    .social-style-pop-head {
+      font-size: 11.5px; color: var(--fg-muted);
+      padding: 4px 4px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    body.dark-mode .social-style-pop-head { border-color: #1F2937; }
+    .social-style-pop-head strong { color: var(--fg); }
+    .social-style-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    }
+    .social-style-tile {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      color: var(--fg);
+      transition: border-color .12s, background .12s, transform .08s;
+    }
+    .social-style-tile:hover { border-color: var(--border-focus); background: var(--bg-muted); }
+    .social-style-tile:active { transform: scale(0.96); }
+    .social-style-tile.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.10);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.18) inset;
+    }
+    body.dark-mode .social-style-tile { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .social-style-tile:hover { background: #1F2937; }
+    body.dark-mode .social-style-tile.is-selected { background: rgba(165,180,252,0.16); border-color: #A5B4FC; }
+    .social-style-tile-glyph {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+    }
+    .social-style-tile-label {
+      font-size: 9.5px; font-weight: 600;
+      color: var(--fg-muted);
+      text-align: center;
+      line-height: 1.2;
+      max-width: 80px;
+    }
+
+    .social-card-body {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .social-card-name {
+      font-size: 11.5px; color: var(--fg-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    .social-card-handle {
+      display: flex; align-items: center; gap: 0;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 0 8px;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .social-card-handle:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+    }
+    .social-card-handle-prefix {
+      font-size: 13px; color: var(--fg-subtle);
+      padding-right: 2px;
+      user-select: none;
+    }
+    .social-card-handle input {
+      flex: 1;
+      background: transparent;
+      border: 0; outline: none;
+      padding: 7px 0;
+      font-family: var(--font-sans); font-size: 13px;
+      color: var(--fg);
+    }
+    body.dark-mode .social-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .social-card-handle { background: #141A2D; border-color: #1F2937; }
+
+    .social-card-remove {
+      width: 28px; height: 28px;
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent;
+      border: 0; border-radius: 8px;
+      color: var(--fg-subtle);
+      cursor: pointer;
+      transition: background .10s, color .10s;
+    }
+    .social-card-remove:hover {
+      background: rgba(220,38,38,0.10);
+      color: #DC2626;
+    }
+    body.dark-mode .social-card-remove:hover { background: rgba(248,113,113,0.18); color: #FCA5A5; }
+    @media (max-width: 480px) {
+      .social-style-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* =========================================================================
+       A/B section identity chip — sits in the section-head right of "Content".
+       Visual signal that A/B testing is available on this block (every block
+       type, every tier — feature visibility). Active = Variant B has at least
+       one differing field. Available = no diffs yet (the feature exists but
+       hasn't been engaged).
+       ========================================================================= */
+    .ab-section-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: var(--font-sans);
+      flex-shrink: 0;
+    }
+    .ab-section-chip .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ab-section-chip[data-state="available"] {
+      background: var(--bg-muted);
+      color: var(--fg-muted);
+      border: 1px solid var(--border-strong);
+    }
+    .ab-section-chip[data-state="available"] .dot {
+      background: var(--fg-subtle);
+    }
+    .ab-section-chip[data-state="active"] {
+      background: rgba(245,158,11,0.14);
+      color: var(--brand-warm-dark, var(--brand-warm));
+      border: 1px solid rgba(245,158,11,0.45);
+    }
+    .ab-section-chip[data-state="active"] .dot {
+      background: var(--brand-warm);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.25);
+    }
+    body.dark-mode .ab-section-chip[data-state="available"] {
+      background: #1F2937; border-color: #374151; color: #9CA3AF;
+    }
+    body.dark-mode .ab-section-chip[data-state="active"] {
+      background: rgba(245,158,11,0.22); color: #FCD34D; border-color: rgba(245,158,11,0.55);
+    }
+
     /* Inline icon helpers used by previews (the colored block surface) */
     .pv-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
     .pv-icon svg { width: 100%; height: 100%; display: block; }
@@ -631,10 +951,40 @@
       flex-wrap: wrap;
     }
     .preview-social .si {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: rgba(255,255,255,0.18);
+      width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
       font-size: 14px; font-weight: 700;
+      color: #fff; /* lucide / mono variants inherit this */
+    }
+    .preview-social.shape-circle .si {
+      background: rgba(255,255,255,0.18);
+      border-radius: 50%;
+    }
+    .preview-social.shape-square .si {
+      background: rgba(255,255,255,0.18);
+      border-radius: 9px;
+    }
+    .preview-social.shape-none .si {
+      background: transparent;
+      border-radius: 0;
+    }
+    /* When the chosen icon style is itself filled (filled-circle /
+       filled-square / classic-camera), the wrapper would double-stack —
+       so we let the filled style provide its own background. The .si
+       wrapper just constrains size. */
+    .preview-social .si .sv-filled-circle,
+    .preview-social .si .sv-filled-square,
+    .preview-social .si .sv-legacy {
+      width: 36px !important; height: 36px !important;
+    }
+    .preview-social-empty {
+      padding: 22px 14px;
+      background: rgba(255,255,255,0.10);
+      border: 1px dashed rgba(255,255,255,0.4);
+      border-radius: 10px;
+      color: rgba(255,255,255,0.85);
+      font-size: 12.5px; font-weight: 500;
+      text-align: center;
     }
     .preview-form input {
       width: 100%; padding: 10px 12px;
@@ -1295,6 +1645,15 @@
           <section class="section" id="form-section" aria-labelledby="form-section-h">
             <div class="section-head">
               <h4 id="form-section-h">Content</h4>
+              <!-- A/B section identity chip — always visible across all 13
+                   block types so "A/B test" reads as a named feature, not a
+                   footnote. Toggles between data-state="available" and
+                   "active" purely from countAbDiffs() (DEC-093 stays). -->
+              <span class="ab-section-chip" id="ab-section-chip" data-state="available"
+                    title="Edit Variant B to start an A/B test — auto-detected at save">
+                <span class="dot" aria-hidden="true"></span>
+                <span class="ab-section-chip-label" id="ab-section-chip-label">A/B test available</span>
+              </span>
               <div class="ab-tabs" id="ab-tabs" role="tablist" aria-label="A/B variant tabs">
                 <button type="button" class="ab-tab is-active" data-variant="A" role="tab" aria-selected="true"
                         onclick="setActiveVariant('A')">
@@ -1782,6 +2141,207 @@
                         'shopping-cart','mail','star','sparkles','music','dollar-sign',
                         'flame','crown','calendar','gift','x','book-open','map-pin','rocket'];
 
+    /* ------------------------------------------------------------------ */
+    /* SOCIAL PLATFORMS + per-platform ICON STYLE VARIANTS                */
+    /*                                                                    */
+    /* Each social platform exposes 5-7 visual styles the creator picks   */
+    /* between (brand-color / monochrome / outline / filled-circle /      */
+    /* filled-square / mono-frame, plus the occasional "legacy" variant   */
+    /* like the classic Twitter blue bird). Real impl maps to             */
+    /* simple-icons (CC0) brand bodies wrapped in style-specific SVG      */
+    /* containers + a small set of inline outlines for Instagram /        */
+    /* Twitter legacy. Mockup synthesizes every variant from the          */
+    /* existing ICON_LIBRARY brand path so we don't bloat the file with   */
+    /* per-style inline copies.                                           */
+    /*                                                                    */
+    /* Variant id format: <platform>-<style>. The base "brand" variant    */
+    /* keeps the canonical id (e.g. `instagram` not `instagram-brand`)    */
+    /* so existing state ids continue to resolve.                         */
+    /* ------------------------------------------------------------------ */
+    var SOCIAL_PLATFORMS = [
+      { id: 'instagram',    name: 'Instagram',     color: '#E4405F', defaultStyle: 'brand' },
+      { id: 'tiktok',       name: 'TikTok',        color: '#000000', defaultStyle: 'brand' },
+      { id: 'youtube',      name: 'YouTube',       color: '#FF0000', defaultStyle: 'brand' },
+      { id: 'x',            name: 'X (Twitter)',   color: '#000000', defaultStyle: 'brand' },
+      { id: 'spotify',      name: 'Spotify',       color: '#1DB954', defaultStyle: 'brand' },
+      { id: 'applemusic',   name: 'Apple Music',   color: '#FA243C', defaultStyle: 'brand' },
+      { id: 'soundcloud',   name: 'SoundCloud',    color: '#FF5500', defaultStyle: 'brand' },
+      { id: 'twitch',       name: 'Twitch',        color: '#9146FF', defaultStyle: 'brand' },
+      { id: 'linkedin',     name: 'LinkedIn',      color: '#0A66C2', defaultStyle: 'brand' },
+      { id: 'discord',      name: 'Discord',       color: '#5865F2', defaultStyle: 'brand' },
+      { id: 'telegram',     name: 'Telegram',      color: '#26A5E4', defaultStyle: 'brand' },
+      { id: 'whatsapp',     name: 'WhatsApp',      color: '#25D366', defaultStyle: 'brand' },
+      { id: 'facebook',     name: 'Facebook',      color: '#1877F2', defaultStyle: 'brand' },
+      { id: 'pinterest',    name: 'Pinterest',     color: '#BD081C', defaultStyle: 'brand' },
+      { id: 'threads',      name: 'Threads',       color: '#000000', defaultStyle: 'brand' },
+      { id: 'mastodon',     name: 'Mastodon',      color: '#6364FF', defaultStyle: 'brand' },
+      { id: 'bluesky',      name: 'Bluesky',       color: '#0085FF', defaultStyle: 'brand' },
+      { id: 'github',       name: 'GitHub',        color: '#181717', defaultStyle: 'brand' },
+      { id: 'substack',     name: 'Substack',      color: '#FF6719', defaultStyle: 'brand' },
+      { id: 'patreon',      name: 'Patreon',       color: '#F96854', defaultStyle: 'brand' },
+      { id: 'buymeacoffee', name: 'Buy Me a Coffee', color: '#FFDD00', defaultStyle: 'brand' },
+      { id: 'kofi',         name: 'Ko-fi',         color: '#FF5E5B', defaultStyle: 'brand' },
+      { id: 'gumroad',      name: 'Gumroad',       color: '#FF90E8', defaultStyle: 'brand' },
+      { id: 'snapchat',     name: 'Snapchat',      color: '#FFFC00', defaultStyle: 'brand' },
+      { id: 'reddit',       name: 'Reddit',        color: '#FF4500', defaultStyle: 'brand' },
+      { id: 'vimeo',        name: 'Vimeo',         color: '#1AB7EA', defaultStyle: 'brand' },
+      { id: 'dribbble',     name: 'Dribbble',      color: '#EA4C89', defaultStyle: 'brand' },
+      { id: 'behance',      name: 'Behance',       color: '#1769FF', defaultStyle: 'brand' },
+      { id: 'paypal',       name: 'PayPal',        color: '#003087', defaultStyle: 'brand' },
+      { id: 'etsy',         name: 'Etsy',          color: '#F16521', defaultStyle: 'brand' }
+    ];
+    var SOCIAL_PLATFORMS_BY_ID = {};
+    SOCIAL_PLATFORMS.forEach(function (p) { SOCIAL_PLATFORMS_BY_ID[p.id] = p; });
+
+    /* Style catalog — every platform supports the same 5-6 base styles
+       (synthesized at render time so we don't inline 150+ SVG copies).
+       Real impl: simple-icons base path + per-style wrapper, plus a
+       small bespoke outline path for the 1-2 platforms where outline
+       differs significantly from a solid-colour stroke (Instagram square
+       outline, X bird-vs-X). For the mockup the wrapper synthesis is
+       indistinguishable visually for 95% of cases. */
+    var SOCIAL_ICON_STYLES = [
+      { id: 'brand',         name: 'Brand color',     hint: 'Original logo colour' },
+      { id: 'mono',          name: 'Monochrome',      hint: 'Inherits text color (currentColor)' },
+      { id: 'mono-frame',    name: 'Mono with frame', hint: 'Monochrome with a circle outline' },
+      { id: 'outline',       name: 'Outline',         hint: 'Hollow brand-colour outline' },
+      { id: 'filled-circle', name: 'Filled circle',   hint: 'White glyph on brand-coloured circle' },
+      { id: 'filled-square', name: 'Filled squircle', hint: 'White glyph on brand-coloured rounded square' }
+    ];
+    /* Platform-specific extra styles ("legacy" / iconic alternates). Each
+       entry is a synthetic icon id. Real impl: map to a custom path. In
+       the mockup we render a stylised version of the brand glyph with a
+       distinguishing tweak (different bg / inverted colour) so the
+       creator sees a visually distinct option. */
+    var SOCIAL_LEGACY_STYLES = {
+      'x':         [{ id: 'twitter-classic', name: 'Classic blue bird', hint: 'Pre-rebrand Twitter logo' }],
+      'instagram': [{ id: 'classic-camera',  name: 'Classic camera',    hint: '2010-era camera glyph' }],
+      'youtube':   [{ id: 'subscribe-red',   name: 'Subscribe button',  hint: 'YouTube subscribe red badge' }]
+    };
+
+    /* All variant ids for a platform (in render order). */
+    function getPlatformVariantIds(platformId) {
+      var base = SOCIAL_ICON_STYLES.map(function (s) {
+        return s.id === 'brand' ? platformId : (platformId + '-' + s.id);
+      });
+      var legacy = (SOCIAL_LEGACY_STYLES[platformId] || []).map(function (l) { return platformId + '-' + l.id; });
+      return base.concat(legacy);
+    }
+    /* Variant id → { platform, styleId, style label, brandColor, body }. */
+    function getSocialVariant(variantId) {
+      // brand (canonical) — matches a SOCIAL_PLATFORMS entry id
+      if (SOCIAL_PLATFORMS_BY_ID[variantId]) {
+        var p = SOCIAL_PLATFORMS_BY_ID[variantId];
+        var brandIcon = ICON_LIBRARY_BY_ID[p.id];
+        return {
+          platform: p.id, styleId: 'brand',
+          name: p.name + ' (brand color)',
+          brandColor: p.color,
+          body: brandIcon ? brandIcon.body : ''
+        };
+      }
+      // <platform>-<style>
+      var dash = variantId.indexOf('-');
+      while (dash !== -1) {
+        var maybePlatform = variantId.slice(0, dash);
+        var maybeStyle = variantId.slice(dash + 1);
+        if (SOCIAL_PLATFORMS_BY_ID[maybePlatform]) {
+          var p2 = SOCIAL_PLATFORMS_BY_ID[maybePlatform];
+          var brandIcon2 = ICON_LIBRARY_BY_ID[p2.id];
+          var styleSpec = SOCIAL_ICON_STYLES.filter(function (s) { return s.id === maybeStyle; })[0];
+          if (!styleSpec) {
+            // legacy?
+            var legacy = (SOCIAL_LEGACY_STYLES[p2.id] || []).filter(function (l) { return l.id === maybeStyle; })[0];
+            if (legacy) {
+              return {
+                platform: p2.id, styleId: maybeStyle,
+                name: p2.name + ' (' + legacy.name.toLowerCase() + ')',
+                brandColor: p2.color,
+                body: brandIcon2 ? brandIcon2.body : ''
+              };
+            }
+          } else {
+            return {
+              platform: p2.id, styleId: maybeStyle,
+              name: p2.name + ' (' + styleSpec.name.toLowerCase() + ')',
+              brandColor: p2.color,
+              body: brandIcon2 ? brandIcon2.body : ''
+            };
+          }
+        }
+        dash = variantId.indexOf('-', dash + 1);
+      }
+      return null;
+    }
+    /* Render a social icon variant at `size` px — the heart of the
+       per-platform style picker. Returns inline HTML wrapping a 24x24
+       SVG body with the chosen visual treatment. */
+    function renderSocialVariant(variantId, size) {
+      var v = getSocialVariant(variantId);
+      if (!v) return '';
+      size = size || 28;
+      var color = v.brandColor;
+      var body = v.body;
+      // Wrapper varies per style.
+      if (v.styleId === 'brand') {
+        return '<span class="sv sv-brand" style="display:inline-flex;color:' + color + ';width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + size + '" height="' + size + '" aria-hidden="true">' + body + '</svg></span>';
+      }
+      if (v.styleId === 'mono') {
+        return '<span class="sv sv-mono" style="display:inline-flex;color:currentColor;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + size + '" height="' + size + '" aria-hidden="true">' + body + '</svg></span>';
+      }
+      if (v.styleId === 'mono-frame') {
+        var inner = Math.round(size * 0.62);
+        return '<span class="sv sv-mono-frame" style="display:inline-flex;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center;border:1.5px solid currentColor;border-radius:50%;color:currentColor">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + inner + '" height="' + inner + '" aria-hidden="true">' + body + '</svg></span>';
+      }
+      if (v.styleId === 'outline') {
+        // simulate outline: thin currentColor circle + brand-color glyph at smaller size
+        var innerO = Math.round(size * 0.6);
+        return '<span class="sv sv-outline" style="display:inline-flex;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center;border:1.5px solid ' + color + ';border-radius:50%;color:' + color + '">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + innerO + '" height="' + innerO + '" aria-hidden="true">' + body + '</svg></span>';
+      }
+      if (v.styleId === 'filled-circle') {
+        var innerC = Math.round(size * 0.6);
+        return '<span class="sv sv-filled-circle" style="display:inline-flex;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center;background:' + color + ';border-radius:50%;color:#fff">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + innerC + '" height="' + innerC + '" aria-hidden="true">' + body + '</svg></span>';
+      }
+      if (v.styleId === 'filled-square') {
+        var innerS = Math.round(size * 0.6);
+        var radius = Math.max(4, Math.round(size * 0.22));
+        return '<span class="sv sv-filled-square" style="display:inline-flex;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center;background:' + color + ';border-radius:' + radius + 'px;color:#fff">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + innerS + '" height="' + innerS + '" aria-hidden="true">' + body + '</svg></span>';
+      }
+      // Legacy / one-off variants — render with a subtle accent so they
+      // read as "alternate" rather than identical to brand.
+      if (v.styleId === 'twitter-classic') {
+        return '<span class="sv sv-legacy" style="display:inline-flex;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center;background:#1DA1F2;border-radius:50%;color:#fff">' +
+               '<svg viewBox="0 0 24 24" fill="currentColor" width="' + Math.round(size * 0.62) + '" height="' + Math.round(size * 0.62) + '" aria-hidden="true">' +
+               '<path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/></svg></span>';
+      }
+      if (v.styleId === 'classic-camera') {
+        return '<span class="sv sv-legacy" style="display:inline-flex;width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center;background:linear-gradient(135deg,#833AB4,#FD1D1D 50%,#FCAF45);border-radius:' + Math.round(size * 0.22) + 'px;color:#fff">' +
+               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="' + Math.round(size * 0.6) + '" height="' + Math.round(size * 0.6) + '" aria-hidden="true">' +
+               '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>';
+      }
+      if (v.styleId === 'subscribe-red') {
+        return '<span class="sv sv-legacy" style="display:inline-flex;width:' + size + 'px;height:' + Math.round(size * 0.62) + 'px;align-items:center;justify-content:center;background:#FF0000;border-radius:' + Math.max(4, Math.round(size * 0.18)) + 'px;color:#fff;font-size:' + Math.round(size * 0.32) + 'px;font-weight:700;font-family:var(--font-sans);letter-spacing:0.02em">SUBSCRIBE</span>';
+      }
+      // Fallback — brand
+      return '<span class="sv sv-brand" style="display:inline-flex;color:' + color + ';width:' + size + 'px;height:' + size + 'px;align-items:center;justify-content:center">' +
+             '<svg viewBox="0 0 24 24" fill="currentColor" width="' + size + '" height="' + size + '" aria-hidden="true">' + body + '</svg></span>';
+    }
+    /* Total count of synthetic per-platform variants, used in changelog. */
+    function countSocialVariants() {
+      var n = 0;
+      SOCIAL_PLATFORMS.forEach(function (p) {
+        n += SOCIAL_ICON_STYLES.length; // brand + 5 styles
+        n += (SOCIAL_LEGACY_STYLES[p.id] || []).length;
+      });
+      return n;
+    }
+
     /* Render a single icon's <svg> markup. Lucide icons inherit currentColor
        (stroke-based, monochrome). Brand icons render with their official
        brand color baked into a wrapping span. size = px. */
@@ -2096,20 +2656,38 @@
         icon: '🌐',
         category: 'Links',
         form: function (state) {
+          // Migrate legacy shape `{instagram: '@x'}` (string handle) into
+          // the new `{instagram: { handle: '@x', iconStyle: 'instagram' }}`
+          // shape on read. Empty default — creator clicks "+ Add social"
+          // to register their first platform per the redesigned UX.
+          var h = normaliseHandles(state.handles);
+          var order = (state.handlesOrder && state.handlesOrder.length)
+            ? state.handlesOrder.filter(function (id) { return h[id]; })
+            : Object.keys(h);
           return [
-            { kind: 'social-list', name: 'handles', label: 'Add your handles',
-              value: state.handles || { instagram: '@alexandra', tiktok: '@alex.silva', youtube: '@alexandra-music' } },
-            { kind: 'select', name: 'shape', label: 'Icon shape',
-              options: [['circle','Circle'],['square','Rounded square']], value: state.shape || 'circle' }
+            { kind: 'social-cards', name: 'handles', label: 'Your social platforms',
+              value: h, order: order,
+              help: 'Click "+ Add social" to register a platform. Each card lets you pick a per-platform icon style. Drag to reorder.' },
+            { kind: 'select', name: 'shape', label: 'Wrapper shape on the public page',
+              options: [['circle','Circle'],['square','Rounded square'],['none','No wrapper — bare icons']],
+              value: state.shape || 'circle',
+              help: 'The chosen icon style still applies — wrapper sits behind it (or is removed for "bare icons").' }
           ];
         },
         preview: function (state) {
-          var h = state.handles || { instagram: '@alexandra', tiktok: '@alex.silva', youtube: '@alexandra-music' };
-          var keys = Object.keys(h).filter(function (k) { return (h[k] || '').trim(); });
-          if (!keys.length) keys = ['instagram','tiktok','youtube'];
-          var letters = { instagram: 'IG', tiktok: 'TT', youtube: 'YT', x: '𝕏', linkedin: 'in', spotify: '♫', twitch: 'Tw' };
-          return '<div class="preview-social">' + keys.map(function (k) {
-            return '<span class="si">' + (letters[k] || k.charAt(0).toUpperCase()) + '</span>';
+          var h = normaliseHandles(state.handles);
+          var order = (state.handlesOrder && state.handlesOrder.length)
+            ? state.handlesOrder.filter(function (id) { return h[id]; })
+            : Object.keys(h);
+          if (!order.length) {
+            return '<div class="preview-social-empty">Add a social platform to see the preview</div>';
+          }
+          var shape = state.shape || 'circle';
+          return '<div class="preview-social shape-' + escapeHtml(shape) + '">' + order.map(function (id) {
+            var entry = h[id];
+            if (!entry) return '';
+            var style = entry.iconStyle || id;
+            return '<span class="si">' + renderSocialVariant(style, 22) + '</span>';
           }).join('') + '</div>';
         },
         analytics: { today: '64', sevenDay: '510', source: 'pinterest' }
@@ -2351,7 +2929,7 @@
       'provider', 'caption',                               /* embed */
       'level', 'text', 'align',                            /* heading */
       'style', 'size',                                     /* divider */
-      'handles', 'shape',                                  /* social */
+      'handles', 'handlesOrder', 'shape',                  /* social */
       'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', /* newsletter */
       'product', 'showPrice',                              /* shop */
       'autoplay', 'loop',                                  /* video */
@@ -2368,7 +2946,7 @@
       provider: 'Provider', caption: 'Caption',
       level: 'Heading level', text: 'Text', align: 'Alignment',
       style: 'Style', size: 'Size',
-      handles: 'Social handles', shape: 'Icon shape',
+      handles: 'Social handles', handlesOrder: 'Platform order', shape: 'Wrapper shape',
       list: 'List', cta: 'Button label', ctaIcon: 'Button icon',
       placeholder: 'Placeholder', doubleOptIn: 'Double opt-in',
       product: 'Product', showPrice: 'Show price',
@@ -2518,6 +3096,24 @@
         }
       }
 
+      // A/B section identity chip — visible across all 13 block types
+      // (FIX-004 consistency). Toggles between "available" and "active"
+      // states purely from countAbDiffs(). No toggle restored — auto-detect
+      // from Variant B edits stays per DEC-093.
+      var chip = document.getElementById('ab-section-chip');
+      var chipLabel = document.getElementById('ab-section-chip-label');
+      if (chip) {
+        if (bDiffers) {
+          chip.setAttribute('data-state', 'active');
+          if (chipLabel) chipLabel.textContent = 'A/B test active · ' + diffCount + ' field' + (diffCount === 1 ? '' : 's');
+          chip.setAttribute('title', 'Variant B differs from A in ' + diffCount + ' field' + (diffCount === 1 ? '' : 's') + ' — split goes live on save');
+        } else {
+          chip.setAttribute('data-state', 'available');
+          if (chipLabel) chipLabel.textContent = 'A/B test available';
+          chip.setAttribute('title', 'Edit Variant B to start an A/B test — auto-detected at save');
+        }
+      }
+
       // Preview routing — single (active variant only) when B has no
       // differing edits; dual stacked when B differs from A.
       document.getElementById('preview-pane').style.display = bDiffers ? 'none' : '';
@@ -2577,6 +3173,32 @@
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
+    }
+
+    /* Normalise the social-block `handles` value into the canonical
+       per-platform shape `{handle, iconStyle}`. Accepts:
+        - undefined / null → {}
+        - legacy `{instagram: '@x'}` (string handle) → upgrades each entry
+          and assigns `iconStyle = <platformId>` (the brand variant).
+        - new `{instagram: {handle: '@x', iconStyle: 'instagram-mono'}}` → returned as-is.
+       Always returns a fresh object so callers can mutate safely. */
+    function normaliseHandles(raw) {
+      var out = {};
+      if (!raw || typeof raw !== 'object') return out;
+      Object.keys(raw).forEach(function (k) {
+        var v = raw[k];
+        if (v == null) return;
+        if (typeof v === 'string') {
+          if (!v.trim()) return;
+          out[k] = { handle: v, iconStyle: k };
+        } else if (typeof v === 'object') {
+          out[k] = {
+            handle: v.handle || '',
+            iconStyle: v.iconStyle || k
+          };
+        }
+      });
+      return out;
     }
 
     function renderForm() {
@@ -2672,15 +3294,8 @@
                  '<button type="button" style="padding:14px;border:2px dashed var(--border-strong);background:var(--bg-elevated);color:var(--fg-muted);border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-sans)" onclick="alert(\'Mockup — file picker would open here.\')">' +
                  '⬆ Click to upload (mockup)</button>' + help + '</div>';
         }
-        if (f.kind === 'social-list') {
-          var h = f.value || {};
-          var rows = ['instagram','tiktok','youtube','x','linkedin','spotify'].map(function (k) {
-            return '<div style="display:flex;gap:8px;align-items:center;margin-top:6px">' +
-                   '<span style="width:64px;font-size:11px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.04em;font-weight:600">' + k + '</span>' +
-                   '<input type="text" placeholder="@handle" value="' + escapeHtml(h[k] || '') + '" oninput="updateSocial(\'' + k + '\', this.value)" style="flex:1;padding:7px 10px;border:1px solid var(--border-strong);border-radius:7px;font-size:12.5px;background:var(--bg-elevated);color:var(--fg);outline:none;font-family:var(--font-sans)"/>' +
-                   '</div>';
-          }).join('');
-          return '<div class="field"><label>' + escapeHtml(f.label) + '</label>' + rows + help + '</div>';
+        if (f.kind === 'social-cards') {
+          return renderSocialCardsField(f, help);
         }
         if (f.kind === 'code') {
           return '<div class="field"><label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
@@ -2764,11 +3379,25 @@
         display = '(empty)'; isEmpty = true;
       } else if (typeof value === 'boolean') {
         display = value ? 'on' : 'off';
+      } else if (Array.isArray(value)) {
+        // platform order array — show "ig → tt → yt"
+        display = value.length ? value.map(function (id) { return id.slice(0, 2); }).join(' → ') : '(empty)';
+        if (display === '(empty)') isEmpty = true;
       } else if (typeof value === 'object') {
-        // social handles object — show "ig:@x · tt:@y"
-        display = Object.keys(value).filter(function (k) { return value[k]; })
-                  .map(function (k) { return k.slice(0, 2) + ':' + value[k]; })
-                  .join(' · ') || '(empty)';
+        // social handles object — supports both legacy `{ig: '@x'}` and
+        // new `{ig: {handle: '@x', iconStyle: 'instagram-mono'}}`.
+        var parts = Object.keys(value).filter(function (k) {
+          var v = value[k];
+          if (!v) return false;
+          if (typeof v === 'string') return v.trim();
+          return v.handle && v.handle.trim();
+        }).map(function (k) {
+          var v = value[k];
+          var handle = (typeof v === 'string') ? v : (v.handle || '');
+          var style = (typeof v === 'object' && v.iconStyle && v.iconStyle !== k) ? '·' + v.iconStyle.replace(k + '-', '') : '';
+          return k.slice(0, 2) + ':' + handle + style;
+        });
+        display = parts.join(' · ') || '(empty)';
         if (display === '(empty)') isEmpty = true;
       } else {
         display = String(value);
@@ -2790,14 +3419,344 @@
       renderPreview();
       bumpSaveStatus();
     }
-    function updateSocial(k, v) {
-      var current = getContentState().handles || {};
-      var next = {};
-      Object.keys(current).forEach(function (kk) { next[kk] = current[kk]; });
-      next[k] = v;
-      writeContent('handles', next);
+    /* ------------------------------------------------------------------ */
+    /* SOCIAL CARDS — addable / removable / draggable per-platform cards  */
+    /*                                                                    */
+    /* State shape (in `state.handles`):                                  */
+    /*   { instagram: { handle: '@alex',   iconStyle: 'instagram-mono' }, */
+    /*     tiktok:    { handle: '@alex.s', iconStyle: 'tiktok' } }        */
+    /*                                                                    */
+    /* Insertion order in `state.handlesOrder` (array of platform ids).    */
+    /* Both the form and the live preview render in this order.           */
+    /* ------------------------------------------------------------------ */
+    var ADD_SOCIAL_OPEN = false;       // platform-picker dropdown open?
+    var ADD_SOCIAL_QUERY = '';         // search input value
+    var STYLE_PICKER_OPEN_FOR = null;  // platform id whose style picker is open
+    var DRAG_SOCIAL = { from: null, to: null };
+
+    function getCurrentSocial() {
+      var content = getContentState();
+      var handles = normaliseHandles(content.handles);
+      var order = (content.handlesOrder && content.handlesOrder.length)
+        ? content.handlesOrder.filter(function (id) { return handles[id]; })
+        : Object.keys(handles);
+      // Ensure every active handle is in the order array.
+      Object.keys(handles).forEach(function (id) {
+        if (order.indexOf(id) === -1) order.push(id);
+      });
+      return { handles: handles, order: order };
+    }
+    function writeSocial(handles, order) {
+      writeContent('handles', handles);
+      writeContent('handlesOrder', order.slice());
+      renderForm();
+      bumpSaveStatus();
+    }
+
+    function renderSocialCardsField(f, help) {
+      var cur = getCurrentSocial();
+      var cards = cur.order.map(function (id) {
+        return renderSocialCard(id, cur.handles[id]);
+      }).join('');
+      var emptyState = !cur.order.length ? renderSocialEmptyState() : '';
+      var picker = renderAddSocialPicker(cur.order);
+      return '<div class="field social-cards-field">' +
+             '<label>' + escapeHtml(f.label) + '</label>' +
+             '<div class="social-cards-toolbar">' +
+               '<button type="button" class="add-social-btn" id="add-social-btn" ' +
+                       'aria-haspopup="listbox" aria-expanded="' + (ADD_SOCIAL_OPEN ? 'true' : 'false') + '" ' +
+                       'onclick="toggleAddSocial(event)">' +
+                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                 '<span>Add social</span>' +
+               '</button>' +
+               '<div class="social-cards-count">' + cur.order.length + ' platform' + (cur.order.length === 1 ? '' : 's') + ' added</div>' +
+               picker +
+             '</div>' +
+             '<div class="social-cards-list" id="social-cards-list" data-empty="' + (cur.order.length === 0) + '">' +
+               cards + emptyState +
+             '</div>' +
+             help +
+             '</div>';
+    }
+
+    function renderSocialEmptyState() {
+      return '<div class="social-empty">' +
+             '<div class="social-empty-icon" aria-hidden="true">' +
+               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="32" height="32">' +
+               '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' +
+             '</div>' +
+             '<div class="social-empty-title">No socials added yet</div>' +
+             '<div class="social-empty-copy">Click <strong>+ Add social</strong> above to register your first platform. You can pick any of 30+ platforms and choose a per-platform icon style for each.</div>' +
+             '</div>';
+    }
+
+    function renderAddSocialPicker(currentOrder) {
+      if (!ADD_SOCIAL_OPEN) return '';
+      var taken = {};
+      currentOrder.forEach(function (id) { taken[id] = true; });
+      var q = (ADD_SOCIAL_QUERY || '').trim().toLowerCase();
+      var available = SOCIAL_PLATFORMS.filter(function (p) {
+        if (taken[p.id]) return false;
+        if (!q) return true;
+        return p.name.toLowerCase().indexOf(q) !== -1 || p.id.indexOf(q) !== -1;
+      });
+      var rows = available.length
+        ? available.map(function (p) {
+            return '<button type="button" class="add-social-row" data-platform="' + p.id + '" ' +
+                   'onclick="addSocialPlatform(\'' + p.id + '\')">' +
+                   '<span class="add-social-row-glyph">' + renderSocialVariant(p.id, 22) + '</span>' +
+                   '<span class="add-social-row-name">' + escapeHtml(p.name) + '</span>' +
+                   '<span class="add-social-row-cta">Add</span>' +
+                   '</button>';
+          }).join('')
+        : '<div class="add-social-empty">' + (q
+            ? 'No platform matches "' + escapeHtml(q) + '". Try another name.'
+            : 'You\'ve added every supported platform — nothing left to add!') + '</div>';
+      var alreadyNote = currentOrder.length
+        ? '<div class="add-social-already">' + currentOrder.length + ' already added — they don\'t show in this list.</div>'
+        : '';
+      return '<div class="add-social-pop" role="listbox" aria-label="Add social platform">' +
+               '<div class="add-social-search">' +
+                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+                 '<input type="text" placeholder="Search platforms…" autocomplete="off" id="add-social-search-input" ' +
+                     'value="' + escapeHtml(ADD_SOCIAL_QUERY) + '" ' +
+                     'oninput="onAddSocialSearch(this.value)" onkeydown="onAddSocialKey(event)" />' +
+               '</div>' +
+               '<div class="add-social-list">' + rows + '</div>' +
+               alreadyNote +
+             '</div>';
+    }
+
+    function renderSocialCard(platformId, entry) {
+      var p = SOCIAL_PLATFORMS_BY_ID[platformId];
+      if (!p) return '';
+      var style = (entry && entry.iconStyle) || platformId;
+      var handle = (entry && entry.handle) || '';
+      var stylePicker = (STYLE_PICKER_OPEN_FOR === platformId)
+        ? renderSocialStylePopover(platformId, style)
+        : '';
+      return '<div class="social-card" data-platform="' + platformId + '" draggable="true" ' +
+                 'ondragstart="onSocialCardDragStart(event, \'' + platformId + '\')" ' +
+                 'ondragover="onSocialCardDragOver(event, \'' + platformId + '\')" ' +
+                 'ondragleave="onSocialCardDragLeave(event, \'' + platformId + '\')" ' +
+                 'ondrop="onSocialCardDrop(event, \'' + platformId + '\')" ' +
+                 'ondragend="onSocialCardDragEnd(event)">' +
+             '<div class="social-card-drag" aria-hidden="true" title="Drag to reorder">' +
+               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>' +
+             '</div>' +
+             '<div class="social-card-style-trigger">' +
+               '<button type="button" class="social-style-btn" ' +
+                       'aria-haspopup="listbox" aria-expanded="' + (STYLE_PICKER_OPEN_FOR === platformId ? 'true' : 'false') + '" ' +
+                       'title="Pick an icon style for ' + escapeHtml(p.name) + '" ' +
+                       'onclick="toggleSocialStylePicker(event, \'' + platformId + '\')">' +
+                 renderSocialVariant(style, 30) +
+                 '<svg class="ipk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polyline points="6 9 12 15 18 9"/></svg>' +
+               '</button>' +
+               stylePicker +
+             '</div>' +
+             '<div class="social-card-body">' +
+               '<div class="social-card-name">' + escapeHtml(p.name) + '</div>' +
+               '<div class="social-card-handle">' +
+                 '<span class="social-card-handle-prefix">@</span>' +
+                 '<input type="text" placeholder="yourhandle" value="' + escapeHtml((handle || '').replace(/^@/, '')) + '" ' +
+                        'oninput="updateSocialHandle(\'' + platformId + '\', this.value)" ' +
+                        'aria-label="' + escapeHtml(p.name) + ' handle" />' +
+               '</div>' +
+             '</div>' +
+             '<button type="button" class="social-card-remove" aria-label="Remove ' + escapeHtml(p.name) + '" ' +
+                     'title="Remove ' + escapeHtml(p.name) + '" ' +
+                     'onclick="removeSocialPlatform(\'' + platformId + '\')">' +
+               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+             '</button>' +
+             '</div>';
+    }
+
+    function renderSocialStylePopover(platformId, currentStyle) {
+      var variantIds = getPlatformVariantIds(platformId);
+      var p = SOCIAL_PLATFORMS_BY_ID[platformId];
+      var tiles = variantIds.map(function (vid) {
+        var variant = getSocialVariant(vid);
+        if (!variant) return '';
+        var styleSpec = SOCIAL_ICON_STYLES.filter(function (s) { return s.id === variant.styleId; })[0]
+          || ((SOCIAL_LEGACY_STYLES[platformId] || []).filter(function (l) { return l.id === variant.styleId; })[0]);
+        var label = styleSpec ? styleSpec.name : variant.styleId;
+        var hint = styleSpec ? styleSpec.hint : '';
+        var sel = (vid === currentStyle) ? ' is-selected' : '';
+        return '<button type="button" class="social-style-tile' + sel + '" ' +
+               'role="option" aria-selected="' + (vid === currentStyle) + '" ' +
+               'title="' + escapeHtml(label) + (hint ? ' — ' + escapeHtml(hint) : '') + '" ' +
+               'onclick="pickSocialStyle(\'' + platformId + '\', \'' + vid + '\')">' +
+               '<span class="social-style-tile-glyph">' + renderSocialVariant(vid, 28) + '</span>' +
+               '<span class="social-style-tile-label">' + escapeHtml(label) + '</span>' +
+               '</button>';
+      }).join('');
+      return '<div class="social-style-pop" role="listbox" aria-label="' + escapeHtml(p.name) + ' icon style">' +
+               '<div class="social-style-pop-head">' +
+                 '<strong>' + escapeHtml(p.name) + '</strong> — choose an icon style' +
+               '</div>' +
+               '<div class="social-style-grid">' + tiles + '</div>' +
+             '</div>';
+    }
+
+    /* --- interaction handlers (exported via window.* below) --- */
+    function toggleAddSocial(ev) {
+      if (ev) ev.stopPropagation();
+      ADD_SOCIAL_OPEN = !ADD_SOCIAL_OPEN;
+      ADD_SOCIAL_QUERY = '';
+      STYLE_PICKER_OPEN_FOR = null;
+      renderForm();
+      if (ADD_SOCIAL_OPEN) {
+        setTimeout(function () {
+          var s = document.getElementById('add-social-search-input');
+          if (s) s.focus();
+        }, 30);
+      }
+    }
+    function onAddSocialSearch(val) {
+      ADD_SOCIAL_QUERY = val;
+      // Render only the list inside the popover for snappier UX. We
+      // re-render the whole form for simplicity since the input is
+      // cheap; preserve focus and selection after re-render.
+      var sel = document.activeElement;
+      var cursor = sel && sel.selectionStart;
+      renderForm();
+      var s = document.getElementById('add-social-search-input');
+      if (s) {
+        s.focus();
+        if (cursor != null) {
+          try { s.setSelectionRange(cursor, cursor); } catch (e) {}
+        }
+      }
+    }
+    function onAddSocialKey(ev) {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        ADD_SOCIAL_OPEN = false;
+        renderForm();
+      } else if (ev.key === 'Enter') {
+        var first = document.querySelector('.add-social-row');
+        if (first) {
+          ev.preventDefault();
+          first.click();
+        }
+      }
+    }
+    function addSocialPlatform(platformId) {
+      var cur = getCurrentSocial();
+      if (cur.handles[platformId]) return;
+      cur.handles[platformId] = { handle: '', iconStyle: platformId };
+      cur.order.push(platformId);
+      ADD_SOCIAL_OPEN = false;
+      ADD_SOCIAL_QUERY = '';
+      writeSocial(cur.handles, cur.order);
+      // Auto-focus the new card's handle input.
+      setTimeout(function () {
+        var card = document.querySelector('.social-card[data-platform="' + platformId + '"]');
+        if (card) {
+          var input = card.querySelector('input[type="text"]');
+          if (input) input.focus();
+        }
+      }, 40);
+    }
+    function removeSocialPlatform(platformId) {
+      var cur = getCurrentSocial();
+      delete cur.handles[platformId];
+      cur.order = cur.order.filter(function (id) { return id !== platformId; });
+      if (STYLE_PICKER_OPEN_FOR === platformId) STYLE_PICKER_OPEN_FOR = null;
+      writeSocial(cur.handles, cur.order);
+    }
+    function updateSocialHandle(platformId, raw) {
+      var cur = getCurrentSocial();
+      if (!cur.handles[platformId]) cur.handles[platformId] = { handle: '', iconStyle: platformId };
+      // Strip a leading @ if the user types it; the prefix is rendered
+      // as a visual decorator ahead of the input.
+      var clean = (raw || '').replace(/^@+/, '');
+      cur.handles[platformId].handle = clean ? '@' + clean : '';
+      // Don't re-render the form on every keystroke (would steal focus);
+      // just write state + bump preview + save status.
+      writeContent('handles', cur.handles);
+      writeContent('handlesOrder', cur.order.slice());
       renderPreview();
       bumpSaveStatus();
+    }
+    function toggleSocialStylePicker(ev, platformId) {
+      if (ev) ev.stopPropagation();
+      STYLE_PICKER_OPEN_FOR = (STYLE_PICKER_OPEN_FOR === platformId) ? null : platformId;
+      ADD_SOCIAL_OPEN = false;
+      renderForm();
+    }
+    function pickSocialStyle(platformId, variantId) {
+      var cur = getCurrentSocial();
+      if (!cur.handles[platformId]) cur.handles[platformId] = { handle: '', iconStyle: platformId };
+      cur.handles[platformId].iconStyle = variantId;
+      STYLE_PICKER_OPEN_FOR = null;
+      writeSocial(cur.handles, cur.order);
+    }
+
+    /* Drag-and-drop reorder. Plain HTML5 DnD — we track `from` on
+       dragstart and update order on drop. Visual feedback via the
+       `.is-drag-over` / `.is-dragging` classes. */
+    function onSocialCardDragStart(ev, platformId) {
+      DRAG_SOCIAL.from = platformId;
+      ev.dataTransfer.effectAllowed = 'move';
+      try { ev.dataTransfer.setData('text/plain', platformId); } catch (e) {}
+      ev.currentTarget.classList.add('is-dragging');
+    }
+    function onSocialCardDragOver(ev, platformId) {
+      if (!DRAG_SOCIAL.from || DRAG_SOCIAL.from === platformId) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      ev.currentTarget.classList.add('is-drag-over');
+    }
+    function onSocialCardDragLeave(ev, platformId) {
+      ev.currentTarget.classList.remove('is-drag-over');
+    }
+    function onSocialCardDrop(ev, platformId) {
+      ev.preventDefault();
+      ev.currentTarget.classList.remove('is-drag-over');
+      var from = DRAG_SOCIAL.from;
+      if (!from || from === platformId) return;
+      var cur = getCurrentSocial();
+      var order = cur.order.slice();
+      var fromIdx = order.indexOf(from);
+      var toIdx = order.indexOf(platformId);
+      if (fromIdx < 0 || toIdx < 0) return;
+      order.splice(fromIdx, 1);
+      order.splice(toIdx, 0, from);
+      writeSocial(cur.handles, order);
+    }
+    function onSocialCardDragEnd(ev) {
+      DRAG_SOCIAL = { from: null, to: null };
+      document.querySelectorAll('.social-card').forEach(function (el) {
+        el.classList.remove('is-dragging');
+        el.classList.remove('is-drag-over');
+      });
+    }
+
+    /* Outside-click closes the add-social picker + style picker. */
+    document.addEventListener('click', function (ev) {
+      if (ADD_SOCIAL_OPEN) {
+        var pop = document.querySelector('.add-social-pop');
+        var btn = document.getElementById('add-social-btn');
+        if (pop && !pop.contains(ev.target) && (!btn || !btn.contains(ev.target))) {
+          ADD_SOCIAL_OPEN = false;
+          renderForm();
+        }
+      }
+      if (STYLE_PICKER_OPEN_FOR) {
+        var pop2 = document.querySelector('.social-style-pop');
+        var trig = document.querySelector('.social-card[data-platform="' + STYLE_PICKER_OPEN_FOR + '"] .social-style-btn');
+        if (pop2 && !pop2.contains(ev.target) && (!trig || !trig.contains(ev.target))) {
+          STYLE_PICKER_OPEN_FOR = null;
+          renderForm();
+        }
+      }
+    }, true);
+
+    /* Legacy adapter — kept exported so any old onclick fragments calling
+       `updateSocial(k, v)` still work. New code uses `updateSocialHandle`. */
+    function updateSocial(k, v) {
+      updateSocialHandle(k, v);
     }
     function toggleVisible() {
       state.visible = !state.visible;
@@ -2823,8 +3782,13 @@
       // from the freshly-defaulted state so B starts identical to A
       // under the new block type (and "differs from A" reads false).
       var preservedAb = state.ab || { enabled: true, activeTab: 'A', previewView: 'both', variants: { A: {}, B: {} } };
-      var preserved = { visible: state.visible, handles: state.handles };
+      var preserved = { visible: state.visible, handles: state.handles, handlesOrder: state.handlesOrder };
       state = Object.assign({}, preserved, { type: t, ab: preservedAb });
+      // Close any per-card popovers that were open under the old type so
+      // we never render stale dropdowns against a different form.
+      ADD_SOCIAL_OPEN = false;
+      ADD_SOCIAL_QUERY = '';
+      STYLE_PICKER_OPEN_FOR = null;
       var spec = BLOCK_TYPES[t];
       // Pre-populate state with form defaults
       spec.form(state).forEach(function (f) {
@@ -3124,6 +4088,19 @@
     window.toggleField = toggleField;
     window.toggleVisible = toggleVisible;
     window.updateSocial = updateSocial;
+    window.updateSocialHandle = updateSocialHandle;
+    window.toggleAddSocial = toggleAddSocial;
+    window.onAddSocialSearch = onAddSocialSearch;
+    window.onAddSocialKey = onAddSocialKey;
+    window.addSocialPlatform = addSocialPlatform;
+    window.removeSocialPlatform = removeSocialPlatform;
+    window.toggleSocialStylePicker = toggleSocialStylePicker;
+    window.pickSocialStyle = pickSocialStyle;
+    window.onSocialCardDragStart = onSocialCardDragStart;
+    window.onSocialCardDragOver = onSocialCardDragOver;
+    window.onSocialCardDragLeave = onSocialCardDragLeave;
+    window.onSocialCardDrop = onSocialCardDrop;
+    window.onSocialCardDragEnd = onSocialCardDragEnd;
     window.openAi = openAi;
     window.closeAi = closeAi;
     window.applyAi = applyAi;
