@@ -123,6 +123,17 @@ Scope: every dashboard-style mockup must render the canonical sidebar — Pages 
 
 ## Changelog
 
+### 2026-04-26 — Icon picker redesigned (PR #54 extension)
+
+`app-block-editor.html` ships a proper dropdown + search icon picker that replaces the throwaway 18-emoji grid (commit `b6bcda3`).
+
+- **UX.** Closed state is a single trigger button showing the currently selected icon + name with a chevron. Click to open a 480px popover containing: search input (real-time filter on name + tags), 7 category tabs (Popular / Social / Music & Video / Shop & Money / Communication / Content / Generic), live count, 6-col grid (4-col on <540px). Outside-click + Esc close; Enter on the search input picks the first visible result.
+- **Library.** ~126 inline SVG icons covering Lucide-style monochrome outline (94 icons inheriting `currentColor` for dark-mode safety) + Simple Icons brand logos (32 icons rendered in their official brand color: Spotify green, TikTok black, YouTube red, Stripe purple, Instagram pink, etc.). Real-impl mapping: `lucide-react` (ISC) + `simple-icons` (CC0). Mockup is dependency-free — every path inlined so the file loads over `file://`.
+- **Field kind.** Added reusable `kind: 'icon-picker'` to the `BLOCK_TYPES` form spec. Multiple block types declare it and get the picker for free.
+- **Block type coverage.** Picker now appears on: Link button (default `spotify`), Newsletter signup (`ctaIcon` default `send`), Shop product (`ctaIcon` default `shopping-cart`), Heading / text (optional leading `icon`), Countdown timer (label `icon` default `flame`), Live stream (`ctaIcon` default `play`), FAQ / accordion (optional `sectionIcon`). Image / Video / Embed / Divider / Custom HTML / Social icons row keep their existing visual treatment (Social row uses its own platform-handle picker — different concept, not conflated).
+- **Backward-compat.** State value `state.icon` (and friends) is now an icon-id string from `ICON_LIBRARY_BY_ID`. Legacy emoji values (e.g. `▶`) still render via a fallback path in `renderIconForPreview()` so any pre-existing state survives. Default for the link block changed from `▶` to `spotify`.
+- **A11y + dark mode.** Trigger has `aria-haspopup="listbox"` + `aria-expanded`. Tiles have `role="option"` + `aria-selected`. Search has Escape-to-clear / Enter-to-select-first. `prefers-reduced-motion` kills the popover animation. Brand glyphs render with their fixed brand color in both light + dark mode; Lucide icons inherit the surrounding text color.
+
 ### 2026-04-26 — Tier-gating UX refactor (no-blur rule, this PR)
 
 **Background.** During PR #54 review the user flagged that the A/B test section of `app-block-editor.html` was rendered behind a blurred overlay carrying only an "Upgrade to Business" CTA — the user couldn't read what A/B testing was, couldn't toggle anything, couldn't make an informed decision. Locked rule `feedback_no_blur_premium_features` (2026-04-26): premium UIs must be FULLY visible and interactive on every tier; gating happens at save/apply/click time, not at display time.
