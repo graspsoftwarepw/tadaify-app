@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Links archive page render — visitor view at tadaify.com/<handle>/links — F-PAGE-LINKS-ARCHIVE-001 #23
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view that renders the searchable + filterable + grouped catalogue
+  of every link button across the creator's site (configured in
+  app-page-links-archive.html).
+
+  Sub-views via in-page hash routing (mockup-only picker pill at bottom-left
+  lets reviewers click each route without typing hashes; disappears in
+  production):
+    #/                 → full archive (default grouping = by source page)
+    #/group/<slug>     → single group deep-link (e.g., #/group/music)
+    #/tag/<slug>       → tag filter view (Creator+ feature)
+    #/search?q=<query> → search results (filters across all groups, highlights matches)
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: sticky search bar persists; tag chips wrap; sort
+  dropdown becomes overlay on mobile; pagination "Load more" tappable.
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every interaction works in-page;
+      search filters live; tag chips filter; sort dropdown re-renders; group
+      headers + click counts + pagination round-trip)
+    - No tadaify nav bar on creator pages — minimal back-link bar only.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>All links — Alexandra Silva — tadaify.com/alexandra/links</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values come from tokens.css (Indigo Serif).
+       Body wash mirrors creator-public.html / creator-blog-public.html
+       so the archive feels like a sub-page of the same site.
+       ============================================================ */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* Mockup-only top strip (back-link + URL pill + theme toggle) */
+    .top-strip {
+      max-width: 1080px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a {
+      color: var(--fg-muted);
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono {
+      font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+    .top-strip .theme-tog {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-muted); cursor: pointer;
+    }
+    .top-strip .theme-tog:hover { color: var(--fg); border-color: var(--border-strong); }
+    .top-strip .theme-tog svg { width: 14px; height: 14px; }
+
+    /* Creator identity row (compacted from creator-public.html) */
+    .creator-row {
+      max-width: 1080px; margin: 0 auto;
+      padding: 30px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+      flex-wrap: wrap;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Page hero */
+    .page-hero {
+      max-width: 1080px; margin: 0 auto;
+      padding: 24px 20px 18px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 52px);
+      letter-spacing: -0.02em; margin: 0;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .page-hero h1 .count-badge {
+      font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+      padding: 5px 12px; border-radius: 999px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      letter-spacing: 0;
+      vertical-align: middle;
+    }
+    .page-hero .lede {
+      max-width: 640px; color: var(--fg-muted);
+      font-size: 16.5px; line-height: 1.55; margin-top: 12px;
+    }
+
+    /* Sticky search + controls bar */
+    .control-bar {
+      position: sticky; top: 0; z-index: 30;
+      background: rgba(248, 249, 252, 0.86);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+      margin-top: 14px;
+    }
+    body.dark-mode .control-bar { background: rgba(11,15,30,0.86); border-bottom-color: #1F2937; }
+    .control-inner {
+      max-width: 1080px; margin: 0 auto;
+      padding: 0 20px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
+
+    /* Search bar */
+    .search-wrap {
+      position: relative; flex: 1; min-width: 220px;
+    }
+    .search-wrap > svg.search-ico {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; color: var(--fg-subtle);
+    }
+    .search-wrap input {
+      width: 100%; padding: 12px 38px 12px 40px;
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14.5px; outline: 0;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .search-wrap input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .search-wrap .search-x {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--bg-muted); color: var(--fg-muted);
+      border: 0; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      font-size: 13px; line-height: 1;
+    }
+    .search-wrap.has-query .search-x { display: flex; }
+    .search-wrap .search-x:hover { background: var(--bg-sunken); color: var(--fg); }
+
+    /* Sort dropdown */
+    .sort-wrap select {
+      padding: 11px 32px 11px 14px;
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13.5px; outline: 0; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 11px center;
+    }
+    .sort-wrap select:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+
+    /* Tag chip bar (Creator+ feature; rendered fully here so reviewers see it) */
+    .tag-bar {
+      max-width: 1080px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .tag-chip {
+      padding: 6px 12px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      cursor: pointer;
+      transition: border-color .12s, color .12s, background .12s;
+    }
+    .tag-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .tag-chip.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .tag-chip .chip-count {
+      margin-left: 6px; font-size: 10.5px; font-weight: 600; opacity: 0.7;
+    }
+
+    /* Results meta strip (search results + tag filter) */
+    .results-meta {
+      max-width: 1080px; margin: 0 auto;
+      padding: 18px 20px 0;
+      font-size: 13.5px; color: var(--fg-muted);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .results-meta b { color: var(--fg); font-weight: 600; }
+    .results-meta a {
+      color: var(--brand-primary); font-weight: 600;
+      padding: 3px 8px; border-radius: 6px;
+    }
+    .results-meta a:hover { background: rgba(99,102,241,0.10); }
+
+    /* Groups (rendered list) */
+    .groups {
+      max-width: 1080px; margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+    .group {
+      margin-bottom: 36px;
+      scroll-margin-top: 90px;
+    }
+    .group:last-child { margin-bottom: 0; }
+    .group-head {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .group-head .gh-emoji {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: rgba(99,102,241,0.10);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+    .group-head .gh-emoji.t-blog    { background: rgba(251,113,133,0.14); }
+    .group-head .gh-emoji.t-about   { background: rgba(52,211,153,0.14); }
+    .group-head .gh-emoji.t-manual  { background: rgba(245,158,11,0.14); }
+    .group-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; margin: 0; letter-spacing: -0.01em;
+      flex: 1;
+    }
+    .group-head .gh-count {
+      font-size: 12px; font-weight: 600;
+      padding: 3px 10px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .group-head .gh-deeplink {
+      font-size: 12.5px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .group-head .gh-deeplink:hover { background: rgba(99,102,241,0.10); }
+
+    /* Link button rows — borrowed visual pattern from BLOCK_TYPES.linkButton */
+    .link-list {
+      display: grid; gap: 10px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 720px) {
+      .link-list { grid-template-columns: 1fr 1fr; gap: 12px; }
+    }
+    .link-row {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 14px; align-items: center;
+      padding: 14px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: 14px;
+      text-decoration: none; color: inherit;
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    }
+    .link-row:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(99,102,241,0.40);
+    }
+    .link-row .lr-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      color: #fff; font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .link-row .lr-icon.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .link-row .lr-icon.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .link-row .lr-icon.t-warm    { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .link-row .lr-icon.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+    .link-row .lr-icon.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .link-row .lr-icon.t-violet  { background: linear-gradient(135deg, #C026D3, #7C3AED); }
+    .link-row .lr-meta { min-width: 0; }
+    .link-row .lr-title {
+      font-weight: 600; font-size: 15px; color: var(--fg);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .link-row .lr-url {
+      font-size: 12px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 3px;
+    }
+    .link-row .lr-tags { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+    .link-row .lr-tag {
+      padding: 1px 7px; border-radius: 999px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 10.5px; font-weight: 600;
+      cursor: pointer;
+    }
+    .link-row .lr-tag:hover { background: rgba(99,102,241,0.18); }
+    .link-row .lr-right {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+      flex-shrink: 0;
+    }
+    .link-row .lr-clicks {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(245,158,11,0.14); color: #92400E;
+      white-space: nowrap;
+    }
+    .link-row .lr-arrow svg {
+      width: 16px; height: 16px; color: var(--fg-subtle);
+    }
+    .link-row:hover .lr-arrow svg { color: var(--brand-primary); }
+
+    /* Highlight matched search terms */
+    .hi-match {
+      background: rgba(245,158,11,0.30);
+      border-radius: 3px; padding: 0 2px;
+      color: #92400E; font-weight: 700;
+    }
+    body.dark-mode .hi-match { background: rgba(245,158,11,0.34); color: #FCD34D; }
+
+    /* Pagination — Load more pattern */
+    .load-more-wrap {
+      max-width: 1080px; margin: 0 auto;
+      padding: 24px 20px 40px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .load-more-wrap .lm-meta { font-size: 13px; color: var(--fg-muted); }
+    .load-more-wrap .lm-btn {
+      padding: 12px 28px;
+      border: 1px solid var(--border-strong); border-radius: 999px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: border-color .12s, background .12s;
+    }
+    .load-more-wrap .lm-btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+    /* Empty / no-match state */
+    .no-match {
+      max-width: 720px; margin: 40px auto;
+      padding: 48px 24px; text-align: center;
+      background: var(--bg-elevated);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 18px;
+    }
+    .no-match .nm-emoji {
+      font-size: 38px; margin-bottom: 10px;
+    }
+    .no-match h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 6px 0 8px;
+    }
+    .no-match p { color: var(--fg-muted); font-size: 13.5px; max-width: 440px; margin: 0 auto; }
+
+    /* Footer (mirrors creator-public.html social block) */
+    .archive-footer {
+      max-width: 1080px; margin: 24px auto 60px;
+      padding: 28px 20px;
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+    }
+    .archive-footer .back-link {
+      font-size: 14px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 999px;
+      background: rgba(99,102,241,0.06);
+    }
+    .archive-footer .back-link:hover { background: rgba(99,102,241,0.14); }
+    .archive-footer .socials {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    }
+    .archive-footer .soc {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--fg-muted);
+    }
+    .archive-footer .soc:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+    .archive-footer .made-with {
+      font-size: 11.5px; color: var(--fg-subtle);
+    }
+    .archive-footer .made-with .wm {
+      font-family: var(--font-display); font-weight: 600;
+    }
+    .archive-footer .made-with .wm .ta  { color: var(--wm-ta); }
+    .archive-footer .made-with .wm .da  { color: var(--wm-da); }
+    .archive-footer .made-with .wm .ify { color: var(--wm-ify); }
+
+    /* Mockup-only sub-view picker pill */
+    .subview-picker {
+      position: fixed; bottom: 14px; left: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 6px; border-radius: 999px;
+      display: flex; gap: 4px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      flex-wrap: wrap; max-width: calc(100vw - 28px);
+    }
+    .subview-picker .sp-label {
+      padding: 4px 10px 4px 12px;
+      color: rgba(255,255,255,0.55);
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px;
+    }
+    .subview-picker button {
+      padding: 5px 11px; border-radius: 999px;
+      background: rgba(255,255,255,0.10); color: #fff;
+      border: 0; cursor: pointer; font-size: 11px; font-weight: 500;
+    }
+    .subview-picker button:hover  { background: rgba(255,255,255,0.18); }
+    .subview-picker button.is-on  { background: var(--brand-primary); color: #fff; }
+
+    /* Dark mode (theme inheritance from tokens.css) */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .top-strip a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .top-strip .url-mono b { color: #F3F4F6; }
+    body.dark-mode .creator-row .who-handle { color: #9CA3AF; }
+    body.dark-mode .creator-row .av { border-color: #141A2D; }
+    body.dark-mode .control-bar { border-bottom-color: #1F2937; }
+    body.dark-mode .search-wrap input,
+    body.dark-mode .sort-wrap select { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .tag-chip { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .tag-chip:hover, body.dark-mode .tag-chip.is-active { color: #fff; }
+    body.dark-mode .group-head { border-bottom-color: #1F2937; }
+    body.dark-mode .link-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .link-row .lr-title { color: #F3F4F6; }
+    body.dark-mode .load-more-wrap .lm-btn { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .archive-footer { border-top-color: #1F2937; }
+    body.dark-mode .archive-footer .soc { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .no-match { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .group-head .gh-count { background: #1F2937; color: #9CA3AF; }
+    body.dark-mode .search-wrap .search-x { background: #1F2937; color: #9CA3AF; }
+    body.dark-mode .archive-footer .back-link { background: rgba(99,102,241,0.18); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .link-row, .tag-chip, .load-more-wrap .lm-btn { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mockup-only top strip — back to main + URL pill + theme toggle -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Back to alexandra</a>
+  <span class="url-mono">tadaify.com/<b>alexandra/links</b></span>
+  <button class="theme-tog" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle theme">
+    <svg id="th-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  </button>
+</div>
+
+<!-- Creator identity row -->
+<div class="creator-row">
+  <div class="av">A</div>
+  <div class="who">
+    <div class="who-name">Alexandra Silva</div>
+    <div class="who-handle">@alexandra · songwriter, producer, journalist</div>
+  </div>
+  <a href="./creator-public.html" class="back-to-main">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to main page
+  </a>
+</div>
+
+<!-- Page hero -->
+<div class="page-hero" id="page-hero">
+  <h1 id="page-title">All links <span class="count-badge" id="count-badge">143 links</span></h1>
+  <p class="lede" id="page-lede">Every link from across alexandra's site — homepage, blog posts, About page, plus a few archive-only bonus links. Search, browse by source, or filter by tag.</p>
+</div>
+
+<!-- Sticky search + sort bar -->
+<div class="control-bar" role="search">
+  <div class="control-inner">
+    <div class="search-wrap" id="search-wrap">
+      <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="search" placeholder="Search 143 links — title or URL…" oninput="onSearchInput(event)" autocomplete="off" />
+      <button class="search-x" id="search-x" type="button" aria-label="Clear search" onclick="clearSearch()">×</button>
+    </div>
+    <div class="sort-wrap">
+      <label class="visually-hidden" for="sort-select">Sort</label>
+      <select id="sort-select" onchange="onSortChange(this.value)" aria-label="Sort links">
+        <option value="default">Group by source page</option>
+        <option value="alpha">A → Z</option>
+        <option value="clicks">Most clicked</option>
+        <option value="newest">Newest first</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Tag filter chip bar (Creator+ feature; rendered in this mockup so reviewers see it) -->
+<div class="tag-bar" role="navigation" aria-label="Filter by tag">
+  <button class="tag-chip is-active" data-tag="all" onclick="pickTag(this, 'all')">All <span class="chip-count">143</span></button>
+  <button class="tag-chip" data-tag="music" onclick="pickTag(this, 'music')">Music <span class="chip-count">38</span></button>
+  <button class="tag-chip" data-tag="podcasts" onclick="pickTag(this, 'podcasts')">Podcasts <span class="chip-count">24</span></button>
+  <button class="tag-chip" data-tag="press" onclick="pickTag(this, 'press')">Press <span class="chip-count">18</span></button>
+  <button class="tag-chip" data-tag="merch" onclick="pickTag(this, 'merch')">Merch <span class="chip-count">9</span></button>
+  <button class="tag-chip" data-tag="video" onclick="pickTag(this, 'video')">Video <span class="chip-count">21</span></button>
+  <button class="tag-chip" data-tag="writing" onclick="pickTag(this, 'writing')">Writing <span class="chip-count">14</span></button>
+  <button class="tag-chip" data-tag="behind-scenes" onclick="pickTag(this, 'behind-scenes')">Behind the scenes <span class="chip-count">11</span></button>
+  <button class="tag-chip" data-tag="archive" onclick="pickTag(this, 'archive')">Archive <span class="chip-count">8</span></button>
+</div>
+
+<!-- Results meta strip (renders only for #/search and #/tag) -->
+<div class="results-meta" id="results-meta" hidden></div>
+
+<!-- ============================================================
+     GROUPS (rendered list)
+     Each group has a stable id used for #/group/<slug> deep-link.
+     ============================================================ -->
+<main class="groups" id="groups">
+
+  <section class="group" id="group-homepage" data-group="homepage">
+    <div class="group-head">
+      <div class="gh-emoji">🏠</div>
+      <h2>From homepage</h2>
+      <span class="gh-count">87 links</span>
+      <a href="#/group/homepage" class="gh-deeplink" onclick="event.preventDefault();routeTo('#/group/homepage')">Open group →</a>
+    </div>
+    <div class="link-list">
+      <a href="#" class="link-row" data-tags="music,featured" data-clicks="3421">
+        <div class="lr-icon t-violet">🎧</div>
+        <div class="lr-meta">
+          <div class="lr-title">Spotify — listen to my latest album</div>
+          <div class="lr-url">open.spotify.com/album/4t8nE2KqL1jGcWvbPXR9YH</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/music')">music</span><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/featured')">featured</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">3.4k clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="merch,music" data-clicks="982">
+        <div class="lr-icon t-warm">🛍️</div>
+        <div class="lr-meta">
+          <div class="lr-title">Tour merch — vinyl + tees</div>
+          <div class="lr-url">store.alexandra.com/tour-merch</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/merch')">merch</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">982 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="video" data-clicks="2110">
+        <div class="lr-icon t-rose">📺</div>
+        <div class="lr-meta">
+          <div class="lr-title">YouTube channel — behind every track</div>
+          <div class="lr-url">youtube.com/@alexandra-silva</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/video')">video</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">2.1k clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="podcasts" data-clicks="745">
+        <div class="lr-icon t-sky">🎙️</div>
+        <div class="lr-meta">
+          <div class="lr-title">Apple Podcasts — Wednesday Notes</div>
+          <div class="lr-url">podcasts.apple.com/us/podcast/wednesday-notes</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/podcasts')">podcasts</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">745 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="music" data-clicks="630">
+        <div class="lr-icon t-emerald">📻</div>
+        <div class="lr-meta">
+          <div class="lr-title">Bandcamp — exclusive demos + B-sides</div>
+          <div class="lr-url">alexandra.bandcamp.com</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/music')">music</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">630 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="behind-scenes" data-clicks="412">
+        <div class="lr-icon">📸</div>
+        <div class="lr-meta">
+          <div class="lr-title">Instagram — daily studio</div>
+          <div class="lr-url">instagram.com/alexandra.silva</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/behind-scenes')">behind the scenes</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">412 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="group" id="group-blog" data-group="blog">
+    <div class="group-head">
+      <div class="gh-emoji t-blog">📝</div>
+      <h2>From blog posts</h2>
+      <span class="gh-count">42 links</span>
+      <a href="#/group/blog" class="gh-deeplink" onclick="event.preventDefault();routeTo('#/group/blog')">Open group →</a>
+    </div>
+    <div class="link-list">
+      <a href="#" class="link-row" data-tags="writing,music" data-clicks="289">
+        <div class="lr-icon t-rose">✍️</div>
+        <div class="lr-meta">
+          <div class="lr-title">Tools I used recording the last LP (linked from "How I record at home")</div>
+          <div class="lr-url">notion.so/alex/tools-shelf-2026</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/writing')">writing</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">289 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="music" data-clicks="194">
+        <div class="lr-icon t-emerald">🎼</div>
+        <div class="lr-meta">
+          <div class="lr-title">SoundCloud — the original demo for "Late August"</div>
+          <div class="lr-url">soundcloud.com/alex/late-august-demo-v3</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/music')">music</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">194 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="press,writing" data-clicks="156">
+        <div class="lr-icon t-slate">📰</div>
+        <div class="lr-meta">
+          <div class="lr-title">Pitchfork review — 8.4 / 10</div>
+          <div class="lr-url">pitchfork.com/reviews/albums/alexandra-silva-late-august</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/press')">press</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">156 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="podcasts,press" data-clicks="124">
+        <div class="lr-icon t-sky">🎙️</div>
+        <div class="lr-meta">
+          <div class="lr-title">Conversation with Hrishikesh Hirway — Song Exploder</div>
+          <div class="lr-url">songexploder.net/episodes/alexandra-silva</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/podcasts')">podcasts</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">124 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="group" id="group-about" data-group="about">
+    <div class="group-head">
+      <div class="gh-emoji t-about">👤</div>
+      <h2>From About page</h2>
+      <span class="gh-count">9 links</span>
+      <a href="#/group/about" class="gh-deeplink" onclick="event.preventDefault();routeTo('#/group/about')">Open group →</a>
+    </div>
+    <div class="link-list">
+      <a href="#" class="link-row" data-tags="press" data-clicks="71">
+        <div class="lr-icon t-slate">📰</div>
+        <div class="lr-meta">
+          <div class="lr-title">NPR Tiny Desk Concert — 2024</div>
+          <div class="lr-url">npr.org/2024/06/12/tiny-desk-alexandra-silva</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/press')">press</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">71 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="press,writing" data-clicks="62">
+        <div class="lr-icon t-rose">📓</div>
+        <div class="lr-meta">
+          <div class="lr-title">Wired interview — "songwriting in the era of stems"</div>
+          <div class="lr-url">wired.com/story/alexandra-silva-stems-interview</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/press')">press</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">62 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="group" id="group-manual" data-group="manual">
+    <div class="group-head">
+      <div class="gh-emoji t-manual">➕</div>
+      <h2>Bonus archive-only links</h2>
+      <span class="gh-count">5 links</span>
+      <a href="#/group/manual" class="gh-deeplink" onclick="event.preventDefault();routeTo('#/group/manual')">Open group →</a>
+    </div>
+    <div class="link-list">
+      <a href="#" class="link-row" data-tags="podcasts,archive" data-clicks="48">
+        <div class="lr-icon t-sky">🎙️</div>
+        <div class="lr-meta">
+          <div class="lr-title">Old podcast — 2019 Lex Fridman interview</div>
+          <div class="lr-url">podcasts.apple.com/podcast/lex-fridman/id1434243584</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/podcasts')">podcasts</span><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/archive')">archive</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">48 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="press,archive" data-clicks="35">
+        <div class="lr-icon t-rose">📰</div>
+        <div class="lr-meta">
+          <div class="lr-title">2017 New York Times feature about my studio</div>
+          <div class="lr-url">nytimes.com/2017/04/12/arts/music/alexandra-silva-studio.html</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/press')">press</span><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/archive')">archive</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">35 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="video,archive" data-clicks="29">
+        <div class="lr-icon t-emerald">🎬</div>
+        <div class="lr-meta">
+          <div class="lr-title">Documentary short — 2020</div>
+          <div class="lr-url">vimeo.com/447832901</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/video')">video</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">29 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="music,archive" data-clicks="22">
+        <div class="lr-icon t-warm">🎤</div>
+        <div class="lr-meta">
+          <div class="lr-title">Live at SXSW 2018 — full set</div>
+          <div class="lr-url">youtube.com/watch?v=alexandra-sxsw-2018</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/music')">music</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">22 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+      <a href="#" class="link-row" data-tags="writing,archive" data-clicks="18">
+        <div class="lr-icon">🧵</div>
+        <div class="lr-meta">
+          <div class="lr-title">Long Twitter thread on creative blocks</div>
+          <div class="lr-url">twitter.com/alexandra/status/1456732891024</div>
+          <div class="lr-tags"><span class="lr-tag" onclick="event.preventDefault();routeTo('#/tag/writing')">writing</span></div>
+        </div>
+        <div class="lr-right">
+          <span class="lr-clicks">18 clicks</span>
+          <span class="lr-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<!-- No-match block (search returning nothing) — hidden by default -->
+<div class="no-match" id="no-match" hidden>
+  <div class="nm-emoji" aria-hidden="true">🔎</div>
+  <h3>No links match your search</h3>
+  <p id="no-match-text">Try a shorter query, or browse by source page above. If you're looking for something specific, you can also <a href="./creator-contact-public.html" style="color:var(--brand-primary);font-weight:600">message Alexandra</a>.</p>
+</div>
+
+<!-- Pagination — Load more -->
+<div class="load-more-wrap" id="load-more">
+  <span class="lm-meta">Showing 30 of <b id="lm-total">143</b> links</span>
+  <button class="lm-btn" onclick="loadMore()">Load 30 more</button>
+</div>
+
+<!-- Footer -->
+<footer class="archive-footer">
+  <a href="./creator-public.html" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to alexandra's main page
+  </a>
+  <div class="socials">
+    <a href="#" class="soc" aria-label="Instagram">📸</a>
+    <a href="#" class="soc" aria-label="TikTok">🎵</a>
+    <a href="#" class="soc" aria-label="YouTube">▶️</a>
+    <a href="#" class="soc" aria-label="Spotify">🎧</a>
+    <a href="mailto:hello@alexandra.com" class="soc" aria-label="Email">✉️</a>
+  </div>
+  <div class="made-with">
+    Made with <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span> · <a href="https://tadaify.com" style="color:inherit">tadaify.com</a>
+  </div>
+</footer>
+
+<!-- Mockup-only sub-view picker pill -->
+<div class="subview-picker" role="navigation" aria-label="Mockup sub-view picker">
+  <span class="sp-label">demo:</span>
+  <button data-route="#/" class="is-on" onclick="routeTo('#/')">Full archive</button>
+  <button data-route="#/group/homepage" onclick="routeTo('#/group/homepage')">Group: homepage</button>
+  <button data-route="#/group/blog" onclick="routeTo('#/group/blog')">Group: blog</button>
+  <button data-route="#/tag/music" onclick="routeTo('#/tag/music')">Tag: music</button>
+  <button data-route="#/search?q=podcast" onclick="routeTo('#/search?q=podcast')">Search: podcast</button>
+  <button data-route="#/search?q=zzzzz" onclick="routeTo('#/search?q=zzzzz')">No-match</button>
+</div>
+
+<script>
+  /* ===========================================================
+     Theme bootstrap (matches creator-blog-public.html pattern)
+     =========================================================== */
+  (function bootstrapTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem('tadaify-theme'); } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (saved === null && prefersDark)) document.body.classList.add('dark-mode');
+  })();
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    try { localStorage.setItem('tadaify-theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); } catch (e) {}
+  }
+
+  /* ===========================================================
+     Hash routing — full state machine for 4 sub-views
+     #/                 → full archive default
+     #/group/<slug>     → single group deep-link
+     #/tag/<slug>       → tag filter view
+     #/search?q=<query> → search results
+     =========================================================== */
+  function routeTo(hash) {
+    location.hash = hash;
+  }
+  function applyRoute() {
+    var h = location.hash || '#/';
+    /* Update mockup-picker active state */
+    document.querySelectorAll('.subview-picker button').forEach(function (b) {
+      b.classList.toggle('is-on', b.dataset.route === h || (h === '#/' && b.dataset.route === '#/'));
+    });
+
+    /* Tag chips active state */
+    document.querySelectorAll('.tag-chip').forEach(function (c) { c.classList.remove('is-active'); });
+
+    /* Search input value sync */
+    var sw = document.getElementById('search-wrap');
+    var si = document.getElementById('search-input');
+
+    /* Reset display */
+    document.querySelectorAll('.group').forEach(function (g) { g.style.display = ''; });
+    document.querySelectorAll('.link-row').forEach(function (r) { r.style.display = ''; clearHi(r); });
+    document.getElementById('no-match').hidden = true;
+    document.getElementById('load-more').hidden = false;
+    var meta = document.getElementById('results-meta');
+    meta.hidden = true; meta.innerHTML = '';
+
+    if (h === '#/' || h === '') {
+      /* Default — show all groups */
+      sw.classList.remove('has-query'); si.value = '';
+      document.querySelector('.tag-chip[data-tag="all"]').classList.add('is-active');
+      return;
+    }
+
+    var mGroup = h.match(/^#\/group\/([^?]+)/);
+    if (mGroup) {
+      var slug = mGroup[1];
+      document.querySelectorAll('.group').forEach(function (g) {
+        g.style.display = (g.dataset.group === slug) ? '' : 'none';
+      });
+      var name = ({ homepage: 'Homepage', blog: 'Blog posts', about: 'About page', manual: 'Bonus archive-only' })[slug] || slug;
+      meta.hidden = false;
+      meta.innerHTML = 'Showing one group: <b>' + name + '</b> · <a href="#/" onclick="event.preventDefault();routeTo(\'#/\')">Show all groups →</a>';
+      /* Smooth scroll into view */
+      var target = document.getElementById('group-' + slug);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    var mTag = h.match(/^#\/tag\/([^?]+)/);
+    if (mTag) {
+      var tagSlug = mTag[1];
+      var tagChip = document.querySelector('.tag-chip[data-tag="' + tagSlug + '"]');
+      if (tagChip) tagChip.classList.add('is-active');
+      var visibleCount = 0;
+      document.querySelectorAll('.link-row').forEach(function (r) {
+        var tags = (r.dataset.tags || '').split(',');
+        var match = tags.indexOf(tagSlug) >= 0;
+        r.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+      });
+      /* Hide groups with 0 visible rows */
+      document.querySelectorAll('.group').forEach(function (g) {
+        var anyVisible = g.querySelectorAll('.link-row:not([style*="display: none"])').length > 0;
+        g.style.display = anyVisible ? '' : 'none';
+      });
+      meta.hidden = false;
+      meta.innerHTML = 'Filtered by tag: <b>' + tagSlug + '</b> · ' + visibleCount + ' link' + (visibleCount === 1 ? '' : 's') + ' · <a href="#/" onclick="event.preventDefault();routeTo(\'#/\')">Clear filter →</a>';
+      document.getElementById('load-more').hidden = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    var mSearch = h.match(/^#\/search\?q=(.+)/);
+    if (mSearch) {
+      var q = decodeURIComponent(mSearch[1]).toLowerCase().trim();
+      sw.classList.add('has-query'); si.value = decodeURIComponent(mSearch[1]);
+      runSearch(q);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+  }
+
+  function runSearch(q) {
+    var meta = document.getElementById('results-meta');
+    if (!q) {
+      document.getElementById('search-wrap').classList.remove('has-query');
+      meta.hidden = true;
+      document.getElementById('no-match').hidden = true;
+      document.querySelectorAll('.group').forEach(function (g) { g.style.display = ''; });
+      document.querySelectorAll('.link-row').forEach(function (r) { clearHi(r); });
+      document.getElementById('load-more').hidden = false;
+      return;
+    }
+    var visibleCount = 0;
+    document.querySelectorAll('.link-row').forEach(function (r) {
+      var title = r.querySelector('.lr-title').textContent.toLowerCase();
+      var url   = r.querySelector('.lr-url').textContent.toLowerCase();
+      var match = title.indexOf(q) >= 0 || url.indexOf(q) >= 0;
+      r.style.display = match ? '' : 'none';
+      if (match) {
+        visibleCount++;
+        applyHi(r, q);
+      } else {
+        clearHi(r);
+      }
+    });
+    document.querySelectorAll('.group').forEach(function (g) {
+      var anyVisible = g.querySelectorAll('.link-row:not([style*="display: none"])').length > 0;
+      g.style.display = anyVisible ? '' : 'none';
+    });
+    meta.hidden = false;
+    meta.innerHTML = visibleCount + ' result' + (visibleCount === 1 ? '' : 's') +
+      ' for <b>"' + escapeHtml(q) + '"</b> · ' +
+      '<a href="#/" onclick="event.preventDefault();clearSearch()">Clear search →</a>';
+    document.getElementById('no-match').hidden = visibleCount > 0;
+    if (visibleCount === 0) {
+      document.getElementById('no-match-text').innerHTML =
+        'No links matched "<b>' + escapeHtml(q) + '</b>". Try a shorter query, or browse by source page above. ' +
+        'If you\'re looking for something specific, you can also <a href="./creator-contact-public.html" style="color:var(--brand-primary);font-weight:600">message Alexandra</a>.';
+    }
+    document.getElementById('load-more').hidden = true;
+  }
+
+  /* Search input live update */
+  var searchTimer = null;
+  function onSearchInput(e) {
+    var q = (e.target.value || '').trim();
+    var sw = document.getElementById('search-wrap');
+    sw.classList.toggle('has-query', q.length > 0);
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () {
+      if (q.length === 0) {
+        if (location.hash.indexOf('#/search') === 0) location.hash = '#/';
+        else applyRoute();
+      } else {
+        location.hash = '#/search?q=' + encodeURIComponent(q);
+      }
+    }, 140);
+  }
+  function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-wrap').classList.remove('has-query');
+    location.hash = '#/';
+  }
+
+  /* Tag chip picker */
+  function pickTag(btn, tag) {
+    if (tag === 'all') { location.hash = '#/'; return; }
+    location.hash = '#/tag/' + tag;
+  }
+
+  /* Sort dropdown — re-orders rows visually within each group (mockup-level) */
+  function onSortChange(mode) {
+    document.querySelectorAll('.group .link-list').forEach(function (list) {
+      var rows = Array.from(list.children);
+      rows.sort(function (a, b) {
+        if (mode === 'alpha') return a.querySelector('.lr-title').textContent.localeCompare(b.querySelector('.lr-title').textContent);
+        if (mode === 'clicks') return parseInt(b.dataset.clicks || 0, 10) - parseInt(a.dataset.clicks || 0, 10);
+        if (mode === 'newest') return rows.indexOf(b) - rows.indexOf(a); /* mockup: reverse current order */
+        return 0; /* default — keep DOM order */
+      });
+      rows.forEach(function (r) { list.appendChild(r); });
+    });
+  }
+
+  /* Load more (mockup increments the displayed count) */
+  var loadedCount = 30;
+  function loadMore() {
+    loadedCount = Math.min(143, loadedCount + 30);
+    var lm = document.querySelector('.lm-meta');
+    if (lm) lm.innerHTML = 'Showing ' + loadedCount + ' of <b id="lm-total">143</b> links';
+    if (loadedCount >= 143) {
+      var btn = document.querySelector('.lm-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'All links loaded'; btn.style.opacity = '0.55'; btn.style.cursor = 'default'; }
+    }
+  }
+
+  /* Highlight + clear matched search terms */
+  function applyHi(row, q) {
+    [['.lr-title'], ['.lr-url']].forEach(function (selArr) {
+      var el = row.querySelector(selArr[0]);
+      if (!el) return;
+      var orig = el.dataset.orig || el.textContent;
+      el.dataset.orig = orig;
+      var safe = escapeHtml(orig);
+      var re = new RegExp('(' + escapeRegExp(q) + ')', 'ig');
+      el.innerHTML = safe.replace(re, '<span class="hi-match">$1</span>');
+    });
+  }
+  function clearHi(row) {
+    [['.lr-title'], ['.lr-url']].forEach(function (selArr) {
+      var el = row.querySelector(selArr[0]);
+      if (!el || !el.dataset.orig) return;
+      el.textContent = el.dataset.orig;
+      delete el.dataset.orig;
+    });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  /* Bootstrap routing on load + on hash change */
+  window.addEventListener('hashchange', applyRoute);
+  applyRoute();
+</script>
+
+</body>
+</html>

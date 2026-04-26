@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Links archive page template (creator-facing) — F-PAGE-LINKS-ARCHIVE-001 #23
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Editor for the Links archive — a dedicated browse-all-links sub-page that
+  derives its contents from link buttons across the creator's other pages
+  (homepage, blog post bodies, About, custom pages) plus optional manual
+  additions. Designed for creators with 50+ links who want a "browse all my
+  links" page beyond the curated homepage.
+
+  Pairs with creator-links-archive-public.html (visitor view).
+
+  Source story: graspsoftwarepw/tadaify-app issues #23 (F-PAGE-LINKS-ARCHIVE-001)
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced toggle; power fields inline visible-by-default-empty)
+    - feedback_no_blur_premium_features (premium fields fully visible + interactive on every tier; tier badges inline; gating happens at Save via TierGate.checkAndProceed)
+    - feedback_no_right_side_drawers (Excluded-link reason editor is a centered modal, NEVER a drawer)
+    - feedback_mockup_full_feature_vision (every interaction does something — source-page toggles update count + group preview; grouping mode swaps preview live; tier switcher exercises gates; manual link inline editor opens; excluded list restore round-trips; empty state renders with one click)
+    - feedback_sidebar_pages_grouping (Pages parent + Home first sub-page; Links archive injected as the active sub-page after the partial mounts)
+
+  Demo-only state via URL query:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator)
+
+  Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Links archive page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Wordmark */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms (mirrors app-page-portfolio.html / app-page-blog.html) ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.archived  { background: rgba(75,85,99,0.10); color: var(--fg-muted); }
+    .chip.warm      { background: rgba(245,158,11,0.16); color: var(--brand-warm-dark); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* Main content */
+    main.content {
+      padding: 24px 20px 140px;
+      min-width: 0;
+      max-width: 1080px;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 100px; } }
+
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 580px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+    .page-head .quick-titles {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px;
+    }
+    .page-head .qt-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 11px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      font-size: 12px; font-weight: 500; color: var(--fg);
+      cursor: pointer; transition: all .12s ease;
+    }
+    .page-head .qt-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .page-head .qt-chip .sparkle { font-size: 11px; color: var(--brand-warm); }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Sections */
+    .section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+    .row-toggle .rt-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* Source-page checklist */
+    .source-list {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .source-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px; align-items: center;
+      padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg);
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .source-row.is-on  { border-color: rgba(99,102,241,0.40); background: rgba(99,102,241,0.04); }
+    .source-row .src-ico {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #fff; flex-shrink: 0;
+    }
+    .source-row .src-ico.s-blog    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .source-row .src-ico.s-about   { background: linear-gradient(135deg, #34D399, #047857); }
+    .source-row .src-ico.s-custom  { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .source-row .src-ico.s-manual  { background: linear-gradient(135deg, #475569, #0F172A); }
+    .source-row .src-name { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .source-row .src-sub  { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+    .source-row .src-count {
+      font-size: 11.5px; font-weight: 600;
+      background: var(--bg-muted); color: var(--fg-muted);
+      padding: 2px 9px; border-radius: 999px;
+      white-space: nowrap;
+    }
+    .source-row.is-on .src-count {
+      background: rgba(99,102,241,0.14); color: var(--brand-primary);
+    }
+
+    /* Live-count summary */
+    .live-count {
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.05));
+      border: 1px solid rgba(99,102,241,0.20);
+      border-radius: 12px;
+    }
+    .live-count .lc-ico {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(99,102,241,0.16); color: var(--brand-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .live-count .lc-text { flex: 1; min-width: 0; }
+    .live-count .lc-num {
+      font-family: var(--font-display); font-weight: 600; font-size: 18px;
+      color: var(--fg);
+    }
+    .live-count .lc-sub { font-size: 12px; color: var(--fg-muted); }
+
+    /* Manual link inline editor — mirrors BLOCK_TYPES.linkButton primitive */
+    .manual-toolbar {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 14px;
+    }
+    .manual-toolbar .ml-meta { color: var(--fg-muted); font-size: 12.5px; }
+
+    .manual-list {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .manual-row {
+      display: grid;
+      grid-template-columns: 16px 36px 1fr auto;
+      gap: 12px; align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .manual-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .manual-row .ml-handle {
+      width: 16px; color: var(--fg-subtle); cursor: grab;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .manual-row .ml-handle svg { width: 14px; height: 14px; }
+    .manual-row .ml-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      color: #fff; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .manual-row .ml-icon.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .manual-row .ml-icon.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .manual-row .ml-icon.t-warm    { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .manual-row .ml-icon.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+    .manual-row .ml-meta-col { min-width: 0; }
+    .manual-row .ml-title-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .manual-row .ml-title {
+      font-weight: 600; font-size: 14px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .manual-row .ml-url {
+      font-size: 12px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .manual-row .ml-actions { display: flex; gap: 4px; align-items: center; }
+
+    /* Inline expanded editor (when clicking Edit on a manual row) */
+    .manual-row.is-editing {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.10);
+      grid-template-columns: 1fr;
+    }
+    .manual-row.is-editing .ml-handle,
+    .manual-row.is-editing .ml-icon,
+    .manual-row.is-editing .ml-meta-col,
+    .manual-row.is-editing .ml-actions { display: none; }
+    .ml-edit-pane { display: none; flex-direction: column; gap: 12px; }
+    .manual-row.is-editing .ml-edit-pane { display: flex; }
+
+    /* Visitor controls panel */
+    .visitor-controls { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Grouping mode visual radios */
+    .group-modes {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(5, 1fr);
+    }
+    @media (max-width: 980px) { .group-modes { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .group-modes { grid-template-columns: 1fr; } }
+    .group-card {
+      position: relative;
+      padding: 14px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      background: var(--bg);
+      cursor: pointer; transition: border-color .12s, transform .12s, box-shadow .12s;
+      display: flex; flex-direction: column; gap: 10px;
+      min-height: 152px;
+    }
+    .group-card:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+    .group-card.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+    }
+    .group-card.is-selected::after {
+      content: "✓"; position: absolute; top: 10px; right: 10px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--brand-primary); color: #fff;
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .group-card .gc-title { font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px; }
+    .group-card .gc-sub { font-size: 12px; color: var(--fg-muted); line-height: 1.45; }
+    .group-card .gc-thumb {
+      flex: 1; padding: 8px; border-radius: 8px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .group-card .gc-thumb .gh {
+      height: 10px; border-radius: 2px;
+      background: linear-gradient(90deg, var(--fg-subtle), transparent 70%);
+      opacity: 0.55;
+    }
+    .group-card .gc-thumb .gh.bold { background: var(--brand-primary); opacity: 0.5; height: 6px; width: 36%; }
+    .group-card .gc-thumb .gl {
+      height: 8px; border-radius: 2px;
+      background: var(--bg-muted);
+    }
+    .group-card .gc-thumb .gh-small {
+      width: 30%; height: 5px; border-radius: 2px;
+      background: var(--brand-primary); opacity: 0.4;
+    }
+
+    /* Excluded links */
+    .excluded-list { display: flex; flex-direction: column; gap: 8px; }
+    .excluded-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 12px; align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .excluded-row .ex-ico {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: rgba(75,85,99,0.10); color: var(--fg-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    .excluded-row .ex-meta { min-width: 0; }
+    .excluded-row .ex-title { font-weight: 600; font-size: 13.5px; }
+    .excluded-row .ex-line {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted); margin-top: 1px;
+    }
+    .excluded-row .ex-line .ex-url { font-family: var(--font-mono); }
+    .excluded-row .ex-line .ex-reason {
+      font-style: italic; padding: 1px 6px; border-radius: 4px;
+      background: rgba(245,158,11,0.10); color: #92400E;
+    }
+    .excluded-row .ex-actions { display: flex; gap: 4px; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 460px; }
+
+    /* Centered modal — Excluded link reason editor (NEVER drawer) */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(560px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    /* Inline tier hint (canonical pattern) */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint.t-pro {
+      background: rgba(99,102,241,0.08);
+      border-left-color: var(--brand-primary);
+      color: #4338CA;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+
+    /* Sticky save bar */
+    .save-bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 -8px 16px rgba(11,15,30,0.04);
+    }
+    @media (min-width: 1180px) { .save-bar { left: 240px; } }
+    @media (min-width: 720px) and (max-width: 1179px) { .save-bar { left: 72px; } }
+    .save-bar .sb-status {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .save-bar .sb-status .sb-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .save-bar .sb-spacer { flex: 1; }
+
+    /* Demo toolbar (bottom-right) */
+    .demo-toolbar {
+      position: fixed; bottom: 78px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode .source-row,
+    body.dark-mode .group-card,
+    body.dark-mode .excluded-row,
+    body.dark-mode details.expander {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .source-row.is-on { background: rgba(99,102,241,0.12); }
+    body.dark-mode .group-card.is-selected { background: rgba(99,102,241,0.18); }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .group-card .gc-thumb { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .group-card .gc-thumb .gl { background: #1F2937; }
+    body.dark-mode .manual-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .save-bar { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .live-count {
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.40);
+    }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .page-head .qt-chip { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .excluded-row .ex-line .ex-reason { background: rgba(245,158,11,0.18); color: #FCD34D; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal, .group-card, .source-row, .swatch { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <a href="./creator-links-archive-public.html" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" data-tip="Open the public Links archive in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View archive
+  </a>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+
+  <!-- Canonical sidebar (Pages active; Links archive sub-page injected after mount) -->
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Links archive</span>
+    </nav>
+
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">🗂️</span> Links archive</h1>
+        <p class="sub">A browse-all-links sub-page that pulls from your homepage, blog posts, and other pages — search, group, and filter for visitors who want the full catalogue.</p>
+        <div class="quick-titles">
+          <span class="text-xs" style="font-size:11px;color:var(--fg-subtle);align-self:center;font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Title ideas</span>
+          <button class="qt-chip" onclick="setTitle('All links')">All links</button>
+          <button class="qt-chip" onclick="setTitle('Browse all')">Browse all</button>
+          <button class="qt-chip" onclick="setTitle('Links archive')">Links archive</button>
+          <button class="qt-chip" onclick="setTitle('The full catalogue')">The full catalogue</button>
+          <button class="qt-chip" onclick="suggestMoreTitles()"><span class="sparkle">✨</span> Suggest more</button>
+        </div>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b id="url-slug">links</b>
+        </span>
+        <a href="./creator-links-archive-public.html" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </a>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         FILLED STATE
+         ============================================================ -->
+    <div id="filled-pane">
+
+      <!-- ===================================================
+           SECTION 1 — Page settings
+           =================================================== -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Page settings</h2>
+          <span class="sub">Title, URL, visibility, theme, and SEO for the archive page itself.</span>
+        </div>
+        <div class="section-body">
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="page-title">Page title <span class="field-hint">shown as &lt;h1&gt; on the public archive</span></label>
+              <input class="field-input" id="page-title" type="text" value="All links" oninput="syncTitle(this.value)" />
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+              <div class="field-prefix-wrap">
+                <span class="field-prefix">tadaify.com/alexandra/</span>
+                <input id="page-slug" type="text" value="links" oninput="syncSlug(this.value)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">Publish to public</div>
+                  <div class="rt-sub">Anyone with the link can browse the archive.</div>
+                </div>
+                <button type="button" class="toggle is-on" aria-pressed="true" onclick="this.classList.toggle('is-on')"></button>
+              </div>
+            </div>
+            <div class="field">
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">Show in homepage footer</div>
+                  <div class="rt-sub">Adds a "Browse all links →" link below your blocks.</div>
+                </div>
+                <button type="button" class="toggle is-on" aria-pressed="true" onclick="this.classList.toggle('is-on')"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Theme color <span class="field-hint">overrides the default page accent for this archive</span></label>
+            <div class="swatch-row">
+              <button class="swatch is-selected" style="background:#6366F1" onclick="pickSwatch(this)" data-tip="Indigo"></button>
+              <button class="swatch" style="background:#F59E0B" onclick="pickSwatch(this)" data-tip="Warm"></button>
+              <button class="swatch" style="background:#34D399" onclick="pickSwatch(this)" data-tip="Emerald"></button>
+              <button class="swatch" style="background:#FB7185" onclick="pickSwatch(this)" data-tip="Rose"></button>
+              <button class="swatch" style="background:#38BDF8" onclick="pickSwatch(this)" data-tip="Sky"></button>
+              <button class="swatch" style="background:#C026D3" onclick="pickSwatch(this)" data-tip="Magenta"></button>
+              <button class="swatch" style="background:#475569" onclick="pickSwatch(this)" data-tip="Slate"></button>
+              <button class="swatch" style="background:#0B0F1E" onclick="pickSwatch(this)" data-tip="Black"></button>
+            </div>
+          </div>
+
+          <details class="expander">
+            <summary>
+              <span>SEO &amp; sharing</span>
+              <span class="ex-sub">Meta title, description, OG image — for Google &amp; social previews</span>
+              <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="ex-body">
+              <div class="field">
+                <label class="field-label" for="seo-title">Meta title <span class="field-hint">≤ 60 chars</span></label>
+                <input class="field-input" id="seo-title" type="text" value="All my links — Alexandra Silva" />
+              </div>
+              <div class="field">
+                <label class="field-label" for="seo-desc">Meta description <span class="field-hint">≤ 160 chars</span></label>
+                <textarea class="field-area" id="seo-desc">Browse 143 links from Alexandra — playlists, podcasts, guest interviews, merch, behind-the-scenes content, and more.</textarea>
+              </div>
+              <div class="field">
+                <label class="field-label">Open Graph image</label>
+                <div style="display:flex;gap:10px;align-items:center;">
+                  <div style="width:100px;height:56px;border-radius:8px;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600">1200×630</div>
+                  <button class="btn btn-ghost btn-sm">Replace</button>
+                  <button class="btn btn-ghost btn-sm">✨ Generate</button>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 2 — Sources (the unique part)
+           =================================================== -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Where do the links come from?</h2>
+          <span class="sub">Toggle pages whose link buttons should populate the archive. Counts update live.</span>
+        </div>
+        <div class="section-body">
+          <div class="source-list">
+
+            <div class="source-row is-on" data-source="home">
+              <button type="button" class="toggle is-on" aria-pressed="true" onclick="toggleSource(this)" aria-label="Include homepage links"></button>
+              <div>
+                <div class="src-name">
+                  <span class="src-ico">🏠</span>
+                  Homepage main page
+                  <span class="chip" style="margin-left:4px">default</span>
+                </div>
+                <div class="src-sub">All Link button blocks on your main <code>/alexandra</code> page.</div>
+              </div>
+              <span class="src-count">87 links</span>
+            </div>
+
+            <div class="source-row is-on" data-source="blog">
+              <button type="button" class="toggle is-on" aria-pressed="true" onclick="toggleSource(this)" aria-label="Include blog post links"></button>
+              <div>
+                <div class="src-name">
+                  <span class="src-ico s-blog">📝</span>
+                  Blog post bodies
+                </div>
+                <div class="src-sub">Pulls every link button placed inside a blog post body — appears under "From blog" group.</div>
+              </div>
+              <span class="src-count">42 links</span>
+            </div>
+
+            <div class="source-row is-on" data-source="about">
+              <button type="button" class="toggle is-on" aria-pressed="true" onclick="toggleSource(this)" aria-label="Include About page links"></button>
+              <div>
+                <div class="src-name">
+                  <span class="src-ico s-about">👤</span>
+                  About page sections
+                </div>
+                <div class="src-sub">Press, contact, story-timeline links from your <code>/alexandra/about</code> page.</div>
+              </div>
+              <span class="src-count">9 links</span>
+            </div>
+
+            <div class="source-row" data-source="custom">
+              <button type="button" class="toggle" aria-pressed="false" onclick="toggleSource(this)" aria-label="Include custom page links"></button>
+              <div>
+                <div class="src-name">
+                  <span class="src-ico s-custom">📄</span>
+                  All custom pages
+                </div>
+                <div class="src-sub">Future pages you create with the page-template framework. <span style="color:var(--fg-subtle)">(0 today)</span></div>
+              </div>
+              <span class="src-count">0 links</span>
+            </div>
+
+            <div class="source-row is-on" data-source="manual">
+              <button type="button" class="toggle is-on" aria-pressed="true" onclick="toggleSource(this)" aria-label="Include manually-added links"></button>
+              <div>
+                <div class="src-name">
+                  <span class="src-ico s-manual">➕</span>
+                  Manually-added bonus links
+                </div>
+                <div class="src-sub">Archive-only links that don't appear on any other page. Edit below.</div>
+              </div>
+              <span class="src-count">5 links</span>
+            </div>
+          </div>
+
+          <div class="live-count" role="status" aria-live="polite">
+            <div class="lc-ico">∑</div>
+            <div class="lc-text">
+              <div class="lc-num"><span id="live-count-num">143</span> links from <span id="live-count-srcs">4</span> sources</div>
+              <div class="lc-sub">Counts refresh hourly. <a href="#" onclick="manualRecount(event)" style="color:var(--brand-primary);font-weight:600">Recount now →</a></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 3 — Manual additions (BLOCK_TYPES.linkButton primitive)
+           =================================================== -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Manual bonus links</h2>
+          <span class="sub">Links that exist <em>only</em> on the archive — useful for old work you don't want featured on the homepage.</span>
+          <div class="head-spacer"></div>
+          <button class="btn btn-primary btn-sm" onclick="addManualLink()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add manual link
+          </button>
+        </div>
+        <div class="section-body">
+          <div class="manual-toolbar">
+            <span class="ml-meta"><b id="manual-count">5</b> manual links · drag to reorder · unlimited on every tier</span>
+          </div>
+
+          <div class="manual-list" id="manual-list">
+
+            <!-- Row 1: collapsed view -->
+            <div class="manual-row" data-id="m1">
+              <div class="ml-handle" data-tip="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+              </div>
+              <div class="ml-icon">🎙️</div>
+              <div class="ml-meta-col">
+                <div class="ml-title-row">
+                  <span class="ml-title">Old podcast — 2019 Lex Fridman interview</span>
+                  <span class="chip warm">A/B test</span>
+                </div>
+                <div class="ml-url">https://podcasts.apple.com/podcast/lex-fridman/id1434243584?i=1000452831024</div>
+              </div>
+              <div class="ml-actions">
+                <button class="btn btn-ghost btn-xs" onclick="editManual('m1')">Edit</button>
+                <button class="iconbtn" data-tip="Delete" onclick="deleteManual('m1')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                </button>
+              </div>
+              <!-- Inline expanded editor (mirrors BLOCK_TYPES.linkButton form) -->
+              <div class="ml-edit-pane">
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">Title</label>
+                    <input class="field-input" type="text" value="Old podcast — 2019 Lex Fridman interview" />
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Icon emoji or upload</label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input class="field-input" type="text" value="🎙️" style="max-width:80px;text-align:center;font-size:18px" />
+                      <button class="btn btn-ghost btn-sm">Upload</button>
+                      <button class="btn btn-ghost btn-sm">✨ Pick</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label">URL</label>
+                  <input class="field-input" type="url" value="https://podcasts.apple.com/podcast/lex-fridman/id1434243584?i=1000452831024" />
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label class="field-label">A/B test variant <span class="chip warm" style="margin-left:4px">Business</span></label>
+                    <select class="field-select">
+                      <option>Off</option>
+                      <option selected>50/50 — auto-pick winner after 7 days</option>
+                      <option>Manual split</option>
+                    </select>
+                    <div class="tier-hint">
+                      <span class="th-icon">🔒</span>
+                      A/B testing on link buttons is part of the Business plan. You can configure it now — gating happens at Save.
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="field-label">Schedule visibility <span class="chip" style="margin-left:4px">Creator+</span></label>
+                    <input class="field-input" type="datetime-local" value="2026-05-01T09:00" />
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button class="btn btn-ghost btn-sm" onclick="cancelEditManual('m1')">Cancel</button>
+                  <button class="btn btn-primary btn-sm" onclick="saveEditManual('m1')">Save</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="manual-row" data-id="m2">
+              <div class="ml-handle" data-tip="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+              </div>
+              <div class="ml-icon t-rose">📰</div>
+              <div class="ml-meta-col">
+                <div class="ml-title-row">
+                  <span class="ml-title">2017 New York Times feature about my studio</span>
+                </div>
+                <div class="ml-url">https://www.nytimes.com/2017/04/12/arts/music/alexandra-silva-studio.html</div>
+              </div>
+              <div class="ml-actions">
+                <button class="btn btn-ghost btn-xs" onclick="editManual('m2')">Edit</button>
+                <button class="iconbtn" data-tip="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="manual-row" data-id="m3">
+              <div class="ml-handle" data-tip="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+              </div>
+              <div class="ml-icon t-emerald">🎬</div>
+              <div class="ml-meta-col">
+                <div class="ml-title-row">
+                  <span class="ml-title">Documentary short — 2020</span>
+                </div>
+                <div class="ml-url">https://vimeo.com/447832901</div>
+              </div>
+              <div class="ml-actions">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="iconbtn" data-tip="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="manual-row" data-id="m4">
+              <div class="ml-handle" data-tip="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+              </div>
+              <div class="ml-icon t-warm">🎤</div>
+              <div class="ml-meta-col">
+                <div class="ml-title-row">
+                  <span class="ml-title">Live at SXSW 2018 — full set</span>
+                </div>
+                <div class="ml-url">https://www.youtube.com/watch?v=dQw4w9WgXcQ</div>
+              </div>
+              <div class="ml-actions">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="iconbtn" data-tip="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="manual-row" data-id="m5">
+              <div class="ml-handle" data-tip="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+              </div>
+              <div class="ml-icon t-sky">🧵</div>
+              <div class="ml-meta-col">
+                <div class="ml-title-row">
+                  <span class="ml-title">Long Twitter thread on creative blocks</span>
+                </div>
+                <div class="ml-url">https://twitter.com/alexandra/status/1456732891024</div>
+              </div>
+              <div class="ml-actions">
+                <button class="btn btn-ghost btn-xs">Edit</button>
+                <button class="iconbtn" data-tip="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 4 — Organization (grouping + visitor controls)
+           =================================================== -->
+      <section class="section">
+        <div class="section-head">
+          <h2>How visitors browse</h2>
+          <span class="sub">Choose how the archive groups + filters in the visitor's view.</span>
+        </div>
+        <div class="section-body">
+
+          <div class="field">
+            <label class="field-label">Grouping mode <span class="field-hint">click to swap — preview updates live</span></label>
+            <div class="group-modes" id="group-modes">
+
+              <button type="button" class="group-card is-selected" data-mode="source" onclick="pickGroupMode(this)">
+                <div class="gc-thumb">
+                  <div class="gh bold"></div>
+                  <div class="gl"></div><div class="gl"></div>
+                  <div class="gh-small" style="margin-top:6px"></div>
+                  <div class="gl"></div>
+                </div>
+                <div class="gc-title">By source page <span class="chip">default</span></div>
+                <div class="gc-sub">"From homepage" / "From blog" / "Manual"</div>
+              </button>
+
+              <button type="button" class="group-card" data-mode="manual" onclick="pickGroupMode(this)">
+                <div class="gc-thumb">
+                  <div class="gh bold"></div>
+                  <div class="gl"></div><div class="gl"></div>
+                  <div class="gh-small" style="margin-top:6px;width:25%"></div>
+                  <div class="gl"></div>
+                </div>
+                <div class="gc-title">Manual categories <span class="chip" style="background:rgba(16,185,129,0.12);color:#047857">Creator+</span></div>
+                <div class="gc-sub">You define groups like "Music" / "Merch" / "Podcasts" then drag links into them.</div>
+              </button>
+
+              <button type="button" class="group-card" data-mode="alpha" onclick="pickGroupMode(this)">
+                <div class="gc-thumb">
+                  <div class="gh-small"></div>
+                  <div class="gl"></div><div class="gl"></div>
+                  <div class="gh-small" style="margin-top:4px"></div>
+                  <div class="gl"></div>
+                </div>
+                <div class="gc-title">Alphabetical</div>
+                <div class="gc-sub">A → Z group headers. Easiest for huge libraries.</div>
+              </button>
+
+              <button type="button" class="group-card" data-mode="clicks" onclick="pickGroupMode(this)">
+                <div class="gc-thumb">
+                  <div class="gh bold" style="width:60%"></div>
+                  <div class="gl"></div><div class="gl"></div><div class="gl"></div>
+                  <div class="gl" style="opacity:.5"></div>
+                </div>
+                <div class="gc-title">Most clicked <span class="chip" style="background:rgba(16,185,129,0.12);color:#047857">Creator+</span></div>
+                <div class="gc-sub">Pulls from the last 30 days of analytics. Hot links float up.</div>
+              </button>
+
+              <button type="button" class="group-card" data-mode="newest" onclick="pickGroupMode(this)">
+                <div class="gc-thumb">
+                  <div class="gh-small bold"></div>
+                  <div class="gl"></div><div class="gl"></div>
+                  <div class="gl" style="opacity:.7"></div><div class="gl" style="opacity:.5"></div>
+                </div>
+                <div class="gc-title">Newest first</div>
+                <div class="gc-sub">Sorted by date the link was added. Great for content drops.</div>
+              </button>
+            </div>
+          </div>
+
+          <div style="height:14px"></div>
+
+          <div class="field">
+            <label class="field-label">Visitor controls <span class="field-hint">what shows up at the top of the public archive</span></label>
+            <div class="visitor-controls">
+
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">🔎 Search bar</div>
+                  <div class="rt-sub">Client-side fuzzy search across all link titles. Always free.</div>
+                </div>
+                <button type="button" class="toggle is-on" aria-pressed="true" onclick="this.classList.toggle('is-on')"></button>
+              </div>
+
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">🏷️ Tag filter chips <span class="chip" style="background:rgba(16,185,129,0.12);color:#047857;margin-left:4px">Creator+</span></div>
+                  <div class="rt-sub">Auto-tagged from link metadata + manual tags. Visitor clicks a chip → filtered list.</div>
+                  <div class="tier-hint">
+                    <span class="th-icon">🔒</span>
+                    Tag filters are part of Creator. Configure them now — gating happens at Save.
+                  </div>
+                </div>
+                <button type="button" class="toggle is-on" aria-pressed="true" onclick="this.classList.toggle('is-on')"></button>
+              </div>
+
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">↕️ Sort dropdown for visitors <span class="chip" style="background:rgba(99,102,241,0.13);color:#4338CA;margin-left:4px">Pro+</span></div>
+                  <div class="rt-sub">Lets visitors re-sort: A-Z / Most clicked / Newest. Default sort comes from grouping mode.</div>
+                  <div class="tier-hint t-pro">
+                    <span class="th-icon">✨</span>
+                    Visitor-facing sort dropdown is part of Pro.
+                  </div>
+                </div>
+                <button type="button" class="toggle" aria-pressed="false" onclick="this.classList.toggle('is-on')"></button>
+              </div>
+
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">📊 Show click counts on every link <span class="chip" style="background:rgba(99,102,241,0.13);color:#4338CA;margin-left:4px">Pro+</span></div>
+                  <div class="rt-sub">Public counts like "1.2k clicks" build trust. Free shows just titles.</div>
+                  <div class="tier-hint t-pro">
+                    <span class="th-icon">✨</span>
+                    Public click counts are part of Pro. Numbers stay private until then.
+                  </div>
+                </div>
+                <button type="button" class="toggle" aria-pressed="false" onclick="this.classList.toggle('is-on')"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 5 — Excluded links
+           =================================================== -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Excluded from archive</h2>
+          <span class="sub">Hide specific links from the archive without deleting them from their source page.</span>
+          <div class="head-spacer"></div>
+          <span class="chip"><b id="excluded-count">5</b>&nbsp;excluded</span>
+        </div>
+        <div class="section-body">
+          <div class="excluded-list" id="excluded-list">
+
+            <div class="excluded-row" data-id="x1">
+              <div class="ex-ico">🚫</div>
+              <div class="ex-meta">
+                <div class="ex-title">Old support form (deprecated)</div>
+                <div class="ex-line">
+                  <span class="ex-url">tadaify.com/alexandra/support-2019</span>
+                  <span>·</span>
+                  <span class="ex-reason">Reason: replaced by Contact page</span>
+                </div>
+              </div>
+              <div class="ex-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openReasonModal('x1')">Edit reason</button>
+                <button class="btn btn-ghost btn-xs" onclick="restoreExcluded('x1')">Restore</button>
+              </div>
+            </div>
+
+            <div class="excluded-row" data-id="x2">
+              <div class="ex-ico">🚫</div>
+              <div class="ex-meta">
+                <div class="ex-title">Internal team Notion (private)</div>
+                <div class="ex-line">
+                  <span class="ex-url">notion.so/team-internal-9a82</span>
+                  <span>·</span>
+                  <span class="ex-reason">Reason: not for public archive</span>
+                </div>
+              </div>
+              <div class="ex-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openReasonModal('x2')">Edit reason</button>
+                <button class="btn btn-ghost btn-xs" onclick="restoreExcluded('x2')">Restore</button>
+              </div>
+            </div>
+
+            <div class="excluded-row" data-id="x3">
+              <div class="ex-ico">🚫</div>
+              <div class="ex-meta">
+                <div class="ex-title">Affiliate code that expired</div>
+                <div class="ex-line">
+                  <span class="ex-url">store.example.com/?ref=alex-2024</span>
+                  <span>·</span>
+                  <span class="ex-reason">Reason: link no longer pays</span>
+                </div>
+              </div>
+              <div class="ex-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openReasonModal('x3')">Edit reason</button>
+                <button class="btn btn-ghost btn-xs" onclick="restoreExcluded('x3')">Restore</button>
+              </div>
+            </div>
+
+            <div class="excluded-row" data-id="x4">
+              <div class="ex-ico">🚫</div>
+              <div class="ex-meta">
+                <div class="ex-title">"Coming soon" placeholder from launch week</div>
+                <div class="ex-line">
+                  <span class="ex-url">tadaify.com/alexandra/coming-soon</span>
+                  <span>·</span>
+                  <span class="ex-reason">Reason: temporary</span>
+                </div>
+              </div>
+              <div class="ex-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openReasonModal('x4')">Edit reason</button>
+                <button class="btn btn-ghost btn-xs" onclick="restoreExcluded('x4')">Restore</button>
+              </div>
+            </div>
+
+            <div class="excluded-row" data-id="x5">
+              <div class="ex-ico">🚫</div>
+              <div class="ex-meta">
+                <div class="ex-title">Draft podcast episode I never released</div>
+                <div class="ex-line">
+                  <span class="ex-url">soundcloud.com/alex/private-draft-44</span>
+                  <span>·</span>
+                  <span class="ex-reason">Reason: still working on it</span>
+                </div>
+              </div>
+              <div class="ex-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openReasonModal('x5')">Edit reason</button>
+                <button class="btn btn-ghost btn-xs" onclick="restoreExcluded('x5')">Restore</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================================================
+         EMPTY STATE (rendered when ?state=empty)
+         ============================================================ -->
+    <div id="empty-pane" style="display:none">
+      <section class="section">
+        <div class="section-body">
+          <div class="empty-state">
+            <div class="es-emoji" aria-hidden="true">🗂️</div>
+            <h3>No links to archive yet</h3>
+            <p>Your archive populates automatically once you add link buttons to your homepage, blog posts, or other pages. Drop your first link to get started.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+              <a href="./app-dashboard.html?tab=page" class="btn btn-primary btn-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add your first link button
+              </a>
+              <button class="btn btn-ghost btn-sm" onclick="addManualLink()">
+                Or add a manual archive-only link →
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===================================================
+     CENTERED MODAL — Excluded link reason editor
+     (NEVER a drawer per feedback_no_right_side_drawers)
+     =================================================== -->
+<div class="modal-backdrop" id="reason-modal" role="dialog" aria-modal="true" aria-labelledby="reason-modal-title">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="reason-modal-title">Why exclude this link?</h3>
+      <div class="head-spacer"></div>
+      <button class="iconbtn" onclick="closeReasonModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--fg-muted);font-size:13.5px;margin:0 0 14px">A short note for your future self — never shown to visitors. Helps you remember why this link is hidden if you come back in 6 months.</p>
+      <div class="field">
+        <label class="field-label">Link</label>
+        <div class="field-prefix-wrap">
+          <span class="field-prefix">URL</span>
+          <input id="reason-url" type="text" value="tadaify.com/alexandra/support-2019" disabled />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="reason-text">Reason</label>
+        <textarea class="field-area" id="reason-text" placeholder="e.g. Replaced by Contact page · Affiliate code expired · Internal only">replaced by Contact page</textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="foot-spacer"></div>
+      <button class="btn btn-ghost btn-sm" onclick="closeReasonModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveReason()">Save reason</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================
+     STICKY SAVE BAR
+     =================================================== -->
+<div class="save-bar" role="region" aria-label="Save changes">
+  <div class="sb-status">
+    <span class="sb-dot" aria-hidden="true"></span>
+    <span id="save-status">All changes saved · last 12 sec ago</span>
+  </div>
+  <div class="sb-spacer"></div>
+  <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+  <button class="btn btn-primary btn-sm" onclick="trySave()">Save changes</button>
+</div>
+
+<!-- ===================================================
+     DEMO TOOLBAR (mockup-only)
+     =================================================== -->
+<div class="demo-toolbar" role="region" aria-label="Demo toolbar">
+  <span>Demo</span>
+  <select id="demo-state" onchange="setDemoState(this.value)">
+    <option value="filled">State: filled</option>
+    <option value="empty">State: empty</option>
+  </select>
+  <select id="demo-tier" onchange="setDemoTier(this.value)">
+    <option value="free">Tier: Free</option>
+    <option value="creator" selected>Tier: Creator</option>
+    <option value="pro">Tier: Pro</option>
+    <option value="business">Tier: Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  /* ===========================================================
+     Theme bootstrap (mirrors other dashboard mockups)
+     =========================================================== */
+  (function bootstrapTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem('tadaify-theme'); } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (saved === null && prefersDark)) document.body.classList.add('dark-mode');
+  })();
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    try { localStorage.setItem('tadaify-theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); } catch (e) {}
+  }
+
+  /* ===========================================================
+     URL state — ?state=empty|filled, ?tier=free|creator|pro|business
+     =========================================================== */
+  function getQuery(name) {
+    var m = new URLSearchParams(location.search).get(name);
+    return m === null ? null : m.toLowerCase();
+  }
+  var initialState = getQuery('state') || 'filled';
+  var initialTier  = getQuery('tier')  || 'creator';
+  document.body.dataset.state = initialState;
+  document.body.dataset.tier  = initialTier;
+  document.getElementById('demo-state').value = initialState;
+  document.getElementById('demo-tier').value  = initialTier;
+  applyState(initialState);
+
+  function applyState(st) {
+    document.getElementById('filled-pane').style.display = (st === 'empty') ? 'none' : 'block';
+    document.getElementById('empty-pane').style.display  = (st === 'empty') ? 'block' : 'none';
+  }
+  function setDemoState(st) {
+    document.body.dataset.state = st;
+    applyState(st);
+    var url = new URL(location.href); url.searchParams.set('state', st); history.replaceState(null, '', url);
+  }
+  function setDemoTier(t) {
+    document.body.dataset.tier = t;
+    var url = new URL(location.href); url.searchParams.set('tier', t); history.replaceState(null, '', url);
+    /* Refresh sidebar tier label if partial mounted */
+    var th = document.getElementById('side-tier');
+    if (th) {
+      var label = ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[t] || 'Creator';
+      th.textContent = '@alexandra · ' + label;
+    }
+  }
+
+  /* ===========================================================
+     Sidebar: inject "Links archive" sub-page above "+ Add page"
+     (same post-inject pattern as app-page-blog / app-page-portfolio)
+     =========================================================== */
+  function injectArchiveSubPage() {
+    var subList = document.querySelector('.tdf-side .nav-sub-list');
+    if (!subList) return;
+    var addBtn = subList.querySelector('.is-disabled');
+    if (subList.querySelector('[data-archive-subpage]')) return;
+    var item = document.createElement('a');
+    item.href = './app-page-links-archive.html';
+    item.className = 'nav-sub-item is-current';
+    item.dataset.archiveSubpage = '';
+    item.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' +
+      '<span>Links archive</span>';
+    if (addBtn) subList.insertBefore(item, addBtn); else subList.appendChild(item);
+    /* Demote Home from is-current since Archive is the active sub-page */
+    var home = subList.querySelector('a:not([data-archive-subpage])');
+    if (home) home.classList.remove('is-current');
+  }
+  /* partials.js mounts synchronously when this script runs after it */
+  injectArchiveSubPage();
+
+  /* ===========================================================
+     Title + slug binding
+     =========================================================== */
+  function syncTitle(v) { /* no-op for mockup; in prod bumps preview */ markDirty(); }
+  function syncSlug(v) {
+    document.getElementById('url-slug').textContent = (v || 'links').replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'links';
+    markDirty();
+  }
+  function setTitle(v) {
+    document.getElementById('page-title').value = v;
+    /* lightweight slug derivation */
+    var slug = v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    document.getElementById('page-slug').value = slug;
+    syncSlug(slug);
+    markDirty();
+  }
+  function suggestMoreTitles() {
+    var pool = ['Catalogue', 'My world', 'Everything', 'Index', 'Library', 'The vault', 'Browse all', 'Reference shelf'];
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    setTitle(pick);
+  }
+
+  /* ===========================================================
+     Source-page toggles + live count
+     =========================================================== */
+  var sourceCounts = { home: 87, blog: 42, about: 9, custom: 0, manual: 5 };
+  function toggleSource(btn) {
+    btn.classList.toggle('is-on');
+    var on = btn.classList.contains('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var row = btn.closest('.source-row');
+    row.classList.toggle('is-on', on);
+    recountLinks();
+    markDirty();
+  }
+  function recountLinks() {
+    var total = 0, srcs = 0;
+    document.querySelectorAll('.source-row').forEach(function (row) {
+      if (row.classList.contains('is-on')) {
+        total += sourceCounts[row.dataset.source] || 0;
+        srcs += 1;
+      }
+    });
+    document.getElementById('live-count-num').textContent = total.toLocaleString();
+    document.getElementById('live-count-srcs').textContent = srcs;
+  }
+  function manualRecount(e) {
+    e.preventDefault();
+    var num = document.getElementById('live-count-num');
+    var orig = num.textContent; num.textContent = '…';
+    setTimeout(function () { num.textContent = orig; }, 700);
+  }
+
+  /* ===========================================================
+     Swatch picker
+     =========================================================== */
+  function pickSwatch(btn) {
+    btn.parentNode.querySelectorAll('.swatch').forEach(function (s) { s.classList.remove('is-selected'); });
+    btn.classList.add('is-selected');
+    markDirty();
+  }
+
+  /* ===========================================================
+     Grouping mode
+     =========================================================== */
+  function pickGroupMode(card) {
+    document.querySelectorAll('#group-modes .group-card').forEach(function (c) { c.classList.remove('is-selected'); });
+    card.classList.add('is-selected');
+    markDirty();
+    /* Track Creator+ premium delta for Save handler */
+    if (['manual', 'clicks'].indexOf(card.dataset.mode) >= 0) markPremiumDirty('grouping_' + card.dataset.mode);
+  }
+
+  /* ===========================================================
+     Manual links — add / edit / delete (mockup-only)
+     =========================================================== */
+  var manualSeq = 6;
+  function addManualLink() {
+    var list = document.getElementById('manual-list');
+    var id = 'm' + (manualSeq++);
+    var row = document.createElement('div');
+    row.className = 'manual-row';
+    row.dataset.id = id;
+    row.innerHTML =
+      '<div class="ml-handle" data-tip="Drag to reorder">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="18" x2="16" y2="18"/></svg>' +
+      '</div>' +
+      '<div class="ml-icon">🔗</div>' +
+      '<div class="ml-meta-col">' +
+        '<div class="ml-title-row"><span class="ml-title">New manual link</span></div>' +
+        '<div class="ml-url">https://</div>' +
+      '</div>' +
+      '<div class="ml-actions">' +
+        '<button class="btn btn-ghost btn-xs" onclick="editManual(\'' + id + '\')">Edit</button>' +
+        '<button class="iconbtn" data-tip="Delete" onclick="deleteManual(\'' + id + '\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>' +
+        '</button>' +
+      '</div>';
+    list.appendChild(row);
+    document.getElementById('manual-count').textContent = list.children.length;
+    sourceCounts.manual = list.children.length;
+    recountLinks();
+    markDirty();
+  }
+  function deleteManual(id) {
+    var row = document.querySelector('.manual-row[data-id="' + id + '"]');
+    if (!row) return;
+    row.remove();
+    var list = document.getElementById('manual-list');
+    document.getElementById('manual-count').textContent = list.children.length;
+    sourceCounts.manual = list.children.length;
+    recountLinks();
+    markDirty();
+  }
+  function editManual(id) {
+    var row = document.querySelector('.manual-row[data-id="' + id + '"]');
+    if (!row) return;
+    /* Close any other open editor */
+    document.querySelectorAll('.manual-row.is-editing').forEach(function (r) { if (r !== row) r.classList.remove('is-editing'); });
+    row.classList.toggle('is-editing');
+  }
+  function cancelEditManual(id) {
+    var row = document.querySelector('.manual-row[data-id="' + id + '"]');
+    if (row) row.classList.remove('is-editing');
+  }
+  function saveEditManual(id) {
+    cancelEditManual(id);
+    markDirty();
+  }
+
+  /* ===========================================================
+     Excluded link — reason modal + restore
+     =========================================================== */
+  var currentExcludedId = null;
+  function openReasonModal(id) {
+    currentExcludedId = id;
+    var row = document.querySelector('.excluded-row[data-id="' + id + '"]');
+    if (row) {
+      var url = row.querySelector('.ex-url').textContent.trim();
+      var reasonText = row.querySelector('.ex-reason').textContent.replace(/^Reason:\s*/, '').trim();
+      document.getElementById('reason-url').value = url;
+      document.getElementById('reason-text').value = reasonText;
+    }
+    document.getElementById('reason-modal').classList.add('is-open');
+  }
+  function closeReasonModal() {
+    document.getElementById('reason-modal').classList.remove('is-open');
+    currentExcludedId = null;
+  }
+  function saveReason() {
+    if (currentExcludedId) {
+      var row = document.querySelector('.excluded-row[data-id="' + currentExcludedId + '"]');
+      if (row) {
+        var newReason = document.getElementById('reason-text').value.trim() || '(no reason given)';
+        row.querySelector('.ex-reason').textContent = 'Reason: ' + newReason;
+      }
+    }
+    closeReasonModal();
+    markDirty();
+  }
+  function restoreExcluded(id) {
+    var row = document.querySelector('.excluded-row[data-id="' + id + '"]');
+    if (!row) return;
+    row.style.transition = 'opacity .18s ease';
+    row.style.opacity = '0';
+    setTimeout(function () {
+      row.remove();
+      var list = document.getElementById('excluded-list');
+      document.getElementById('excluded-count').textContent = list.children.length;
+      markDirty();
+    }, 180);
+  }
+
+  /* Close reason modal on backdrop click + ESC */
+  document.getElementById('reason-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeReasonModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.getElementById('reason-modal').classList.contains('is-open')) closeReasonModal();
+  });
+
+  /* ===========================================================
+     Save bar — premium dirty tracking + TierGate.checkAndProceed
+     =========================================================== */
+  var dirty = false;
+  var premiumDirty = new Set();
+  function markDirty() {
+    dirty = true;
+    var s = document.getElementById('save-status');
+    s.innerHTML = '<span class="sb-dot" style="background:var(--brand-warm);box-shadow:0 0 0 3px rgba(245,158,11,0.18)"></span>&nbsp;Unsaved changes';
+  }
+  function markPremiumDirty(key) { premiumDirty.add(key); markDirty(); }
+  function discardChanges() {
+    if (!dirty) return;
+    if (confirm('Discard all unsaved changes?')) location.reload();
+  }
+  function trySave() {
+    /* Build features[] for TierGate.checkAndProceed */
+    var features = [];
+    if (premiumDirty.has('grouping_manual'))  features.push({ id: 'grouping_manual',  name: 'Manual category grouping', requires: 'creator',  meta: 'Creator-defined groups instead of auto-by-source' });
+    if (premiumDirty.has('grouping_clicks'))  features.push({ id: 'grouping_clicks',  name: 'Most-clicked sort',         requires: 'creator',  meta: 'Pulls from last 30 days analytics' });
+    /* Visitor controls — sample wiring */
+    /* In production: collect from toggle states only when their delta differs from saved baseline. */
+    /* TierGate handles the no-op case (no premium delta → onProceed runs immediately). */
+    if (typeof window.TierGate !== 'undefined') {
+      window.TierGate.checkAndProceed({
+        currentTier: document.body.dataset.tier || 'creator',
+        features: features,
+        onProceed: function () {
+          /* TierGate placeholder — real save here */
+          dirty = false; premiumDirty.clear();
+          var s = document.getElementById('save-status');
+          s.innerHTML = '<span class="sb-dot"></span>&nbsp;All changes saved · just now';
+          alert('Mockup — saved (premium changes proceeded under tier ' + (document.body.dataset.tier) + ')');
+        },
+        onSaveWithout: function () {
+          premiumDirty.clear();
+          alert('Mockup — saved without premium changes (Creator/Pro toggles reverted to defaults)');
+        },
+        onUpgrade: function (tier) {
+          alert('Mockup — would open Stripe checkout for ' + tier + ' tier');
+        }
+      });
+    } else {
+      alert('Mockup — TierGate partial not loaded; pretending save succeeded');
+    }
+  }
+</script>
+
+</body>
+</html>
