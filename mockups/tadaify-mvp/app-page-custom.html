@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Custom page template (creator-facing) — F-PAGE-CUSTOM-001 #14
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Surfaces the editor a creator sees when they open a Custom page.
+  Pairs with creator-custom-public.html (visitor view).
+
+  Source story: graspsoftwarepw/tadaify-app issues #14 (F-PAGE-CUSTOM-001)
+
+  Architecture per the issue (DEC-MULTIPAGE-01 + page-type framework):
+    - Page type id: `custom`
+    - Per-type config schema: empty object {} — NO opinionated section structure
+    - The Custom page IS just a creator-named page built from the block library
+    - Content = stack of blocks (any of the 12 BLOCK_TYPES), drag-reorderable
+    - 6 starter templates pre-populate the block list (Press kit, Speaking,
+      Resources, FAQ-style, Coming soon, Thank you page)
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced toggle; power fields inline empty by default)
+    - feedback_no_blur_premium_features (premium fields fully visible + interactive; tier badge inline; gate at Save via TierGate)
+    - feedback_no_right_side_drawers (block picker + template picker + per-block edit are centered modals, NEVER drawers)
+    - feedback_mockup_full_feature_vision (every interaction does something — empty ↔ filled state ↔ template picker ↔ block picker all wired)
+    - feedback_sidebar_pages_grouping (Pages parent + Home first page; active Custom page is post-injected as a sub-item)
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator — Custom requires Creator+ when used as a SECOND page per DEC-MULTIPAGE-01)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.scheduled { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content ── */
+    main.content {
+      padding: 24px 20px 140px;
+      min-width: 0;
+      max-width: 1080px;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 100px; } }
+
+    /* Breadcrumb */
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    /* Page header */
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 input.title-inline {
+      font: inherit; color: inherit; background: transparent;
+      border: 1px dashed transparent; border-radius: 8px;
+      padding: 2px 6px; outline: 0; min-width: 0;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .page-head h1 input.title-inline:hover { border-color: var(--border-strong); }
+    .page-head h1 input.title-inline:focus {
+      border-color: var(--brand-primary); border-style: solid;
+      background: var(--bg-elevated);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Sections */
+    .section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+    .section-body.has-pad-lg { padding: 22px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker (FIX-DIV-001) */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* Inline tier hint (per no-blur-premium pattern) */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+    body.dark-mode .tier-hint { color: #FCD34D; background: rgba(245,158,11,0.16); }
+
+    /* Slug-collision warning */
+    .slug-warn {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: var(--danger-bg);
+      border-left: 3px solid var(--danger);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: var(--danger);
+    }
+
+    /* ===========================================
+       BLOCK LIST — the heart of the Custom editor
+       =========================================== */
+    .blocklist {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .block-row {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 12px; align-items: center;
+      padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease, transform .14s ease;
+      position: relative;
+    }
+    .block-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .block-row.is-dragging { opacity: 0.5; transform: scale(0.99); }
+    .block-row.is-drag-over {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .block-row .br-grip {
+      width: 18px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab;
+    }
+    .block-row .br-grip:active { cursor: grabbing; }
+    .block-row .br-grip svg { width: 14px; height: 16px; }
+
+    .block-row .br-icon {
+      width: 38px; height: 38px; border-radius: 9px;
+      background: rgba(99,102,241,0.10);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .block-row .br-icon.t-warm    { background: rgba(245,158,11,0.14); }
+    .block-row .br-icon.t-rose    { background: rgba(244,63,94,0.12); }
+    .block-row .br-icon.t-emerald { background: rgba(16,185,129,0.12); }
+    .block-row .br-icon.t-slate   { background: rgba(71,85,105,0.12); }
+
+    .block-row .br-meta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .block-row .br-name {
+      font-weight: 600; font-size: 14px; color: var(--fg);
+      display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .block-row .br-name .br-type-pill {
+      font-size: 10.5px; font-weight: 600;
+      padding: 1px 7px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .block-row .br-summary {
+      font-size: 12.5px; color: var(--fg-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 460px;
+    }
+    .block-row .br-flags {
+      display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      font-size: 11px; color: var(--fg-muted);
+    }
+    .block-row .br-flag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 7px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 11px; font-weight: 500;
+    }
+    .block-row .br-flag.is-ab    { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+    .block-row .br-flag.is-sched { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .block-row .br-flag.is-hidden { background: var(--bg-muted); color: var(--fg-muted); text-decoration: line-through; }
+
+    .block-row .br-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+    .kebab-pop {
+      position: absolute; right: 12px; top: 48px; z-index: 5;
+      min-width: 200px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-lg); padding: 4px;
+      display: none;
+    }
+    .kebab-pop.is-open { display: block; }
+    .kebab-pop button {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 8px 10px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--fg);
+      font-size: 13px; text-align: left; cursor: pointer;
+    }
+    .kebab-pop button:hover { background: var(--bg-muted); }
+    .kebab-pop button.danger { color: var(--danger); }
+    .kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+    .kebab-pop button.danger svg { color: var(--danger); }
+    .kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* Add-block CTA — full-width "+ Add block" anywhere in stack */
+    .add-block-row {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 14px;
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      background: transparent; color: var(--fg-muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+    }
+    .add-block-row:hover {
+      border-color: var(--brand-primary); color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .add-block-row svg { width: 14px; height: 14px; }
+
+    /* Floating Add block button (anchored bottom-right of section body) */
+    .add-block-fab {
+      position: sticky; bottom: 14px;
+      display: flex; justify-content: flex-end; padding-top: 12px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 460px; line-height: 1.55; }
+    .empty-state .es-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .empty-state .es-templates {
+      margin-top: 14px;
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      width: 100%; max-width: 720px;
+    }
+    .empty-state .es-templ-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      text-align: left; cursor: pointer;
+      transition: border-color .12s ease, transform .12s ease;
+    }
+    .empty-state .es-templ-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+    .empty-state .es-templ-card .es-templ-emoji { font-size: 22px; }
+    .empty-state .es-templ-card .es-templ-name { font-weight: 600; font-size: 13px; }
+    .empty-state .es-templ-card .es-templ-sub  { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Centered modal — block picker / template picker / edit (per feedback_no_right_side_drawers) */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(880px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal.modal-md { width: min(720px, 96vw); }
+    .modal.modal-lg { width: min(960px, 96vw); }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    /* Block picker — gallery */
+    .picker-search {
+      position: relative;
+      margin-bottom: 14px;
+    }
+    .picker-search svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--fg-subtle);
+    }
+    .picker-search input {
+      width: 100%; padding: 10px 12px 10px 34px;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px; outline: 0;
+    }
+    .picker-search input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .picker-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .picker-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 14px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      text-align: left; cursor: pointer; position: relative;
+      transition: border-color .12s ease, transform .14s ease, box-shadow .14s ease;
+    }
+    .picker-card:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .picker-card .pc-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(99,102,241,0.10);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .picker-card .pc-name { font-weight: 600; font-size: 14px; margin-top: 4px; }
+    .picker-card .pc-desc { font-size: 12px; color: var(--fg-muted); line-height: 1.45; }
+    .picker-card .pc-tier {
+      position: absolute; top: 10px; right: 10px;
+    }
+
+    /* Template picker — starter compositions */
+    .templ-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .templ-card {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 16px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: border-color .12s ease, transform .14s ease, box-shadow .14s ease;
+    }
+    .templ-card:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .templ-card .tc-head {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .templ-card .tc-emoji {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.10));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .templ-card .tc-name { font-weight: 600; font-size: 14.5px; }
+    .templ-card .tc-sub { font-size: 12px; color: var(--fg-muted); margin-top: 1px; }
+    .templ-card .tc-blocks {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+    }
+    .templ-card .tc-block-pill {
+      font-size: 10.5px; font-weight: 500;
+      padding: 2px 7px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+
+    /* Sticky save bar */
+    .save-bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      box-shadow: 0 -4px 14px rgba(11,15,30,0.05);
+    }
+    @media (min-width: 720px) { .save-bar { padding-left: 88px; } }
+    @media (min-width: 1180px) { .save-bar { padding-left: 256px; } }
+    .save-bar .sb-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .save-bar .sb-status .sb-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .save-bar .sb-spacer { flex: 1; }
+
+    /* Demo-toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 70px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode details.expander {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .block-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .empty-state .es-templ-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .picker-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .templ-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .picker-search input { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .add-block-row { color: #9CA3AF; }
+    body.dark-mode .add-block-row:hover { background: rgba(99,102,241,0.10); color: #A5B4FC; border-color: #6366F1; }
+    body.dark-mode .kebab-pop { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .kebab-pop button { color: #F3F4F6; }
+    body.dark-mode .kebab-pop button:hover { background: #1F2937; }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .save-bar { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .slug-warn { color: #FECACA; background: rgba(239,68,68,0.18); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal, .block-row, .picker-card, .templ-card { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <a href="./creator-custom-public.html" class="btn btn-ghost btn-sm" data-tip="Open the public page in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View page
+  </a>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+
+  <!-- Canonical sidebar (Pages active, Custom sub-page highlighted via JS post-inject) -->
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ========== MAIN ========== -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here" id="crumb-page-name">Press kit</span>
+    </nav>
+
+    <!-- Page header with editable title -->
+    <div class="page-head">
+      <div>
+        <h1>
+          <span class="ph-emoji" aria-hidden="true">🧩</span>
+          <input id="page-title" class="title-inline" type="text" value="Press kit" oninput="onTitleChange()" aria-label="Page title" />
+        </h1>
+        <p class="sub">A blank page you build from the block library — use it for press kits, free downloads, FAQs, speaking, anything you need a dedicated URL for.</p>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b id="url-pill-slug">press-kit</b>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('templ-modal')" data-tip="Replace blocks with a starter template">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Use template
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="alert('Mockup — preview opens this page in a new tab')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         SECTION 1 — Page settings (title controlled above; slug, publish, theme, behaviour, SEO)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Page settings</h2>
+        <span class="sub">URL, visibility, theme and SEO for this page.</span>
+      </div>
+      <div class="section-body">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens · must be unique on your site</span></label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">tadaify.com/alexandra/</span>
+              <input id="page-slug" type="text" value="press-kit" oninput="onSlugChange()" />
+            </div>
+            <div class="slug-warn" id="slug-warn" style="display:none">
+              <span aria-hidden="true">⚠️</span>
+              <span id="slug-warn-text"><b>blog</b> is reserved for the Blog page template. Pick a different slug.</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Publish</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Page is live</div>
+                <div class="rt-sub">Visitors can find this page at the URL above.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Show in nav menu</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Add to homepage nav</div>
+                <div class="rt-sub">Visitors see a link to this page from your main page.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle show-in-nav" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Hide from search engines</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Add <span style="font-family:var(--font-mono); font-size:12px">noindex</span> meta</div>
+                <div class="rt-sub">Useful for private press kits or unlisted pages.</div>
+              </div>
+              <button class="toggle" type="button" aria-pressed="false" aria-label="Toggle noindex" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:14px">
+          <label class="field-label">Page background <span class="field-hint">override theme colour for this page only</span></label>
+          <div class="swatch-row">
+            <div class="swatch is-selected" style="background: var(--bg);"               data-name="Inherit theme"  onclick="pickSwatch(this)" title="Inherit theme"></div>
+            <div class="swatch"             style="background: #FFFFFF;"                  data-name="White"          onclick="pickSwatch(this)" title="White"></div>
+            <div class="swatch"             style="background: #F8F4EE;"                  data-name="Warm cream"     onclick="pickSwatch(this)" title="Warm cream"></div>
+            <div class="swatch"             style="background: #1F2937;"                  data-name="Slate"          onclick="pickSwatch(this)" title="Slate"></div>
+            <div class="swatch"             style="background: #0B0F1E;"                  data-name="Dark canvas"    onclick="pickSwatch(this)" title="Dark canvas"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#FDE68A,#F59E0B);" data-name="Sunrise"   onclick="pickSwatch(this)" title="Sunrise gradient"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#6366F1,#8B5CF6);" data-name="Indigo"    onclick="pickSwatch(this)" title="Indigo gradient"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#0F172A,#334155);" data-name="Nightfall" onclick="pickSwatch(this)" title="Nightfall"></div>
+          </div>
+        </div>
+
+        <details class="expander" style="margin-top:14px">
+          <summary>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7"/><path d="M9 12V7a3 3 0 0 1 6 0v5"/><circle cx="12" cy="17" r="3"/></svg>
+            SEO settings <span class="ex-sub">— meta title, description, social card</span>
+            <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+          </summary>
+          <div class="ex-body">
+            <div class="field">
+              <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
+              <div class="field-prefix-wrap">
+                <input id="seo-title" type="text" value="Press kit — Alexandra Silva" />
+                <button class="field-suffix-action" onclick="alert('Mockup — opens the AI Suggest modal (app-ai-suggest-modal.html)')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+              <div class="field-prefix-wrap" style="align-items:flex-start">
+                <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Logos, founder photos, key facts and approved bios — everything journalists, podcasters and partners need.</textarea>
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">OG image <span class="field-hint">1200×630 — shown when shared on social</span></label>
+              <div class="row-toggle" style="padding:8px 12px">
+                <div>
+                  <div class="rt-name">Auto-generated from page title</div>
+                  <div class="rt-sub">Or <a href="#" onclick="event.preventDefault();alert('Mockup — image picker / drop-zone')" style="color:var(--brand-primary); font-weight:600">upload your own →</a></div>
+                </div>
+                <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle auto OG" onclick="toggleSwitch(this)"></button>
+              </div>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 2 — Page-level power options (custom domain Pro+, password Pro+, redirect Pro+)
+         All visible per no-blur-premium; gates at Save.
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Page options</h2>
+        <span class="sub">Power features — fully visible. Gated only at Save.</span>
+      </div>
+      <div class="section-body">
+
+        <!-- Custom domain override -->
+        <div class="field">
+          <label class="field-label">
+            Custom domain for this page
+            <span id="badge-custom-domain"></span>
+          </label>
+          <div class="field-prefix-wrap">
+            <input id="page-domain" type="text" placeholder="e.g. presskit.alexandra.com" value="" oninput="markPremiumDirty('custom-domain')" />
+            <button class="field-suffix-action" type="button" onclick="alert('Mockup — opens DNS-setup wizard like app-domain.html')">Verify DNS</button>
+          </div>
+          <div class="tier-hint">
+            <span class="th-icon" aria-hidden="true">💡</span>
+            Per-page custom domain points just this page (e.g. <b>presskit.yourbrand.com</b>) at tadaify. Available on <b>Pro</b> — we'll prompt to upgrade if you save with a value here.
+          </div>
+        </div>
+
+        <!-- Password protect -->
+        <div class="field">
+          <label class="field-label">
+            Password protection
+            <span id="badge-password"></span>
+          </label>
+          <div class="row-toggle">
+            <div>
+              <div class="rt-name">Require a password to view</div>
+              <div class="rt-sub">Visitors get a "Locked" screen until they enter the right password. Useful for private press kits, client previews and pre-launch reveals.</div>
+            </div>
+            <button class="toggle" id="t-password" type="button" aria-pressed="false" aria-label="Toggle password gate" onclick="toggleSwitch(this); markPremiumDirty('password')"></button>
+          </div>
+          <div class="field-prefix-wrap" style="margin-top:8px">
+            <span class="field-prefix" style="font-family:var(--font-sans)">🔑</span>
+            <input id="page-password" type="text" value="atelier-2026" placeholder="Set a page password" />
+          </div>
+          <div class="tier-hint">
+            <span class="th-icon" aria-hidden="true">💡</span>
+            Page passwords are a <b>Pro</b> perk. The password screen is fully themeable.
+          </div>
+        </div>
+
+        <!-- Redirect-after -->
+        <div class="field">
+          <label class="field-label">
+            Redirect after viewing
+            <span id="badge-redirect"></span>
+          </label>
+          <div class="field-row">
+            <div class="field-prefix-wrap" style="margin-bottom:0">
+              <span class="field-prefix">After</span>
+              <input id="page-redirect-secs" type="number" value="0" min="0" max="600" oninput="markPremiumDirty('redirect')" />
+              <span class="field-prefix" style="padding-right:12px">seconds</span>
+            </div>
+            <div class="field-prefix-wrap" style="margin-bottom:0">
+              <span class="field-prefix" style="font-family:var(--font-sans)">↗</span>
+              <input id="page-redirect-url" type="text" placeholder="https://store.alexandra.com" oninput="markPremiumDirty('redirect')" />
+            </div>
+          </div>
+          <div class="tier-hint">
+            <span class="th-icon" aria-hidden="true">💡</span>
+            Redirect-after is a <b>Pro</b> perk. Leave seconds at <b>0</b> to keep the page sticky.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 3 — Page content (THE block list — heart of Custom)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Page content</h2>
+        <span class="sub">Drag to reorder. Click any block to edit.</span>
+        <span class="head-spacer"></span>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('templ-modal')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Starter templates
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('picker-modal')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add block
+        </button>
+      </div>
+
+      <div class="section-body has-pad-lg">
+
+        <!-- =====================
+             FILLED STATE (default — Press kit composition pre-loaded)
+             ===================== -->
+        <div id="state-filled">
+          <div class="blocklist" id="blocklist">
+
+            <!-- Block 1 — Heading "Press & media kit" -->
+            <div class="block-row" draggable="true" data-block-id="b1" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon" aria-hidden="true">📰</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Press & media kit
+                  <span class="br-type-pill">Heading</span>
+                </div>
+                <div class="br-summary">H1 · centered · 48px display font · subtitle: "Everything you need to write about Alexandra Silva."</div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens app-block-editor.html?type=heading&id=b1 in centered modal')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+                <div class="kebab-pop">
+                  <button onclick="closePops();alert('Mockup — opens block editor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Edit</button>
+                  <button onclick="closePops();duplicateBlock('b1')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Duplicate</button>
+                  <button onclick="closePops();alert('Mockup — schedule visibility opens — Creator+ premium, gates at Save')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule visibility</button>
+                  <button onclick="closePops();alert('Mockup — A/B test setup — Business premium, gates at Save')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M12 2v20"/></svg> A/B test variants</button>
+                  <button onclick="closePops();alert('Mockup — block hidden from public; visible in editor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide from public</button>
+                  <hr/>
+                  <button class="danger" onclick="closePops();deleteBlock('b1')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg> Delete</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Block 2 — Image (founder photo) -->
+            <div class="block-row" draggable="true" data-block-id="b2" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon t-rose" aria-hidden="true">🖼</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Founder portrait
+                  <span class="br-type-pill">Image</span>
+                </div>
+                <div class="br-summary">alexandra-portrait-2026.jpg · 1600×1200 · alt "Alexandra Silva, founder, in studio" · centered, max 600px wide</div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor for Image type')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Block 3 — Heading "Logos & assets" -->
+            <div class="block-row" draggable="true" data-block-id="b3" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon" aria-hidden="true">📰</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Logos & download assets
+                  <span class="br-type-pill">Heading</span>
+                </div>
+                <div class="br-summary">H2 · "Click any logo to download. SVG and PNG both included."</div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Block 4 — Link buttons (logo downloads) — has A/B variant active -->
+            <div class="block-row" draggable="true" data-block-id="b4" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon t-emerald" aria-hidden="true">🔗</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Download logos (4 buttons)
+                  <span class="br-type-pill">Link</span>
+                </div>
+                <div class="br-summary">Logo · Wordmark · Mono dark · Mono light — each links to assets.alexandra.com/press/...</div>
+                <div class="br-flags">
+                  <span class="br-flag is-ab" data-tip="A/B test active — Variant B serves 50% of visitors">⚡ A/B active · 312 / 287</span>
+                </div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor with A/B tabs visible')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Block 5 — Heading "Key facts" -->
+            <div class="block-row" draggable="true" data-block-id="b5" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon" aria-hidden="true">📰</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Quick facts about Alexandra
+                  <span class="br-type-pill">Heading</span>
+                </div>
+                <div class="br-summary">H2 · centered · serif display</div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Block 6 — Accordion (key facts Q&A) — scheduled visibility active -->
+            <div class="block-row" draggable="true" data-block-id="b6" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon t-warm" aria-hidden="true">📚</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Key facts (5 Q&A)
+                  <span class="br-type-pill">Accordion</span>
+                </div>
+                <div class="br-summary">"Founded?" "Where based?" "How many clients?" "Speaking topics?" "Approved bio?"</div>
+                <div class="br-flags">
+                  <span class="br-flag is-sched" data-tip="Visible only between May 1 and Aug 31">📅 Scheduled · May 1 – Aug 31</span>
+                </div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Inline Add-block CTA between blocks -->
+            <button class="add-block-row" type="button" onclick="openModal('picker-modal')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add block here
+            </button>
+
+            <!-- Block 7 — Newsletter signup (capture press contacts) -->
+            <div class="block-row" draggable="true" data-block-id="b7" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon t-slate" aria-hidden="true">✉️</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  Press list signup
+                  <span class="br-type-pill">Newsletter</span>
+                </div>
+                <div class="br-summary">"Get press releases first." Provider: Kit · 1,247 subscribers · GDPR consent ON</div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor for Newsletter type')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Block 8 — Link button (Contact CTA) -->
+            <div class="block-row" draggable="true" data-block-id="b8" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+              <span class="br-grip" aria-label="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <div class="br-icon t-emerald" aria-hidden="true">🔗</div>
+              <div class="br-meta">
+                <div class="br-name">
+                  "Reach me directly →"
+                  <span class="br-type-pill">Link</span>
+                </div>
+                <div class="br-summary">Pill button · brand-warm · → tadaify.com/alexandra/contact</div>
+              </div>
+              <div class="br-actions">
+                <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — opens block editor')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Block options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom +Add block (sticky-ish at the end) -->
+          <div style="margin-top:12px">
+            <button class="add-block-row" type="button" onclick="openModal('picker-modal')" style="font-size:14px; padding:14px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add another block
+            </button>
+          </div>
+        </div>
+
+        <!-- =====================
+             EMPTY STATE (toggle via demo toolbar ?state=empty)
+             ===================== -->
+        <div id="state-empty" style="display:none">
+          <div class="empty-state">
+            <div class="es-emoji" aria-hidden="true">🧩</div>
+            <h3>Start with a blank canvas — or pick a starter</h3>
+            <p>This page is published but empty. Add blocks one at a time, or grab a ready-made composition you can edit. Press kit, speaking, FAQ, resources, coming-soon — they all start here.</p>
+            <div class="es-actions">
+              <button class="btn btn-primary" onclick="openModal('picker-modal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add your first block
+              </button>
+              <button class="btn btn-ghost" onclick="openModal('templ-modal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                Browse starter templates
+              </button>
+            </div>
+            <div class="es-templates">
+              <button class="es-templ-card" type="button" onclick="useTemplate('press-kit')">
+                <span class="es-templ-emoji">📰</span>
+                <div>
+                  <div class="es-templ-name">Press kit</div>
+                  <div class="es-templ-sub">Logos · bio · facts · contact</div>
+                </div>
+              </button>
+              <button class="es-templ-card" type="button" onclick="useTemplate('speaking')">
+                <span class="es-templ-emoji">🎤</span>
+                <div>
+                  <div class="es-templ-name">Speaking</div>
+                  <div class="es-templ-sub">Talks · topics · contact</div>
+                </div>
+              </button>
+              <button class="es-templ-card" type="button" onclick="useTemplate('resources')">
+                <span class="es-templ-emoji">📚</span>
+                <div>
+                  <div class="es-templ-name">Resources</div>
+                  <div class="es-templ-sub">Free downloads · signup</div>
+                </div>
+              </button>
+              <button class="es-templ-card" type="button" onclick="useTemplate('faq')">
+                <span class="es-templ-emoji">❓</span>
+                <div>
+                  <div class="es-templ-name">FAQ-style</div>
+                  <div class="es-templ-sub">Q&A · contact CTA</div>
+                </div>
+              </button>
+              <button class="es-templ-card" type="button" onclick="useTemplate('coming-soon')">
+                <span class="es-templ-emoji">🌅</span>
+                <div>
+                  <div class="es-templ-name">Coming soon</div>
+                  <div class="es-templ-sub">Hero · countdown · signup</div>
+                </div>
+              </button>
+              <button class="es-templ-card" type="button" onclick="useTemplate('thank-you')">
+                <span class="es-templ-emoji">🎉</span>
+                <div>
+                  <div class="es-templ-name">Thank you</div>
+                  <div class="es-templ-sub">Confirmation · next-steps</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     CENTERED MODAL — Block picker
+     (re-uses pattern from app-block-picker.html — NEVER a drawer)
+     ============================================================ -->
+<div class="modal-backdrop" id="picker-modal" role="dialog" aria-modal="true" aria-labelledby="pm-title" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="pm-title">Add a block</h3>
+      <span class="sub">Pick from the 12 block types</span>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('picker-modal')" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="picker-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search blocks — link, video, image, FAQ…" />
+      </div>
+      <p style="font-size:12.5px; color: var(--fg-muted); margin: 0 0 12px;">
+        For the full block gallery with categories, search and AI suggest, see <a href="./app-block-picker.html" style="color: var(--brand-primary); font-weight:600">app-block-picker.html</a>. The grid below is a quick-pick.
+      </p>
+      <div class="picker-grid">
+        <button class="picker-card" type="button" onclick="addBlock('link')">
+          <div class="pc-icon">🔗</div>
+          <div class="pc-name">Link</div>
+          <div class="pc-desc">Tappable button to any URL — store, video, profile.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('social')">
+          <div class="pc-icon">🌐</div>
+          <div class="pc-name">Social</div>
+          <div class="pc-desc">Icon row — 30+ platforms, 6 icon styles.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('embedded')">
+          <div class="pc-icon">📺</div>
+          <div class="pc-name">Embedded</div>
+          <div class="pc-desc">Spotify, YouTube, Apple Music, Maps, Calendly…</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('video')">
+          <div class="pc-icon">▶️</div>
+          <div class="pc-name">Video</div>
+          <div class="pc-desc">Native player — MP4, YouTube, Vimeo.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('image')">
+          <div class="pc-icon">🖼</div>
+          <div class="pc-name">Image</div>
+          <div class="pc-desc">Single image with optional caption + click target.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('heading')">
+          <div class="pc-icon">📰</div>
+          <div class="pc-name">Heading</div>
+          <div class="pc-desc">H1 / H2 / H3 with display font + alignment.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('divider')">
+          <div class="pc-icon">➖</div>
+          <div class="pc-name">Divider</div>
+          <div class="pc-desc">Visual separator — line, dots, gap.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('newsletter')">
+          <div class="pc-icon">✉️</div>
+          <div class="pc-name">Newsletter</div>
+          <div class="pc-desc">Email capture — Kit, Beehiiv, Mailchimp, Klaviyo, Sheets…</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('countdown')">
+          <div class="pc-icon">⏳</div>
+          <div class="pc-name">Countdown</div>
+          <div class="pc-desc">Timer to a launch, drop or live event.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('product')">
+          <div class="pc-icon">🛍</div>
+          <div class="pc-name">Product</div>
+          <div class="pc-desc" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap">
+            <span>Link to your Shopify, Stripe, Etsy, Gumroad…</span>
+          </div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('accordion')">
+          <div class="pc-icon">📚</div>
+          <div class="pc-name">Accordion</div>
+          <div class="pc-desc">Collapsible Q&A — perfect for FAQ + key facts.</div>
+        </button>
+        <button class="picker-card" type="button" onclick="addBlock('html')">
+          <div class="pc-icon">&lt;/&gt;</div>
+          <div class="pc-name">Custom HTML <span id="badge-html-block"></span></div>
+          <div class="pc-desc">Drop arbitrary HTML — for advanced creators.</div>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span style="font-size:12px; color:var(--fg-muted)">Drag any block to reorder once added.</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('picker-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CENTERED MODAL — Starter templates (6 ready compositions)
+     ============================================================ -->
+<div class="modal-backdrop" id="templ-modal" role="dialog" aria-modal="true" aria-labelledby="tm-title" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="tm-title">Starter templates</h3>
+      <span class="sub">Pre-built block compositions you can edit.</span>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('templ-modal')" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--fg-muted); margin: 0 0 16px;">
+        Picking a template <b>replaces</b> your current block list. Your page settings (title, slug, theme) stay as they are.
+      </p>
+      <div class="templ-grid">
+
+        <button class="templ-card" type="button" onclick="useTemplate('press-kit')">
+          <div class="tc-head">
+            <div class="tc-emoji">📰</div>
+            <div>
+              <div class="tc-name">Press kit</div>
+              <div class="tc-sub">Logos, founder bio, key facts, press signup.</div>
+            </div>
+          </div>
+          <div class="tc-blocks">
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Image</span>
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Link × 4</span>
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Accordion</span>
+            <span class="tc-block-pill">Newsletter</span>
+            <span class="tc-block-pill">Link</span>
+          </div>
+        </button>
+
+        <button class="templ-card" type="button" onclick="useTemplate('speaking')">
+          <div class="tc-head">
+            <div class="tc-emoji">🎤</div>
+            <div>
+              <div class="tc-name">Speaking</div>
+              <div class="tc-sub">Recent talk, topics list, event photos, contact.</div>
+            </div>
+          </div>
+          <div class="tc-blocks">
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Embedded</span>
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Image × 4</span>
+            <span class="tc-block-pill">Accordion</span>
+            <span class="tc-block-pill">Link</span>
+          </div>
+        </button>
+
+        <button class="templ-card" type="button" onclick="useTemplate('resources')">
+          <div class="tc-head">
+            <div class="tc-emoji">📚</div>
+            <div>
+              <div class="tc-name">Resources</div>
+              <div class="tc-sub">Free downloads + email signup to keep visitors.</div>
+            </div>
+          </div>
+          <div class="tc-blocks">
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Link × 6</span>
+            <span class="tc-block-pill">Divider</span>
+            <span class="tc-block-pill">Newsletter</span>
+          </div>
+        </button>
+
+        <button class="templ-card" type="button" onclick="useTemplate('faq')">
+          <div class="tc-head">
+            <div class="tc-emoji">❓</div>
+            <div>
+              <div class="tc-name">FAQ-style</div>
+              <div class="tc-sub">Frequently-asked accordion + contact CTA. (For a full-FAQ page with search + TOC, use the dedicated FAQ template instead.)</div>
+            </div>
+          </div>
+          <div class="tc-blocks">
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Accordion × 8</span>
+            <span class="tc-block-pill">Link</span>
+          </div>
+        </button>
+
+        <button class="templ-card" type="button" onclick="useTemplate('coming-soon')">
+          <div class="tc-head">
+            <div class="tc-emoji">🌅</div>
+            <div>
+              <div class="tc-name">Coming soon</div>
+              <div class="tc-sub">Hero + countdown + email signup for launch.</div>
+            </div>
+          </div>
+          <div class="tc-blocks">
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Image</span>
+            <span class="tc-block-pill">Countdown</span>
+            <span class="tc-block-pill">Newsletter</span>
+          </div>
+        </button>
+
+        <button class="templ-card" type="button" onclick="useTemplate('thank-you')">
+          <div class="tc-head">
+            <div class="tc-emoji">🎉</div>
+            <div>
+              <div class="tc-name">Thank you</div>
+              <div class="tc-sub">Confirmation page after purchase / signup with next-step CTAs.</div>
+            </div>
+          </div>
+          <div class="tc-blocks">
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Image</span>
+            <span class="tc-block-pill">Heading</span>
+            <span class="tc-block-pill">Link × 3</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span style="font-size:12px; color:var(--fg-muted)">All templates are starting points — edit any block after.</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('templ-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     STICKY SAVE BAR
+     ============================================================ -->
+<div class="save-bar" role="region" aria-label="Save changes">
+  <span class="sb-status" id="sb-status">
+    <span class="sb-dot"></span>
+    All changes saved · 2 sec ago
+  </span>
+  <span class="sb-spacer"></span>
+  <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — discard reverts to last saved')">Discard changes</button>
+  <button class="btn btn-primary btn-sm" onclick="trySave()">Save changes</button>
+</div>
+
+<!-- Demo toolbar — switch state + tier without page reload -->
+<div class="demo-toolbar" aria-hidden="true">
+  <span style="opacity:0.65">Demo</span>
+  <select onchange="setState(this.value)" aria-label="State">
+    <option value="filled" selected>State: filled (8 blocks)</option>
+    <option value="empty">State: empty</option>
+  </select>
+  <select onchange="setTier(this.value)" aria-label="Tier">
+    <option value="free">Tier: Free</option>
+    <option value="creator" selected>Tier: Creator</option>
+    <option value="pro">Tier: Pro</option>
+    <option value="business">Tier: Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // Reserved slugs — typing one warns the creator before save.
+  var RESERVED_SLUGS = ['blog', 'about', 'portfolio', 'subscribe', 'contact', 'faq', 'book', 'admin'];
+
+  // Track which premium options the creator actually changed — only those
+  // are passed to TierGate at save (mirrors the page-blog / page-about pattern).
+  var premiumDirty = {};
+  function markPremiumDirty(key) { premiumDirty[key] = true; }
+
+  // ----- Demo state machinery -----
+  function urlParam(k, fb) {
+    var u = new URL(location.href);
+    return u.searchParams.get(k) || fb;
+  }
+  function setState(v) {
+    document.body.dataset.state = v;
+    document.getElementById('state-filled').style.display = (v === 'filled') ? '' : 'none';
+    document.getElementById('state-empty').style.display  = (v === 'empty')  ? '' : 'none';
+  }
+  function setTier(v) {
+    document.body.dataset.tier = v;
+    var pill = document.querySelector('.tdf-side .uhandle');
+    if (pill) pill.textContent = '@alexandra · ' + (v.charAt(0).toUpperCase() + v.slice(1));
+    repaintTierBadges();
+  }
+
+  // Re-render tier badges relative to the current tier (per no-blur-premium pattern,
+  // included badges show muted via .is-included).
+  function repaintTierBadges() {
+    if (!window.TadaifyPartials || !window.TierGate) return;
+    var current = document.body.dataset.tier || 'creator';
+    var slots = [
+      { id: 'badge-custom-domain', requires: 'pro' },
+      { id: 'badge-password',      requires: 'pro' },
+      { id: 'badge-redirect',      requires: 'pro' },
+      { id: 'badge-html-block',    requires: 'business' }
+    ];
+    slots.forEach(function (s) {
+      var el = document.getElementById(s.id);
+      if (!el) return;
+      var included = TierGate.TIER_RANK[current] >= TierGate.TIER_RANK[s.requires];
+      el.innerHTML = TadaifyPartials.renderTierBadge(s.requires, { included: included });
+    });
+  }
+
+  // ----- Toggles -----
+  function toggleSwitch(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  // ----- Swatch picker -----
+  function pickSwatch(el) {
+    document.querySelectorAll('.swatch.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+  }
+
+  // ----- Theme -----
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  // ----- Title edit propagates to breadcrumb -----
+  function onTitleChange() {
+    var t = document.getElementById('page-title').value || 'Untitled page';
+    document.getElementById('crumb-page-name').textContent = t;
+  }
+
+  // ----- Slug edit + collision warning + URL pill sync -----
+  function onSlugChange() {
+    var raw = (document.getElementById('page-slug').value || '').trim();
+    var clean = raw.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    document.getElementById('url-pill-slug').textContent = clean || 'untitled';
+    var warn = document.getElementById('slug-warn');
+    var warnText = document.getElementById('slug-warn-text');
+    if (RESERVED_SLUGS.indexOf(clean) !== -1) {
+      warn.style.display = '';
+      warnText.innerHTML = '<b>' + clean + '</b> is reserved for a built-in page template. Pick a different slug.';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+
+  // ----- Block list — drag-reorder + delete + duplicate -----
+  var dragSrc = null;
+  function onDragStart(e) {
+    dragSrc = e.currentTarget;
+    dragSrc.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSrc.dataset.blockId);
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (e.currentTarget !== dragSrc) e.currentTarget.classList.add('is-drag-over');
+  }
+  function onDragLeave(e) {
+    e.currentTarget.classList.remove('is-drag-over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('is-drag-over');
+    if (!dragSrc || dragSrc === e.currentTarget) return;
+    var list = document.getElementById('blocklist');
+    var rect = e.currentTarget.getBoundingClientRect();
+    var after = (e.clientY - rect.top) > rect.height / 2;
+    list.insertBefore(dragSrc, after ? e.currentTarget.nextSibling : e.currentTarget);
+    showAutosave('Reordered · saved');
+  }
+  function onDragEnd() {
+    if (dragSrc) dragSrc.classList.remove('is-dragging');
+    dragSrc = null;
+    document.querySelectorAll('.block-row.is-drag-over').forEach(function (n) { n.classList.remove('is-drag-over'); });
+  }
+  function deleteBlock(id) {
+    if (!confirm('Mockup — delete this block? This cannot be undone.')) return;
+    var row = document.querySelector('[data-block-id="' + id + '"]');
+    if (row) row.parentNode.removeChild(row);
+    showAutosave('Block deleted · saved');
+  }
+  function duplicateBlock(id) {
+    var row = document.querySelector('[data-block-id="' + id + '"]');
+    if (!row) return;
+    var clone = row.cloneNode(true);
+    clone.dataset.blockId = id + '-copy';
+    row.parentNode.insertBefore(clone, row.nextSibling);
+    showAutosave('Block duplicated · saved');
+  }
+
+  // ----- Auto-save status -----
+  function showAutosave(text) {
+    var el = document.getElementById('sb-status');
+    if (!el) return;
+    el.innerHTML = '<span class="sb-dot"></span> ' + text;
+    setTimeout(function () { el.innerHTML = '<span class="sb-dot"></span> All changes saved · just now'; }, 1800);
+  }
+
+  // ----- Modals -----
+  function openModal(id) {
+    closePops();
+    var bd = document.getElementById(id);
+    if (!bd) return;
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closeModal(id) {
+    var bd = document.getElementById(id);
+    if (!bd) return;
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+
+  // ----- Add block (from picker) — closes picker, alerts placeholder for full editor -----
+  function addBlock(type) {
+    closeModal('picker-modal');
+    if (type === 'html') {
+      // Custom HTML is Business-tier — show TierGate immediately so creator sees the gate.
+      var tier = document.body.dataset.tier || 'creator';
+      if (window.TierGate) {
+        TierGate.checkAndProceed({
+          currentTier: tier,
+          features: [{ id: 'custom-html', name: 'Custom HTML block', requires: 'business',
+                       meta: 'Drop arbitrary HTML/CSS — full power, your own risk.' }],
+          onProceed:    function () { alert('Mockup — Custom HTML block added; opens block editor'); },
+          onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+          onCancel:     function () {}
+        });
+        return;
+      }
+    }
+    alert('Mockup — adds a ' + type + ' block to the bottom of the list and opens app-block-editor.html?type=' + type);
+  }
+
+  // ----- Use template — replace block list with a starter -----
+  function useTemplate(slug) {
+    closeModal('templ-modal');
+    setState('filled'); // make sure block list is visible
+    alert('Mockup — replacing block list with the "' + slug + '" template. In production: confirm-modal first ("This replaces your 8 blocks"), then atomic swap with undo toast.');
+    showAutosave('Template applied · saved');
+  }
+
+  // ----- Kebab popovers -----
+  function togglePop(btn) {
+    var pop = btn.parentElement.querySelector('.kebab-pop');
+    if (!pop) return;
+    var wasOpen = pop.classList.contains('is-open');
+    closePops();
+    if (!wasOpen) pop.classList.add('is-open');
+  }
+  function closePops() { document.querySelectorAll('.kebab-pop.is-open').forEach(function (p) { p.classList.remove('is-open'); }); }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.br-actions') && !e.target.closest('.kebab-pop')) closePops();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closePops();
+      ['picker-modal', 'templ-modal'].forEach(function (id) {
+        var bd = document.getElementById(id);
+        if (bd && bd.classList.contains('is-open')) closeModal(id);
+      });
+    }
+  });
+
+  // ----- Save → run TierGate.checkAndProceed (premium fields gate at save per no-blur-premium) -----
+  function trySave() {
+    var tier = document.body.dataset.tier || 'creator';
+    var features = [];
+
+    if (premiumDirty['custom-domain'] && document.getElementById('page-domain').value.trim()) {
+      features.push({ id: 'page-custom-domain', name: 'Per-page custom domain', requires: 'pro',
+                      meta: 'Point e.g. presskit.alexandra.com just at this page.' });
+    }
+    if (premiumDirty['password'] && document.getElementById('t-password').classList.contains('is-on')) {
+      features.push({ id: 'page-password', name: 'Page password protection', requires: 'pro',
+                      meta: 'Visitors must enter a password before viewing.' });
+    }
+    if (premiumDirty['redirect'] && parseInt(document.getElementById('page-redirect-secs').value, 10) > 0
+                                  && document.getElementById('page-redirect-url').value.trim()) {
+      features.push({ id: 'page-redirect', name: 'Redirect after viewing', requires: 'pro',
+                      meta: 'Send visitors to another URL after N seconds.' });
+    }
+
+    if (window.TierGate) {
+      TierGate.checkAndProceed({
+        currentTier: tier,
+        features: features,
+        onProceed:    function () { alert('Mockup — page saved'); showAutosave('Saved · just now'); premiumDirty = {}; },
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onSaveWithout: features.length ? function () { alert('Mockup — saved without premium changes'); showAutosave('Saved (premium skipped)'); } : null,
+        onCancel: function () {}
+      });
+    } else {
+      alert('Mockup — saved');
+    }
+  }
+
+  // ----- Boot from URL -----
+  setState(urlParam('state', 'filled'));
+  var initTier = urlParam('tier', 'creator');
+  setTier(initTier);
+  // Re-render badges on first load too (in case URL tier=creator).
+  setTimeout(repaintTierBadges, 0);
+
+  // After partials inject, mark Custom page as the current sub-page.
+  // Same post-inject pattern as app-page-blog.html / app-page-about.html / app-page-faq.html etc.
+  setTimeout(function () {
+    var subList = document.querySelector('.tdf-side .nav-sub-list');
+    if (!subList) return;
+    var customItem = document.createElement('a');
+    customItem.href = './app-page-custom.html';
+    customItem.className = 'nav-sub-item is-current';
+    customItem.setAttribute('data-tip', 'Press kit');
+    customItem.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Press kit</span>';
+    var addPage = subList.querySelector('.is-disabled');
+    if (addPage) subList.insertBefore(customItem, addPage);
+    else subList.appendChild(customItem);
+    // Demote the previously-current entry (Home).
+    Array.prototype.forEach.call(subList.querySelectorAll('.nav-sub-item.is-current'), function (el) {
+      if (el !== customItem) el.classList.remove('is-current');
+    });
+  }, 30);
+</script>
+</body>
+</html>
