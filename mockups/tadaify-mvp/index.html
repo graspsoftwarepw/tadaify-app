@@ -250,6 +250,52 @@
   </section>
 
   <section class="section container" style="border-top: 1px solid var(--border); padding-top: 64px">
+    <h2>Page templates — Newsletter signup (F-PAGE-NEWSLETTER-001 #22)</h2>
+    <p class="text-muted" style="margin-top:8px; margin-bottom:24px">
+      Dedicated full-page Substack/Beehiiv-style subscribe landing — different from the inline Newsletter signup BLOCK shipped in PR #74. Reuses the BLOCK_TYPES.newsletter provider config exactly so creators learn it once.
+    </p>
+    <div class="grid grid-3">
+
+      <a href="./app-page-newsletter-signup.html" class="card" style="color:inherit; text-decoration:none">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span class="pill pill-primary">✉️ editor</span>
+          <span class="text-subtle text-sm mono">/app/pages/subscribe</span>
+        </div>
+        <h3>Newsletter signup page editor</h3>
+        <p class="text-muted">8 reorderable sections (Hero · Provider · Form · Social proof · What you'll get · Past issues · FAQ · Footer CTA) · 7-provider dropdown (Kit / Beehiiv / MailerLite / Mailchimp / Klaviyo / Google Sheets / Webhook — locked scope) · 3 form layout variants · centered-modal section picker.</p>
+        <p class="text-sm" style="margin-top:12px; color: var(--brand-primary);">
+          Differentiator → <strong>reuses BLOCK_TYPES.newsletter</strong> · tier-gates at Save (no blur)
+        </p>
+      </a>
+
+      <a href="./creator-newsletter-signup-public.html" class="card" style="color:inherit; text-decoration:none">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span class="pill pill-warm">🌐 public</span>
+          <span class="text-subtle text-sm mono">/alexandra/subscribe</span>
+        </div>
+        <h3>Public Newsletter signup render</h3>
+        <p class="text-muted">All 3 form layouts as anchor sections (compare in one file). All 5 confirmation states via hash routing — default / submitting (auto-advances) / success / already-subscribed / error. Provider trust strip + past issues preview + FAQ accordion.</p>
+        <p class="text-sm" style="margin-top:12px; color: var(--brand-primary);">
+          Differentiator → <strong>5 confirmation states</strong> rendered in one file
+        </p>
+      </a>
+
+      <a href="https://github.com/graspsoftwarepw/tadaify-app/issues/22" class="card" style="color:inherit; text-decoration:none" target="_blank" rel="noopener">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span class="pill">📋 spec</span>
+          <span class="text-subtle text-sm mono">issue #22</span>
+        </div>
+        <h3>F-PAGE-NEWSLETTER-001 issue</h3>
+        <p class="text-muted">Architecture (page-type id `newsletter`, type_config schema, blocks, GDPR consent + DOI flow), in-scope vs out-of-scope, acceptance criteria, dependencies (F-MULTIPAGE-001 #8 + Resend integration).</p>
+        <p class="text-sm" style="margin-top:12px; color: var(--brand-primary);">
+          Locked scope → 7 providers (NO Substack, NO Buttondown)
+        </p>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section container" style="border-top: 1px solid var(--border); padding-top: 64px">
     <h2>Phase 2 — Registration + Onboarding</h2>
     <p class="text-muted" style="margin-top:8px; margin-bottom:24px">
       Full 7-screen flow from handle claim to live page. Walk through end-to-end —
