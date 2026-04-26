@@ -2714,10 +2714,23 @@
         icon: '📝',
         category: 'Layout',
         form: function (state) {
+          /* FIX-HEAD-001 — Merged Style + Size into one "Display" dropdown
+             (Hero / H1 / H2 / H3 / Paragraph). Cleaner than two cross-
+             multiplied dropdowns: each option implies its own weight +
+             scale + semantic level, matching how Notion / Linear / docs
+             editors present heading levels. Suggest STAYS on Text per
+             FIX-SUGGEST-RESTORE-001. */
           return [
-            { kind: 'select', name: 'level', label: 'Style',
-              options: [['h2','Heading'],['p','Paragraph']],
-              value: state.level || 'h2' },
+            { kind: 'select', name: 'level', label: 'Display',
+              options: [
+                ['hero','Hero (largest, display weight)'],
+                ['h1','Heading 1 (large, bold)'],
+                ['h2','Heading 2 (medium, bold)'],
+                ['h3','Heading 3 (small, semibold)'],
+                ['p','Paragraph (regular text)']
+              ],
+              value: state.level || 'h2',
+              help: 'One choice that controls visual size + semantic level. Hero for landing-style page tops; H1–H3 for sections; Paragraph for body copy.' },
             { kind: 'text', name: 'text', label: 'Text', value: state.text || 'My latest releases', ai: true },
             { kind: 'select', name: 'align', label: 'Alignment',
               options: [['left','Left'],['center','Center'],['right','Right']],
@@ -2728,10 +2741,24 @@
         },
         preview: function (state) {
           var lead = state.icon ? renderIconForPreview(state.icon) + ' ' : '';
-          if ((state.level || 'h2') === 'h2') {
-            return '<div class="preview-heading">' + lead + escapeHtml(state.text || 'My latest releases') + '</div>';
+          var lvl = state.level || 'h2';
+          var sizeMap = {
+            hero: '32px',
+            h1:   '24px',
+            h2:   '20px',
+            h3:   '16px',
+            p:    '13px'
+          };
+          var weightMap = {
+            hero: 700, h1: 700, h2: 600, h3: 600, p: 400
+          };
+          var fontSize = sizeMap[lvl] || '20px';
+          var fontWeight = weightMap[lvl] || 600;
+          var align = state.align || 'center';
+          if (lvl === 'p') {
+            return '<div class="preview-block compact" style="text-align:' + align + '">' + lead + escapeHtml(state.text || 'My latest releases') + '</div>';
           }
-          return '<div class="preview-block compact">' + lead + escapeHtml(state.text || 'My latest releases') + '</div>';
+          return '<div class="preview-heading" style="font-size:' + fontSize + ';font-weight:' + fontWeight + ';text-align:' + align + '">' + lead + escapeHtml(state.text || 'My latest releases') + '</div>';
         },
         analytics: { today: '0', sevenDay: '0', source: '—', trending: false }
       },
