@@ -304,6 +304,7 @@
     }
     .section-head {
       display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
       margin-bottom: 12px;
     }
     .section-head h4 {
@@ -312,8 +313,9 @@
       color: var(--fg-subtle);
       text-transform: uppercase; letter-spacing: 0.06em;
       margin: 0;
-      flex: 1;
+      flex: 0 0 auto;
     }
+    .section-head .head-spacer { flex: 1; min-width: 0; }
     .section-head .pill {
       font-size: 10px; padding: 2px 8px;
     }
@@ -767,16 +769,99 @@
     .ab-tab-pill-a, .ab-pill-a { background: var(--brand-primary); }
     .ab-tab-pill-b, .ab-pill-b { background: var(--brand-warm); }
     .ab-tab-label { white-space: nowrap; }
-    .ab-tab-meta {
-      font-size: 10px; font-weight: 500; color: var(--fg-subtle);
-      text-transform: uppercase; letter-spacing: 0.04em;
-      padding-left: 6px; border-left: 1px solid var(--border);
+
+    /* Variant B locked-state for non-Business tiers (per
+       feedback_no_blur_premium_features — never disable, never blur,
+       always invite exploration). Tab stays clickable; visual treatment
+       hints at the tier requirement; click reveals the inline tier
+       callout in the form area. */
+    .ab-tab.is-locked { opacity: 0.72; }
+    .ab-tab.is-locked .ab-tab-label { color: var(--fg-muted); }
+    .ab-tab.is-locked.is-active { opacity: 1; }
+    .ab-tab .ab-tab-lock {
+      display: none;
+      align-items: center; gap: 3px;
+      padding: 1px 6px;
       margin-left: 2px;
+      background: rgba(245,158,11,0.18);
+      color: var(--brand-warm-dark, var(--brand-warm));
+      border: 1px solid rgba(245,158,11,0.45);
+      border-radius: 999px;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
+    body.dark-mode .ab-tab .ab-tab-lock {
+      background: rgba(245,158,11,0.22);
+      color: #FCD34D;
+      border-color: rgba(245,158,11,0.55);
+    }
+    .ab-tab.is-locked .ab-tab-lock { display: inline-flex; }
     @media (max-width: 480px) {
-      .ab-tab-meta { display: none; }
       .ab-tab { padding: 5px 10px 5px 5px; }
+      .ab-tab .ab-tab-lock { display: none; }
+      .ab-tab.is-locked .ab-tab-lock { display: inline-flex; }
     }
+
+    /* Educational explainer below tabs (visible at every tier, every
+       block type — sells the feature at point of contact). */
+    .ab-edu {
+      font-size: 11.5px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+      font-style: italic;
+      padding: 0 2px;
+      margin-top: -2px;
+      margin-bottom: 2px;
+    }
+    .ab-edu strong { color: var(--fg); font-style: normal; font-weight: 600; }
+
+    /* Inline tier callout shown at the top of the form area when the
+       active variant is B and the user's tier is below Business. NOT a
+       blur, NOT a disabled overlay — fields below stay fully editable
+       (feedback_no_blur_premium_features). */
+    .ab-tier-callout {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 13px;
+      background: linear-gradient(0deg, rgba(245,158,11,0.07), rgba(245,158,11,0.07)), var(--bg-elevated);
+      border: 1px solid rgba(245,158,11,0.45);
+      border-radius: 10px;
+    }
+    .ab-tier-callout .ico {
+      font-size: 16px; line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .ab-tier-callout .body { flex: 1; min-width: 0; }
+    .ab-tier-callout .ttl {
+      font-size: 12.5px; font-weight: 600; color: var(--fg);
+      margin-bottom: 2px;
+    }
+    .ab-tier-callout .copy {
+      font-size: 11.5px; color: var(--fg-muted); line-height: 1.5;
+    }
+    .ab-tier-callout .cta {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px; font-weight: 600;
+      color: var(--brand-warm-dark, var(--brand-warm));
+      text-decoration: none;
+    }
+    .ab-tier-callout .cta:hover { text-decoration: underline; }
+
+    /* Win-criteria footnote — appears only when Variant B has at least
+       one differing field (auto-detect signal that A/B will engage on
+       save). Subtle informational tone. */
+    .ab-win-note {
+      display: flex; align-items: flex-start; gap: 7px;
+      font-size: 11px; color: var(--fg-muted); line-height: 1.5;
+      padding: 8px 10px;
+      background: var(--bg-muted);
+      border-left: 2px solid var(--brand-warm);
+      border-radius: 0 7px 7px 0;
+      margin-top: 4px;
+    }
+    .ab-win-note .ico { flex-shrink: 0; }
 
     /* Helper bar shown only when A/B on AND active tab is B (Copy A→B etc.) */
     .ab-helper {
@@ -1196,36 +1281,65 @@
         <div class="col-form">
 
           <!-- ▼ TYPE-SPECIFIC FORM (rendered by JS) ▼
-               When state.ab.enabled is true, the section header swaps in a
-               Variant A | B tab strip and a "Copy A → B" / "Reset B → A"
-               action. Form fields read/write through the active variant in
+               Variant A | B tabs are ALWAYS visible (DEC-093 = Option 1,
+               auto-detect). Variant A is the primary editing surface for
+               every tier. Variant B is fully visible too but carries a
+               🔒 Business badge for non-Business tiers — clicking B
+               reveals an inline tier callout above the form fields
+               (NEVER blurs / disables — feedback_no_blur_premium_features).
+               Form fields read/write through the active variant in
                state.ab.variants[activeTab] — transparent to BLOCK_TYPES.form()
-               which keeps receiving a single content-state object. -->
+               which keeps receiving a single content-state object. A/B
+               "intent" is auto-detected at save time from whether B has
+               any differing field (countAbDiffs > 0). -->
           <section class="section" id="form-section" aria-labelledby="form-section-h">
             <div class="section-head">
               <h4 id="form-section-h">Content</h4>
-              <div class="ab-tabs" id="ab-tabs" style="display:none" role="tablist" aria-label="A/B variant tabs">
+              <div class="ab-tabs" id="ab-tabs" role="tablist" aria-label="A/B variant tabs">
                 <button type="button" class="ab-tab is-active" data-variant="A" role="tab" aria-selected="true"
                         onclick="setActiveVariant('A')">
                   <span class="ab-tab-pill ab-tab-pill-a">A</span>
                   <span class="ab-tab-label">Variant A</span>
-                  <span class="ab-tab-meta" id="ab-tab-meta-a">Original</span>
                 </button>
                 <button type="button" class="ab-tab" data-variant="B" role="tab" aria-selected="false"
                         onclick="setActiveVariant('B')">
                   <span class="ab-tab-pill ab-tab-pill-b">B</span>
                   <span class="ab-tab-label">Variant B</span>
-                  <span class="ab-tab-meta" id="ab-tab-meta-b">Challenger</span>
+                  <span class="ab-tab-lock" aria-hidden="true">🔒 Business</span>
                 </button>
               </div>
-              <div class="toggle-row" style="gap:6px">
+              <span class="head-spacer"></span>
+              <div class="toggle-row" style="gap:6px;flex:0 0 auto">
                 <span style="font-size:11px;color:var(--fg-muted);font-weight:600">Visible</span>
                 <span class="switch on" id="d-visible-switch" role="switch" aria-checked="true" tabindex="0"
                       onclick="toggleVisible()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleVisible();}"></span>
               </div>
             </div>
 
-            <!-- Variant B helper bar (only visible when A/B on AND active tab is B) -->
+            <!-- Educational explainer (always visible — sells A/B at point
+                 of contact for every tier, every block type). -->
+            <div class="ab-edu" id="ab-edu">
+              <strong>A/B test</strong> — On <strong>Business</strong>, edit Variant B to test two versions of this block. Traffic splits 50/50 and the winner promotes automatically. <span id="ab-edu-tier-suffix"></span>
+            </div>
+
+            <!-- Inline tier callout — shown when active variant is B AND
+                 current tier is below Business. Form below stays fully
+                 editable per feedback_no_blur_premium_features. -->
+            <div class="ab-tier-callout" id="ab-tier-callout" style="display:none" role="note">
+              <span class="ico" aria-hidden="true">🔒</span>
+              <div class="body">
+                <div class="ttl">Variant B is part of A/B testing — Business plan</div>
+                <div class="copy">
+                  Edit Variant B freely to preview how an A/B test looks.
+                  When you save, we'll prompt to upgrade to <strong>Business</strong> ($49/mo)
+                  to actually run the 50/50 split.
+                </div>
+                <a href="./pricing.html" class="cta" onclick="event.preventDefault();openUpgrade('business')">Upgrade to Business →</a>
+              </div>
+            </div>
+
+            <!-- Variant B helper bar (visible when active tab is B —
+                 every tier so users can demo Copy A → B exploration). -->
             <div class="ab-helper" id="ab-helper" style="display:none">
               <div class="ab-helper-text" id="ab-helper-text">
                 Variant B is a copy of A. Edit any field below to make it differ.
@@ -1243,6 +1357,15 @@
 
             <div class="section-body" id="form-body">
               <!-- populated by renderForm() -->
+            </div>
+
+            <!-- Win-criteria footnote — visible only when Variant B has
+                 differing edits (auto-detect signal that A/B will engage
+                 on save). -->
+            <div class="ab-win-note" id="ab-win-note" style="display:none" role="note">
+              <span class="ico" aria-hidden="true">📊</span>
+              <span>When you save, traffic will split <strong>50/50</strong> across <span id="ab-win-diffcount">0</span>
+                differing field<span id="ab-win-diffplural">s</span>. The winning variant auto-promotes after <strong>7 days or 1,000 clicks</strong>.</span>
             </div>
           </section>
 
@@ -1280,48 +1403,12 @@
             </div>
           </section>
 
-          <!-- ▼ A/B TESTING (Business — fully visible per feedback_no_blur_premium_features) ▼
-               Toggle controls whether the Content section above renders with
-               Variant A | B tabs. When ON, every field in the Content section
-               becomes variant-aware (label, url, icon, html — all of them, for
-               every block type). The preview pane below stacks A + B so the
-               creator can compare in real time. Save-time tier-gate per the
-               feedback_no_blur_premium_features rule. -->
-          <section class="section tier-gated" id="ab-card" data-min-tier="business" aria-labelledby="ab-section-h">
-            <div class="section-head">
-              <h4 id="ab-section-h">A/B test this block</h4>
-              <span id="ab-tier-badge" data-tier-badge="business"></span>
-            </div>
-            <div class="section-body">
-              <div class="toggle-row">
-                <div class="lbl">
-                  <div class="t">Run a 50/50 split test</div>
-                  <div class="s">Test two completely different versions of this block — different label, URL, icon, thumbnail, anything. Winning variant auto-applied after 7 days or 1,000 clicks.</div>
-                </div>
-                <span class="switch" id="ab-switch" role="switch" aria-checked="false" tabindex="0"
-                      onclick="toggleAb(this)"
-                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAb(this);}"></span>
-              </div>
-              <div class="ab-explainer" id="ab-explainer" style="display:none">
-                <div class="ab-explainer-row">
-                  <span class="ab-pill ab-pill-a">A</span>
-                  <span>Edit fields in the <strong>Content</strong> section above. Switch tabs to edit Variant B independently.</span>
-                </div>
-                <div class="ab-explainer-row">
-                  <span class="ab-pill ab-pill-b">B</span>
-                  <span>Variant B starts as a copy of A. Change anything that matters — label, URL, icon, schedule.</span>
-                </div>
-                <div class="ab-explainer-row">
-                  <span class="ab-pill ab-pill-traffic">50/50</span>
-                  <span>Visitors split deterministically by visitor hash (cookieless). Both variants log clicks separately in Insights.</span>
-                </div>
-              </div>
-              <div class="tier-hint" id="ab-tier-hint" style="display:none">
-                A/B testing unlocks on <strong>Business</strong> ($49/mo). Configure the test now — we'll prompt to upgrade when you save.
-                <a href="./pricing.html" onclick="event.preventDefault();openUpgrade('business')">See plans →</a>
-              </div>
-            </div>
-          </section>
+          <!-- A/B test "section" used to live here as a separate toggle card.
+               Per DEC-093 (auto-detect, locked 2026-04-26) the explicit toggle
+               + dedicated section was removed. A/B is now expressed inline in
+               the Content section above (always-visible Variant A | B tabs);
+               A/B "intent" auto-detects at save time from whether Variant B
+               has any field differing from Variant A. -->
 
           <!-- ▼ ACTION ROW ▼ -->
           <section class="section" aria-label="Block actions">
@@ -2224,10 +2311,11 @@
       // Show inline tier hint only when the current tier is below the requirement.
       var schedHint = document.getElementById('sched-tier-hint');
       if (schedHint) schedHint.style.display = TIER_RANK[t] < TIER_RANK.creator ? '' : 'none';
-      var abHint = document.getElementById('ab-tier-hint');
-      if (abHint) abHint.style.display = TIER_RANK[t] < TIER_RANK.business ? '' : 'none';
 
       currentTier = t;
+      // Re-render A/B-driven UI — tier change toggles Variant B locked
+      // styling + tier callout visibility on Variant B.
+      if (typeof applyAbVisibility === 'function') applyAbVisibility();
     }
     var currentTier = 'creator';
 
@@ -2292,11 +2380,14 @@
       platform: 'Platform', channel: 'Channel', showWhenOffline: 'Show when offline'
     };
 
+    /* state.ab.enabled is now ALWAYS true (DEC-093 auto-detect). The
+       editor renders Variant A | B tabs at all times. Whether an A/B
+       test actually runs is auto-detected at save from countAbDiffs(). */
     var state = {
       type: 'link',
       visible: true,
       ab: {
-        enabled: false,
+        enabled: true,
         activeTab: 'A',
         previewView: 'both',  /* 'both' | 'A' | 'B' */
         variants: { A: {}, B: {} }
@@ -2355,47 +2446,10 @@
       return out;
     }
 
-    /* ------------------------------------------------------------------ */
-    /* A/B switch — toggles the variant tabs, helper bar, dual preview,   */
-    /* and diff card. Seeding both variants from current top-level state  */
-    /* on first ON makes Variant B start as a clone of A so the creator   */
-    /* can edit ONLY what differs without re-entering identical fields.   */
-    /* ------------------------------------------------------------------ */
-    function toggleAb(el) {
-      var goingOn = !el.classList.contains('on');
-
-      if (!goingOn && state.ab.enabled) {
-        // Going OFF — confirm B will be discarded if user customised it.
-        var bIsDistinct = abVariantsDiffer();
-        if (bIsDistinct) {
-          if (!confirm('Disabling A/B test will discard Variant B.\n\nContinue?')) return;
-        }
-        // Collapse: keep variant A's values at top level (so the form continues
-        // editing whatever the user last saw on tab A), wipe ab.
-        var aSnap = state.ab.variants.A || {};
-        CONTENT_FIELD_KEYS.forEach(function (k) {
-          if (aSnap[k] !== undefined) state[k] = deepClone(aSnap[k]);
-        });
-        state.ab.enabled = false;
-        state.ab.activeTab = 'A';
-        state.ab.variants.A = {};
-        state.ab.variants.B = {};
-      } else if (goingOn && !state.ab.enabled) {
-        // Going ON — seed both variants from current top-level state.
-        // Variant B starts as a clone of A; user edits to differ.
-        var seed = snapshotContent(state);
-        state.ab.enabled = true;
-        state.ab.activeTab = 'A';
-        state.ab.variants.A = deepClone(seed);
-        state.ab.variants.B = deepClone(seed);
-      }
-
-      el.classList.toggle('on', state.ab.enabled);
-      el.setAttribute('aria-checked', state.ab.enabled ? 'true' : 'false');
-      applyAbVisibility();
-      renderForm();
-      bumpSaveStatus();
-    }
+    /* (DEC-093 auto-detect, 2026-04-26) — toggleAb() removed. The
+       Variant A | B tabs are always visible; A/B "intent" auto-detects
+       at save from countAbDiffs(). Variants are seeded by loadType().
+       Disabling = simply not editing Variant B (no toggle to flip). */
 
     /* Returns true if A and B variants have at least one content field
        that differs (i.e., the test is non-trivial). */
@@ -2418,24 +2472,60 @@
       return differ;
     }
 
-    /* Show/hide A/B-specific UI based on state.ab.enabled. */
+    /* Show/hide A/B-specific UI. Tabs are ALWAYS visible (DEC-093).
+       Variant B locked-state styling appears for non-Business tiers.
+       Dual preview + diff card + win-note appear only when B has at
+       least one differing edit (auto-detect of A/B "intent"). */
     function applyAbVisibility() {
-      var on = state.ab.enabled;
-      document.getElementById('ab-explainer').style.display = on ? '' : 'none';
-      document.getElementById('ab-tabs').style.display = on ? '' : 'none';
-      document.getElementById('ab-preview-picker').style.display = on ? '' : 'none';
-      document.getElementById('preview-pane').style.display = on ? 'none' : '';
-      document.getElementById('preview-pair').style.display = on ? '' : 'none';
-      document.getElementById('ab-diff').style.display = on ? '' : 'none';
-      // Helper bar only when on AND active is B
-      document.getElementById('ab-helper').style.display = (on && state.ab.activeTab === 'B') ? '' : 'none';
-      // Tab active states
+      var activeIsB = state.ab.activeTab === 'B';
+      var bDiffers = abVariantsDiffer();
+      var diffCount = countAbDiffs();
+      var bIsLocked = TIER_RANK[currentTier] < TIER_RANK.business;
+
+      // Helper bar — only when on Variant B (let users explore Copy A → B
+      // even on free tiers; the actual save gate is the only barrier).
+      document.getElementById('ab-helper').style.display = activeIsB ? '' : 'none';
+
+      // Tier callout — only when on Variant B AND tier is below Business.
+      document.getElementById('ab-tier-callout').style.display = (activeIsB && bIsLocked) ? '' : 'none';
+
+      // Win-criteria footnote — only when B has differing edits.
+      var winNote = document.getElementById('ab-win-note');
+      if (winNote) {
+        winNote.style.display = bDiffers ? '' : 'none';
+        var dc = document.getElementById('ab-win-diffcount');
+        var dp = document.getElementById('ab-win-diffplural');
+        if (dc) dc.textContent = String(diffCount);
+        if (dp) dp.textContent = (diffCount === 1 ? '' : 's');
+      }
+
+      // Variant B tab — locked-state styling for non-Business.
       document.querySelectorAll('.ab-tab').forEach(function (t) {
-        var sel = t.getAttribute('data-variant') === state.ab.activeTab;
+        var variant = t.getAttribute('data-variant');
+        var sel = variant === state.ab.activeTab;
         t.classList.toggle('is-active', sel);
         t.setAttribute('aria-selected', sel ? 'true' : 'false');
+        if (variant === 'B') t.classList.toggle('is-locked', bIsLocked);
       });
-      // Preview-view picker active states
+
+      // Educational explainer — adapt suffix per tier.
+      var eduSuffix = document.getElementById('ab-edu-tier-suffix');
+      if (eduSuffix) {
+        if (currentTier === 'business') {
+          eduSuffix.textContent = '';
+        } else {
+          eduSuffix.innerHTML = 'You can preview the experience now — we\'ll prompt to upgrade when you save.';
+        }
+      }
+
+      // Preview routing — single (active variant only) when B has no
+      // differing edits; dual stacked when B differs from A.
+      document.getElementById('preview-pane').style.display = bDiffers ? 'none' : '';
+      document.getElementById('preview-pair').style.display = bDiffers ? '' : 'none';
+      document.getElementById('ab-preview-picker').style.display = bDiffers ? '' : 'none';
+      document.getElementById('ab-diff').style.display = bDiffers ? '' : 'none';
+
+      // Preview-view picker active states (Both / A only / B only).
       var pv = (state.ab.previewView || 'both');
       document.querySelectorAll('.ab-preview-picker button').forEach(function (b) {
         var sel = b.getAttribute('data-pv') === pv;
@@ -2493,8 +2583,9 @@
       var spec = BLOCK_TYPES[state.type];
       var contentState = getContentState();
       var fields = spec.form(contentState);
-      // Update variant tab metadata (short summary) when A/B is on.
-      updateVariantTabMeta();
+      // Re-evaluate A/B-driven UI (helper bar, callout, win note, dual
+      // preview routing) — variant edits change which UI is appropriate.
+      applyAbVisibility();
       var html = fields.map(function (f) {
         var id = 'f-' + f.name;
         var aiBtn = f.ai ? '<button class="ai-btn" type="button" onclick="openAi(\'' + f.name + '\')">✨ Suggest</button>' : '';
@@ -2604,21 +2695,20 @@
 
     function renderPreview() {
       var spec = BLOCK_TYPES[state.type];
-      // Single preview (A/B off path)
-      if (!state.ab.enabled) {
+      var bDiffers = abVariantsDiffer();
+
+      // When B has not diverged, show single-pane preview of the active
+      // variant. When B differs, show dual stacked preview + diff card.
+      if (!bDiffers) {
+        var view = synthesiseVariantView(state.ab.activeTab);
         var pane = document.getElementById('preview-pane');
         pane.classList.toggle('is-hidden', state.visible === false);
-        document.getElementById('preview-body').innerHTML = spec.preview(state);
+        document.getElementById('preview-body').innerHTML = spec.preview(view);
         return;
       }
-      // Dual preview (A/B on) — render each variant from a synthesised
-      // content-state where the variant's fields override the top-level seed.
+
       ['A', 'B'].forEach(function (which) {
-        var variant = state.ab.variants[which] || {};
-        var view = { type: state.type, visible: state.visible };
-        CONTENT_FIELD_KEYS.forEach(function (k) {
-          view[k] = (variant[k] !== undefined) ? variant[k] : state[k];
-        });
+        var view = synthesiseVariantView(which);
         var paneId = 'preview-pane-' + which.toLowerCase();
         var bodyId = 'preview-body-' + which.toLowerCase();
         document.getElementById(paneId).classList.toggle('is-hidden', state.visible === false);
@@ -2627,20 +2717,17 @@
       renderAbDiff();
     }
 
-    /* Update the small "Original / Challenger" subtitle on each variant tab
-       to a short summary of the variant's identity (label/text/cta if set). */
-    function updateVariantTabMeta() {
-      if (!state.ab.enabled) return;
-      ['A', 'B'].forEach(function (which) {
-        var v = state.ab.variants[which] || {};
-        var labelKey = ['label', 'cta', 'text', 'caption', 'channel', 'q1'].find(function (k) { return v[k]; });
-        var fallback = (which === 'A') ? 'Original' : 'Challenger';
-        var meta = labelKey ? truncate(String(v[labelKey]), 24) : fallback;
-        var el = document.getElementById('ab-tab-meta-' + which.toLowerCase());
-        if (el) el.textContent = meta;
+    /* Build a content-state object for a given variant by merging the
+       variant's fields over the top-level (seed) state. Used by both
+       preview rendering and form rendering. */
+    function synthesiseVariantView(which) {
+      var variant = state.ab.variants[which] || {};
+      var view = { type: state.type, visible: state.visible };
+      CONTENT_FIELD_KEYS.forEach(function (k) {
+        view[k] = (variant[k] !== undefined) ? variant[k] : state[k];
       });
+      return view;
     }
-    function truncate(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 
     /* Render the diff card — show only fields where A and B differ. */
     function renderAbDiff() {
@@ -2732,11 +2819,10 @@
     /* ------------------------------------------------------------------ */
     function loadType(t) {
       // Reset state to type defaults — keep handle for social, etc.
-      // PRESERVE state.ab so the user's A/B configuration survives a
-      // type-switch within the same edit session. Variants get re-seeded
-      // from the new type's defaults when A/B is on (so B starts as a clone
-      // of A under the new type, not a stale clone of the previous type).
-      var preservedAb = state.ab || { enabled: false, activeTab: 'A', previewView: 'both', variants: { A: {}, B: {} } };
+      // A/B is always enabled (DEC-093). Both variants are re-seeded
+      // from the freshly-defaulted state so B starts identical to A
+      // under the new block type (and "differs from A" reads false).
+      var preservedAb = state.ab || { enabled: true, activeTab: 'A', previewView: 'both', variants: { A: {}, B: {} } };
       var preserved = { visible: state.visible, handles: state.handles };
       state = Object.assign({}, preserved, { type: t, ab: preservedAb });
       var spec = BLOCK_TYPES[t];
@@ -2744,14 +2830,12 @@
       spec.form(state).forEach(function (f) {
         if (state[f.name] === undefined && f.value !== undefined) state[f.name] = f.value;
       });
-      // If A/B is on, re-seed variants from the freshly-defaulted state so
-      // both variants start identical under the new block type.
-      if (state.ab.enabled) {
-        var seed = snapshotContent(state);
-        state.ab.variants.A = deepClone(seed);
-        state.ab.variants.B = deepClone(seed);
-        state.ab.activeTab = 'A';
-      }
+      // Re-seed both variants from the freshly-defaulted state.
+      var seed = snapshotContent(state);
+      state.ab.enabled = true;
+      state.ab.variants.A = deepClone(seed);
+      state.ab.variants.B = deepClone(seed);
+      state.ab.activeTab = 'A';
       // Update head
       document.getElementById('modal-title').textContent = spec.label;
       document.getElementById('d-type-icon').textContent = spec.icon;
@@ -2858,17 +2942,16 @@
         });
       }
 
-      // A/B test toggle — Business. Triggered when state.ab.enabled is true
-      // (full Content-section variant split per the redesign).
-      if (state.ab && state.ab.enabled) {
-        var diffCount = countAbDiffs();
+      // A/B test — Business. Auto-detected via differing fields (DEC-093,
+       // 2026-04-26). No explicit toggle: if Variant B differs from A in
+       // any content field, A/B intent is "active" and gets gated at save.
+      var diffCount = countAbDiffs();
+      if (diffCount > 0) {
         feats.push({
           id: 'ab',
           name: 'A/B testing',
           requires: 'business',
-          meta: diffCount > 0
-            ? '50/50 split across ' + diffCount + ' field' + (diffCount === 1 ? '' : 's') + ' — winner promoted automatically'
-            : '50/50 split — winner promoted automatically'
+          meta: '50/50 split across ' + diffCount + ' field' + (diffCount === 1 ? '' : 's') + ' — winner promoted automatically'
         });
       }
 
@@ -2901,14 +2984,9 @@
     }
 
     function saveBlock() {
-      // Soft-warn when A/B is on but variants are identical (test would be meaningless).
-      if (state.ab && state.ab.enabled && !abVariantsDiffer()) {
-        var msg = 'Variant B has no changes from Variant A.\n\n' +
-                  'A/B testing identical variants will not produce a winner — ' +
-                  'visitors see the same block on both sides.\n\nSave anyway?';
-        if (!confirm(msg)) return;
-      }
-
+      // DEC-093 auto-detect: no warning when B has no changes — that's
+      // simply a single-variant save. The premium gate fires only when
+      // Variant B has differing edits (collectPremiumChanges -> diffCount > 0).
       var premium = collectPremiumChanges();
 
       // No premium changes — save immediately.
@@ -2930,24 +3008,14 @@
               var a = document.getElementById('d-sched-start'); if (a) a.value = '';
               var b = document.getElementById('d-sched-end');   if (b) b.value = '';
             } else if (f.id === 'ab') {
-              // Collapse A/B back to single state — keep variant A's values
-              // at top level (what the creator was seeing on tab A) and
-              // discard variant B silently (TierGate flow already explained
-              // the trade-off in its modal).
-              if (state.ab && state.ab.enabled) {
-                var aSnap = state.ab.variants.A || {};
-                CONTENT_FIELD_KEYS.forEach(function (k) {
-                  if (aSnap[k] !== undefined) state[k] = deepClone(aSnap[k]);
-                });
-                state.ab.enabled = false;
-                state.ab.activeTab = 'A';
-                state.ab.variants.A = {};
-                state.ab.variants.B = {};
-                var sw = document.getElementById('ab-switch');
-                if (sw) { sw.classList.remove('on'); sw.setAttribute('aria-checked', 'false'); }
-                applyAbVisibility();
-                renderForm();
-              }
+              // Save without A/B: collapse Variant B to match A (drops
+              // the differing edits silently — TierGate already explained
+              // the trade-off in its modal). Auto-detect on next save
+              // returns 0 differences and proceeds without the gate.
+              state.ab.variants.B = deepClone(state.ab.variants.A || {});
+              state.ab.activeTab = 'A';
+              applyAbVisibility();
+              renderForm();
             }
           });
           applySaveOk();
@@ -3066,7 +3134,6 @@
     window.closeDelete = closeDelete;
     window.doDelete = doDelete;
     window.openUpgrade = openUpgrade;
-    window.toggleAb = toggleAb;
     window.setActiveVariant = setActiveVariant;
     window.copyAtoB = copyAtoB;
     window.resetBtoA = resetBtoA;

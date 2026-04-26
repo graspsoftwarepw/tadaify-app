@@ -123,6 +123,22 @@ Scope: every dashboard-style mockup must render the canonical sidebar — Pages 
 
 ## Changelog
 
+### 2026-04-26 — A/B section UX overhaul: always-visible tabs + auto-detect (PR #54, FIX-001..004)
+
+`app-block-editor.html` — second pass on the A/B implementation that landed
+earlier today (commit `ccfcc0a`). User reviewed and locked DEC-093
+(Option 1, auto-detect): no explicit toggle, tabs always visible,
+A/B intent inferred at save from whether Variant B has differing edits.
+Layout cleanup + cross-block-type consistency verification.
+
+- **FIX-001 — Visible toggle layout.** `.section-head` gains `flex-wrap: wrap` and a `.head-spacer` filler. The `Visible` toggle stays right-aligned on wide modals and wraps to its own row on narrow widths instead of overflowing the panel.
+- **FIX-002 — Variant tab labels.** Dropped the value-echo `.ab-tab-meta` suffix (`Variant A · LISTEN ON SPOTIFY`). Tabs read `[A] Variant A` and `[B] Variant B` only — no informational repeat of the field below. Tabs are now narrow enough that the section-head fits comfortably without wrapping in 99% of viewport widths.
+- **FIX-003 — Always-visible tabs + auto-detect (DEC-093 = Option 1).** Removed the standalone `A/B test this block` section and its toggle. Variant A | B tabs now render at all times in the Content section header. `state.ab.enabled` is permanently `true`; the `toggleAb()` function is gone. Variant A is the primary editing surface for every tier. Variant B is fully visible and clickable for non-Business tiers but carries dimmed styling + a `🔒 Business` lock pill on the tab itself; clicking B reveals an inline `.ab-tier-callout` above the form fields explaining the gate without blurring or disabling anything (per `feedback_no_blur_premium_features`). A new `.ab-edu` line below the tabs delivers the standing pitch — "On Business, edit Variant B to test two versions… Traffic splits 50/50 and the winner promotes automatically." — visible at every tier, every block type. A/B intent auto-detects at save: `collectPremiumChanges()` adds the A/B feature only when `countAbDiffs() > 0`. The win-criteria copy ("auto-promote after 7 days or 1k clicks") moves to the `.ab-win-note` footnote that surfaces only when B has differing edits. Dual stacked preview + diff card also key off `abVariantsDiffer()` instead of the old toggle.
+- **FIX-004 — 13 block-type consistency.** Manually walked the type switcher through all 13 BLOCK_TYPES (Link, Image, Embed, Heading, Divider, Social, Newsletter, Shop, Video, Accordion, Custom HTML, Countdown, Live stream). Variant A | B tabs render identically positioned + sized + styled in every type. Variant B locked-state visual (dimmed + lock pill) is identical across types. The `.ab-edu` explainer is the same copy on every type (kept universal, not type-adapted — locks the brand voice). Helper bar, dual preview, diff card, copy A→B button render identically. State-routing via `getContentState()` / `writeContent()` already handles all 28 `CONTENT_FIELD_KEYS` transparently per block type, so per-type form differences route correctly into per-variant state.
+- **State + lifecycle.** `loadType()` always re-seeds both variants from the freshly-defaulted state (so type-switch resets B to match A under the new type, identical to before). `saveBlock()` drops the soft-warn-on-identical-variants confirm — with auto-detect, identical = single-variant save, no friction. `Save without A/B` in the TierGate flow now collapses Variant B to match A (instead of the old "disable toggle" path).
+- **Removed surface area.** Deleted standalone A/B `<section>` (`#ab-card`), the `#ab-switch` element, the `#ab-explainer` rows under the toggle, the `#ab-tier-hint` line, the `.ab-tab-meta` slots, the `updateVariantTabMeta()` function, the `toggleAb()` function, and their `window.toggleAb` export. Orphan CSS classes (`.ab-explainer*`, `.ab-pill-traffic`) kept in the stylesheet for reuse / minimal-diff.
+- **New CSS primitives.** `.ab-tab.is-locked` + `.ab-tab-lock` (lock pill on Variant B tab), `.ab-edu` (italic explainer line under tabs), `.ab-tier-callout` (inline tier explainer when on Variant B + non-Business), `.ab-win-note` (footnote when B has differing edits). Tier callout uses `var(--brand-warm)` accents to align with the B variant's brand-warm pill.
+
 ### 2026-04-26 — A/B test = full Content split (PR #54 extension)
 
 `app-block-editor.html` replaces the "Variant B label" half-feature with full
