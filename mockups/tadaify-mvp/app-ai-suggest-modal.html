@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<!--
+  AI Suggest sub-modal — the floating UI that appears when a creator clicks
+  the ✨ Suggest button on any title / label / caption / short-text field
+  across the tadaify block editor.
+
+  Sister of FIX-SUGGEST-RESTORE-001 (PR #70) which restored the ✨ Suggest
+  entry-points on every relevant text field. That PR added the trigger;
+  this mockup designs what happens AFTER click.
+
+  Issue:  TBD — file F-AI-SUGGEST-MODAL-001 after acceptance.
+  DECs:   DEC-AI-FEATURES-ROADMAP-01 (text-only AI),
+          DEC-AI-QUOTA-LADDER-01 (Free 5/d · Creator 20/d · Pro 100/d · Business unlimited),
+          DEC-114 (simple UI, no Advanced toggle),
+          no-right-side-drawers (centered modal, never slide-in).
+
+  This file is a STANDALONE mockup of the sub-modal — three demo trigger
+  buttons at the top simulate the entry-points (Block title / Caption /
+  Button label) so reviewers can see the modal without embedding it in
+  app-block-editor.html.
+
+  Cost frame (DEC-097-era cost-value analysis):
+    Claude Haiku per click ≈ $0.0001
+    100k creators × 5 clicks/year ≈ $50/year total
+    → cheap, valuable, ON BRAND with marketing pillar #2 (AI baked in).
+  Free-tier 30/day cap exists ONLY as abuse protection (rate-limit state);
+  typical creator never sees it.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AI Suggest — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+
+    /* =========================================================================
+       Demo launcher (top of the standalone file)
+       ========================================================================= */
+    .demo-launcher {
+      max-width: 760px;
+      margin: clamp(24px, 4vw, 48px) auto;
+      padding: clamp(20px, 3vw, 28px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .demo-launcher h1 {
+      font-family: var(--font-display);
+      font-size: clamp(22px, 2.6vw, 28px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .demo-launcher .subline {
+      margin-top: 6px;
+      font-size: 14px;
+      color: var(--fg-muted);
+      max-width: 580px;
+    }
+    .demo-launcher .field-row {
+      margin-top: 22px;
+      display: grid;
+      gap: 14px;
+    }
+    .demo-launcher .field {
+      display: grid; gap: 6px;
+    }
+    .demo-launcher .field label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.01em;
+    }
+    .demo-launcher .field .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-launcher .field input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border .14s, box-shadow .14s;
+    }
+    .demo-launcher .field input[type="text"]:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+    }
+    .ai-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--brand-primary);
+      font-family: var(--font-sans); font-size: 12.5px; font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .12s, border-color .12s, transform .12s;
+      white-space: nowrap;
+    }
+    .ai-btn:hover {
+      background: rgba(99,102,241,0.08);
+      border-color: var(--brand-primary);
+      transform: translateY(-1px);
+    }
+    .ai-btn .sparkle { font-size: 13px; }
+    .demo-launcher .legend {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: var(--bg-muted);
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .demo-launcher .legend b { color: var(--fg); font-weight: 600; }
+
+    .tier-row {
+      margin-top: 18px;
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .tier-chip {
+      padding: 4px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .tier-chip.is-active {
+      background: var(--brand-primary);
+      color: #fff;
+      border-color: var(--brand-primary);
+    }
+
+    /* =========================================================================
+       Sub-modal (the AI Suggest UI itself — centered, NEVER right-drawer)
+       ========================================================================= */
+    .ai-modal-backdrop {
+      position: fixed; inset: 0; z-index: 80;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity .22s ease;
+    }
+    .ai-modal-backdrop.is-open { display: flex; opacity: 1; }
+    .ai-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      width: min(560px, 100%);
+      max-height: calc(100vh - 32px);
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.98);
+      transition: transform .22s cubic-bezier(.22,.61,.36,1);
+      overflow: hidden;
+    }
+    .ai-modal-backdrop.is-open .ai-modal { transform: translateY(0) scale(1); }
+    @media (max-width: 600px) {
+      .ai-modal-backdrop { padding: 0; align-items: stretch; }
+      .ai-modal { border-radius: 0; max-height: 100vh; height: 100vh; width: 100%; }
+    }
+
+    /* Head */
+    .ai-modal-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .ai-modal-head h3 {
+      font-family: var(--font-display);
+      font-size: 19px; font-weight: 600;
+      flex: 1; margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .ai-modal-head h3 .sparkle { color: var(--brand-warm); margin-right: 4px; }
+    .ai-modal-head .target-name { color: var(--brand-primary); }
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .12s, color .12s;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* Body */
+    .ai-modal-body {
+      padding: 16px 22px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* Context strip */
+    .ctx-strip {
+      display: flex; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .ctx-strip .ctx-icon {
+      flex-shrink: 0; width: 14px; height: 14px;
+      margin-top: 2px;
+      color: var(--brand-primary);
+    }
+    .ctx-strip .ctx-text b {
+      color: var(--fg);
+      font-weight: 600;
+    }
+    .ctx-strip code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      padding: 1px 5px;
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      border-radius: 4px;
+    }
+
+    /* Refinement field */
+    .refine {
+      display: grid; gap: 6px;
+    }
+    .refine label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.01em;
+    }
+    .refine label .opt {
+      font-weight: 500;
+      color: var(--fg-subtle);
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+    .refine textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      resize: vertical;
+      min-height: 64px;
+      outline: none;
+      transition: border .14s, box-shadow .14s;
+    }
+    .refine textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+      background: var(--bg-elevated);
+    }
+    .refine textarea::placeholder {
+      color: var(--fg-subtle);
+    }
+    .refine .examples {
+      font-size: 11.5px;
+      color: var(--fg-subtle);
+      margin-top: 2px;
+    }
+
+    /* Suggestions area */
+    .suggestions-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+      padding-top: 4px;
+    }
+    .suggestions-head .lbl {
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .suggestions-head .count {
+      font-size: 11.5px;
+      color: var(--fg-subtle);
+    }
+
+    .sugg-list {
+      display: flex; flex-direction: column; gap: 8px;
+      list-style: none; margin: 0; padding: 0;
+    }
+    .sugg-card {
+      position: relative;
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px 12px 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border .14s, background .14s, transform .12s, box-shadow .14s;
+      font-family: var(--font-sans);
+      text-align: left;
+      width: 100%;
+    }
+    .sugg-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .sugg-card.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.06);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+    }
+    .sugg-card .idx {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 7px;
+      background: var(--bg-muted);
+      color: var(--fg-muted);
+      font-size: 11.5px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      margin-top: 1px;
+    }
+    .sugg-card.is-selected .idx {
+      background: var(--brand-primary);
+      color: #fff;
+    }
+    .sugg-card .copy {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--fg);
+      font-weight: 500;
+    }
+    .sugg-card .style-tag {
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 2px;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 99px;
+      color: var(--fg-muted);
+      background: var(--bg-muted);
+    }
+    .sugg-card.is-selected .style-tag {
+      background: rgba(245,158,11,0.14);
+      color: var(--brand-warm-dark);
+    }
+    .sugg-card .check {
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--success);
+      color: #fff;
+      display: none;
+      align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .sugg-card.is-selected .check { display: flex; }
+
+    /* Skeletons (loading) */
+    .sugg-skeleton {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px 12px 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+    }
+    .sk-block {
+      background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s linear infinite;
+      border-radius: 6px;
+      height: 14px;
+    }
+    .sk-idx { width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; margin-top: 1px;
+      background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s linear infinite;
+    }
+    .sk-copy { flex: 1; }
+    .sk-line-1 { width: 75%; height: 14px; }
+    .sk-line-2 { width: 45%; height: 12px; margin-top: 8px; }
+    .sk-tag { width: 56px; height: 16px; border-radius: 99px; flex-shrink: 0; margin-top: 1px;
+      background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s linear infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sk-block, .sk-idx, .sk-tag { animation: none; }
+    }
+
+    /* Error state */
+    .err-box {
+      padding: 16px;
+      background: var(--danger-bg);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 12px;
+      color: var(--fg);
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .err-box .err-icon {
+      flex-shrink: 0; width: 20px; height: 20px;
+      color: var(--danger);
+      margin-top: 1px;
+    }
+    .err-box .err-msg {
+      flex: 1;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .err-box .err-msg b { display: block; margin-bottom: 2px; color: var(--fg); font-weight: 600; }
+    .err-box .err-msg .err-sub { color: var(--fg-muted); font-weight: 400; }
+    .err-box .err-actions { margin-top: 10px; display: flex; gap: 8px; }
+    .err-box .err-actions button {
+      padding: 7px 12px;
+      font-size: 12.5px; font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid var(--danger);
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .err-box .err-actions button:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* Empty state (no input, no context) */
+    .empty-box {
+      padding: 18px;
+      background: var(--bg-muted);
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .empty-box .empty-icon {
+      width: 32px; height: 32px;
+      margin: 0 auto 8px;
+      color: var(--fg-subtle);
+    }
+    .empty-box .empty-h {
+      font-size: 14px; font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+    .empty-box .empty-sub {
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      max-width: 360px;
+      margin: 0 auto 14px;
+      line-height: 1.5;
+    }
+
+    /* Rate-limited state */
+    .rate-box {
+      padding: 18px;
+      background: var(--warning-bg);
+      border: 1px solid rgba(245,158,11,0.30);
+      border-radius: 12px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .rate-box .rate-icon {
+      flex-shrink: 0; width: 22px; height: 22px;
+      color: var(--brand-warm-dark);
+      margin-top: 1px;
+    }
+    .rate-box .rate-body { flex: 1; }
+    .rate-box .rate-h {
+      font-size: 14px; font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+    .rate-box .rate-sub {
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+      margin-bottom: 12px;
+    }
+    .rate-box .rate-meta {
+      font-size: 11.5px;
+      color: var(--fg-subtle);
+      margin-top: 8px;
+    }
+    .rate-box .upsell-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .upgrade-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--brand-warm);
+      color: #FFFFFF;
+      font-size: 13px; font-weight: 600;
+      border: 0;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background .14s;
+    }
+    .upgrade-btn:hover { background: var(--brand-warm-dark); }
+
+    /* Foot (sticky actions) */
+    .ai-modal-foot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex; gap: 10px; align-items: center;
+      flex-shrink: 0;
+    }
+    .ai-modal-foot .left  { display: flex; gap: 8px; }
+    .ai-modal-foot .right { display: flex; gap: 8px; margin-left: auto; }
+    .btn-primary, .btn-secondary, .btn-ghost {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 14px;
+      font-family: var(--font-sans); font-size: 13.5px; font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background .14s, border-color .14s, color .14s, transform .12s;
+    }
+    .btn-primary {
+      background: var(--brand-primary);
+      color: #FFFFFF;
+    }
+    .btn-primary:not(:disabled):hover {
+      background: var(--brand-primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      background: var(--bg-sunken);
+      color: var(--fg-subtle);
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      border-color: var(--border-strong);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-muted);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg-muted);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-muted);
+      color: var(--fg);
+    }
+    .btn-spinner {
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      display: none;
+    }
+    .btn-secondary .btn-spinner {
+      border-color: rgba(99,102,241,0.25);
+      border-top-color: var(--brand-primary);
+    }
+    .is-loading .btn-spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* =========================================================================
+       Static state-variants (under demo launcher)
+       Each section shows a frozen rendition of one modal state for review.
+       ========================================================================= */
+    .variants {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .variants > h2 {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 32px 0 6px;
+    }
+    .variants > h2:first-child { margin-top: 0; }
+    .variants > p {
+      font-size: 13.5px;
+      color: var(--fg-muted);
+      margin-bottom: 14px;
+      max-width: 580px;
+    }
+    .frame {
+      border: 1px dashed var(--border-strong);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(11,15,30,0.04);
+      display: flex; justify-content: center;
+    }
+    .frame .ai-modal {
+      transform: none !important;
+      width: min(540px, 100%);
+      box-shadow: var(--shadow);
+      max-height: none;
+    }
+
+    /* Selected confirmation flourish */
+    .selected-banner {
+      padding: 10px 12px;
+      background: rgba(16,185,129,0.10);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 10px;
+      display: flex; gap: 10px; align-items: center;
+      font-size: 12.5px; color: var(--fg);
+    }
+    .selected-banner .check {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--success); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; flex-shrink: 0;
+    }
+    .selected-banner b { color: var(--fg); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       Demo launcher — three trigger buttons mimic the editor entry points.
+       In production, these triggers live inside app-block-editor.html on every
+       title / label / caption / short-text field flagged with `ai: true`.
+       ========================================================================= -->
+  <div class="demo-launcher">
+    <h1>✨ AI Suggest — sub-modal preview</h1>
+    <p class="subline">
+      Try a trigger below to open the sub-modal with the right context.
+      In the real app, these buttons live next to every title / caption /
+      label field across the block editor.
+    </p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="demo-title">Block title</label>
+        <div class="input-wrap">
+          <input id="demo-title" type="text" value="My latest release" />
+          <button class="ai-btn" type="button" onclick="openAi('title')">
+            <span class="sparkle">✨</span> Suggest
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="demo-caption">Caption</label>
+        <div class="input-wrap">
+          <input id="demo-caption" type="text" value="Album cover for &quot;Spring Drops&quot;" />
+          <button class="ai-btn" type="button" onclick="openAi('caption')">
+            <span class="sparkle">✨</span> Suggest
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="demo-cta">Button label</label>
+        <div class="input-wrap">
+          <input id="demo-cta" type="text" value="Listen on Spotify" />
+          <button class="ai-btn" type="button" onclick="openAi('cta')">
+            <span class="sparkle">✨</span> Suggest
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <b>How it works.</b> Click ✨ Suggest on any short-text field in the
+      block editor. The sub-modal reads what you've already entered (plus
+      surrounding block context — type, URL, image alt-text, …) and returns
+      five short alternatives in different tones. Pick one, click <b>Use this</b>,
+      and the field updates. <b>Cost:</b> ~$0.0001 per click on Claude Haiku
+      &mdash; baked into every paid tier with a soft 30/day cap on Free for
+      abuse protection.
+    </div>
+
+    <div class="tier-row">
+      <span>Demo state:</span>
+      <button class="tier-chip is-active" type="button" data-state="loaded" onclick="setState(this, 'loaded')">5 suggestions</button>
+      <button class="tier-chip" type="button" data-state="loading" onclick="setState(this, 'loading')">Loading</button>
+      <button class="tier-chip" type="button" data-state="error" onclick="setState(this, 'error')">Error</button>
+      <button class="tier-chip" type="button" data-state="empty" onclick="setState(this, 'empty')">Empty (no input)</button>
+      <button class="tier-chip" type="button" data-state="rate" onclick="setState(this, 'rate')">Rate-limited</button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Live sub-modal — opens via demo triggers above
+       ========================================================================= -->
+  <div
+    class="ai-modal-backdrop"
+    id="ai-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ai-h"
+    onclick="if(event.target===this)closeAi()"
+  >
+    <div class="ai-modal" role="document">
+
+      <div class="ai-modal-head">
+        <h3 id="ai-h">
+          <span class="sparkle">✨</span>
+          AI suggestions for <span class="target-name" id="ai-target">Block title</span>
+        </h3>
+        <button class="iconbtn" type="button" onclick="closeAi()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="ai-modal-body" id="ai-body">
+        <!-- Context strip (always visible at top) -->
+        <div class="ctx-strip">
+          <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <div class="ctx-text" id="ctx-text">
+            Based on your <b>Link button</b> &mdash;
+            URL: <code>open.spotify.com/album/spring-drops</code>
+          </div>
+        </div>
+
+        <!-- Refinement (visible, empty by default per simple-UI rule) -->
+        <div class="refine">
+          <label for="refine-input">
+            Add context for AI <span class="opt">— optional</span>
+          </label>
+          <textarea
+            id="refine-input"
+            placeholder="e.g. 'punchy and short', 'more professional', 'mention the release date'"
+          ></textarea>
+        </div>
+
+        <!-- Suggestions list -->
+        <div class="suggestions-head">
+          <span class="lbl">Pick one</span>
+          <span class="count" id="sugg-count">5 suggestions</span>
+        </div>
+
+        <ul class="sugg-list" id="sugg-list">
+          <li>
+            <button class="sugg-card" type="button" onclick="selectCard(this)">
+              <span class="idx">1</span>
+              <span class="copy">Spring Drops — out now</span>
+              <span class="style-tag">Direct</span>
+              <span class="check">✓</span>
+            </button>
+          </li>
+          <li>
+            <button class="sugg-card is-selected" type="button" onclick="selectCard(this)">
+              <span class="idx">2</span>
+              <span class="copy">Hit play. New album, fresh feels.</span>
+              <span class="style-tag">Playful</span>
+              <span class="check">✓</span>
+            </button>
+          </li>
+          <li>
+            <button class="sugg-card" type="button" onclick="selectCard(this)">
+              <span class="idx">3</span>
+              <span class="copy">My new album is here — give it a spin</span>
+              <span class="style-tag">Friendly</span>
+              <span class="check">✓</span>
+            </button>
+          </li>
+          <li>
+            <button class="sugg-card" type="button" onclick="selectCard(this)">
+              <span class="idx">4</span>
+              <span class="copy">Listen to Spring Drops on Spotify</span>
+              <span class="style-tag">Professional</span>
+              <span class="check">✓</span>
+            </button>
+          </li>
+          <li>
+            <button class="sugg-card" type="button" onclick="selectCard(this)">
+              <span class="idx">5</span>
+              <span class="copy">Wonder what's new? Spring Drops is live</span>
+              <span class="style-tag">Curious</span>
+              <span class="check">✓</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="ai-modal-foot">
+        <div class="left">
+          <button class="btn-secondary" type="button" id="refresh-btn" onclick="refreshSuggestions()">
+            <span class="btn-spinner"></span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh suggestions
+          </button>
+        </div>
+        <div class="right">
+          <button class="btn-ghost" type="button" onclick="closeAi()">Cancel</button>
+          <button class="btn-primary" type="button" id="use-btn" onclick="useSelected()">
+            Use this
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Static state-variants (always rendered — review aid).
+       Each variant frame shows one frozen state of the modal so reviewers
+       can compare loading / error / empty / rate-limited / selected without
+       toggling the live modal.
+       ========================================================================= -->
+  <div class="variants">
+
+    <h2>State 1 &mdash; Loaded (5 suggestions)</h2>
+    <p>The default state once the API returns. Five short variants in different tones, click any card to select.</p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Caption</span></h3>
+          <button class="iconbtn" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">
+              Based on your <b>Image</b> &mdash;
+              filename <code>album-cover.jpg</code>, alt: <code>Spring Drops cover</code>
+            </div>
+          </div>
+          <div class="refine">
+            <label>Add context for AI <span class="opt">— optional</span></label>
+            <textarea placeholder="e.g. 'punchy and short', 'more professional', 'mention the release date'"></textarea>
+          </div>
+          <div class="suggestions-head">
+            <span class="lbl">Pick one</span>
+            <span class="count">5 suggestions</span>
+          </div>
+          <ul class="sugg-list">
+            <li><button class="sugg-card"><span class="idx">1</span><span class="copy">The cover that started it all</span><span class="style-tag">Curious</span><span class="check">✓</span></button></li>
+            <li><button class="sugg-card is-selected"><span class="idx">2</span><span class="copy">Spring Drops — album cover</span><span class="style-tag">Direct</span><span class="check">✓</span></button></li>
+            <li><button class="sugg-card"><span class="idx">3</span><span class="copy">Behind the artwork: Spring Drops</span><span class="style-tag">Friendly</span><span class="check">✓</span></button></li>
+            <li><button class="sugg-card"><span class="idx">4</span><span class="copy">Cover art for my new album</span><span class="style-tag">Professional</span><span class="check">✓</span></button></li>
+            <li><button class="sugg-card"><span class="idx">5</span><span class="copy">Pretty proud of this cover, ngl</span><span class="style-tag">Playful</span><span class="check">✓</span></button></li>
+          </ul>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"><button class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Refresh suggestions</button></div>
+          <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary">Use this</button></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 2 &mdash; Loading</h2>
+    <p>Initial fetch and after Refresh — five skeleton cards with shimmer animation while the API is in flight.</p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Block title</span></h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">Based on your <b>Link button</b> &mdash; URL: <code>open.spotify.com/album/spring-drops</code></div>
+          </div>
+          <div class="refine">
+            <label>Add context for AI <span class="opt">— optional</span></label>
+            <textarea placeholder="e.g. 'punchy and short', 'more professional', 'mention the release date'"></textarea>
+          </div>
+          <div class="suggestions-head">
+            <span class="lbl">Pick one</span>
+            <span class="count">Generating…</span>
+          </div>
+          <div class="sugg-list">
+            <div class="sugg-skeleton"><div class="sk-idx"></div><div class="sk-copy"><div class="sk-block sk-line-1"></div><div class="sk-block sk-line-2"></div></div><div class="sk-tag"></div></div>
+            <div class="sugg-skeleton"><div class="sk-idx"></div><div class="sk-copy"><div class="sk-block sk-line-1" style="width:60%"></div><div class="sk-block sk-line-2" style="width:40%"></div></div><div class="sk-tag"></div></div>
+            <div class="sugg-skeleton"><div class="sk-idx"></div><div class="sk-copy"><div class="sk-block sk-line-1" style="width:80%"></div><div class="sk-block sk-line-2" style="width:35%"></div></div><div class="sk-tag"></div></div>
+            <div class="sugg-skeleton"><div class="sk-idx"></div><div class="sk-copy"><div class="sk-block sk-line-1" style="width:70%"></div><div class="sk-block sk-line-2" style="width:50%"></div></div><div class="sk-tag"></div></div>
+            <div class="sugg-skeleton"><div class="sk-idx"></div><div class="sk-copy"><div class="sk-block sk-line-1" style="width:65%"></div><div class="sk-block sk-line-2" style="width:42%"></div></div><div class="sk-tag"></div></div>
+          </div>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"><button class="btn-secondary is-loading"><span class="btn-spinner"></span>Refresh suggestions</button></div>
+          <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary" disabled>Use this</button></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 3 &mdash; Error</h2>
+    <p>Network or upstream failure. Friendly copy, no error codes, prominent Retry. Cancel still available.</p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Button label</span></h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">Based on your <b>Newsletter signup</b> &mdash; current label: <code>Subscribe</code></div>
+          </div>
+          <div class="err-box">
+            <svg class="err-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <div class="err-msg">
+              <b>Couldn't fetch suggestions.</b>
+              <span class="err-sub">The AI model is taking longer than expected. Give it another go in a moment.</span>
+              <div class="err-actions">
+                <button type="button">Try again</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"></div>
+          <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary" disabled>Use this</button></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 4 &mdash; Empty (no input, no context yet)</h2>
+    <p>Creator clicked ✨ Suggest on a blank field of a brand-new block. We have block-type context but no creator copy to riff off — offer to generate from context alone.</p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Block title</span></h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">
+              New <b>Link button</b> block &mdash; no URL set yet, no current label.
+            </div>
+          </div>
+          <div class="refine">
+            <label>Add context for AI <span class="opt">— optional</span></label>
+            <textarea placeholder="e.g. 'this links to my new album on Spotify' or 'CTA for my online course'"></textarea>
+          </div>
+          <div class="empty-box">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <div class="empty-h">Tell us a bit about it first</div>
+            <div class="empty-sub">
+              Type something in the field, paste a URL into the block, or describe it
+              in the box above. We'll generate five options based on whatever you give us.
+            </div>
+            <button class="btn-primary" type="button">Generate from context</button>
+          </div>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"></div>
+          <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary" disabled>Use this</button></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 5 &mdash; Rate-limited (Free tier abuse cap)</h2>
+    <p>Free creator hit 30 clicks today. Typical creator never sees this — only those automating against the trigger. Upsell to a paid tier where AI Suggest is unlimited (Business) or much higher (Creator/Pro).</p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Caption</span></h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">
+              Based on your <b>Image</b> &mdash; filename <code>studio-session.jpg</code>
+            </div>
+          </div>
+          <div class="rate-box">
+            <svg class="rate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <div class="rate-body">
+              <div class="rate-h">You've used today's AI credits</div>
+              <div class="rate-sub">
+                Free creators get 30 ✨ Suggest clicks per day &mdash; that resets at
+                midnight (your time zone). Upgrade for higher quotas now or just
+                give it a few hours.
+              </div>
+              <div class="upsell-row">
+                <button class="upgrade-btn" type="button">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" transform="rotate(180 12 12)"></polyline></svg>
+                  Upgrade for unlimited
+                </button>
+                <button class="btn-secondary" type="button">See plans</button>
+              </div>
+              <div class="rate-meta">
+                Resets in 4h 12m &middot; Creator 50/day &middot; Pro 200/day &middot; Business unlimited
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"></div>
+          <div class="right"><button class="btn-ghost">Close</button></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 6 &mdash; Selected confirmation</h2>
+    <p>After picking a card and before clicking Use this — quick visual confirmation banner so the creator knows what's about to be applied. Pressed state of Use this.</p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Button label</span></h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">Based on your <b>Link button</b> &mdash; URL: <code>open.spotify.com/album/spring-drops</code></div>
+          </div>
+          <div class="selected-banner">
+            <span class="check">✓</span>
+            <span>Selected: <b>Hit play. New album, fresh feels.</b></span>
+          </div>
+          <div class="suggestions-head">
+            <span class="lbl">Pick one</span>
+            <span class="count">5 suggestions</span>
+          </div>
+          <ul class="sugg-list">
+            <li><button class="sugg-card"><span class="idx">1</span><span class="copy">Spring Drops — out now</span><span class="style-tag">Direct</span><span class="check">✓</span></button></li>
+            <li><button class="sugg-card is-selected"><span class="idx">2</span><span class="copy">Hit play. New album, fresh feels.</span><span class="style-tag">Playful</span><span class="check">✓</span></button></li>
+            <li><button class="sugg-card"><span class="idx">3</span><span class="copy">My new album is here — give it a spin</span><span class="style-tag">Friendly</span><span class="check">✓</span></button></li>
+          </ul>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"><button class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Refresh suggestions</button></div>
+          <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary" style="box-shadow:0 0 0 3px rgba(99,102,241,0.25);">Use this</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* =========================================================================
+       Standalone demo behaviour. None of this lands in the production code —
+       in app-block-editor.html the trigger and state come from the block
+       editor's own form-state machinery.
+       ========================================================================= */
+
+    // Field-name + context strip swap per trigger.
+    var TRIGGER_CONTEXTS = {
+      title: {
+        label: 'Block title',
+        ctxHtml: 'Based on your <b>Link button</b> &mdash; URL: <code>open.spotify.com/album/spring-drops</code>',
+        suggestions: [
+          { copy: 'Spring Drops — out now',                  tag: 'Direct'       },
+          { copy: 'Hit play. New album, fresh feels.',       tag: 'Playful'      },
+          { copy: 'My new album is here — give it a spin',   tag: 'Friendly'     },
+          { copy: 'Listen to Spring Drops on Spotify',       tag: 'Professional' },
+          { copy: "Wonder what's new? Spring Drops is live", tag: 'Curious'      }
+        ]
+      },
+      caption: {
+        label: 'Caption',
+        ctxHtml: 'Based on your <b>Image</b> &mdash; filename <code>album-cover.jpg</code>, alt: <code>Spring Drops cover</code>',
+        suggestions: [
+          { copy: 'The cover that started it all',        tag: 'Curious'      },
+          { copy: 'Spring Drops — album cover',           tag: 'Direct'       },
+          { copy: 'Behind the artwork: Spring Drops',     tag: 'Friendly'     },
+          { copy: 'Cover art for my new album',           tag: 'Professional' },
+          { copy: 'Pretty proud of this cover, ngl',      tag: 'Playful'      }
+        ]
+      },
+      cta: {
+        label: 'Button label',
+        ctxHtml: 'Based on your <b>Link button</b> &mdash; URL: <code>open.spotify.com/album/spring-drops</code>',
+        suggestions: [
+          { copy: 'Listen now',           tag: 'Direct'       },
+          { copy: 'Hit play 🎧',          tag: 'Playful'      },
+          { copy: 'Stream Spring Drops', tag: 'Professional' },
+          { copy: "Take a listen",        tag: 'Friendly'     },
+          { copy: 'Curious? Press play',  tag: 'Curious'      }
+        ]
+      }
+    };
+
+    var current = { trigger: 'title', selectedIdx: 1, dirty: false };
+    var demoState = 'loaded';
+
+    function openAi(triggerKey) {
+      current.trigger = triggerKey;
+      current.selectedIdx = -1;
+      current.dirty = false;
+
+      var ctx = TRIGGER_CONTEXTS[triggerKey];
+      document.getElementById('ai-target').textContent = ctx.label;
+      document.getElementById('ctx-text').innerHTML = ctx.ctxHtml;
+
+      renderState();
+
+      document.getElementById('ai-backdrop').classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeAi() {
+      // Confirmation if user selected a card but never applied.
+      if (current.dirty && current.selectedIdx >= 0) {
+        var ok = confirm('Discard your selected suggestion?');
+        if (!ok) return;
+      }
+      document.getElementById('ai-backdrop').classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    function selectCard(btn) {
+      var list = btn.closest('.sugg-list');
+      [].forEach.call(list.querySelectorAll('.sugg-card'), function (c) { c.classList.remove('is-selected'); });
+      btn.classList.add('is-selected');
+      current.selectedIdx = parseInt(btn.querySelector('.idx').textContent, 10) - 1;
+      current.dirty = true;
+      document.getElementById('use-btn').disabled = false;
+    }
+
+    function useSelected() {
+      if (current.selectedIdx < 0) return;
+      var ctx = TRIGGER_CONTEXTS[current.trigger];
+      var picked = ctx.suggestions[current.selectedIdx];
+      // In production: write picked.copy back into the originating field.
+      // In the demo: update the input value + close.
+      var inputId = current.trigger === 'cta'
+        ? 'demo-cta'
+        : current.trigger === 'caption' ? 'demo-caption' : 'demo-title';
+      var input = document.getElementById(inputId);
+      if (input) input.value = picked.copy;
+      current.dirty = false;
+      console.log('[AI Suggest] applied to ' + inputId + ':', picked.copy);
+      document.getElementById('ai-backdrop').classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    function refreshSuggestions() {
+      var btn = document.getElementById('refresh-btn');
+      btn.classList.add('is-loading');
+      // In production: re-call the AI endpoint. In the demo: just blink.
+      setTimeout(function () { btn.classList.remove('is-loading'); }, 900);
+    }
+
+    /* Demo state switcher — picks which body to render in the live modal. */
+    function setState(chip, state) {
+      [].forEach.call(document.querySelectorAll('.tier-chip'), function (c) { c.classList.remove('is-active'); });
+      chip.classList.add('is-active');
+      demoState = state;
+      // If the modal is open, re-render in place.
+      if (document.getElementById('ai-backdrop').classList.contains('is-open')) {
+        renderState();
+      }
+    }
+
+    function renderState() {
+      var ctx = TRIGGER_CONTEXTS[current.trigger];
+      var body = document.getElementById('ai-body');
+      var useBtn = document.getElementById('use-btn');
+      var refreshBtn = document.getElementById('refresh-btn');
+
+      // Reset the foot for the default state.
+      useBtn.style.display = '';
+      refreshBtn.style.display = '';
+      useBtn.disabled = true;
+
+      var ctxHtml =
+        '<div class="ctx-strip">' +
+        '<svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>' +
+        '<div class="ctx-text">' + ctx.ctxHtml + '</div>' +
+        '</div>';
+
+      var refineHtml =
+        '<div class="refine">' +
+        '<label>Add context for AI <span class="opt">— optional</span></label>' +
+        '<textarea placeholder="e.g. \'punchy and short\', \'more professional\', \'mention the release date\'"></textarea>' +
+        '</div>';
+
+      if (demoState === 'loaded') {
+        var cards = ctx.suggestions.map(function (s, i) {
+          return '<li><button class="sugg-card" type="button" onclick="selectCard(this)">' +
+            '<span class="idx">' + (i + 1) + '</span>' +
+            '<span class="copy">' + escapeHtml(s.copy) + '</span>' +
+            '<span class="style-tag">' + s.tag + '</span>' +
+            '<span class="check">✓</span>' +
+            '</button></li>';
+        }).join('');
+        body.innerHTML = ctxHtml + refineHtml +
+          '<div class="suggestions-head"><span class="lbl">Pick one</span><span class="count">5 suggestions</span></div>' +
+          '<ul class="sugg-list">' + cards + '</ul>';
+      } else if (demoState === 'loading') {
+        var skeletons = '';
+        for (var i = 0; i < 5; i++) {
+          skeletons +=
+            '<div class="sugg-skeleton"><div class="sk-idx"></div>' +
+            '<div class="sk-copy"><div class="sk-block sk-line-1"></div><div class="sk-block sk-line-2"></div></div>' +
+            '<div class="sk-tag"></div></div>';
+        }
+        body.innerHTML = ctxHtml + refineHtml +
+          '<div class="suggestions-head"><span class="lbl">Pick one</span><span class="count">Generating…</span></div>' +
+          '<div class="sugg-list">' + skeletons + '</div>';
+      } else if (demoState === 'error') {
+        body.innerHTML = ctxHtml +
+          '<div class="err-box">' +
+          '<svg class="err-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' +
+          '<div class="err-msg"><b>Couldn\'t fetch suggestions.</b>' +
+          '<span class="err-sub">The AI model is taking longer than expected. Give it another go in a moment.</span>' +
+          '<div class="err-actions"><button type="button" onclick="setState(document.querySelector(\'[data-state=loading]\'),\'loading\');setTimeout(function(){setState(document.querySelector(\'[data-state=loaded]\'),\'loaded\');},900);">Try again</button></div>' +
+          '</div></div>';
+        refreshBtn.style.display = 'none';
+      } else if (demoState === 'empty') {
+        body.innerHTML = ctxHtml + refineHtml +
+          '<div class="empty-box">' +
+          '<svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' +
+          '<div class="empty-h">Tell us a bit about it first</div>' +
+          '<div class="empty-sub">Type something in the field, paste a URL into the block, or describe it in the box above. We\'ll generate five options based on whatever you give us.</div>' +
+          '<button class="btn-primary" type="button" onclick="setState(document.querySelector(\'[data-state=loading]\'),\'loading\');setTimeout(function(){setState(document.querySelector(\'[data-state=loaded]\'),\'loaded\');},900);">Generate from context</button>' +
+          '</div>';
+        refreshBtn.style.display = 'none';
+      } else if (demoState === 'rate') {
+        body.innerHTML = ctxHtml +
+          '<div class="rate-box">' +
+          '<svg class="rate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' +
+          '<div class="rate-body">' +
+          '<div class="rate-h">You\'ve used today\'s AI credits</div>' +
+          '<div class="rate-sub">Free creators get 30 ✨ Suggest clicks per day — that resets at midnight (your time zone). Upgrade for higher quotas now or just give it a few hours.</div>' +
+          '<div class="upsell-row"><button class="upgrade-btn" type="button">Upgrade for unlimited</button><button class="btn-secondary" type="button">See plans</button></div>' +
+          '<div class="rate-meta">Resets in 4h 12m · Creator 50/day · Pro 200/day · Business unlimited</div>' +
+          '</div></div>';
+        refreshBtn.style.display = 'none';
+        useBtn.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* Esc to close. */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.getElementById('ai-backdrop').classList.contains('is-open')) {
+        closeAi();
+      }
+    });
+  </script>
+</body>
+</html>
