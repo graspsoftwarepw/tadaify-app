@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Contact page template (creator-facing) — F-PAGE-CONTACT-001 #21
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Editor for the Contact page template. Visitor inquiries, project
+  requests, booking-adjacent forms. Pairs with creator-contact-public.html.
+
+  Source story: graspsoftwarepw/tadaify-app issues #21 (F-PAGE-CONTACT-001)
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced
+      toggle; power fields inline empty by default)
+    - feedback_no_blur_premium_features (premium fields fully visible +
+      interactive; tier badge inline; gate at Save via TierGate)
+    - feedback_no_right_side_drawers (section picker, field-type picker,
+      thank-you sub-page editor are CENTERED modals, never drawers)
+    - feedback_mockup_full_feature_vision (every interaction does
+      something — section reorder, field add/remove/reorder, field-type
+      picker, after-submit dropdown, delivery channel switcher all wired)
+    - feedback_sidebar_pages_grouping (Pages parent + Contact sub-page
+      highlighted via canonical app-sidebar partial)
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms (mirror app-page-newsletter-signup.html) ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live  { background: var(--success-bg); color: #065F46; }
+    .chip.draft { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.required { background: rgba(239,68,68,0.10); color: var(--danger); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm { background: var(--brand-warm); color: #1F2937; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+    .iconbtn.is-danger:hover { background: var(--danger-bg); color: var(--danger); }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid; grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 24px 20px 120px; min-width: 0; max-width: 1080px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* ── Inbox preview banner ── */
+    .inbox-banner {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px; margin-bottom: 18px;
+      border: 1px solid rgba(99,102,241,0.30);
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));
+      border-radius: 12px;
+    }
+    .inbox-banner .ib-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(99,102,241,0.15);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .inbox-banner .ib-body { flex: 1; min-width: 0; }
+    .inbox-banner .ib-title { font-weight: 600; font-size: 14px; }
+    .inbox-banner .ib-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+    .inbox-banner .ib-cta {
+      padding: 7px 13px; border-radius: 8px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; font: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .inbox-banner .ib-cta:hover { background: var(--brand-primary-hover); }
+
+    /* ── Sections ── */
+    .section {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; margin-bottom: 18px; overflow: visible;
+    }
+    .section[draggable="true"] { cursor: grab; }
+    .section.is-collapsed .section-body { display: none; }
+    .section.is-dragging { opacity: 0.4; }
+    .section.is-drag-over { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+    }
+    .section.is-collapsed .section-head { border-bottom: 0; }
+    .section-head .sh-grip {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab; padding: 2px;
+    }
+    .section-head .sh-grip svg { width: 14px; height: 14px; }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-head .sh-actions { display: inline-flex; gap: 4px; align-items: center; }
+    .section-head .sh-collapse {
+      transition: transform .15s ease;
+    }
+    .section.is-collapsed .sh-collapse { transform: rotate(-90deg); }
+    .section-body { padding: 18px; }
+    .section-body.has-pad-lg { padding: 22px; }
+
+    /* ── Field atoms ── */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 80px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px; background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* ── Inline tier hint (per no-blur-premium pattern) ── */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+
+    /* ── Tier badges (per no-blur-premium-features) ── */
+    .tier-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 7px; border-radius: 999px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      background: rgba(245,158,11,0.15); color: #92400E;
+    }
+    .tier-badge.t-creator { background: rgba(99,102,241,0.13); color: var(--brand-primary); }
+    .tier-badge.t-pro     { background: rgba(245,158,11,0.18); color: #92400E; }
+    .tier-badge.t-business{ background: rgba(220,38,38,0.13); color: #991B1B; }
+
+    /* ── Form-field builder rows ── */
+    .ff-list { display: flex; flex-direction: column; gap: 8px; }
+    .ff-row {
+      display: flex; align-items: stretch; gap: 0;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .ff-row.is-expanded { border-color: var(--brand-primary); background: rgba(99,102,241,0.03); }
+    .ff-row.is-required-locked { border-style: dashed; }
+    .ff-row .ff-grip {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; color: var(--fg-subtle);
+      cursor: grab; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .ff-row .ff-grip svg { width: 14px; height: 14px; }
+    .ff-row .ff-main {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column;
+    }
+    .ff-row .ff-summary {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer; flex-wrap: wrap;
+    }
+    .ff-row .ff-type-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .ff-row .ff-name {
+      font-weight: 600; font-size: 14px; min-width: 0;
+      flex-shrink: 1;
+    }
+    .ff-row .ff-type-name {
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .ff-row .ff-spacer { flex: 1; }
+    .ff-row .ff-row-actions { display: inline-flex; gap: 2px; }
+    .ff-row .ff-config {
+      display: none;
+      padding: 12px 14px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .ff-row.is-expanded .ff-config { display: block; }
+    .ff-row.is-expanded .ff-summary .ff-caret { transform: rotate(180deg); }
+    .ff-row .ff-caret { transition: transform .15s ease; color: var(--fg-subtle); }
+
+    .ff-add {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 14px; border: 1px dashed var(--border-strong); border-radius: 10px;
+      background: transparent; color: var(--fg-muted);
+      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+      align-self: flex-start; margin-top: 10px;
+    }
+    .ff-add:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    /* ── Field-type picker grid (modal) ── */
+    .ftp-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    }
+    .ftp-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 14px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg); cursor: pointer; transition: all .12s ease;
+      text-align: left; position: relative;
+    }
+    .ftp-card:hover {
+      border-color: var(--brand-primary); transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .ftp-card .ftp-emoji { font-size: 22px; line-height: 1; }
+    .ftp-card .ftp-name { font-size: 13.5px; font-weight: 600; }
+    .ftp-card .ftp-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+    .ftp-card .tier-badge {
+      position: absolute; top: 10px; right: 10px;
+    }
+
+    /* ── Delivery / channel cards ── */
+    .delivery-channels {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      margin-top: 4px;
+    }
+    .dch-card {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg); padding: 12px;
+      display: flex; flex-direction: column; gap: 6px;
+      cursor: pointer; transition: all .12s ease;
+      position: relative;
+    }
+    .dch-card:hover { border-color: var(--border-strong); }
+    .dch-card.is-on {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .dch-card .dch-row { display: flex; align-items: center; gap: 8px; }
+    .dch-card .dch-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .dch-card .dch-name { font-weight: 600; font-size: 13.5px; flex: 1; }
+    .dch-card .dch-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+    .dch-card .dch-config {
+      margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border);
+      display: none;
+    }
+    .dch-card.is-on .dch-config { display: block; }
+    .dch-card .dch-config input {
+      width: 100%; padding: 7px 10px;
+      border: 1px solid var(--border-strong); border-radius: 7px;
+      background: var(--bg-elevated); font: inherit; font-size: 12px;
+      color: var(--fg); outline: 0; font-family: var(--font-mono);
+    }
+    .dch-card .dch-config input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .dch-card .tier-badge {
+      position: absolute; top: 10px; right: 10px;
+    }
+
+    /* Delivery webhook endpoint (for Generic webhook) */
+    .endpoint-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 11px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg-elevated);
+    }
+    .endpoint-row code {
+      flex: 1; font-family: var(--font-mono); font-size: 12px; color: var(--fg);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .endpoint-row .ep-copy {
+      padding: 4px 9px; border: 1px solid var(--border-strong); border-radius: 6px;
+      background: var(--bg); cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600;
+      color: var(--fg-muted);
+    }
+    .endpoint-row .ep-copy:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    /* ── Office hours grid ── */
+    .hours-grid { display: flex; flex-direction: column; gap: 6px; }
+    .hours-row {
+      display: grid; gap: 8px; align-items: center;
+      grid-template-columns: 90px 1fr;
+    }
+    .hours-row .hr-day {
+      font-size: 12.5px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .hours-row .hr-day .toggle { transform: scale(0.85); transform-origin: left center; }
+    .hours-row .hr-times {
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap;
+    }
+    .hours-row.is-off .hr-times { opacity: 0.45; pointer-events: none; }
+    .hours-row .hr-time {
+      padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 6px;
+      background: var(--bg-elevated); font: inherit; font-size: 12px;
+      font-family: var(--font-mono); width: 76px; outline: 0;
+    }
+    .hours-row .hr-sep { color: var(--fg-muted); font-size: 12px; }
+    .hours-row .hr-closed { font-size: 12px; color: var(--fg-subtle); font-style: italic; }
+
+    /* ── Other contact methods ── */
+    .other-methods {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px) { .other-methods { grid-template-columns: 1fr 1fr; } }
+    .om-card {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg); padding: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .om-card .om-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .om-card input {
+      flex: 1; min-width: 0; padding: 6px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); font: inherit; font-size: 13px;
+      color: var(--fg); outline: 0;
+    }
+    .om-card input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+
+    /* ── FAQ-quickref items (Creator+) ── */
+    .faq-item {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg); padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .faq-item .faq-head {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .faq-item .faq-head .faq-grip { color: var(--fg-subtle); cursor: grab; }
+    .faq-item .faq-q {
+      flex: 1; padding: 7px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); font: inherit; font-size: 13.5px; outline: 0;
+      font-weight: 600;
+    }
+    .faq-item .faq-a {
+      width: 100%; padding: 8px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); font: inherit; font-size: 13px;
+      min-height: 56px; resize: vertical; outline: 0; line-height: 1.5;
+    }
+
+    /* ── Sticky save-bar ── */
+    .save-bar {
+      position: sticky; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border-strong);
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 -4px 16px rgba(11,15,30,0.04);
+      margin: 24px -32px -80px;
+    }
+    @media (max-width: 720px) { .save-bar { margin: 24px -20px -120px; padding: 10px 16px; } }
+    .save-bar .save-status {
+      font-size: 12px; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .save-bar .save-status.is-dirty { color: var(--brand-warm-dark); }
+    .save-bar .ss-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+    }
+    .save-bar .save-status.is-dirty .ss-dot { background: var(--brand-warm); }
+    .save-bar .foot-spacer { flex: 1; }
+
+    /* ── Add-section floating button ── */
+    .add-section-row {
+      display: flex; justify-content: center; margin: 18px 0;
+    }
+    .add-section-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px;
+      border: 1.5px dashed var(--border-strong); border-radius: 999px;
+      background: var(--bg-elevated);
+      color: var(--fg-muted); font: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .12s ease;
+    }
+    .add-section-btn:hover {
+      color: var(--brand-primary); border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+
+    /* ── Centered modal — section picker, field-type picker, thank-you editor ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(820px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal.modal-md { width: min(620px, 96vw); }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+
+    .section-picker-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    .sp-card {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 14px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg); cursor: pointer; transition: all .12s ease;
+      text-align: left;
+    }
+    .sp-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .sp-card.is-disabled { opacity: 0.55; cursor: not-allowed; }
+    .sp-card.is-disabled:hover { transform: none; box-shadow: none; border-color: var(--border); }
+    .sp-card .sp-emoji { font-size: 24px; }
+    .sp-card .sp-name { font-size: 13.5px; font-weight: 600; }
+    .sp-card .sp-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+    .sp-card .sp-already {
+      align-self: flex-start;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    /* ── Demo toolbar ── */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      flex-wrap: wrap;
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 420px; }
+
+    /* ── Cover-drop ── */
+    .cover-drop {
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      padding: 22px; text-align: center; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      cursor: pointer; transition: border-color .12s ease, background .12s ease;
+    }
+    .cover-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .cover-drop .cd-emoji { font-size: 30px; }
+    .cover-drop .cd-title { font-weight: 600; font-size: 14px; }
+    .cover-drop .cd-sub { color: var(--fg-muted); font-size: 12.5px; }
+
+    /* ── Inbox preview list (in-section) ── */
+    .inbox-list { display: flex; flex-direction: column; gap: 6px; }
+    .inbox-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg);
+    }
+    .inbox-item .ii-av {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-weight: 700; font-size: 12px; flex-shrink: 0;
+    }
+    .inbox-item .ii-av.t-rose { background: linear-gradient(135deg, #FB7185, #BE185D); color: #fff; }
+    .inbox-item .ii-av.t-emerald { background: linear-gradient(135deg, #34D399, #047857); color: #fff; }
+    .inbox-item .ii-av.t-indigo { background: linear-gradient(135deg, #6366F1, #4F46E5); color: #fff; }
+    .inbox-item .ii-av.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); color: #fff; }
+    .inbox-item .ii-body { flex: 1; min-width: 0; }
+    .inbox-item .ii-from { font-size: 13px; font-weight: 600; }
+    .inbox-item .ii-from .ii-unread { color: var(--brand-primary); margin-right: 4px; }
+    .inbox-item .ii-subject {
+      font-size: 12.5px; color: var(--fg-muted);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .inbox-item .ii-time { font-size: 11px; color: var(--fg-subtle); flex-shrink: 0; }
+
+    /* ── Map embed preview ── */
+    .map-preview {
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+      background: linear-gradient(135deg, #DCFCE7 0%, #A7F3D0 50%, #BBF7D0 100%);
+      height: 160px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .map-preview::before {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(0deg, rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .map-preview .mp-pin {
+      position: relative; z-index: 1;
+      font-size: 32px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    }
+
+    /* ── Dark mode (mirror app-page-newsletter-signup) ── */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode details.expander,
+    body.dark-mode .ff-row,
+    body.dark-mode .ff-row .ff-grip,
+    body.dark-mode .dch-card,
+    body.dark-mode .om-card,
+    body.dark-mode .om-card input,
+    body.dark-mode .faq-item,
+    body.dark-mode .endpoint-row,
+    body.dark-mode .inbox-item,
+    body.dark-mode .modal { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .modal { background: #141A2D; }
+    body.dark-mode .ff-row .ff-grip { background: #141A2D; }
+    body.dark-mode .ff-row.is-expanded .ff-config { background: #141A2D; }
+    body.dark-mode .dch-card.is-on { background: rgba(99,102,241,0.10); }
+    body.dark-mode .faq-q,
+    body.dark-mode .faq-a,
+    body.dark-mode .hours-row .hr-time,
+    body.dark-mode .dch-card .dch-config input { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .save-bar { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .sp-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .ftp-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .add-section-btn { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .inbox-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.06));
+      border-color: rgba(99,102,241,0.45);
+    }
+    body.dark-mode .map-preview {
+      background: linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+  <div class="spacer"></div>
+  <a href="./creator-contact-public.html" class="btn btn-ghost btn-sm" data-tip="Open the public Contact page in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View page
+  </a>
+  <button class="iconbtn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Contact</span>
+    </nav>
+
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">📮</span> Contact</h1>
+        <p class="sub">A serious channel for visitor inquiries, project requests and bookings — beyond a single mailto link.</p>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b>contact</b>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="window.open('./creator-contact-public.html','_blank')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+    </div>
+
+    <!-- ========== INBOX BANNER (links to dedicated app-inbox.html, TBD) ========== -->
+    <div class="inbox-banner" id="inbox-banner">
+      <div class="ib-icon" aria-hidden="true">📬</div>
+      <div class="ib-body">
+        <div class="ib-title">Inbox: <b style="color:var(--brand-primary)">23 new</b> messages</div>
+        <div class="ib-sub">Last reply from <b>Marcus Chen</b> · 2h ago. Open inbox to read &amp; respond.</div>
+      </div>
+      <button class="ib-cta" onclick="alert('Mockup — opens dedicated app-inbox.html (TBD as separate mockup)')">Open inbox →</button>
+    </div>
+
+    <!-- ========== EMPTY STATE (state=empty) ========== -->
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="es-emoji">📮</div>
+      <h3>Your contact page is empty</h3>
+      <p>Start with our recommended layout — Hero, Form, Where messages go and Other contact methods — or pick sections one at a time.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+        <button class="btn btn-primary" onclick="useStarter()">✨ Use recommended layout</button>
+        <button class="btn btn-ghost" onclick="openSectionPicker()">+ Add section</button>
+      </div>
+    </div>
+
+    <!-- ========== FILLED STATE (state=filled, default) ========== -->
+    <div id="filled-state">
+
+      <!-- ===================================================
+           SECTION 0 — Page settings (always present, NOT removable)
+           =================================================== -->
+      <section class="section" data-section-id="page-settings">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Page settings always come first" style="opacity:0.4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>Page settings</h2>
+          <span class="sub">Title, URL, theme &amp; SEO.</span>
+          <span class="head-spacer"></span>
+          <span class="chip live">Live</span>
+        </div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="page-title">Page title <span class="field-hint">shown in the browser tab + on the page</span></label>
+              <input class="field-input" id="page-title" type="text" value="Contact" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+              <div class="field-prefix-wrap">
+                <span class="field-prefix">tadaify.com/alexandra/</span>
+                <input id="page-slug" type="text" value="contact" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Publish</label>
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">Page is live</div>
+                  <div class="rt-sub">Visitors can find this page at the URL above.</div>
+                </div>
+                <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Common alternatives <span class="field-hint">click to use as title + slug</span></label>
+              <div style="display:flex; gap:6px; flex-wrap:wrap">
+                <button class="chip" type="button" onclick="useTitleSlug('Contact','contact')" style="cursor:pointer">Contact · /contact</button>
+                <button class="chip" type="button" onclick="useTitleSlug('Get in touch','get-in-touch')" style="cursor:pointer">Get in touch · /get-in-touch</button>
+                <button class="chip" type="button" onclick="useTitleSlug('Work with me','work-with-me')" style="cursor:pointer">Work with me · /work-with-me</button>
+                <button class="chip" type="button" onclick="useTitleSlug('Say hi','say-hi')" style="cursor:pointer">Say hi · /say-hi</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Theme color <span class="field-hint">override theme for this page only</span></label>
+            <div class="swatch-row">
+              <div class="swatch is-selected" style="background: var(--bg);" data-name="Inherit theme" onclick="pickSwatch(this)" title="Inherit theme"></div>
+              <div class="swatch" style="background: #FFFFFF;" data-name="White" onclick="pickSwatch(this)" title="White"></div>
+              <div class="swatch" style="background: #F8F4EE;" data-name="Warm cream" onclick="pickSwatch(this)" title="Warm cream"></div>
+              <div class="swatch" style="background: #1F2937;" data-name="Slate" onclick="pickSwatch(this)" title="Slate"></div>
+              <div class="swatch" style="background: #0B0F1E;" data-name="Dark canvas" onclick="pickSwatch(this)" title="Dark canvas"></div>
+              <div class="swatch" style="background: linear-gradient(135deg,#FDE68A,#F59E0B);" data-name="Sunrise" onclick="pickSwatch(this)" title="Sunrise gradient"></div>
+              <div class="swatch" style="background: linear-gradient(135deg,#6366F1,#8B5CF6);" data-name="Indigo" onclick="pickSwatch(this)" title="Indigo gradient"></div>
+              <div class="swatch" style="background: linear-gradient(135deg,#0F172A,#334155);" data-name="Nightfall" onclick="pickSwatch(this)" title="Nightfall"></div>
+            </div>
+          </div>
+
+          <details class="expander" style="margin-top:14px">
+            <summary>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7"/><path d="M9 12V7a3 3 0 0 1 6 0v5"/><circle cx="12" cy="17" r="3"/></svg>
+              SEO settings <span class="ex-sub">— meta title, description, social card</span>
+              <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+            </summary>
+            <div class="ex-body">
+              <div class="field">
+                <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
+                <div class="field-prefix-wrap">
+                  <input id="seo-title" type="text" value="Contact Alexandra Silva — projects, collabs, talks" />
+                  <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal with 5 variants')" type="button">✨ Suggest</button>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+                <div class="field-prefix-wrap" style="align-items:flex-start">
+                  <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Get in touch about coaching, speaking gigs, partnerships or general questions. I read every message and reply within 24h on weekdays.</textarea>
+                  <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">OG image <span class="field-hint">1200×630 — shown when shared on social</span></label>
+                <div class="cover-drop" style="height:auto; padding:14px;" onclick="openImagePicker()">
+                  <span class="cd-emoji">🖼</span>
+                  <div class="cd-title">Drop an image, or click to upload</div>
+                  <div class="cd-sub">Or <a href="#" onclick="event.preventDefault();alert('Mockup — AI generates 4 OG cards')" style="color:var(--brand-primary); font-weight:600">✨ generate one with AI</a></div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Custom domain (Pro+) — fully visible per no-blur-premium, gated at Save -->
+          <div class="field" style="margin-top:14px">
+            <label class="field-label">Custom domain <span class="tier-badge t-pro">✨ Pro</span></label>
+            <div class="field-prefix-wrap">
+              <input type="text" placeholder="e.g. contact.alexandrasilva.com" />
+              <button class="field-suffix-action" onclick="alert('Mockup — opens Domain page')" type="button">Set up</button>
+            </div>
+            <div class="tier-hint">
+              <span class="th-icon">✨</span>
+              <span>Custom domains are a Pro feature. We'll prompt you to upgrade when you save.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 1 — Hero
+           =================================================== -->
+      <section class="section" data-section-id="hero" draggable="true">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>🎯 Hero</h2>
+          <span class="sub">Headline + subhead + optional cover image.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn is-danger" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="hero-headline">Headline <span class="field-hint">large, friendly, first thing visitors see</span></label>
+            <div class="field-prefix-wrap">
+              <input id="hero-headline" type="text" value="Let's work together." />
+              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest 5 variants')" type="button">✨ Suggest</button>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
+              <button class="chip" type="button" onclick="setHeadline(this, 'Let’s work together.')" style="cursor:pointer">Let's work together</button>
+              <button class="chip" type="button" onclick="setHeadline(this, 'Drop me a line.')" style="cursor:pointer">Drop me a line</button>
+              <button class="chip" type="button" onclick="setHeadline(this, 'Get in touch.')" style="cursor:pointer">Get in touch</button>
+              <button class="chip" type="button" onclick="setHeadline(this, 'Book a project.')" style="cursor:pointer">Book a project</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="hero-sub">Sub-headline</label>
+            <div class="field-prefix-wrap" style="align-items:flex-start">
+              <textarea id="hero-sub" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">For project briefs, coaching calls, speaking invitations or just a friendly hello — I usually reply within 24h on weekdays.</textarea>
+              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Cover image / illustration <span class="field-hint">optional — 800×600 recommended</span></label>
+            <div class="cover-drop" onclick="openImagePicker()">
+              <span class="cd-emoji">🖼</span>
+              <div class="cd-title">Drop an image, or click to upload</div>
+              <div class="cd-sub">JPG, PNG, WebP · max 5MB · or <a href="#" onclick="event.preventDefault();alert('Mockup — AI generates 4 hero illustrations')" style="color:var(--brand-primary); font-weight:600">✨ generate with AI</a></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 2 — Form (THE primary functional section)
+           =================================================== -->
+      <section class="section" data-section-id="form" draggable="true">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>📝 Contact form</h2>
+          <span class="sub">Fields visitors fill in to reach you.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn is-danger" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <!-- Field builder list -->
+          <div class="field">
+            <label class="field-label">Form fields <span class="field-hint">drag to reorder · click a row to edit</span></label>
+            <div class="ff-list" id="ff-list">
+
+              <!-- Field 1: Name (required, default) -->
+              <div class="ff-row" data-ff-type="short_text">
+                <div class="ff-grip" data-tip="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </div>
+                <div class="ff-main">
+                  <div class="ff-summary" onclick="toggleFf(this)">
+                    <span class="ff-type-icon" aria-hidden="true">Aa</span>
+                    <span class="ff-name">Name</span>
+                    <span class="ff-type-name">· short text</span>
+                    <span class="chip required">Required</span>
+                    <span class="ff-spacer"></span>
+                    <span class="ff-row-actions">
+                      <span class="ff-caret" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Field 2: Email (required, default) — expanded by default to show config -->
+              <div class="ff-row is-expanded" data-ff-type="email">
+                <div class="ff-grip" data-tip="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </div>
+                <div class="ff-main">
+                  <div class="ff-summary" onclick="toggleFf(this)">
+                    <span class="ff-type-icon" aria-hidden="true">@</span>
+                    <span class="ff-name">Email</span>
+                    <span class="ff-type-name">· email</span>
+                    <span class="chip required">Required</span>
+                    <span class="ff-spacer"></span>
+                    <span class="ff-row-actions">
+                      <span class="ff-caret" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </span>
+                  </div>
+                  <div class="ff-config">
+                    <div class="field-row">
+                      <div class="field">
+                        <label class="field-label">Label</label>
+                        <input class="field-input" type="text" value="Email" />
+                      </div>
+                      <div class="field">
+                        <label class="field-label">Placeholder</label>
+                        <input class="field-input" type="text" value="you@example.com" />
+                      </div>
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label class="field-label">Help text <span class="field-hint">small caption shown below the field</span></label>
+                        <input class="field-input" type="text" value="We'll only use this to reply to you." />
+                      </div>
+                      <div class="field">
+                        <label class="field-label">Required</label>
+                        <div class="row-toggle">
+                          <div>
+                            <div class="rt-name">Visitor must fill this in</div>
+                            <div class="rt-sub">Email is the only way to reply — we recommend keeping this on.</div>
+                          </div>
+                          <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="field" style="margin-top:6px">
+                      <label class="field-label">Conditional visibility <span class="tier-badge t-pro">✨ Pro</span></label>
+                      <div class="row-toggle">
+                        <div>
+                          <div class="rt-name">Show this field only when…</div>
+                          <div class="rt-sub">e.g. show "Project budget" only when "Inquiry type" = Booking. Lets you keep the form short.</div>
+                        </div>
+                        <button class="toggle" type="button" aria-pressed="false" onclick="toggleSwitch(this)"></button>
+                      </div>
+                      <div class="tier-hint">
+                        <span class="th-icon">✨</span>
+                        <span>Conditional visibility is a Pro feature. We'll prompt you to upgrade when you save.</span>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px">
+                      <button class="btn btn-danger-ghost btn-sm" onclick="removeField(this)">Delete field</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Field 3: Subject -->
+              <div class="ff-row" data-ff-type="short_text">
+                <div class="ff-grip" data-tip="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </div>
+                <div class="ff-main">
+                  <div class="ff-summary" onclick="toggleFf(this)">
+                    <span class="ff-type-icon" aria-hidden="true">Aa</span>
+                    <span class="ff-name">Subject</span>
+                    <span class="ff-type-name">· short text</span>
+                    <span class="ff-spacer"></span>
+                    <span class="ff-row-actions">
+                      <span class="ff-caret" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Field 4: Inquiry type (dropdown) — illustrative second field -->
+              <div class="ff-row" data-ff-type="dropdown">
+                <div class="ff-grip" data-tip="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </div>
+                <div class="ff-main">
+                  <div class="ff-summary" onclick="toggleFf(this)">
+                    <span class="ff-type-icon" aria-hidden="true">▾</span>
+                    <span class="ff-name">Inquiry type</span>
+                    <span class="ff-type-name">· dropdown · 4 options</span>
+                    <span class="ff-spacer"></span>
+                    <span class="ff-row-actions">
+                      <span class="ff-caret" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Field 5: Message (required, default, textarea) -->
+              <div class="ff-row" data-ff-type="long_text">
+                <div class="ff-grip" data-tip="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </div>
+                <div class="ff-main">
+                  <div class="ff-summary" onclick="toggleFf(this)">
+                    <span class="ff-type-icon" aria-hidden="true">¶</span>
+                    <span class="ff-name">Message</span>
+                    <span class="ff-type-name">· long text · textarea</span>
+                    <span class="chip required">Required</span>
+                    <span class="ff-spacer"></span>
+                    <span class="ff-row-actions">
+                      <span class="ff-caret" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Field 6: GDPR consent (always present when EU enabled) -->
+              <div class="ff-row is-required-locked" data-ff-type="consent">
+                <div class="ff-grip" data-tip="GDPR consent stays at the bottom" style="opacity:0.4; cursor:not-allowed">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </div>
+                <div class="ff-main">
+                  <div class="ff-summary" onclick="toggleFf(this)">
+                    <span class="ff-type-icon" aria-hidden="true">☑</span>
+                    <span class="ff-name">GDPR consent checkbox</span>
+                    <span class="ff-type-name">· auto-added when EU compliance is on</span>
+                    <span class="chip required">Required</span>
+                    <span class="ff-spacer"></span>
+                    <span class="tier-badge" style="background:var(--success-bg); color:#065F46">Auto</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <button class="ff-add" type="button" onclick="openFieldTypePicker()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add field
+            </button>
+          </div>
+
+          <!-- Submit button + after-submit -->
+          <div class="field-row" style="margin-top:18px">
+            <div class="field">
+              <label class="field-label" for="submit-label">Submit button label</label>
+              <div class="field-prefix-wrap">
+                <input id="submit-label" type="text" value="Send message" />
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest 5 variants')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="after-submit">After submit</label>
+              <select class="field-select" id="after-submit" onchange="onAfterSubmitChange(this)">
+                <option value="inline" selected>Show inline success message</option>
+                <option value="redirect">Redirect to a URL</option>
+                <option value="thank-you">Show a custom Thank-you sub-page</option>
+              </select>
+              <div id="after-submit-extra-redirect" style="display:none; margin-top:6px">
+                <input class="field-input" type="url" placeholder="https://yoursite.com/thanks" />
+              </div>
+              <div id="after-submit-extra-thankyou" style="display:none; margin-top:6px">
+                <button class="btn btn-ghost btn-sm" onclick="openThankYouEditor()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><polygon points="18.5 2.5 22 6 12 16 8 16 8 12 18.5 2.5"/></svg>
+                  Edit thank-you sub-page
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spam protection -->
+          <div class="field" style="margin-top:6px">
+            <label class="field-label">Spam protection</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Invisible reCAPTCHA + honeypot</div>
+                <div class="rt-sub">Honeypot is always on. Invisible reCAPTCHA adds a Google check that runs in the background — visitors don't see it.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 3 — Where messages go (delivery)
+           =================================================== -->
+      <section class="section" data-section-id="delivery" draggable="true">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>📡 Where messages go</h2>
+          <span class="sub">Email, your tadaify inbox, or a third-party service.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn is-danger" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <!-- Email forwarding (always on, free) -->
+          <div class="field">
+            <label class="field-label" for="forward-email">Email forwarding <span class="field-hint">we send each message here</span></label>
+            <div class="field-row">
+              <div class="field" style="margin-bottom:0">
+                <input class="field-input" id="forward-email" type="email" value="hello@alexandrasilva.com" />
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px">
+                  <button class="chip" type="button" onclick="this.parentElement.previousElementSibling.value='alexandra@gmail.com'" style="cursor:pointer">Use account email · alexandra@gmail.com</button>
+                </div>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label class="field-label">Send to multiple <span class="tier-badge t-business">🔒 Business</span></label>
+                <div class="row-toggle">
+                  <div>
+                    <div class="rt-name">CC/BCC additional addresses</div>
+                    <div class="rt-sub">Useful for team inboxes — every message also goes to your assistant or partner.</div>
+                  </div>
+                  <button class="toggle" type="button" aria-pressed="false" onclick="toggleSwitch(this)"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Save to tadaify inbox -->
+          <div class="field">
+            <label class="field-label">Save to your tadaify inbox</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Keep a copy in <a href="#" onclick="event.preventDefault();alert('Mockup — opens app-inbox.html (TBD as separate mockup)')" style="color:var(--brand-primary); font-weight:600">your inbox →</a></div>
+                <div class="rt-sub">Searchable archive, threaded replies, and you can reply right from tadaify without leaving the app.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <!-- Direct providers grid (Pro+) -->
+          <div class="field" style="margin-top:6px">
+            <label class="field-label">Send to other tools <span class="tier-badge t-pro">✨ Pro</span> <span class="field-hint">Optional — useful for team workflows. Same payload pattern as the Newsletter signup webhook.</span></label>
+            <div class="delivery-channels">
+
+              <!-- Slack -->
+              <div class="dch-card" onclick="toggleDch(this)">
+                <div class="dch-row">
+                  <div class="dch-icon">💬</div>
+                  <div class="dch-name">Slack</div>
+                  <button class="toggle" type="button" aria-pressed="false" onclick="event.stopPropagation();toggleSwitch(this);toggleDch(this.closest('.dch-card'))"></button>
+                </div>
+                <div class="dch-sub">Post each message to a Slack channel via webhook.</div>
+                <div class="dch-config">
+                  <input type="url" placeholder="https://hooks.slack.com/services/T00000000/B00000000/XXXX" />
+                </div>
+              </div>
+
+              <!-- Discord -->
+              <div class="dch-card is-on" onclick="toggleDch(this)">
+                <div class="dch-row">
+                  <div class="dch-icon">🎮</div>
+                  <div class="dch-name">Discord</div>
+                  <button class="toggle is-on" type="button" aria-pressed="true" onclick="event.stopPropagation();toggleSwitch(this);toggleDch(this.closest('.dch-card'))"></button>
+                </div>
+                <div class="dch-sub">Post to a Discord channel via webhook.</div>
+                <div class="dch-config">
+                  <input type="url" value="https://discord.com/api/webhooks/9876543210/abc123XYZ-defGHI" />
+                </div>
+              </div>
+
+              <!-- Notion -->
+              <div class="dch-card" onclick="toggleDch(this)">
+                <div class="dch-row">
+                  <div class="dch-icon">🗒</div>
+                  <div class="dch-name">Notion database</div>
+                  <button class="toggle" type="button" aria-pressed="false" onclick="event.stopPropagation();toggleSwitch(this);toggleDch(this.closest('.dch-card'))"></button>
+                </div>
+                <div class="dch-sub">Append each message as a row in a Notion DB.</div>
+                <div class="dch-config">
+                  <input type="text" placeholder="Notion database URL or ID" />
+                </div>
+              </div>
+
+              <!-- Make.com -->
+              <div class="dch-card" onclick="toggleDch(this)">
+                <div class="dch-row">
+                  <div class="dch-icon">🔁</div>
+                  <div class="dch-name">Make.com</div>
+                  <button class="toggle" type="button" aria-pressed="false" onclick="event.stopPropagation();toggleSwitch(this);toggleDch(this.closest('.dch-card'))"></button>
+                </div>
+                <div class="dch-sub">Trigger a Make scenario via webhook.</div>
+                <div class="dch-config">
+                  <input type="url" placeholder="https://hook.eu1.make.com/xxxxxxxxxxxx" />
+                </div>
+              </div>
+
+              <!-- Generic webhook -->
+              <div class="dch-card" onclick="toggleDch(this)">
+                <div class="dch-row">
+                  <div class="dch-icon">🔗</div>
+                  <div class="dch-name">Generic webhook</div>
+                  <button class="toggle" type="button" aria-pressed="false" onclick="event.stopPropagation();toggleSwitch(this);toggleDch(this.closest('.dch-card'))"></button>
+                </div>
+                <div class="dch-sub">POST a JSON payload to any URL you control.</div>
+                <div class="dch-config">
+                  <input type="url" placeholder="https://your-server.com/webhook/contact" />
+                </div>
+              </div>
+
+            </div>
+            <div class="tier-hint" style="margin-top:10px">
+              <span class="th-icon">✨</span>
+              <span>Direct providers are a Pro feature. Toggles work in the editor; on Save we'll prompt you to upgrade if any provider is enabled.</span>
+            </div>
+
+            <!-- Inbound endpoint (mirrors newsletter pattern) -->
+            <div style="margin-top:12px">
+              <div style="font-size:12px; color:var(--fg-muted); font-weight:600; margin-bottom:6px">Your inbound endpoint <span class="field-hint" style="color:var(--fg-subtle); font-weight:400">(for testing or external posting tools)</span></div>
+              <div class="endpoint-row">
+                <code>https://tadaify.com/wh/v1/alexandra/contact</code>
+                <button class="ep-copy" type="button" onclick="this.textContent='Copied ✓'; setTimeout(()=>this.textContent='Copy', 1200)">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 4 — Office hours / availability (Creator+)
+           =================================================== -->
+      <section class="section" data-section-id="office-hours" draggable="true">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>🕐 Office hours <span class="tier-badge t-creator">Creator+</span></h2>
+          <span class="sub">When you actually reply.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn is-danger" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="hours-display">What to show on the page</label>
+            <select class="field-select" id="hours-display">
+              <option>Display schedule (full grid)</option>
+              <option selected>Display response time ("Replies usually within 24h")</option>
+              <option>Both</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Schedule grid <span class="field-hint">toggle a day off to mark it as closed</span></label>
+            <div class="hours-grid">
+              <div class="hours-row">
+                <div class="hr-day"><button class="toggle is-on" type="button" onclick="toggleDayRow(this)"></button> Mon</div>
+                <div class="hr-times"><input class="hr-time" type="text" value="09:00" /><span class="hr-sep">→</span><input class="hr-time" type="text" value="17:00" /></div>
+              </div>
+              <div class="hours-row">
+                <div class="hr-day"><button class="toggle is-on" type="button" onclick="toggleDayRow(this)"></button> Tue</div>
+                <div class="hr-times"><input class="hr-time" type="text" value="09:00" /><span class="hr-sep">→</span><input class="hr-time" type="text" value="17:00" /></div>
+              </div>
+              <div class="hours-row">
+                <div class="hr-day"><button class="toggle is-on" type="button" onclick="toggleDayRow(this)"></button> Wed</div>
+                <div class="hr-times"><input class="hr-time" type="text" value="09:00" /><span class="hr-sep">→</span><input class="hr-time" type="text" value="17:00" /></div>
+              </div>
+              <div class="hours-row">
+                <div class="hr-day"><button class="toggle is-on" type="button" onclick="toggleDayRow(this)"></button> Thu</div>
+                <div class="hr-times"><input class="hr-time" type="text" value="09:00" /><span class="hr-sep">→</span><input class="hr-time" type="text" value="17:00" /></div>
+              </div>
+              <div class="hours-row">
+                <div class="hr-day"><button class="toggle is-on" type="button" onclick="toggleDayRow(this)"></button> Fri</div>
+                <div class="hr-times"><input class="hr-time" type="text" value="09:00" /><span class="hr-sep">→</span><input class="hr-time" type="text" value="14:00" /></div>
+              </div>
+              <div class="hours-row is-off">
+                <div class="hr-day"><button class="toggle" type="button" onclick="toggleDayRow(this)"></button> Sat</div>
+                <div class="hr-times"><span class="hr-closed">Closed</span></div>
+              </div>
+              <div class="hours-row is-off">
+                <div class="hr-day"><button class="toggle" type="button" onclick="toggleDayRow(this)"></button> Sun</div>
+                <div class="hr-times"><span class="hr-closed">Closed</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="hours-tz">Timezone</label>
+              <select class="field-select" id="hours-tz">
+                <option>Europe/London (auto-detected)</option>
+                <option>Europe/Berlin</option>
+                <option>Europe/Warsaw</option>
+                <option>America/New_York</option>
+                <option>America/Los_Angeles</option>
+                <option>Asia/Tokyo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="hours-response">Typical response time</label>
+              <select class="field-select" id="hours-response">
+                <option>Within 1 hour</option>
+                <option>Within 4 hours</option>
+                <option selected>Within 24 hours</option>
+                <option>Within 2 business days</option>
+                <option>Within 1 week</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 5 — Other contact methods
+           =================================================== -->
+      <section class="section" data-section-id="other-methods" draggable="true">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>📞 Other contact methods</h2>
+          <span class="sub">Phone, social, address, map.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn is-danger" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <div class="field">
+            <label class="field-label">Public business email <span class="field-hint">shown on the page · separate from forwarding above</span></label>
+            <div class="other-methods">
+              <div class="om-card">
+                <div class="om-icon">✉️</div>
+                <input type="email" value="hello@alexandrasilva.com" />
+              </div>
+              <div class="om-card">
+                <div class="om-icon">📞</div>
+                <input type="tel" value="+44 20 7946 0192" placeholder="Phone (optional)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Messaging</label>
+            <div class="other-methods">
+              <div class="om-card">
+                <div class="om-icon">📱</div>
+                <input type="text" placeholder="WhatsApp number (optional)" value="+44 7700 900123" />
+              </div>
+              <div class="om-card">
+                <div class="om-icon">💬</div>
+                <input type="text" placeholder="Telegram handle (optional)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Social profiles <span class="field-hint">visitors can DM you here too · pulled from main page if blank</span></label>
+            <div class="other-methods">
+              <div class="om-card">
+                <div class="om-icon">📷</div>
+                <input type="text" value="@alexandrasilva" placeholder="Instagram handle" />
+              </div>
+              <div class="om-card">
+                <div class="om-icon">🐦</div>
+                <input type="text" value="@alex_silva" placeholder="X / Twitter handle" />
+              </div>
+              <div class="om-card">
+                <div class="om-icon">💼</div>
+                <input type="text" value="alexandra-silva" placeholder="LinkedIn handle" />
+              </div>
+              <div class="om-card">
+                <div class="om-icon">▶️</div>
+                <input type="text" placeholder="YouTube channel" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Physical address <span class="field-hint">optional — for service businesses or studios</span></label>
+            <input class="field-input" type="text" value="71 Shoreditch High Street, London E1 6JJ, United Kingdom" />
+          </div>
+
+          <div class="field">
+            <label class="field-label">Show map embed</label>
+            <div class="row-toggle" style="margin-bottom:10px">
+              <div>
+                <div class="rt-name">Embed a map under the address</div>
+                <div class="rt-sub">Uses the Embedded block oEmbed pattern — Google Maps via iframe by default; OpenStreetMap as a fallback.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this); toggleMapPreview(this)"></button>
+            </div>
+            <div class="map-preview" id="map-preview" aria-label="Map preview">
+              <span class="mp-pin" aria-hidden="true">📍</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 6 — FAQ-quickref (Creator+)
+           =================================================== -->
+      <section class="section" data-section-id="faq" draggable="true">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>❓ FAQ-quickref <span class="tier-badge t-creator">Creator+</span></h2>
+          <span class="sub">3-5 common questions inline · cuts down dumb inquiries.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn is-danger" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="faq-item">
+            <div class="faq-head">
+              <span class="faq-grip" data-tip="Drag to reorder">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <input class="faq-q" type="text" value="How fast do you reply?" />
+              <button class="iconbtn is-danger btn-xs" onclick="this.closest('.faq-item').remove()" data-tip="Delete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <textarea class="faq-a">Within 24h on weekdays. Weekends are off — I don't check email Sat/Sun on purpose. If it's truly urgent, mention "URGENT" in the subject and I'll triage faster.</textarea>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-head">
+              <span class="faq-grip" data-tip="Drag to reorder">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <input class="faq-q" type="text" value="What's your typical project rate?" />
+              <button class="iconbtn is-danger btn-xs" onclick="this.closest('.faq-item').remove()" data-tip="Delete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <textarea class="faq-a">Coaching packages start at £450 / month for 4 weekly sessions. One-off form-check sessions are £85. Custom programming is £600. Send me your goal in the form and I'll match you with the right option.</textarea>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-head">
+              <span class="faq-grip" data-tip="Drag to reorder">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+              </span>
+              <input class="faq-q" type="text" value="Do you take on pro-bono / charity work?" />
+              <button class="iconbtn is-danger btn-xs" onclick="this.closest('.faq-item').remove()" data-tip="Delete">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <textarea class="faq-a">Yes — one project per quarter. Reach out with a short pitch (mission, audience, ask) and I'll let you know if it's a fit for the next slot.</textarea>
+          </div>
+
+          <button class="ff-add" type="button" onclick="alert('Mockup — adds an empty FAQ row')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add question
+          </button>
+        </div>
+      </section>
+
+      <!-- Add-section pill -->
+      <div class="add-section-row">
+        <button class="add-section-btn" type="button" onclick="openSectionPicker()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add section
+        </button>
+      </div>
+    </div>
+
+    <!-- ========== STICKY SAVE BAR ========== -->
+    <div class="save-bar">
+      <span class="save-status" id="save-status"><span class="ss-dot"></span> All changes saved · 12s ago</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="window.open('./creator-contact-public.html','_blank')">Preview</button>
+      <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — Discard reverts to last saved snapshot')">Discard</button>
+      <button class="btn btn-primary btn-sm" onclick="onSave()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save changes
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ========== MODAL — Section picker ========== -->
+<div class="modal-backdrop" id="m-section-picker" onclick="if(event.target===this)closeModal('m-section-picker')">
+  <div class="modal" role="dialog" aria-labelledby="msp-title">
+    <div class="modal-head">
+      <h3 id="msp-title">Add a section</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('m-section-picker')" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="section-picker-grid">
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">🎯</span>
+          <span class="sp-name">Hero</span>
+          <span class="sp-sub">Headline + subhead + cover image. Sets the tone.</span>
+          <span class="sp-already">Already on page</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">📝</span>
+          <span class="sp-name">Contact form</span>
+          <span class="sp-sub">The actual form with configurable fields.</span>
+          <span class="sp-already">Already on page</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">📡</span>
+          <span class="sp-name">Where messages go</span>
+          <span class="sp-sub">Email forwarding + 3rd-party providers.</span>
+          <span class="sp-already">Already on page</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">🕐</span>
+          <span class="sp-name">Office hours <span class="tier-badge t-creator">Creator+</span></span>
+          <span class="sp-sub">Schedule grid + response-time line.</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">📞</span>
+          <span class="sp-name">Other contact methods</span>
+          <span class="sp-sub">Phone, WhatsApp, social, address, map.</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">❓</span>
+          <span class="sp-name">FAQ-quickref <span class="tier-badge t-creator">Creator+</span></span>
+          <span class="sp-sub">Common questions inline before form.</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">📅</span>
+          <span class="sp-name">Booking calendar <span class="tier-badge t-pro">✨ Pro</span></span>
+          <span class="sp-sub">Embed your Cal.com / Calendly schedule for direct bookings.</span>
+        </button>
+        <button class="sp-card" onclick="closeModal('m-section-picker')">
+          <span class="sp-emoji">⭐</span>
+          <span class="sp-name">Testimonials</span>
+          <span class="sp-sub">Pull 2-3 quotes from happy clients to build trust.</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span style="font-size:12px; color:var(--fg-muted)">Pick a section to insert. You can drag to reorder once added.</span>
+      <span class="foot-spacer" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('m-section-picker')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL — Field-type picker (12 tiles) ========== -->
+<div class="modal-backdrop" id="m-field-type" onclick="if(event.target===this)closeModal('m-field-type')">
+  <div class="modal" role="dialog" aria-labelledby="mft-title">
+    <div class="modal-head">
+      <h3 id="mft-title">Add a form field</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('m-field-type')" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="ftp-grid">
+        <button class="ftp-card" onclick="addField('short_text');closeModal('m-field-type')">
+          <span class="ftp-emoji">Aa</span>
+          <span class="ftp-name">Short text</span>
+          <span class="ftp-sub">Single line — name, subject, company.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('long_text');closeModal('m-field-type')">
+          <span class="ftp-emoji">¶</span>
+          <span class="ftp-name">Long text</span>
+          <span class="ftp-sub">Multi-line textarea — message, description.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('email');closeModal('m-field-type')">
+          <span class="ftp-emoji">@</span>
+          <span class="ftp-name">Email</span>
+          <span class="ftp-sub">Validated email field with browser keyboard.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('phone');closeModal('m-field-type')">
+          <span class="ftp-emoji">📞</span>
+          <span class="ftp-name">Phone</span>
+          <span class="ftp-sub">Tel input with country-code prefix.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('url');closeModal('m-field-type')">
+          <span class="ftp-emoji">🔗</span>
+          <span class="ftp-name">URL</span>
+          <span class="ftp-sub">Validated link — portfolio, social profile.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('number');closeModal('m-field-type')">
+          <span class="ftp-emoji">#</span>
+          <span class="ftp-name">Number</span>
+          <span class="ftp-sub">Numeric — budget, headcount, age.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('dropdown');closeModal('m-field-type')">
+          <span class="ftp-emoji">▾</span>
+          <span class="ftp-name">Dropdown</span>
+          <span class="ftp-sub">Pick one from a list — inquiry type, package.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('checkboxes');closeModal('m-field-type')">
+          <span class="ftp-emoji">☑</span>
+          <span class="ftp-name">Multiselect checkboxes</span>
+          <span class="ftp-sub">Pick many — interests, services needed.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('radio');closeModal('m-field-type')">
+          <span class="ftp-emoji">◉</span>
+          <span class="ftp-name">Radio choice</span>
+          <span class="ftp-sub">Pick one — visible buttons (vs dropdown).</span>
+        </button>
+        <button class="ftp-card" onclick="addField('file');closeModal('m-field-type')">
+          <span class="ftp-emoji">📎</span>
+          <span class="ftp-name">File upload</span>
+          <span class="ftp-sub">PDF, image, or doc up to 10MB.</span>
+          <span class="tier-badge t-pro">✨ Pro</span>
+        </button>
+        <button class="ftp-card" onclick="addField('date');closeModal('m-field-type')">
+          <span class="ftp-emoji">📅</span>
+          <span class="ftp-name">Date picker</span>
+          <span class="ftp-sub">Calendar widget — preferred call date.</span>
+        </button>
+        <button class="ftp-card" onclick="addField('hidden');closeModal('m-field-type')">
+          <span class="ftp-emoji">🙈</span>
+          <span class="ftp-name">Hidden field</span>
+          <span class="ftp-sub">UTM tracking, source, referrer — invisible to visitor.</span>
+          <span class="tier-badge t-business">🔒 Business</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span style="font-size:12px; color:var(--fg-muted)">Tier-gated fields are addable now — we'll prompt at Save if your tier doesn't include them.</span>
+      <span class="foot-spacer" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('m-field-type')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL — Thank-you sub-page editor ========== -->
+<div class="modal-backdrop" id="m-thankyou" onclick="if(event.target===this)closeModal('m-thankyou')">
+  <div class="modal modal-md" role="dialog" aria-labelledby="mty-title">
+    <div class="modal-head">
+      <h3 id="mty-title">🙏 Thank-you sub-page</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('m-thankyou')" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--fg-muted); margin-top:0">Shown after a visitor submits the form. Lives at <code style="font-family:var(--font-mono); font-size:12px">tadaify.com/alexandra/contact/thanks</code>.</p>
+      <div class="field">
+        <label class="field-label" for="ty-headline">Headline</label>
+        <div class="field-prefix-wrap">
+          <input id="ty-headline" type="text" value="Got it — thanks for reaching out!" />
+          <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button">✨ Suggest</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ty-body">Body</label>
+        <textarea id="ty-body" class="field-area">I read every message myself, so it might take up to 24h on weekdays. In the meantime, feel free to browse the latest essays or follow along on Instagram.</textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Related links <span class="field-hint">optional CTAs after the message</span></label>
+        <div style="display:flex; flex-direction:column; gap:6px">
+          <div style="display:flex; gap:6px">
+            <input class="field-input" type="text" value="📚 Read the latest blog post" />
+            <input class="field-input" type="url" value="https://alexandrasilva.com/blog" style="flex:0.7" />
+          </div>
+          <div style="display:flex; gap:6px">
+            <input class="field-input" type="text" value="📷 Follow on Instagram" />
+            <input class="field-input" type="url" value="https://instagram.com/alexandrasilva" style="flex:0.7" />
+          </div>
+          <button class="ff-add" type="button" style="margin-top:4px">+ Add link</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="window.open('./creator-contact-public.html#/success','_blank')">Preview</button>
+      <span class="foot-spacer" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('m-thankyou')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('m-thankyou')">Save thank-you page</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Demo toolbar ========== -->
+<div class="demo-toolbar" role="toolbar" aria-label="Mockup state controls">
+  <span>State</span>
+  <select onchange="setQuery('state', this.value)">
+    <option value="filled">Filled</option>
+    <option value="empty">Empty</option>
+  </select>
+  <span>Tier</span>
+  <select onchange="setQuery('tier', this.value)">
+    <option value="free">Free</option>
+    <option value="creator" selected>Creator</option>
+    <option value="pro">Pro</option>
+    <option value="business">Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script>
+  // ── State + tier from URL ──
+  function getQuery(key) {
+    return new URLSearchParams(location.search).get(key);
+  }
+  function setQuery(key, val) {
+    var p = new URLSearchParams(location.search);
+    p.set(key, val);
+    location.search = p.toString();
+  }
+  var state = getQuery('state') || 'filled';
+  var tier = getQuery('tier') || 'creator';
+  document.body.dataset.state = state;
+  document.body.dataset.tier = tier;
+  document.getElementById('empty-state').style.display = (state === 'empty') ? 'flex' : 'none';
+  document.getElementById('filled-state').style.display = (state === 'empty') ? 'none' : 'block';
+  document.getElementById('inbox-banner').style.display = (state === 'empty') ? 'none' : 'flex';
+  // Sync demo-toolbar selects
+  document.querySelectorAll('.demo-toolbar select').forEach(function (sel, i) {
+    sel.value = (i === 0) ? state : tier;
+  });
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+  }
+
+  // ── Generic toggle ──
+  function toggleSwitch(btn) {
+    btn.classList.toggle('is-on');
+    var pressed = btn.classList.contains('is-on');
+    btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    markDirty();
+  }
+
+  function toggleCollapse(btn) {
+    btn.closest('.section').classList.toggle('is-collapsed');
+  }
+
+  function removeSection(btn) {
+    var sec = btn.closest('.section');
+    var name = (sec.querySelector('h2')||{}).textContent || 'this section';
+    if (confirm('Remove ' + name.trim() + '? You can add it back from the section picker.')) {
+      sec.remove(); markDirty();
+    }
+  }
+
+  // ── Field-row expand/collapse ──
+  function toggleFf(headEl) {
+    var row = headEl.closest('.ff-row');
+    if (row.classList.contains('is-required-locked')) return;
+    document.querySelectorAll('.ff-row.is-expanded').forEach(function (r) {
+      if (r !== row) r.classList.remove('is-expanded');
+    });
+    row.classList.toggle('is-expanded');
+  }
+  function removeField(btn) {
+    var row = btn.closest('.ff-row');
+    var name = (row.querySelector('.ff-name')||{}).textContent || 'this field';
+    if (confirm('Delete the "' + name + '" field?')) { row.remove(); markDirty(); }
+  }
+
+  // ── Page settings actions ──
+  function pickSwatch(el) {
+    document.querySelectorAll('.swatch').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected'); markDirty();
+  }
+  function useTitleSlug(title, slug) {
+    document.getElementById('page-title').value = title;
+    document.getElementById('page-slug').value = slug;
+    markDirty();
+  }
+  function setHeadline(btn, txt) {
+    document.getElementById('hero-headline').value = txt || btn.textContent;
+    markDirty();
+  }
+  function openImagePicker() {
+    alert('Mockup — opens centered Image picker modal (Upload / Library / ✨ AI generate)');
+  }
+
+  // ── After-submit dropdown ──
+  function onAfterSubmitChange(sel) {
+    document.getElementById('after-submit-extra-redirect').style.display = (sel.value === 'redirect') ? 'block' : 'none';
+    document.getElementById('after-submit-extra-thankyou').style.display = (sel.value === 'thank-you') ? 'block' : 'none';
+    markDirty();
+  }
+
+  // ── Delivery channel toggle ──
+  function toggleDch(card) {
+    card.classList.toggle('is-on');
+    markDirty();
+  }
+
+  // ── Office-hours day row ──
+  function toggleDayRow(btn) {
+    var row = btn.closest('.hours-row');
+    btn.classList.toggle('is-on');
+    row.classList.toggle('is-off');
+    var times = row.querySelector('.hr-times');
+    if (row.classList.contains('is-off')) {
+      times.dataset.cached = times.innerHTML;
+      times.innerHTML = '<span class="hr-closed">Closed</span>';
+    } else if (times.dataset.cached) {
+      times.innerHTML = times.dataset.cached;
+    }
+    markDirty();
+  }
+
+  // ── Map preview toggle ──
+  function toggleMapPreview(btn) {
+    var on = btn.classList.contains('is-on');
+    document.getElementById('map-preview').style.display = on ? 'flex' : 'none';
+  }
+
+  // ── Modals ──
+  function openModal(id)  { document.getElementById(id).classList.add('is-open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('is-open'); }
+  function openSectionPicker()    { openModal('m-section-picker'); }
+  function openFieldTypePicker()  { openModal('m-field-type'); }
+  function openThankYouEditor()   { openModal('m-thankyou'); }
+
+  // ── Add a new field of a given type (mockup — appends a stub row) ──
+  var FIELD_TYPE_META = {
+    short_text: { icon: 'Aa', label: 'New text field',     type: 'short text' },
+    long_text:  { icon: '¶',  label: 'New paragraph',      type: 'long text · textarea' },
+    email:      { icon: '@',  label: 'New email',          type: 'email' },
+    phone:      { icon: '📞', label: 'Phone',              type: 'phone' },
+    url:        { icon: '🔗', label: 'Website',            type: 'URL' },
+    number:     { icon: '#',  label: 'Number',             type: 'number' },
+    dropdown:   { icon: '▾',  label: 'Pick one',           type: 'dropdown · 0 options' },
+    checkboxes: { icon: '☑',  label: 'Pick many',          type: 'multiselect checkboxes' },
+    radio:      { icon: '◉',  label: 'Choose one',         type: 'radio · 0 options' },
+    file:       { icon: '📎', label: 'Upload',             type: 'file upload' },
+    date:       { icon: '📅', label: 'Pick a date',        type: 'date picker' },
+    hidden:     { icon: '🙈', label: 'Hidden field',       type: 'hidden · UTM tracking' }
+  };
+  function addField(type) {
+    var meta = FIELD_TYPE_META[type];
+    if (!meta) return;
+    var list = document.getElementById('ff-list');
+    // Insert before the GDPR-locked row
+    var locked = list.querySelector('.is-required-locked');
+    var row = document.createElement('div');
+    row.className = 'ff-row';
+    row.dataset.ffType = type;
+    row.innerHTML = '<div class="ff-grip" data-tip="Drag to reorder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg></div>'
+      + '<div class="ff-main"><div class="ff-summary" onclick="toggleFf(this)">'
+      + '<span class="ff-type-icon" aria-hidden="true">' + meta.icon + '</span>'
+      + '<span class="ff-name">' + meta.label + '</span>'
+      + '<span class="ff-type-name">· ' + meta.type + '</span>'
+      + '<span class="ff-spacer"></span>'
+      + '<span class="ff-row-actions"><span class="ff-caret"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span></span>'
+      + '</div></div>';
+    if (locked) list.insertBefore(row, locked); else list.appendChild(row);
+    markDirty();
+    setTimeout(function () { row.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
+  }
+
+  // ── Recommended starter (empty -> filled) ──
+  function useStarter() { setQuery('state', 'filled'); }
+
+  // ── Save (TierGate placeholder) ──
+  function onSave() {
+    /*
+     * IMPLEMENTATION NOTE:
+     *   On real save, call shared TierGate.checkAndProceed({
+     *     creatorTier: tier,
+     *     usedFeatures: [
+     *       'custom_domain',          // requires Pro
+     *       'office_hours',           // requires Creator+
+     *       'faq_quickref',           // requires Creator+
+     *       'multi_recipient',        // requires Business
+     *       'webhook_provider:slack', // requires Pro per-channel
+     *       'field:file_upload',      // requires Pro
+     *       'field:hidden',           // requires Business
+     *       'field:conditional',      // requires Pro
+     *     ]
+     *   })
+     *   which opens app-tier-gate-modal.html if any feature exceeds tier.
+     */
+    alert('Mockup — Save would call TierGate.checkAndProceed before persist.\n\n(See onSave() comment for the feature list this page would emit.)');
+    markClean();
+  }
+
+  // ── Dirty / clean status ──
+  function markDirty() {
+    var el = document.getElementById('save-status');
+    if (!el || el.classList.contains('is-dirty')) return;
+    el.classList.add('is-dirty');
+    el.innerHTML = '<span class="ss-dot"></span> Unsaved changes';
+  }
+  function markClean() {
+    var el = document.getElementById('save-status');
+    if (!el) return;
+    el.classList.remove('is-dirty');
+    el.innerHTML = '<span class="ss-dot"></span> All changes saved · just now';
+  }
+
+  // ── Drag-reorder for sections (HTML5 DnD) ──
+  (function () {
+    var dragSrc = null;
+    document.querySelectorAll('.section[draggable="true"]').forEach(function (sec) {
+      sec.addEventListener('dragstart', function (e) {
+        dragSrc = sec; sec.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      sec.addEventListener('dragend', function () {
+        sec.classList.remove('is-dragging');
+        document.querySelectorAll('.section.is-drag-over').forEach(function (s) { s.classList.remove('is-drag-over'); });
+      });
+      sec.addEventListener('dragover', function (e) {
+        if (!dragSrc || dragSrc === sec) return;
+        e.preventDefault(); sec.classList.add('is-drag-over');
+      });
+      sec.addEventListener('dragleave', function () { sec.classList.remove('is-drag-over'); });
+      sec.addEventListener('drop', function (e) {
+        e.preventDefault();
+        if (!dragSrc || dragSrc === sec) return;
+        var rect = sec.getBoundingClientRect();
+        var insertBefore = (e.clientY - rect.top) < (rect.height / 2);
+        sec.parentNode.insertBefore(dragSrc, insertBefore ? sec : sec.nextSibling);
+        sec.classList.remove('is-drag-over');
+        markDirty();
+      });
+    });
+  })();
+</script>
+</body>
+</html>

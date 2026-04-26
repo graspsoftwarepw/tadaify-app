@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Contact page render — visitor view at tadaify.com/<handle>/contact — F-PAGE-CONTACT-001 #21
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view of the Contact page authored via app-page-contact.html.
+  A single, focused page for inquiry capture: hero, optional office-hours
+  strip, optional FAQ-quickref, the form, and other contact methods.
+
+  All 5 visitor-facing states are rendered in-page via hash routing so
+  reviewers can compare without switching files:
+    #/                  → default form
+    #/submitting        → disabled form + spinner
+    #/success           → inline thank-you (or redirect mock)
+    #/error             → friendly retry
+    #/honeypot-caught   → silent-fail mockup (visible only with ?debug=1)
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: hero/form/methods collapse to single column.
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every state actually rendered;
+      every interaction wired)
+    - No tadaify nav bar on creator pages (creator-public.html convention)
+      — minimal back-link top strip instead.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — Alexandra Silva — tadaify.com/alexandra/contact</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ── Theme inheritance — same warm + indigo wash as
+       creator-newsletter-signup-public.html so it reads as a sub-page
+       of the same site. ── */
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      margin: 0;
+    }
+    * { box-sizing: border-box; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+
+    /* Mockup-only top strip */
+    .top-strip {
+      max-width: 980px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+      flex-wrap: wrap; gap: 8px;
+    }
+    .top-strip a { color: var(--fg-muted); padding: 4px 8px; border-radius: 6px; }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle); }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+    .top-strip .toggle-theme {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--fg-muted);
+    }
+
+    /* Creator identity row */
+    .creator-row {
+      max-width: 720px; margin: 0 auto;
+      padding: 32px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Hero */
+    .hero {
+      max-width: 720px; margin: 0 auto;
+      padding: 28px 20px 16px;
+      text-align: center;
+    }
+    .hero .hero-icon {
+      width: 88px; height: 88px; border-radius: 22px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 38px;
+      box-shadow: var(--shadow-lg);
+    }
+    .hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 48px);
+      letter-spacing: -0.02em; line-height: 1.15; margin: 0;
+    }
+    .hero .lede {
+      max-width: 520px; margin: 14px auto 0;
+      color: var(--fg-muted);
+      font-size: 17px; line-height: 1.55;
+    }
+
+    /* Office-hours strip (Creator+) */
+    .hours-strip {
+      max-width: 720px; margin: 14px auto 0;
+      padding: 0 20px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px;
+      font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .hours-strip .hs-mark {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: 999px;
+      font-weight: 600; color: var(--fg-muted);
+    }
+    .hours-strip .hs-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .hours-strip .hs-dot.is-off { background: var(--brand-warm); box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+
+    /* FAQ-quickref accordion */
+    .faq-quick {
+      max-width: 720px; margin: 28px auto 0;
+      padding: 0 20px;
+    }
+    .faq-quick h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0 0 10px;
+      color: var(--fg-muted); letter-spacing: -0.005em;
+      text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.08em;
+    }
+    .faq-quick details {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 4px;
+    }
+    .faq-quick details:first-of-type { border-top: 1px solid var(--border); }
+    .faq-quick summary {
+      list-style: none; cursor: pointer;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 14.5px; font-weight: 600; color: var(--fg);
+    }
+    .faq-quick summary::-webkit-details-marker { display: none; }
+    .faq-quick summary::after {
+      content: "+"; margin-left: auto; font-size: 20px; line-height: 1; color: var(--fg-muted);
+      transition: transform .2s ease;
+    }
+    .faq-quick details[open] summary::after { content: "−"; }
+    .faq-quick .faq-a {
+      padding: 8px 0 4px; color: var(--fg-muted); font-size: 13.5px; line-height: 1.6;
+      max-width: 600px;
+    }
+
+    /* Form section */
+    .form-section {
+      max-width: 720px; margin: 0 auto;
+      padding: 30px 20px 8px;
+    }
+    .form-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .form-card .form-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 540px) { .form-card .form-grid { grid-template-columns: 1fr; } }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+    }
+    .field-label .req { color: var(--danger); margin-left: 2px; }
+    .field-input, .field-area, .field-select {
+      width: 100%; padding: 12px 14px;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg);
+      font: inherit; font-size: 15px; color: var(--fg);
+      outline: 0;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-area { min-height: 130px; resize: vertical; line-height: 1.5; font-family: var(--font-sans); }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-help {
+      font-size: 12px; color: var(--fg-subtle);
+    }
+    .field-help.is-error { color: var(--danger); }
+
+    /* Inline validation hint (mockup-only — surfaces on Submit-with-empty in #/) */
+    .field.has-error .field-input,
+    .field.has-error .field-area {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.10);
+    }
+
+    /* Honeypot — visually hidden but in the DOM */
+    .honeypot {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0); clip-path: inset(50%);
+      white-space: nowrap; border: 0;
+    }
+
+    /* Consent + submit row */
+    .consent {
+      grid-column: 1 / -1;
+      display: flex; gap: 10px; align-items: flex-start;
+      margin-top: 4px;
+      font-size: 12.5px; color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .consent input[type="checkbox"] {
+      width: 16px; height: 16px; margin-top: 2px;
+      accent-color: var(--brand-primary);
+      flex-shrink: 0;
+    }
+    .consent a { color: var(--brand-primary); font-weight: 600; }
+
+    .submit-row {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .form-btn {
+      padding: 13px 22px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 10px;
+      font: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background .12s ease;
+    }
+    .form-btn:hover { background: var(--brand-primary-hover); }
+    .form-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+    .submit-meta { font-size: 12px; color: var(--fg-subtle); }
+
+    /* Other contact methods */
+    .other {
+      max-width: 720px; margin: 0 auto;
+      padding: 32px 20px 0;
+    }
+    .other h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; margin: 0 0 16px;
+      letter-spacing: -0.01em;
+    }
+    .om-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 540px) { .om-grid { grid-template-columns: 1fr; } }
+    .om-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .om-card .om-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .om-card .om-body { flex: 1; min-width: 0; }
+    .om-card .om-label { font-size: 11.5px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .om-card .om-value {
+      font-size: 14px; font-weight: 600; color: var(--fg);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .om-card .om-value a { color: var(--brand-primary); }
+
+    .address-card {
+      grid-column: 1 / -1;
+      display: flex; gap: 14px;
+      padding: 0;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    @media (max-width: 540px) { .address-card { flex-direction: column; } }
+    .address-card .ac-text {
+      padding: 14px 16px; flex: 1;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .address-card .ac-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .address-card .ac-body .om-label { font-size: 11.5px; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .address-card .ac-body .om-value { font-size: 14px; font-weight: 600; color: var(--fg); line-height: 1.45; }
+    .address-card .ac-map {
+      width: 240px; min-height: 140px;
+      background:
+        linear-gradient(0deg, rgba(0,0,0,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(135deg, #DCFCE7 0%, #A7F3D0 50%, #BBF7D0 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    }
+    @media (max-width: 540px) { .address-card .ac-map { width: 100%; min-height: 120px; } }
+
+    /* Socials inline strip */
+    .socials-inline {
+      grid-column: 1 / -1;
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      padding: 12px 14px;
+      border: 1px dashed var(--border-strong); border-radius: 12px;
+      background: transparent;
+    }
+    .socials-inline .si-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      transition: all .12s ease;
+    }
+    .socials-inline .si-link:hover {
+      border-color: var(--brand-primary); color: var(--brand-primary);
+      transform: translateY(-1px);
+    }
+
+    /* Footer */
+    .public-footer {
+      max-width: 720px; margin: 32px auto 0;
+      padding: 24px 20px 60px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 14px;
+      flex-wrap: wrap;
+      color: var(--fg-muted); font-size: 12.5px;
+    }
+    .public-footer .pf-socials { display: flex; gap: 6px; flex-wrap: wrap; }
+    .public-footer .pf-socials a {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all .12s ease;
+    }
+    .public-footer .pf-socials a:hover { background: var(--bg-muted); transform: translateY(-1px); }
+    .public-footer .pf-tdf { display: inline-flex; align-items: center; gap: 6px; }
+    .public-footer .pf-tdf .wm { font-family: var(--font-display); font-weight: 600; font-size: 14px; }
+    .public-footer .pf-tdf .wm .ta { color: var(--wm-ta); }
+    .public-footer .pf-tdf .wm .da { color: var(--wm-da); }
+    .public-footer .pf-tdf .wm .ify { color: var(--wm-ify); }
+
+    /* ========== Confirmation states (hash-routed) ========== */
+    .state-host {
+      max-width: 720px; margin: 60px auto;
+      padding: 0 20px;
+    }
+    .state-card {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px 28px; text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .state-card .state-emoji {
+      width: 72px; height: 72px; border-radius: 20px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 36px; margin-bottom: 16px;
+    }
+    .state-card .state-emoji.is-success { background: rgba(16,185,129,0.14); }
+    .state-card .state-emoji.is-pending { background: rgba(99,102,241,0.14); }
+    .state-card .state-emoji.is-error   { background: rgba(239,68,68,0.14); }
+    .state-card .state-emoji.is-info    { background: rgba(245,158,11,0.14); }
+    .state-card h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 26px; margin: 0 0 10px; letter-spacing: -0.01em;
+    }
+    .state-card p {
+      color: var(--fg-muted); font-size: 15px; line-height: 1.55;
+      max-width: 460px; margin: 0 auto;
+    }
+    .state-card .state-actions {
+      margin-top: 22px;
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    }
+    .state-card .btn-primary {
+      padding: 10px 18px; background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer;
+    }
+    .state-card .btn-ghost {
+      padding: 10px 18px; background: transparent; color: var(--fg);
+      border: 1px solid var(--border-strong); border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer;
+    }
+    .state-card .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid rgba(99,102,241,0.20);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+    .state-card .related-links {
+      margin-top: 22px;
+      display: flex; flex-direction: column; gap: 8px;
+      max-width: 360px; margin-left: auto; margin-right: auto;
+    }
+    .state-card .related-links a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      font-size: 14px; font-weight: 600; color: var(--fg);
+      text-align: left;
+      transition: all .12s ease;
+    }
+    .state-card .related-links a:hover {
+      border-color: var(--brand-primary); color: var(--brand-primary);
+      transform: translateY(-1px);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Mockup state-anchor strip */
+    .state-strip {
+      max-width: 720px; margin: 0 auto;
+      padding: 12px 20px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+      border-top: 1px dashed var(--border-strong);
+      margin-top: 30px;
+    }
+    .state-strip a {
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    .state-strip a:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+    .state-strip .ss-debug {
+      margin-left: auto; opacity: 0.6;
+      font-family: var(--font-mono); font-size: 11px;
+    }
+
+    /* Hide all state-host blocks by default; JS reveals one based on hash. */
+    .state-host { display: none; }
+    .state-host.is-active { display: block; }
+
+    /* The default page (#/) shows the full landing — everything except state-host blocks. */
+    .full-landing { display: none; }
+    .full-landing.is-active { display: block; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .top-strip a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .form-card,
+    body.dark-mode .om-card,
+    body.dark-mode .address-card,
+    body.dark-mode .socials-inline .si-link,
+    body.dark-mode .public-footer .pf-socials a,
+    body.dark-mode .layout-switcher a,
+    body.dark-mode .state-strip a,
+    body.dark-mode .state-card,
+    body.dark-mode .hours-strip .hs-mark,
+    body.dark-mode .state-card .related-links a { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .field-input, body.dark-mode .field-area, body.dark-mode .field-select { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .faq-quick details, body.dark-mode .faq-quick details:first-of-type, body.dark-mode .public-footer { border-color: #1F2937; }
+    body.dark-mode .state-strip { border-top-color: #1F2937; }
+    body.dark-mode .toggle-theme { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .address-card .ac-map {
+      background:
+        linear-gradient(0deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== Mockup-only top strip ========== -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Back to alexandra.tadaify.com</a>
+  <span class="url-mono">tadaify.com/<b>alexandra/contact</b></span>
+  <button class="toggle-theme" onclick="document.body.classList.toggle('dark-mode')">Toggle theme</button>
+</div>
+
+<!-- ========== FULL LANDING (hash = #/) ========== -->
+<div class="full-landing" id="state-default">
+
+  <!-- Creator identity row -->
+  <div class="creator-row">
+    <div class="av">A</div>
+    <div class="who">
+      <div class="who-name">Alexandra Silva</div>
+      <div class="who-handle">@alexandra · usually replies within 24h</div>
+    </div>
+    <a href="./creator-public.html" class="back-to-main">← Back to main</a>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-icon" aria-hidden="true">📮</div>
+    <h1>Let's work together.</h1>
+    <p class="lede">For project briefs, coaching calls, speaking invitations or just a friendly hello — I usually reply within 24h on weekdays.</p>
+  </section>
+
+  <!-- Office-hours strip (Creator+) -->
+  <div class="hours-strip">
+    <span class="hs-mark"><span class="hs-dot" aria-hidden="true"></span> Replies usually within 24h · Mon–Fri 9-17 GMT</span>
+  </div>
+
+  <!-- FAQ-quickref accordion (Creator+) -->
+  <section class="faq-quick">
+    <h2>Before you write — answers to the 3 most common questions</h2>
+    <details>
+      <summary>How fast do you reply?</summary>
+      <div class="faq-a">Within 24h on weekdays. Weekends are off — I don't check email Sat/Sun on purpose. If it's truly urgent, mention "URGENT" in the subject and I'll triage faster.</div>
+    </details>
+    <details>
+      <summary>What's your typical project rate?</summary>
+      <div class="faq-a">Coaching packages start at £450 / month for 4 weekly sessions. One-off form-check sessions are £85. Custom programming is £600. Send me your goal in the form and I'll match you with the right option.</div>
+    </details>
+    <details>
+      <summary>Do you take on pro-bono / charity work?</summary>
+      <div class="faq-a">Yes — one project per quarter. Reach out with a short pitch (mission, audience, ask) and I'll let you know if it's a fit for the next slot.</div>
+    </details>
+  </section>
+
+  <!-- Form -->
+  <section class="form-section" id="form">
+    <div class="form-card">
+      <form class="form-grid" id="contact-form" onsubmit="onSubmit(event)" novalidate>
+
+        <!-- Name -->
+        <div class="field">
+          <label class="field-label" for="f-name">Name<span class="req" aria-hidden="true">*</span></label>
+          <input class="field-input" id="f-name" name="name" type="text" placeholder="Your name" required />
+        </div>
+
+        <!-- Email -->
+        <div class="field">
+          <label class="field-label" for="f-email">Email<span class="req" aria-hidden="true">*</span></label>
+          <input class="field-input" id="f-email" name="email" type="email" placeholder="you@example.com" required />
+          <div class="field-help">We'll only use this to reply to you.</div>
+        </div>
+
+        <!-- Subject -->
+        <div class="field">
+          <label class="field-label" for="f-subject">Subject</label>
+          <input class="field-input" id="f-subject" name="subject" type="text" placeholder="What's this about?" />
+        </div>
+
+        <!-- Inquiry type -->
+        <div class="field">
+          <label class="field-label" for="f-inquiry">Inquiry type</label>
+          <select class="field-select" id="f-inquiry" name="inquiry">
+            <option value="">Select one…</option>
+            <option>Coaching package</option>
+            <option>Speaking / podcast</option>
+            <option>Brand partnership</option>
+            <option>General question</option>
+          </select>
+        </div>
+
+        <!-- Message -->
+        <div class="field full">
+          <label class="field-label" for="f-message">Message<span class="req" aria-hidden="true">*</span></label>
+          <textarea class="field-area" id="f-message" name="message" placeholder="Tell me what you're working on, what you'd like help with, and any timeline you have in mind…" required></textarea>
+        </div>
+
+        <!-- Honeypot — visually hidden, must stay empty -->
+        <div class="honeypot" aria-hidden="true">
+          <label for="hp-website">Don't fill this in</label>
+          <input id="hp-website" type="text" name="hp-website" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <!-- GDPR consent -->
+        <div class="consent">
+          <input type="checkbox" id="consent" name="consent" required />
+          <label for="consent">I agree to my data being stored to receive a reply, and I accept the <a href="#">privacy policy</a>.</label>
+        </div>
+
+        <!-- Submit -->
+        <div class="submit-row">
+          <button class="form-btn" type="submit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send message
+          </button>
+          <span class="submit-meta">Spam-protected · GDPR-friendly</span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Other contact methods -->
+  <section class="other">
+    <h2>Other ways to reach me</h2>
+    <div class="om-grid">
+
+      <a class="om-card" href="mailto:hello@alexandrasilva.com">
+        <div class="om-icon" aria-hidden="true">✉️</div>
+        <div class="om-body">
+          <div class="om-label">Email</div>
+          <div class="om-value">hello@alexandrasilva.com</div>
+        </div>
+      </a>
+
+      <a class="om-card" href="tel:+442079460192">
+        <div class="om-icon" aria-hidden="true">📞</div>
+        <div class="om-body">
+          <div class="om-label">Phone</div>
+          <div class="om-value">+44 20 7946 0192</div>
+        </div>
+      </a>
+
+      <a class="om-card" href="https://wa.me/447700900123" target="_blank" rel="noopener">
+        <div class="om-icon" aria-hidden="true">📱</div>
+        <div class="om-body">
+          <div class="om-label">WhatsApp</div>
+          <div class="om-value">+44 7700 900123</div>
+        </div>
+      </a>
+
+      <a class="om-card" href="https://instagram.com/alexandrasilva" target="_blank" rel="noopener">
+        <div class="om-icon" aria-hidden="true">📷</div>
+        <div class="om-body">
+          <div class="om-label">Instagram DMs</div>
+          <div class="om-value">@alexandrasilva</div>
+        </div>
+      </a>
+
+      <!-- Address + map -->
+      <div class="address-card">
+        <div class="ac-text">
+          <div class="ac-icon" aria-hidden="true">📍</div>
+          <div class="ac-body">
+            <div class="om-label">Studio</div>
+            <div class="om-value">71 Shoreditch High Street, London E1 6JJ, United Kingdom</div>
+          </div>
+        </div>
+        <div class="ac-map" aria-label="Map embed (Google Maps iframe in production)">📍</div>
+      </div>
+
+      <!-- Inline social row -->
+      <div class="socials-inline">
+        <a class="si-link" href="https://instagram.com/alexandrasilva" target="_blank" rel="noopener">📷 Instagram</a>
+        <a class="si-link" href="https://twitter.com/alex_silva" target="_blank" rel="noopener">🐦 X / Twitter</a>
+        <a class="si-link" href="https://linkedin.com/in/alexandra-silva" target="_blank" rel="noopener">💼 LinkedIn</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="public-footer">
+    <div class="pf-socials">
+      <a href="#" aria-label="Instagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+      <a href="#" aria-label="TikTok"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></a>
+      <a href="#" aria-label="YouTube"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg></a>
+    </div>
+    <div class="pf-tdf">
+      <span>Made with</span>
+      <a href="./landing.html" class="wm">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </a>
+    </div>
+  </footer>
+</div><!-- /#state-default -->
+
+<!-- ========== STATE: SUBMITTING (#/submitting) ========== -->
+<div class="state-host" id="state-submitting">
+  <div class="state-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <h2>Sending your message…</h2>
+    <p>Hold tight — Alexandra's inbox is just a moment away. We're delivering your message + (optionally) a copy to her tadaify inbox.</p>
+  </div>
+</div>
+
+<!-- ========== STATE: SUCCESS (#/success) ========== -->
+<div class="state-host" id="state-success">
+  <div class="state-card">
+    <div class="state-emoji is-success" aria-hidden="true">🙏</div>
+    <h2>Got it — thanks for reaching out!</h2>
+    <p>I read every message myself, so it might take up to 24h on weekdays. In the meantime, feel free to browse the latest essays or follow along on Instagram.</p>
+
+    <div class="related-links">
+      <a href="https://alexandrasilva.com/blog">📚 Read the latest blog post</a>
+      <a href="https://instagram.com/alexandrasilva">📷 Follow on Instagram</a>
+    </div>
+
+    <div class="state-actions">
+      <a class="btn-primary" href="./creator-public.html">← Back to alexandra.tadaify.com</a>
+      <a class="btn-ghost" href="#/">Send another message</a>
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--fg-subtle)">Your message ID: <code style="font-family:var(--font-mono); font-size:11.5px">msg_8a2b91…</code> — keep it for any follow-up.</p>
+  </div>
+</div>
+
+<!-- ========== STATE: ERROR (#/error) ========== -->
+<div class="state-host" id="state-error">
+  <div class="state-card">
+    <div class="state-emoji is-error" aria-hidden="true">😬</div>
+    <h2>Something went wrong sending that.</h2>
+    <p>We couldn't deliver your message just now — your draft isn't lost, you can try again. If it keeps failing, you can email Alexandra directly.</p>
+    <div class="state-actions">
+      <a class="btn-primary" href="#/">Try again</a>
+      <a class="btn-ghost" href="mailto:hello@alexandrasilva.com">Email Alexandra</a>
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--fg-subtle)">Error code: <code style="font-family:var(--font-mono); font-size:11.5px">SMTP_TIMEOUT · req_8a2b…</code></p>
+  </div>
+</div>
+
+<!-- ========== STATE: HONEYPOT-CAUGHT (#/honeypot-caught) ==========
+     In production a visitor never sees this — bots get a fake success
+     so they think they got through. We mock it visibly only for the
+     reviewer to confirm the spam-prevention path works.
+-->
+<div class="state-host" id="state-honeypot-caught">
+  <div class="state-card">
+    <div class="state-emoji is-info" aria-hidden="true">🪤</div>
+    <h2>Honeypot caught (mockup-only view)</h2>
+    <p>The hidden honeypot field was filled in — that's a strong signal this is a bot. In production, the visitor would silently see the success screen so the spammer doesn't know they were filtered. The message <b>does not</b> reach Alexandra's inbox.</p>
+    <div class="state-actions">
+      <a class="btn-primary" href="#/success">See what the bot would see</a>
+      <a class="btn-ghost" href="#/">Back to form</a>
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--fg-subtle)">Filter applied: <code style="font-family:var(--font-mono); font-size:11.5px">honeypot:hp-website · 0 messages forwarded</code></p>
+  </div>
+</div>
+
+<!-- ========== Mockup-only state-anchor strip ========== -->
+<div class="state-strip">
+  <span>Mockup states (try each):</span>
+  <a href="#/">Default</a>
+  <a href="#/submitting">Submitting</a>
+  <a href="#/success">Success</a>
+  <a href="#/error">Error</a>
+  <a href="#/honeypot-caught">Honeypot caught</a>
+  <span class="ss-debug">visitor only ever sees one of these at a time</span>
+</div>
+
+<script>
+  // ── Hash router for confirmation states ──
+  function applyHash() {
+    var h = (location.hash || '#/').replace(/^#/, '');
+    var states = {
+      '/': 'state-default',
+      '/submitting': 'state-submitting',
+      '/success': 'state-success',
+      '/error': 'state-error',
+      '/honeypot-caught': 'state-honeypot-caught'
+    };
+    var target = states[h] || 'state-default';
+    document.querySelectorAll('.full-landing, .state-host').forEach(function (el) {
+      el.classList.toggle('is-active', el.id === target);
+    });
+    if (target === 'state-submitting') {
+      setTimeout(function () {
+        if (location.hash === '#/submitting') location.hash = '#/success';
+      }, 1500);
+    }
+  }
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+
+  // ── Form submit ──
+  function onSubmit(e) {
+    e.preventDefault();
+    // Honeypot check — if filled, jump to honeypot-caught (mockup only).
+    var hp = document.getElementById('hp-website');
+    if (hp && hp.value.trim() !== '') {
+      location.hash = '#/honeypot-caught';
+      return;
+    }
+    // Required fields check
+    var form = e.target;
+    var firstInvalid = null;
+    ['f-name','f-email','f-message','consent'].forEach(function (id) {
+      var el = document.getElementById(id);
+      var field = el && el.closest ? el.closest('.field') : null;
+      var ok = el ? (el.type === 'checkbox' ? el.checked : el.value.trim() !== '') : true;
+      if (field) field.classList.toggle('has-error', !ok);
+      if (!ok && !firstInvalid) firstInvalid = el;
+    });
+    if (firstInvalid) {
+      firstInvalid.focus();
+      return;
+    }
+    // All good — go to submitting state, which auto-advances to success.
+    location.hash = '#/submitting';
+  }
+</script>
+</body>
+</html>
