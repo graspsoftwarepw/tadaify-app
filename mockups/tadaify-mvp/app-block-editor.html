@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<!--
+  Block editor drawer — per-block-type forms + live preview + analytics
+  drill-down + future-ready scaffolding for AI suggest, schedule visibility
+  (Creator+), A/B testing (Business).
+
+  Issue:    https://github.com/graspsoftwarepw/tadaify-app/issues/52
+  DECs:     DEC-077 (every interaction logged), DEC-076 (depth gating Cat A/B/C),
+            DEC-MULTIPAGE-01 (sidebar Add page disabled),
+            DEC-AI-FEATURES-ROADMAP-01 (AI text features),
+            DEC-AI-QUOTA-LADDER-01 (AI quotas).
+
+  This page demonstrates a right-side drawer that slides in over a frozen
+  dashboard backdrop. Use the type selector at the top of the drawer to
+  switch between block types and see how the form + live preview adapt.
+  Use the demo toolbar (bottom-right) to switch tier and see locked-state UIs.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Block editor — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    /* =========================================================================
+       Page-level (frozen dashboard backdrop)
+       ========================================================================= */
+    body { background: var(--bg); min-height: 100vh; }
+
+    .appbar {
+      position: sticky; top: 0; z-index: 30;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px; height: 54px;
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .appbar .brand .wm { font-size: 20px; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .appbar .brand .ta { color: var(--brand-primary); }
+    .appbar .brand .da { color: var(--brand-warm); }
+    .appbar .brand .ify { color: var(--fg); }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-muted);
+      border-radius: 99px;
+      font-size: 13px; color: var(--fg-muted); text-decoration: none;
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 0 4px rgba(16,185,129,0.18);
+    }
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 10px;
+      background: transparent; border: 0; color: var(--fg-muted); cursor: pointer;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 18px; height: 18px; }
+    .theme-icon-moon { display: none; }
+    body.dark-mode .theme-icon-sun { display: none; }
+    body.dark-mode .theme-icon-moon { display: inline-block; }
+
+    .layout {
+      display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px) { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content {
+      padding: clamp(20px, 3vw, 32px);
+      min-width: 0;
+      position: relative;
+    }
+
+    /* =========================================================================
+       Frozen dashboard preview (the surface the drawer overlays)
+       ========================================================================= */
+    .freeze {
+      filter: saturate(0.85);
+      pointer-events: none;
+      user-select: none;
+      transition: filter .2s ease, opacity .2s ease;
+    }
+    .drawer-open .freeze { opacity: 0.55; }
+    body.dark-mode .freeze { filter: saturate(0.7) brightness(0.85); }
+
+    .page-head h1 {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 3.4vw, 36px);
+      letter-spacing: -0.02em;
+      margin: 0 0 6px;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 14px; }
+
+    .demo-blocks {
+      margin-top: 24px;
+      display: flex; flex-direction: column; gap: 10px;
+      max-width: 600px;
+    }
+    .demo-block {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      transition: border .12s, box-shadow .12s;
+      cursor: pointer;
+    }
+    .demo-block:hover { border-color: var(--brand-primary); box-shadow: var(--shadow); }
+    .demo-block.is-editing { border-color: var(--brand-primary); box-shadow: var(--shadow-brand); }
+    .demo-block .ic {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(99,102,241,0.10);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .demo-block .meta { flex: 1; min-width: 0; }
+    .demo-block .meta .t { font-weight: 600; font-size: 14px; color: var(--fg); }
+    .demo-block .meta .u { font-size: 12px; color: var(--fg-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .demo-block .stats { font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+    .demo-block .stats b { color: var(--fg); }
+
+    .add-block-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 14px;
+      padding: 12px 18px;
+      background: var(--brand-primary); color: #fff;
+      border-radius: 99px; border: 0; font-weight: 600;
+      box-shadow: var(--shadow-brand);
+      cursor: pointer; font-family: var(--font-sans); font-size: 14px;
+      text-decoration: none;
+    }
+    .add-block-btn svg { width: 16px; height: 16px; }
+
+    /* =========================================================================
+       Drawer
+       ========================================================================= */
+    .drawer-backdrop {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(11, 15, 30, 0.45);
+      backdrop-filter: blur(2px);
+      opacity: 0; pointer-events: none;
+      transition: opacity .22s ease;
+    }
+    .drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(480px, 92vw); z-index: 60;
+      background: var(--bg-elevated);
+      border-left: 1px solid var(--border);
+      box-shadow: -16px 0 48px rgba(17,24,39,0.18);
+      transform: translateX(100%);
+      transition: transform .28s cubic-bezier(.22,.61,.36,1);
+      display: flex; flex-direction: column;
+    }
+    .drawer.is-open { transform: translateX(0); }
+    @media (max-width: 720px) {
+      .drawer { width: 100vw; }
+    }
+
+    .drawer-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    .drawer-head .type-ic {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(99,102,241,0.10);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; flex-shrink: 0;
+    }
+    .drawer-head .type-meta { flex: 1; min-width: 0; }
+    .drawer-head .type-meta .lbl {
+      font-size: 11px; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    }
+    .drawer-head .type-meta .ttl {
+      font-family: var(--font-display);
+      font-size: 18px; font-weight: 600;
+      color: var(--fg);
+      letter-spacing: -0.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .drawer-head .type-switch {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg);
+      font-size: 12px; font-weight: 500;
+      color: var(--fg);
+      cursor: pointer; font-family: var(--font-sans);
+    }
+    .drawer-head .iconbtn { width: 32px; height: 32px; }
+    .drawer-head .iconbtn svg { width: 16px; height: 16px; }
+
+    .drawer-body {
+      flex: 1; overflow-y: auto;
+      padding: 18px;
+      display: flex; flex-direction: column;
+      gap: 18px;
+    }
+
+    .drawer-foot {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    .drawer-foot .saved-hint {
+      flex: 1; font-size: 12px; color: var(--fg-subtle);
+    }
+    .drawer-foot .saved-hint b { color: var(--fg-muted); font-weight: 500; }
+    .btn-discard {
+      padding: 9px 16px; border-radius: 9px;
+      border: 1px solid var(--border-strong); background: transparent;
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+      cursor: pointer; font-family: var(--font-sans);
+    }
+    .btn-discard:hover { background: var(--bg-muted); color: var(--fg); }
+    .btn-save {
+      padding: 9px 18px; border-radius: 9px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: var(--font-sans);
+      box-shadow: var(--shadow-brand);
+    }
+    .btn-save:hover { background: var(--brand-primary-hover); }
+
+    /* =========================================================================
+       Drawer sections (form + preview + extras)
+       ========================================================================= */
+    .section {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .section-head h4 {
+      font-family: var(--font-sans);
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin: 0;
+      flex: 1;
+    }
+    .section-head .pill {
+      font-size: 10px; padding: 2px 8px;
+    }
+    .section-body { display: flex; flex-direction: column; gap: 12px; }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field > label {
+      font-size: 12px; font-weight: 600; color: var(--fg-muted);
+      margin: 0;
+    }
+    .field .help { font-size: 11px; color: var(--fg-subtle); }
+    .field input[type="text"],
+    .field input[type="url"],
+    .field input[type="number"],
+    .field input[type="date"],
+    .field input[type="datetime-local"],
+    .field textarea,
+    .field select {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 13px;
+      background: var(--bg-elevated);
+      color: var(--fg);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      outline: none;
+      font-family: var(--font-sans);
+      transition: border .14s, box-shadow .14s;
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+    }
+    .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 480px) { .field-row { grid-template-columns: 1fr; } }
+
+    /* AI suggest CTA next to text fields */
+    .with-ai { position: relative; }
+    .with-ai .ai-btn {
+      position: absolute; right: 6px; top: 30px;
+      padding: 4px 10px; border-radius: 99px;
+      background: rgba(245,158,11,0.14); color: #92400E;
+      border: 0; font-size: 11px; font-weight: 600;
+      cursor: pointer; font-family: var(--font-sans);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .with-ai .ai-btn:hover { background: rgba(245,158,11,0.22); }
+    body.dark-mode .with-ai .ai-btn { background: rgba(245,158,11,0.22); color: #FCD34D; }
+
+    /* Visibility toggle */
+    .toggle-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .toggle-row .lbl { flex: 1; }
+    .toggle-row .lbl .t { font-size: 13px; font-weight: 600; color: var(--fg); }
+    .toggle-row .lbl .s { font-size: 11px; color: var(--fg-muted); margin-top: 2px; }
+    .switch {
+      position: relative; width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 99px;
+      cursor: pointer; transition: background .15s;
+      flex-shrink: 0;
+    }
+    .switch::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.18);
+      transition: transform .15s;
+    }
+    .switch.on { background: var(--brand-primary); }
+    .switch.on::after { transform: translateX(16px); }
+
+    /* Preview pane */
+    .preview {
+      background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%);
+      border-radius: 14px;
+      padding: 18px 14px;
+      color: #fff;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    .preview::before {
+      content: "Live preview";
+      position: absolute; top: 8px; left: 12px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; opacity: 0.7;
+    }
+    .preview-block {
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px; font-weight: 600;
+      margin-top: 8px;
+    }
+    .preview-block.compact { padding: 8px 12px; font-size: 12px; }
+    .preview-img {
+      width: 100%; height: 120px; border-radius: 10px;
+      background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    .preview-embed {
+      width: 100%; aspect-ratio: 16/9; border-radius: 10px;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; font-weight: 600;
+      gap: 8px;
+    }
+    .preview-heading {
+      font-family: var(--font-display); font-size: 20px;
+      font-weight: 600;
+    }
+    .preview-divider {
+      height: 1px; background: rgba(255,255,255,0.4);
+      margin: 8px 0;
+    }
+    .preview-divider.dotted {
+      height: 0; border-top: 2px dotted rgba(255,255,255,0.6);
+      background: transparent;
+    }
+    .preview-divider.spacer {
+      height: 24px; background: transparent;
+    }
+    .preview-social {
+      display: flex; gap: 10px; justify-content: center;
+      flex-wrap: wrap;
+    }
+    .preview-social .si {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .preview-form input {
+      width: 100%; padding: 10px 12px;
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.3); color: #fff;
+      border-radius: 8px; font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .preview-form input::placeholder { color: rgba(255,255,255,0.7); }
+    .preview-form button {
+      width: 100%; padding: 10px;
+      background: #fff; color: var(--brand-primary);
+      border: 0; border-radius: 8px;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+    .preview-product {
+      display: flex; gap: 10px; align-items: center;
+      background: rgba(255,255,255,0.16); border-radius: 10px;
+      padding: 10px;
+    }
+    .preview-product .pic {
+      width: 56px; height: 56px; border-radius: 8px;
+      background: linear-gradient(135deg, #FBBF24, #F59E0B);
+      flex-shrink: 0;
+    }
+    .preview-product .info { flex: 1; min-width: 0; text-align: left; }
+    .preview-product .info .t { font-size: 13px; font-weight: 600; }
+    .preview-product .info .p { font-size: 12px; color: rgba(255,255,255,0.85); }
+    .preview-product .buy {
+      padding: 6px 10px; background: #fff; color: var(--brand-primary);
+      border-radius: 8px; font-size: 11px; font-weight: 700;
+    }
+    .preview-countdown {
+      display: flex; gap: 6px; justify-content: center;
+    }
+    .preview-countdown .cd-cell {
+      background: rgba(255,255,255,0.22); border-radius: 8px;
+      padding: 8px 10px; min-width: 44px;
+    }
+    .preview-countdown .cd-cell .v { font-size: 17px; font-weight: 700; line-height: 1; }
+    .preview-countdown .cd-cell .l { font-size: 9px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+    .preview-faq {
+      text-align: left;
+      background: rgba(255,255,255,0.12); border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .preview-faq .q { font-size: 13px; font-weight: 600; }
+    .preview-faq .a { font-size: 11.5px; opacity: 0.85; margin-top: 4px; }
+    .preview-stream {
+      background: #0B0F1E; border-radius: 10px;
+      padding: 14px; color: #fff;
+      text-align: left; font-size: 13px;
+    }
+    .preview-stream .live { color: #EF4444; font-weight: 700; }
+    .preview-stream .v { font-size: 11px; opacity: 0.65; margin-top: 4px; }
+    .preview-html {
+      background: #0B0F1E; color: #A5B4FC; border-radius: 10px;
+      padding: 12px; font-family: var(--font-mono); font-size: 11px;
+      text-align: left; line-height: 1.5;
+    }
+
+    body.dark-mode .preview-block,
+    body.dark-mode .preview-product { border-color: rgba(255,255,255,0.18); }
+
+    .preview.is-hidden { opacity: 0.42; filter: grayscale(0.7); }
+    .preview-hidden-flag {
+      position: absolute; top: 8px; right: 12px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.4); color: #fff;
+      padding: 2px 8px; border-radius: 99px;
+      display: none;
+    }
+    .preview.is-hidden .preview-hidden-flag { display: inline-block; }
+
+    /* Locked state UI for tier-gated features */
+    .locked-card {
+      position: relative;
+      border: 1px dashed var(--border-strong);
+      background: var(--bg-muted);
+    }
+    .locked-card[data-locked="true"] .locked-overlay {
+      display: flex;
+    }
+    .locked-overlay {
+      display: none;
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.95) 50%);
+      backdrop-filter: blur(2px);
+      border-radius: 12px;
+      align-items: center; justify-content: center;
+      padding: 14px;
+      flex-direction: column; gap: 8px; text-align: center;
+    }
+    body.dark-mode .locked-overlay {
+      background: linear-gradient(180deg, rgba(20,26,45,0.7), rgba(11,15,30,0.95));
+    }
+    .locked-overlay .lk-title {
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .locked-overlay .lk-desc {
+      font-size: 11.5px; color: var(--fg-muted); max-width: 280px;
+    }
+    .locked-overlay .lk-cta {
+      display: inline-flex; gap: 6px; align-items: center;
+      padding: 7px 14px; border-radius: 99px;
+      background: var(--brand-primary); color: #fff; font-size: 12px; font-weight: 600;
+      text-decoration: none;
+      box-shadow: var(--shadow-brand);
+      cursor: pointer; border: 0; font-family: var(--font-sans);
+    }
+    .locked-overlay .lk-cta:hover { background: var(--brand-primary-hover); }
+    .locked-overlay .lk-tier-needed {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 99px;
+      background: rgba(245,158,11,0.14); color: #92400E;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    body.dark-mode .locked-overlay .lk-tier-needed { background: rgba(245,158,11,0.22); color: #FCD34D; }
+
+    /* Analytics tile */
+    .analytics-tile {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-bottom: 8px;
+    }
+    .analytics-tile .a-cell {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px;
+      text-align: center;
+    }
+    .analytics-tile .a-cell .v {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 600; color: var(--fg);
+      line-height: 1;
+    }
+    .analytics-tile .a-cell .l {
+      font-size: 10px; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+      margin-top: 4px;
+    }
+    .analytics-deep {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--brand-primary); font-weight: 600;
+      text-decoration: none;
+    }
+    .analytics-deep:hover { text-decoration: underline; }
+
+    /* Action row (duplicate / delete) */
+    .action-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .action-row button {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer; font-family: var(--font-sans);
+    }
+    .action-row button:hover { background: var(--bg-muted); }
+    .action-row button.danger { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+    .action-row button.danger:hover { background: rgba(239,68,68,0.08); }
+    .action-row button svg { width: 13px; height: 13px; }
+
+    /* Sub-modal (AI suggest, Delete confirm) */
+    .submodal-backdrop {
+      position: fixed; inset: 0; z-index: 70;
+      background: rgba(11,15,30,0.65);
+      backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .submodal-backdrop.is-open { display: flex; }
+    .submodal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-xl);
+      width: min(440px, 92vw);
+      max-height: 80vh; overflow-y: auto;
+    }
+    .submodal-head {
+      padding: 18px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .submodal-head h3 {
+      font-size: 17px; flex: 1; margin: 0;
+    }
+    .submodal-body { padding: 14px 20px 20px; }
+    .submodal .ai-option {
+      display: block; width: 100%;
+      padding: 12px 14px; margin-top: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; color: var(--fg);
+      font-family: var(--font-sans); text-align: left;
+      cursor: pointer; transition: border .12s, transform .12s;
+    }
+    .submodal .ai-option:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-1px);
+    }
+    .submodal .ai-option:first-of-type { margin-top: 0; }
+    .submodal .ai-option .lbl {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+
+    /* Demo toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px; z-index: 100;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 600; color: var(--fg-subtle);
+      display: flex; flex-direction: column; gap: 6px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      max-width: calc(100vw - 32px);
+    }
+    .demo-toolbar .dt-label { text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+    .demo-toolbar .dt-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+    .demo-toolbar button {
+      padding: 4px 10px; border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 11px; font-weight: 600;
+      cursor: pointer; font-family: var(--font-sans);
+      color: var(--fg);
+    }
+    .demo-toolbar button.is-active {
+      background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
+    }
+    .demo-toolbar .dt-tip { font-size: 10px; color: var(--fg-subtle); font-weight: 500; max-width: 220px; }
+
+    @media (max-width: 599px) {
+      .demo-toolbar { bottom: 8px; right: 8px; padding: 8px 10px; }
+      .demo-toolbar .dt-tip { display: none; }
+    }
+
+    /* Dark mode appbar + content */
+    body.dark-mode { background: var(--bg-dark); color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .brand .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #1F2937; color: #9CA3AF; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .iconbtn { color: #9CA3AF; }
+    body.dark-mode .iconbtn:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .demo-block { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .demo-block:hover { border-color: var(--brand-primary); }
+    body.dark-mode .demo-block .meta .t { color: #F3F4F6; }
+    body.dark-mode .demo-block .stats b { color: #F3F4F6; }
+    body.dark-mode .drawer { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .drawer-head, body.dark-mode .drawer-foot { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .field input, body.dark-mode .field textarea, body.dark-mode .field select {
+      background: #0B0F1E; color: #F3F4F6; border-color: #1F2937;
+    }
+    body.dark-mode .drawer-head .type-switch { background: #0B0F1E; color: #F3F4F6; border-color: #1F2937; }
+    body.dark-mode .submodal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .submodal-head { border-color: #1F2937; }
+    body.dark-mode .submodal .ai-option { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .analytics-tile .a-cell { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .analytics-tile .a-cell .v { color: #F3F4F6; }
+    body.dark-mode .action-row button { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }
+    body.dark-mode .action-row button:hover { background: #1F2937; }
+    body.dark-mode .demo-toolbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .demo-toolbar button { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+    body.dark-mode .demo-toolbar button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    body.dark-mode .add-block-btn { box-shadow: 0 8px 18px rgba(99,102,241,0.4); }
+    body.dark-mode .locked-card { background: #1F2937; border-color: #374151; }
+
+    /* Prefer-reduced-motion: kill drawer slide */
+    @media (prefers-reduced-motion: reduce) {
+      .drawer { transition: none !important; }
+      .drawer-backdrop { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-tier="creator">
+
+  <!-- ============================================================
+       TOP BAR
+       ============================================================ -->
+  <header class="appbar" role="banner">
+    <a href="./index.html" class="brand">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+
+    <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span class="hide-mobile">tadaify.com/</span><b>alexandra</b>
+    </a>
+
+    <div class="spacer"></div>
+
+    <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </header>
+
+  <!-- ============================================================
+       LAYOUT — sidebar + content (frozen behind drawer)
+       ============================================================ -->
+  <div class="layout">
+
+    <!-- Canonical sidebar — Pages active because we're editing a block on Home -->
+    <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+    <main class="content">
+      <div class="freeze">
+        <div class="page-head">
+          <h1>My page</h1>
+          <div class="sub">3 blocks · published · last edit just now</div>
+        </div>
+
+        <div class="demo-blocks" id="demo-blocks">
+          <!-- Click any block to open the editor on that block. -->
+        </div>
+
+        <button class="add-block-btn" onclick="window.location.href='./app-block-picker.html'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add block
+        </button>
+
+        <p style="margin-top:24px;font-size:12px;color:var(--fg-subtle);max-width:560px">
+          Demo note — this page shows the editor drawer overlaying a frozen dashboard backdrop.
+          Click any block above to re-open the editor for that type. The drawer also opens
+          automatically on first load.
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================
+       DRAWER BACKDROP
+       ============================================================ -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       DRAWER — block editor
+       ============================================================ -->
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+    <header class="drawer-head">
+      <span class="type-ic" id="d-type-icon">🔗</span>
+      <div class="type-meta">
+        <div class="lbl">Editing block</div>
+        <div class="ttl" id="drawer-title">Link button</div>
+      </div>
+      <select class="type-switch" id="d-type-switch" aria-label="Switch block type" onchange="loadType(this.value)">
+        <!-- options populated by JS -->
+      </select>
+      <button class="iconbtn" aria-label="Close editor" onclick="closeDrawer()" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    <div class="drawer-body" id="drawer-body">
+
+      <!-- ▼ TYPE-SPECIFIC FORM (rendered by JS) ▼ -->
+      <section class="section" id="form-section" aria-labelledby="form-section-h">
+        <div class="section-head">
+          <h4 id="form-section-h">Content</h4>
+        </div>
+        <div class="section-body" id="form-body">
+          <!-- populated by renderForm() -->
+        </div>
+      </section>
+
+      <!-- ▼ LIVE PREVIEW ▼ -->
+      <section class="section" aria-labelledby="preview-section-h">
+        <div class="section-head">
+          <h4 id="preview-section-h">Preview · what visitors see</h4>
+          <div class="toggle-row" style="gap:6px">
+            <span style="font-size:11px;color:var(--fg-muted);font-weight:600">Visible</span>
+            <span class="switch on" id="d-visible-switch" role="switch" aria-checked="true" tabindex="0"
+                  onclick="toggleVisible()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleVisible();}"></span>
+          </div>
+        </div>
+        <div class="preview" id="preview-pane" aria-live="polite">
+          <span class="preview-hidden-flag">Hidden</span>
+          <div id="preview-body"></div>
+        </div>
+      </section>
+
+      <!-- ▼ ANALYTICS DRILL-DOWN ▼ -->
+      <section class="section" aria-labelledby="analytics-section-h">
+        <div class="section-head">
+          <h4 id="analytics-section-h">This block's analytics</h4>
+          <span class="pill pill-success" id="trending-pill" style="display:none">↑ Trending</span>
+        </div>
+        <div class="analytics-tile">
+          <div class="a-cell"><div class="v" id="a-today">128</div><div class="l">today</div></div>
+          <div class="a-cell"><div class="v" id="a-7d">1.2k</div><div class="l">last 7 days</div></div>
+          <div class="a-cell"><div class="v" id="a-source">tiktok</div><div class="l">top source</div></div>
+        </div>
+        <a href="./app-insights.html" class="analytics-deep">
+          View in Insights
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+        </a>
+      </section>
+
+      <!-- ▼ SCHEDULE VISIBILITY (Creator+ feature, locked-state UI for Free) ▼ -->
+      <section class="section locked-card" id="schedule-card" data-locked="false" aria-labelledby="sched-section-h">
+        <div class="section-head">
+          <h4 id="sched-section-h">Schedule visibility</h4>
+          <span class="pill" id="sched-pill" style="display:none">Creator+</span>
+        </div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field">
+              <label for="d-sched-start">Show from</label>
+              <input id="d-sched-start" type="datetime-local" value=""/>
+            </div>
+            <div class="field">
+              <label for="d-sched-end">Hide after</label>
+              <input id="d-sched-end" type="datetime-local" value=""/>
+            </div>
+          </div>
+          <div class="help" id="sched-help">Leave both empty to keep the block always visible. Useful for limited-time launches.</div>
+        </div>
+        <div class="locked-overlay">
+          <span class="lk-tier-needed">⏰ Creator</span>
+          <div class="lk-title">Show this block only on certain dates</div>
+          <div class="lk-desc">Schedule visibility — perfect for launch windows, expiring offers, and seasonal pages. Available from Creator ($8/mo).</div>
+          <button class="lk-cta" onclick="openUpgrade('creator')">Upgrade to Creator →</button>
+        </div>
+      </section>
+
+      <!-- ▼ A/B TESTING (Business-only, locked-state for Free/Creator/Pro) ▼ -->
+      <section class="section locked-card" id="ab-card" data-locked="true" aria-labelledby="ab-section-h">
+        <div class="section-head">
+          <h4 id="ab-section-h">A/B test this block</h4>
+          <span class="pill pill-pro" id="ab-pill">Business</span>
+        </div>
+        <div class="section-body">
+          <div class="toggle-row">
+            <div class="lbl">
+              <div class="t">Run a 50/50 split test</div>
+              <div class="s">Compare two variants — winning variant auto-applied after 7 days or 1k clicks.</div>
+            </div>
+            <span class="switch" role="switch" aria-checked="false" onclick="this.classList.toggle('on');this.setAttribute('aria-checked', this.classList.contains('on'));"></span>
+          </div>
+          <div class="field">
+            <label>Variant B label</label>
+            <input type="text" placeholder="Try a different headline…"/>
+          </div>
+        </div>
+        <div class="locked-overlay">
+          <span class="lk-tier-needed">⚖️ Business</span>
+          <div class="lk-title">Compare two block variants and ship the winner</div>
+          <div class="lk-desc">Run automatic A/B tests — winning variant promoted after 7 days or 1,000 clicks. Available on Business ($49/mo).</div>
+          <button class="lk-cta" onclick="openUpgrade('business')">Upgrade to Business →</button>
+        </div>
+      </section>
+
+      <!-- ▼ ACTION ROW ▼ -->
+      <section class="section" aria-label="Block actions">
+        <div class="action-row">
+          <button onclick="duplicateBlock()" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Duplicate
+          </button>
+          <button onclick="confirmDelete()" type="button" class="danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Delete
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="drawer-foot">
+      <div class="saved-hint"><b id="save-status">Last saved 12s ago</b></div>
+      <button class="btn-discard" onclick="discardChanges()" type="button">Discard</button>
+      <button class="btn-save" onclick="saveBlock()" type="button">Save</button>
+    </footer>
+  </aside>
+
+  <!-- ============================================================
+       SUB-MODAL — AI suggest
+       ============================================================ -->
+  <div class="submodal-backdrop" id="ai-modal" onclick="if(event.target===this)closeAi()" role="dialog" aria-modal="true" aria-labelledby="ai-h">
+    <div class="submodal" role="document">
+      <div class="submodal-head">
+        <span style="font-size:18px">✨</span>
+        <h3 id="ai-h">AI copy suggestions</h3>
+        <button class="iconbtn" onclick="closeAi()" aria-label="Close" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="submodal-body" id="ai-body">
+        <p style="font-size:12px;color:var(--fg-muted);margin-bottom:14px">
+          Tap a suggestion to apply it to the field. <span id="ai-quota-hint" class="text-subtle">Free 5 / Creator 20 / Pro 100 / Business unlimited per DEC-AI-QUOTA-LADDER-01.</span>
+        </p>
+        <button class="ai-option" onclick="applyAi(this)">
+          <div class="lbl">Punchy</div>
+          <div>Get my latest drop on Spotify ↗</div>
+        </button>
+        <button class="ai-option" onclick="applyAi(this)">
+          <div class="lbl">Friendly</div>
+          <div>New track is live — give it a listen 🎧</div>
+        </button>
+        <button class="ai-option" onclick="applyAi(this)">
+          <div class="lbl">Curious</div>
+          <div>Wanna hear what I made this week?</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SUB-MODAL — Delete confirm
+       ============================================================ -->
+  <div class="submodal-backdrop" id="delete-modal" onclick="if(event.target===this)closeDelete()" role="dialog" aria-modal="true" aria-labelledby="del-h">
+    <div class="submodal" role="document">
+      <div class="submodal-head">
+        <span style="font-size:18px">🗑</span>
+        <h3 id="del-h">Delete this block?</h3>
+        <button class="iconbtn" onclick="closeDelete()" aria-label="Close" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="submodal-body">
+        <p style="font-size:13px;color:var(--fg-muted);margin-bottom:12px">
+          This block has <b id="del-clicks">1,240</b> recorded clicks. The historical data will stay in Insights, but the block will disappear from your page immediately.
+        </p>
+        <p style="font-size:12px;color:var(--fg-muted);margin-bottom:14px">
+          Type <b id="del-confirm-text">delete spotify-link</b> to confirm:
+        </p>
+        <input id="del-input" type="text" placeholder="delete spotify-link" oninput="window.checkDeleteInput(this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--border-strong);border-radius:8px;font-size:13px;font-family:var(--font-sans);background:var(--bg-elevated);color:var(--fg);outline:none"/>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button class="btn-discard" onclick="closeDelete()">Cancel</button>
+          <button id="del-confirm-btn" class="btn-save" onclick="doDelete()" disabled style="background:var(--danger);box-shadow:none;opacity:0.5;cursor:not-allowed">Delete block</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       DEMO TOOLBAR
+       ============================================================ -->
+  <div class="demo-toolbar" aria-hidden="true">
+    <span class="dt-label">Tier preview</span>
+    <div class="dt-btns">
+      <button data-tier="free" onclick="setTier('free')">Free</button>
+      <button data-tier="creator" class="is-active" onclick="setTier('creator')">Creator ✓</button>
+      <button data-tier="pro" onclick="setTier('pro')">Pro</button>
+      <button data-tier="business" onclick="setTier('business')">Business</button>
+    </div>
+    <div class="dt-tip">Switching tier toggles locked-state UIs for Schedule (Creator+) and A/B testing (Business).</div>
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    /* ------------------------------------------------------------------ */
+    /* THEME                                                              */
+    /* ------------------------------------------------------------------ */
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      try { localStorage.setItem('tadaify-theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); } catch (e) {}
+    }
+    try {
+      if (localStorage.getItem('tadaify-theme') === 'dark') document.body.classList.add('dark-mode');
+    } catch (e) {}
+
+    /* ------------------------------------------------------------------ */
+    /* BLOCK TYPE CATALOG                                                 */
+    /*                                                                    */
+    /* Each type is a self-contained spec: form fields + preview renderer */
+    /* + analytics seed. Adding a new type means appending one entry.    */
+    /* ------------------------------------------------------------------ */
+    var BLOCK_TYPES = {
+      'link': {
+        label: 'Link button',
+        icon: '🔗',
+        category: 'Links',
+        form: function (state) {
+          return [
+            { kind: 'text', name: 'label', label: 'Button label', value: state.label || 'Listen on Spotify', ai: true, help: 'Short and clickable. Use a verb where you can.' },
+            { kind: 'url',  name: 'url',   label: 'URL', value: state.url || 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF' },
+            { kind: 'text', name: 'icon',  label: 'Icon (emoji or upload)', value: state.icon || '▶' },
+            { kind: 'check', name: 'newtab', label: 'Open in new tab', value: state.newtab !== false },
+            { kind: 'thumb', name: 'thumb', label: 'Custom thumbnail', value: state.thumb }
+          ];
+        },
+        preview: function (state) {
+          return '<div class="preview-block">' + escapeHtml(state.icon || '▶') + ' &nbsp; ' + escapeHtml(state.label || 'Listen on Spotify') + '</div>';
+        },
+        analytics: { today: '128', sevenDay: '1.2k', source: 'tiktok', trending: true }
+      },
+      'image': {
+        label: 'Image',
+        icon: '🖼',
+        category: 'Media',
+        form: function (state) {
+          return [
+            { kind: 'upload', name: 'src',   label: 'Image (jpg / png / webp · max 5MB)' },
+            { kind: 'text',   name: 'alt',   label: 'Alt text (accessibility)', value: state.alt || 'Album cover for "Spring Drops"', help: 'Describe the image for screen readers and SEO.' },
+            { kind: 'url',    name: 'href',  label: 'Click-through URL (optional)', value: state.href || '' },
+            { kind: 'select', name: 'aspect', label: 'Aspect ratio',
+              options: [['1','Square 1:1'], ['43','Standard 4:3'], ['169','Wide 16:9'], ['rounded','Rounded card']],
+              value: state.aspect || 'rounded' }
+          ];
+        },
+        preview: function (state) {
+          return '<div class="preview-img">🖼</div>' +
+                 '<div class="preview-block compact">' + escapeHtml(state.alt || 'Album cover for "Spring Drops"') + '</div>';
+        },
+        analytics: { today: '46', sevenDay: '380', source: 'instagram' }
+      },
+      'embed': {
+        label: 'Embed',
+        icon: '📺',
+        category: 'Media',
+        form: function (state) {
+          return [
+            { kind: 'url',  name: 'url',  label: 'Paste a URL — YouTube, Vimeo, Spotify, SoundCloud, Twitter, Instagram, TikTok',
+              value: state.url || 'https://youtu.be/dQw4w9WgXcQ',
+              help: 'Provider auto-detected. Preview updates instantly.' },
+            { kind: 'select', name: 'provider', label: 'Detected provider',
+              options: [['youtube','YouTube'],['vimeo','Vimeo'],['spotify','Spotify'],['soundcloud','SoundCloud'],['twitter','Twitter'],['instagram','Instagram'],['tiktok','TikTok']],
+              value: state.provider || 'youtube', readonly: true },
+            { kind: 'text', name: 'caption', label: 'Caption (optional)', value: state.caption || '', ai: true }
+          ];
+        },
+        preview: function (state) {
+          var prov = state.provider || 'youtube';
+          var icons = { youtube: '▶', vimeo: '▶', spotify: '♫', soundcloud: '♪', twitter: '𝕏', instagram: '📷', tiktok: '🎵' };
+          return '<div class="preview-embed">' + (icons[prov] || '▶') + ' &nbsp; ' + escapeHtml(prov.toUpperCase()) + ' embed</div>';
+        },
+        analytics: { today: '92', sevenDay: '760', source: 'youtube' }
+      },
+      'heading': {
+        label: 'Heading / text',
+        icon: '📝',
+        category: 'Layout',
+        form: function (state) {
+          return [
+            { kind: 'select', name: 'level', label: 'Style',
+              options: [['h2','Heading'],['p','Paragraph']],
+              value: state.level || 'h2' },
+            { kind: 'text', name: 'text', label: 'Text', value: state.text || 'My latest releases', ai: true },
+            { kind: 'select', name: 'align', label: 'Alignment',
+              options: [['left','Left'],['center','Center'],['right','Right']],
+              value: state.align || 'center' }
+          ];
+        },
+        preview: function (state) {
+          if ((state.level || 'h2') === 'h2') {
+            return '<div class="preview-heading">' + escapeHtml(state.text || 'My latest releases') + '</div>';
+          }
+          return '<div class="preview-block compact">' + escapeHtml(state.text || 'My latest releases') + '</div>';
+        },
+        analytics: { today: '0', sevenDay: '0', source: '—', trending: false }
+      },
+      'divider': {
+        label: 'Divider',
+        icon: '➖',
+        category: 'Layout',
+        form: function (state) {
+          return [
+            { kind: 'select', name: 'style', label: 'Style',
+              options: [['line','Solid line'],['dotted','Dotted line'],['spacer','Empty space']],
+              value: state.style || 'line' },
+            { kind: 'select', name: 'size', label: 'Size',
+              options: [['sm','Small'],['md','Medium'],['lg','Large']],
+              value: state.size || 'md' }
+          ];
+        },
+        preview: function (state) {
+          var s = state.style || 'line';
+          return '<div class="preview-divider ' + (s === 'dotted' ? 'dotted' : s === 'spacer' ? 'spacer' : '') + '"></div>';
+        },
+        analytics: { today: '0', sevenDay: '0', source: '—' }
+      },
+      'social': {
+        label: 'Social icons row',
+        icon: '🌐',
+        category: 'Links',
+        form: function (state) {
+          return [
+            { kind: 'social-list', name: 'handles', label: 'Add your handles',
+              value: state.handles || { instagram: '@alexandra', tiktok: '@alex.silva', youtube: '@alexandra-music' } },
+            { kind: 'select', name: 'shape', label: 'Icon shape',
+              options: [['circle','Circle'],['square','Rounded square']], value: state.shape || 'circle' }
+          ];
+        },
+        preview: function (state) {
+          var h = state.handles || { instagram: '@alexandra', tiktok: '@alex.silva', youtube: '@alexandra-music' };
+          var keys = Object.keys(h).filter(function (k) { return (h[k] || '').trim(); });
+          if (!keys.length) keys = ['instagram','tiktok','youtube'];
+          var letters = { instagram: 'IG', tiktok: 'TT', youtube: 'YT', x: '𝕏', linkedin: 'in', spotify: '♫', twitch: 'Tw' };
+          return '<div class="preview-social">' + keys.map(function (k) {
+            return '<span class="si">' + (letters[k] || k.charAt(0).toUpperCase()) + '</span>';
+          }).join('') + '</div>';
+        },
+        analytics: { today: '64', sevenDay: '510', source: 'pinterest' }
+      },
+      'newsletter': {
+        label: 'Newsletter signup',
+        icon: '✉️',
+        category: 'Forms',
+        form: function (state) {
+          return [
+            { kind: 'select', name: 'provider', label: 'Email provider',
+              options: [['mailchimp','Mailchimp'],['convertkit','ConvertKit'],['substack','Substack'],['beehiiv','beehiiv']],
+              value: state.provider || 'mailchimp' },
+            { kind: 'text', name: 'list', label: 'List ID / URL', value: state.list || 'list_alex_main',
+              help: 'Mailchimp: List ID. Substack: publication URL.' },
+            { kind: 'text', name: 'cta',  label: 'Button label', value: state.cta || 'Subscribe', ai: true },
+            { kind: 'text', name: 'placeholder', label: 'Input placeholder', value: state.placeholder || 'you@email.com' },
+            { kind: 'check', name: 'doubleOptIn', label: 'Require double opt-in (recommended)', value: state.doubleOptIn !== false }
+          ];
+        },
+        preview: function (state) {
+          return '<div class="preview-form">' +
+                   '<input placeholder="' + escapeHtml(state.placeholder || 'you@email.com') + '"/>' +
+                   '<button>' + escapeHtml(state.cta || 'Subscribe') + '</button>' +
+                 '</div>';
+        },
+        analytics: { today: '14', sevenDay: '92', source: 'instagram', trending: false }
+      },
+      'product': {
+        label: 'Shop product',
+        icon: '🛍',
+        category: 'Shop',
+        form: function (state) {
+          return [
+            { kind: 'select', name: 'product', label: 'Pick a product from your shop',
+              options: [['drop1','Spring drop merch — $24'],['ebook','My productivity playbook (PDF) — $9'],['call','30-min coaching call — $80']],
+              value: state.product || 'drop1' },
+            { kind: 'text', name: 'cta', label: 'Button label', value: state.cta || 'Buy now', ai: true },
+            { kind: 'check', name: 'showPrice', label: 'Show price on card', value: state.showPrice !== false }
+          ];
+        },
+        preview: function (state) {
+          var products = { drop1: ['Spring drop merch','$24'], ebook: ['Productivity playbook','$9'], call: ['30-min coaching call','$80'] };
+          var p = products[state.product || 'drop1'];
+          return '<div class="preview-product">' +
+                   '<div class="pic"></div>' +
+                   '<div class="info"><div class="t">' + escapeHtml(p[0]) + '</div>' +
+                     (state.showPrice !== false ? '<div class="p">' + p[1] + '</div>' : '') + '</div>' +
+                   '<div class="buy">' + escapeHtml(state.cta || 'Buy now') + '</div>' +
+                 '</div>';
+        },
+        analytics: { today: '38', sevenDay: '210', source: 'tiktok' }
+      },
+      'video': {
+        label: 'Video',
+        icon: '🎬',
+        category: 'Media',
+        form: function (state) {
+          return [
+            { kind: 'upload', name: 'src', label: 'Upload video (mp4 / webm · max 50MB)' },
+            { kind: 'text', name: 'caption', label: 'Caption', value: state.caption || 'Behind the scenes', ai: true },
+            { kind: 'check', name: 'autoplay', label: 'Autoplay (muted)', value: state.autoplay === true },
+            { kind: 'check', name: 'loop', label: 'Loop', value: state.loop === true }
+          ];
+        },
+        preview: function () {
+          return '<div class="preview-embed">🎬 &nbsp; Video</div>';
+        },
+        analytics: { today: '78', sevenDay: '630', source: 'youtube' }
+      },
+      'accordion': {
+        label: 'FAQ / accordion',
+        icon: '❓',
+        category: 'Layout',
+        form: function (state) {
+          return [
+            { kind: 'text', name: 'q1', label: 'Question 1', value: state.q1 || 'Do you take collab requests?' },
+            { kind: 'text', name: 'a1', label: 'Answer 1',   value: state.a1 || 'Yes — DM on Instagram and I\'ll get back within 48h.', ai: true },
+            { kind: 'text', name: 'q2', label: 'Question 2', value: state.q2 || 'How do I get the workout plan?' },
+            { kind: 'text', name: 'a2', label: 'Answer 2',   value: state.a2 || 'Buy on the shop tab — instant download after checkout.', ai: true }
+          ];
+        },
+        preview: function (state) {
+          return '<div class="preview-faq">' +
+                   '<div class="q">▼ ' + escapeHtml(state.q1 || 'Do you take collab requests?') + '</div>' +
+                   '<div class="a">' + escapeHtml(state.a1 || 'Yes — DM on Instagram and I\'ll get back within 48h.') + '</div>' +
+                 '</div>';
+        },
+        analytics: { today: '22', sevenDay: '180', source: 'direct' }
+      },
+      'custom-html': {
+        label: 'Custom HTML',
+        icon: '</>',
+        category: 'Layout',
+        gatedAt: 'pro',
+        form: function (state) {
+          return [
+            { kind: 'code', name: 'html', label: 'HTML / CSS / JS', value: state.html || '<div style="background:#fff;color:#111;padding:12px;border-radius:10px">\n  <b>Hi from custom HTML.</b>\n</div>' }
+          ];
+        },
+        preview: function (state) {
+          var snippet = (state.html || '<div ...>').replace(/\s+/g, ' ').slice(0, 80) + '…';
+          return '<div class="preview-html">' + escapeHtml(snippet) + '</div>';
+        },
+        analytics: { today: '5', sevenDay: '40', source: 'direct' }
+      },
+      'countdown': {
+        label: 'Countdown timer',
+        icon: '⏳',
+        category: 'Layout',
+        form: function (state) {
+          return [
+            { kind: 'text', name: 'label', label: 'Event label', value: state.label || 'Next live in', ai: true },
+            { kind: 'datetime', name: 'target', label: 'Target date + time', value: state.target || '2026-05-15T19:00' },
+            { kind: 'select', name: 'theme', label: 'Style',
+              options: [['boxed','Boxed cells'],['plain','Plain numbers']], value: state.theme || 'boxed' }
+          ];
+        },
+        preview: function (state) {
+          return '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;opacity:0.85;margin-bottom:6px">' + escapeHtml(state.label || 'Next live in') + '</div>' +
+                 '<div class="preview-countdown">' +
+                   '<div class="cd-cell"><div class="v">19</div><div class="l">d</div></div>' +
+                   '<div class="cd-cell"><div class="v">04</div><div class="l">h</div></div>' +
+                   '<div class="cd-cell"><div class="v">37</div><div class="l">m</div></div>' +
+                   '<div class="cd-cell"><div class="v">22</div><div class="l">s</div></div>' +
+                 '</div>';
+        },
+        analytics: { today: '54', sevenDay: '420', source: 'instagram', trending: true }
+      },
+      'livestream': {
+        label: 'Live stream',
+        icon: '📡',
+        category: 'Media',
+        form: function (state) {
+          return [
+            { kind: 'select', name: 'platform', label: 'Platform',
+              options: [['twitch','Twitch'],['youtubelive','YouTube Live'],['kick','Kick']], value: state.platform || 'twitch' },
+            { kind: 'text', name: 'channel', label: 'Channel / handle', value: state.channel || 'alexandra-music' },
+            { kind: 'check', name: 'showWhenOffline', label: 'Show block when offline (with "next stream" countdown)', value: state.showWhenOffline === true }
+          ];
+        },
+        preview: function (state) {
+          return '<div class="preview-stream">' +
+                   '<span class="live">● LIVE</span> &nbsp; ' + escapeHtml(state.channel || 'alexandra-music') +
+                   '<div class="v">142 watching · ' + escapeHtml((state.platform || 'twitch').toUpperCase()) + '</div>' +
+                 '</div>';
+        },
+        analytics: { today: '12', sevenDay: '88', source: 'discord' }
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /* TIER GATING                                                        */
+    /*                                                                    */
+    /* The locked-state UI for Schedule (Creator+) and A/B (Business)    */
+    /* is driven by data-locked on the .locked-card containers. setTier  */
+    /* recomputes them.                                                   */
+    /* ------------------------------------------------------------------ */
+    var TIER_RANK = { free: 0, creator: 1, pro: 2, business: 3 };
+
+    function setTier(t) {
+      document.body.setAttribute('data-tier', t);
+      // Update demo toolbar
+      document.querySelectorAll('.demo-toolbar button[data-tier]').forEach(function (b) {
+        var on = b.getAttribute('data-tier') === t;
+        b.classList.toggle('is-active', on);
+        var raw = ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[b.getAttribute('data-tier')];
+        b.textContent = on ? raw + ' ✓' : raw;
+      });
+      // Update sidebar tier label
+      var st = document.getElementById('side-tier');
+      if (st) st.textContent = '@alexandra · ' + ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[t];
+      // Schedule unlocks at Creator+
+      var sched = document.getElementById('schedule-card');
+      sched.setAttribute('data-locked', TIER_RANK[t] < TIER_RANK.creator ? 'true' : 'false');
+      // A/B unlocks at Business
+      var ab = document.getElementById('ab-card');
+      ab.setAttribute('data-locked', TIER_RANK[t] < TIER_RANK.business ? 'true' : 'false');
+      // Custom HTML block: gated at Pro — re-evaluate the current form
+      if (state.type === 'custom-html' && TIER_RANK[t] < TIER_RANK.pro) {
+        // Show inline upgrade hint inside the form section instead of swapping types
+      }
+      currentTier = t;
+    }
+    var currentTier = 'creator';
+
+    /* ------------------------------------------------------------------ */
+    /* DRAWER + STATE                                                     */
+    /* ------------------------------------------------------------------ */
+    var state = {
+      type: 'link',
+      label: 'Listen on Spotify',
+      url: 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF',
+      icon: '▶',
+      newtab: true,
+      visible: true
+    };
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function renderForm() {
+      var spec = BLOCK_TYPES[state.type];
+      var fields = spec.form(state);
+      var html = fields.map(function (f) {
+        var id = 'f-' + f.name;
+        var aiBtn = f.ai ? '<button class="ai-btn" type="button" onclick="openAi(\'' + f.name + '\')">✨ Suggest</button>' : '';
+        var help = f.help ? '<div class="help">' + escapeHtml(f.help) + '</div>' : '';
+        if (f.kind === 'text' || f.kind === 'url') {
+          return '<div class="field' + (f.ai ? ' with-ai' : '') + '">' +
+                 '<label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
+                 '<input id="' + id + '" type="' + (f.kind === 'url' ? 'url' : 'text') + '" value="' + escapeHtml(f.value || '') + '" oninput="updateField(\'' + f.name + '\', this.value)"' + (f.readonly ? ' readonly style="background:var(--bg-muted);color:var(--fg-muted)"' : '') + '/>' +
+                 aiBtn + help + '</div>';
+        }
+        if (f.kind === 'datetime') {
+          return '<div class="field"><label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
+                 '<input id="' + id + '" type="datetime-local" value="' + escapeHtml(f.value || '') + '" oninput="updateField(\'' + f.name + '\', this.value)"/>' +
+                 help + '</div>';
+        }
+        if (f.kind === 'select') {
+          var opts = (f.options || []).map(function (o) {
+            return '<option value="' + escapeHtml(o[0]) + '"' + (o[0] === f.value ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>';
+          }).join('');
+          return '<div class="field"><label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
+                 '<select id="' + id + '" onchange="updateField(\'' + f.name + '\', this.value)"' + (f.readonly ? ' disabled style="background:var(--bg-muted);color:var(--fg-muted)"' : '') + '>' + opts + '</select>' +
+                 help + '</div>';
+        }
+        if (f.kind === 'check') {
+          return '<div class="toggle-row" style="padding:6px 0">' +
+                 '<div class="lbl"><div class="t">' + escapeHtml(f.label) + '</div>' + (f.help ? '<div class="s">' + escapeHtml(f.help) + '</div>' : '') + '</div>' +
+                 '<span class="switch' + (f.value ? ' on' : '') + '" role="switch" aria-checked="' + (f.value ? 'true' : 'false') + '" tabindex="0" ' +
+                       'onclick="toggleField(\'' + f.name + '\', this)" ' +
+                       'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleField(\'' + f.name + '\', this);}"></span>' +
+                 '</div>';
+        }
+        if (f.kind === 'thumb' || f.kind === 'upload') {
+          return '<div class="field"><label>' + escapeHtml(f.label) + '</label>' +
+                 '<button type="button" style="padding:14px;border:2px dashed var(--border-strong);background:var(--bg-elevated);color:var(--fg-muted);border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-sans)" onclick="alert(\'Mockup — file picker would open here.\')">' +
+                 '⬆ Click to upload (mockup)</button>' + help + '</div>';
+        }
+        if (f.kind === 'social-list') {
+          var h = f.value || {};
+          var rows = ['instagram','tiktok','youtube','x','linkedin','spotify'].map(function (k) {
+            return '<div style="display:flex;gap:8px;align-items:center;margin-top:6px">' +
+                   '<span style="width:64px;font-size:11px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.04em;font-weight:600">' + k + '</span>' +
+                   '<input type="text" placeholder="@handle" value="' + escapeHtml(h[k] || '') + '" oninput="updateSocial(\'' + k + '\', this.value)" style="flex:1;padding:7px 10px;border:1px solid var(--border-strong);border-radius:7px;font-size:12.5px;background:var(--bg-elevated);color:var(--fg);outline:none;font-family:var(--font-sans)"/>' +
+                   '</div>';
+          }).join('');
+          return '<div class="field"><label>' + escapeHtml(f.label) + '</label>' + rows + help + '</div>';
+        }
+        if (f.kind === 'code') {
+          return '<div class="field"><label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
+                 '<textarea id="' + id + '" rows="6" style="font-family:var(--font-mono);font-size:12px;line-height:1.5" oninput="updateField(\'' + f.name + '\', this.value)">' + escapeHtml(f.value || '') + '</textarea>' +
+                 help + '</div>';
+        }
+        return '';
+      }).join('');
+      document.getElementById('form-body').innerHTML = html;
+      renderPreview();
+    }
+
+    function renderPreview() {
+      var spec = BLOCK_TYPES[state.type];
+      var pane = document.getElementById('preview-pane');
+      pane.classList.toggle('is-hidden', state.visible === false);
+      document.getElementById('preview-body').innerHTML = spec.preview(state);
+    }
+
+    function updateField(name, value) {
+      state[name] = value;
+      renderPreview();
+      bumpSaveStatus();
+    }
+    function toggleField(name, el) {
+      var on = !el.classList.contains('on');
+      el.classList.toggle('on', on);
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+      state[name] = on;
+      renderPreview();
+      bumpSaveStatus();
+    }
+    function updateSocial(k, v) {
+      if (!state.handles) state.handles = {};
+      state.handles[k] = v;
+      renderPreview();
+      bumpSaveStatus();
+    }
+    function toggleVisible() {
+      state.visible = !state.visible;
+      var sw = document.getElementById('d-visible-switch');
+      sw.classList.toggle('on', state.visible);
+      sw.setAttribute('aria-checked', state.visible ? 'true' : 'false');
+      renderPreview();
+      bumpSaveStatus();
+    }
+
+    function bumpSaveStatus() {
+      var el = document.getElementById('save-status');
+      el.textContent = 'Unsaved changes';
+      el.style.color = 'var(--brand-warm-dark)';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* TYPE SWITCHER + initial setup                                      */
+    /* ------------------------------------------------------------------ */
+    function loadType(t) {
+      // Reset state to type defaults — keep handle for social, etc.
+      var preserved = { visible: state.visible, handles: state.handles };
+      state = Object.assign({}, preserved, { type: t });
+      var spec = BLOCK_TYPES[t];
+      // Pre-populate state with form defaults
+      spec.form(state).forEach(function (f) {
+        if (state[f.name] === undefined && f.value !== undefined) state[f.name] = f.value;
+      });
+      // Update head
+      document.getElementById('drawer-title').textContent = spec.label;
+      document.getElementById('d-type-icon').textContent = spec.icon;
+      // Update analytics
+      var a = spec.analytics || { today: '0', sevenDay: '0', source: '—' };
+      document.getElementById('a-today').textContent = a.today;
+      document.getElementById('a-7d').textContent = a.sevenDay;
+      document.getElementById('a-source').textContent = a.source;
+      document.getElementById('trending-pill').style.display = a.trending ? '' : 'none';
+      // Reset save indicator
+      document.getElementById('save-status').textContent = 'Last saved 12s ago';
+      document.getElementById('save-status').style.color = '';
+      renderForm();
+    }
+
+    function buildTypeSwitch() {
+      var sel = document.getElementById('d-type-switch');
+      var byCat = {};
+      Object.keys(BLOCK_TYPES).forEach(function (k) {
+        var cat = BLOCK_TYPES[k].category || 'Other';
+        (byCat[cat] = byCat[cat] || []).push(k);
+      });
+      var html = '';
+      ['Links','Media','Forms','Shop','Layout'].forEach(function (cat) {
+        if (!byCat[cat]) return;
+        html += '<optgroup label="' + cat + '">';
+        byCat[cat].forEach(function (k) {
+          html += '<option value="' + k + '">' + BLOCK_TYPES[k].icon + ' ' + BLOCK_TYPES[k].label + '</option>';
+        });
+        html += '</optgroup>';
+      });
+      sel.innerHTML = html;
+      sel.value = state.type;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* DEMO BLOCKS (frozen dashboard backdrop)                            */
+    /* ------------------------------------------------------------------ */
+    var DEMO_BLOCKS = [
+      { type: 'link',     label: 'Listen on Spotify', sub: 'open.spotify.com/artist/...' , clicks: '128 today' },
+      { type: 'embed',    label: 'My latest YT drop', sub: 'youtu.be/dQw4w9WgXcQ',          clicks: '92 today'  },
+      { type: 'newsletter', label: 'Join my newsletter', sub: 'Mailchimp · list_alex_main', clicks: '14 today' }
+    ];
+    function renderDemoBlocks() {
+      var c = document.getElementById('demo-blocks');
+      c.innerHTML = DEMO_BLOCKS.map(function (b, i) {
+        var spec = BLOCK_TYPES[b.type];
+        var active = (state.type === b.type);
+        return '<div class="demo-block' + (active ? ' is-editing' : '') + '" onclick="openDrawerForBlock(\'' + b.type + '\')" tabindex="0" onkeydown="if(event.key===\'Enter\'){this.click();}">' +
+               '<div class="ic">' + spec.icon + '</div>' +
+               '<div class="meta"><div class="t">' + b.label + '</div><div class="u">' + b.sub + '</div></div>' +
+               '<div class="stats"><b>' + b.clicks + '</b></div>' +
+               '</div>';
+      }).join('');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* OPEN / CLOSE                                                       */
+    /* ------------------------------------------------------------------ */
+    function openDrawerForBlock(t) {
+      loadType(t);
+      document.getElementById('drawer').classList.add('is-open');
+      document.getElementById('drawer-backdrop').classList.add('is-open');
+      document.body.classList.add('drawer-open');
+      renderDemoBlocks();
+    }
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('is-open');
+      document.getElementById('drawer-backdrop').classList.remove('is-open');
+      document.body.classList.remove('drawer-open');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* SAVE / DISCARD / DUPLICATE / DELETE                                */
+    /* ------------------------------------------------------------------ */
+    function saveBlock() {
+      var el = document.getElementById('save-status');
+      el.textContent = 'Saved just now';
+      el.style.color = 'var(--success)';
+      setTimeout(function () {
+        el.textContent = 'Last saved just now';
+        el.style.color = '';
+      }, 1400);
+    }
+    function discardChanges() {
+      if (document.getElementById('save-status').textContent === 'Unsaved changes') {
+        if (!confirm('Discard unsaved changes?')) return;
+      }
+      loadType(state.type);
+    }
+    function duplicateBlock() {
+      var t = document.getElementById('save-status');
+      t.textContent = 'Duplicated — preview shows new block';
+      t.style.color = 'var(--brand-primary)';
+      setTimeout(function () { t.textContent = 'Last saved just now'; t.style.color = ''; }, 1400);
+    }
+    function confirmDelete() {
+      var spec = BLOCK_TYPES[state.type];
+      var slug = state.type + '-' + (state.label || 'block').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'').slice(0, 24);
+      document.getElementById('del-confirm-text').textContent = 'delete ' + slug;
+      document.getElementById('del-input').placeholder = 'delete ' + slug;
+      document.getElementById('del-input').value = '';
+      document.getElementById('del-clicks').textContent = (BLOCK_TYPES[state.type].analytics || {}).sevenDay || '—';
+      document.getElementById('del-confirm-btn').disabled = true;
+      document.getElementById('del-confirm-btn').style.opacity = '0.5';
+      document.getElementById('del-confirm-btn').style.cursor = 'not-allowed';
+      document.getElementById('delete-modal').classList.add('is-open');
+      window.checkDeleteInput = function (v) {
+        var ok = v === document.getElementById('del-confirm-text').textContent;
+        var btn = document.getElementById('del-confirm-btn');
+        btn.disabled = !ok;
+        btn.style.opacity = ok ? '1' : '0.5';
+        btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+      };
+    }
+    function closeDelete() { document.getElementById('delete-modal').classList.remove('is-open'); }
+    function doDelete() {
+      closeDelete();
+      closeDrawer();
+      // Visually remove the block from the demo list (mockup only)
+      var t = document.getElementById('save-status');
+      t.textContent = 'Block deleted';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* AI suggest                                                         */
+    /* ------------------------------------------------------------------ */
+    var aiTargetField = null;
+    function openAi(name) {
+      aiTargetField = name;
+      document.getElementById('ai-modal').classList.add('is-open');
+    }
+    function closeAi() { document.getElementById('ai-modal').classList.remove('is-open'); aiTargetField = null; }
+    function applyAi(btn) {
+      if (aiTargetField) {
+        var text = btn.querySelector('div:last-child').textContent;
+        state[aiTargetField] = text;
+        renderForm();
+        bumpSaveStatus();
+      }
+      closeAi();
+    }
+
+    function openUpgrade(tier) {
+      alert('Mockup — would open the upgrade flow for tier: ' + tier + '. Stripe Checkout via DEC-073 hybrid Portal.');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* KEYBOARD                                                           */
+    /* ------------------------------------------------------------------ */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (document.getElementById('ai-modal').classList.contains('is-open')) { closeAi(); return; }
+        if (document.getElementById('delete-modal').classList.contains('is-open')) { closeDelete(); return; }
+        if (document.getElementById('drawer').classList.contains('is-open')) closeDrawer();
+      }
+    });
+
+    /* ------------------------------------------------------------------ */
+    /* INIT                                                               */
+    /* ------------------------------------------------------------------ */
+    buildTypeSwitch();
+    loadType('link');
+    renderDemoBlocks();
+    setTier('creator');
+
+    // Auto-open drawer on first load (so reviewers see it immediately)
+    setTimeout(function () {
+      document.getElementById('drawer').classList.add('is-open');
+      document.getElementById('drawer-backdrop').classList.add('is-open');
+      document.body.classList.add('drawer-open');
+    }, 250);
+
+    // Expose for inline handlers
+    window.openDrawerForBlock = openDrawerForBlock;
+    window.closeDrawer = closeDrawer;
+    window.loadType = loadType;
+    window.updateField = updateField;
+    window.toggleField = toggleField;
+    window.toggleVisible = toggleVisible;
+    window.updateSocial = updateSocial;
+    window.openAi = openAi;
+    window.closeAi = closeAi;
+    window.applyAi = applyAi;
+    window.saveBlock = saveBlock;
+    window.discardChanges = discardChanges;
+    window.duplicateBlock = duplicateBlock;
+    window.confirmDelete = confirmDelete;
+    window.closeDelete = closeDelete;
+    window.doDelete = doDelete;
+    window.openUpgrade = openUpgrade;
+    window.setTier = setTier;
+    window.toggleTheme = toggleTheme;
+  </script>
+</body>
+</html>
