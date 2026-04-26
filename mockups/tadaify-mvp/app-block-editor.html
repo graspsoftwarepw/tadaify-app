@@ -2630,7 +2630,11 @@
         category: 'Links',
         form: function (state) {
           return [
-            { kind: 'text', name: 'label', label: 'Button label', value: state.label || 'Listen on Spotify', help: 'Short and clickable. Use a verb where you can.' },
+            /* FIX-SUGGEST-RESTORE-001 — ai: true restored on the Link
+               button label (and kept on Heading text + Countdown event
+               label below). Suggest stays out of URL / numeric / date
+               / toggle / dropdown / icon-picker fields per the spec. */
+            { kind: 'text', name: 'label', label: 'Button label', value: state.label || 'Listen on Spotify', ai: true, help: 'Short and clickable. Use a verb where you can.' },
             { kind: 'url',  name: 'url',   label: 'URL', value: state.url || 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF' },
             { kind: 'icon-picker', name: 'icon', label: 'Icon', value: state.icon || 'spotify',
               help: 'Pick a brand logo for social platforms or a generic glyph for any other link.' },
