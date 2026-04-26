@@ -918,12 +918,43 @@
       margin-top: 8px;
     }
     .preview-block.compact { padding: 8px 12px; font-size: 12px; }
-    .preview-img {
-      width: 100%; height: 120px; border-radius: 10px;
+    /* FIX-IMG-001 — unified Image card.
+       Single visually-unified panel: image area on top, content area
+       (caption + optional CTA) on bottom — shared border, radius and
+       background. Replaces the prior split (orange image + separate
+       purple caption pill) reported on 2026-04-26. */
+    .preview-image-card {
+      width: 100%;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 12px;
+      overflow: hidden;
+      text-align: left;
+    }
+    .preview-image-card .img {
+      width: 100%; height: 140px;
       background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
       display: flex; align-items: center; justify-content: center;
-      font-size: 30px;
+      font-size: 32px;
     }
+    .preview-image-card .content {
+      padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .preview-image-card .cap {
+      font-size: 13px; font-weight: 600; line-height: 1.35;
+      color: #fff;
+    }
+    .preview-image-card .cta {
+      align-self: flex-start;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px;
+      background: #fff; color: var(--brand-primary);
+      border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      text-decoration: none;
+    }
+    body.dark-mode .preview-image-card { border-color: rgba(255,255,255,0.18); }
     .preview-embed {
       width: 100%; aspect-ratio: 16/9; border-radius: 10px;
       background: rgba(0,0,0,0.45);
@@ -2570,16 +2601,34 @@
         form: function (state) {
           return [
             { kind: 'upload', name: 'src',   label: 'Image (jpg / png / webp · max 5MB)' },
-            { kind: 'text',   name: 'alt',   label: 'Alt text (accessibility)', value: state.alt || 'Album cover for "Spring Drops"', help: 'Describe the image for screen readers and SEO.' },
+            { kind: 'text',   name: 'alt',   label: 'Alt text (accessibility)', value: state.alt || 'Album cover for "Spring Drops"', help: 'Describe the image for screen readers and SEO. Not visible on the public page.' },
+            { kind: 'text',   name: 'caption', label: 'Caption (optional, shown under the image)', value: state.caption || 'Album cover for "Spring Drops"', ai: true, help: 'Visible text shown on the public page, beneath the image.' },
             { kind: 'url',    name: 'href',  label: 'Click-through URL (optional)', value: state.href || '' },
+            { kind: 'text',   name: 'ctaLabel', label: 'CTA label (shown when click-through URL is set)', value: state.ctaLabel || 'Listen now', ai: true, help: 'Small inline link rendered inside the card, e.g. "Listen now", "Buy", "Read".' },
             { kind: 'select', name: 'aspect', label: 'Aspect ratio',
               options: [['1','Square 1:1'], ['43','Standard 4:3'], ['169','Wide 16:9'], ['rounded','Rounded card']],
               value: state.aspect || 'rounded' }
           ];
         },
         preview: function (state) {
-          return '<div class="preview-img">🖼</div>' +
-                 '<div class="preview-block compact">' + escapeHtml(state.alt || 'Album cover for "Spring Drops"') + '</div>';
+          /* FIX-IMG-001 — single unified card: image area on top,
+             content area (caption + optional CTA) on bottom. The two
+             zones share one border, radius and background, reading as
+             ONE block. Caption falls back to alt text if empty so the
+             card still renders meaningful copy in the editor. */
+          var caption = state.caption || state.alt || 'Album cover for "Spring Drops"';
+          var hasHref = state.href && state.href.trim().length > 0;
+          var ctaLabel = state.ctaLabel || 'Listen now';
+          var cta = hasHref
+            ? '<a class="cta" href="#" onclick="event.preventDefault()">' + escapeHtml(ctaLabel) + ' →</a>'
+            : '';
+          return '<div class="preview-image-card">' +
+                   '<div class="img">🖼</div>' +
+                   '<div class="content">' +
+                     '<div class="cap">' + escapeHtml(caption) + '</div>' +
+                     cta +
+                   '</div>' +
+                 '</div>';
         },
         analytics: { today: '46', sevenDay: '380', source: 'instagram' }
       },
@@ -2925,7 +2974,7 @@
     /* ------------------------------------------------------------------ */
     var CONTENT_FIELD_KEYS = [
       'label', 'url', 'icon', 'newtab', 'thumb',           /* link */
-      'src', 'alt', 'href', 'aspect',                      /* image */
+      'src', 'alt', 'href', 'aspect', 'ctaLabel',          /* image (caption shared with embed below) */
       'provider', 'caption',                               /* embed */
       'level', 'text', 'align',                            /* heading */
       'style', 'size',                                     /* divider */
@@ -2942,7 +2991,7 @@
     /* Diff field labels — what shows up in the "What's different" card */
     var AB_DIFF_LABELS = {
       label: 'Label', url: 'URL', icon: 'Icon', newtab: 'New tab', thumb: 'Thumbnail',
-      src: 'Source', alt: 'Alt text', href: 'Link', aspect: 'Aspect',
+      src: 'Source', alt: 'Alt text', href: 'Link', aspect: 'Aspect', ctaLabel: 'CTA label',
       provider: 'Provider', caption: 'Caption',
       level: 'Heading level', text: 'Text', align: 'Alignment',
       style: 'Style', size: 'Size',
