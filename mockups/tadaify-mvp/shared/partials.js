@@ -261,8 +261,281 @@
     el.outerHTML = html;
   });
 
+  /* ----------------------------------------------------------------- */
+  /* 4. Tier badge + tier-gate-modal (no-blur premium UX)              */
+  /*                                                                    */
+  /* Per feedback_no_blur_premium_features (2026-04-26): premium UI    */
+  /* must be FULLY visible and interactive. The badge marks the tier   */
+  /* required; gating happens at save/apply time via TierGate.modal.   */
+  /* ----------------------------------------------------------------- */
+  var TIER_RANK = { free: 0, creator: 1, pro: 2, business: 3 };
+  var TIER_LABEL = { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+
+  var TIER_BADGE_CSS = '' +
+    '<style data-source="tier-badge-partial">' +
+    /* Inline pill rendered next to a section heading */
+    '.tdf-tier-badge {' +
+    '  display: inline-flex; align-items: center; gap: 4px;' +
+    '  padding: 2px 8px; border-radius: 99px;' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '  font-size: 10px; font-weight: 700;' +
+    '  text-transform: uppercase; letter-spacing: 0.06em;' +
+    '  line-height: 1.3; white-space: nowrap;' +
+    '  border: 1px solid transparent;' +
+    '  cursor: help;' +
+    '  vertical-align: middle;' +
+    '}' +
+    '.tdf-tier-badge .tb-ico { font-size: 10px; line-height: 1; }' +
+    /* Creator — neutral teal accent */
+    '.tdf-tier-badge.tier-creator {' +
+    '  background: rgba(16,185,129,0.12); color: #047857;' +
+    '  border-color: rgba(16,185,129,0.28);' +
+    '}' +
+    'body.dark-mode .tdf-tier-badge.tier-creator { background: rgba(16,185,129,0.20); color: #6EE7B7; border-color: rgba(16,185,129,0.45); }' +
+    /* Pro — brand-primary indigo */
+    '.tdf-tier-badge.tier-pro {' +
+    '  background: rgba(99,102,241,0.13); color: #4338CA;' +
+    '  border-color: rgba(99,102,241,0.30);' +
+    '}' +
+    'body.dark-mode .tdf-tier-badge.tier-pro { background: rgba(99,102,241,0.22); color: #A5B4FC; border-color: rgba(99,102,241,0.50); }' +
+    /* Business — warm amber */
+    '.tdf-tier-badge.tier-business {' +
+    '  background: rgba(245,158,11,0.14); color: #92400E;' +
+    '  border-color: rgba(245,158,11,0.32);' +
+    '}' +
+    'body.dark-mode .tdf-tier-badge.tier-business { background: rgba(245,158,11,0.22); color: #FCD34D; border-color: rgba(245,158,11,0.55); }' +
+    /* Indicator-state: when a badge is rendered for a feature the user already has */
+    '.tdf-tier-badge.is-included { opacity: 0.55; }' +
+    /* Tier-gate modal */
+    '.tdf-gate-backdrop {' +
+    '  position: fixed; inset: 0; z-index: 1000;' +
+    '  background: rgba(11,15,30,0.55);' +
+    '  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);' +
+    '  display: none; align-items: center; justify-content: center;' +
+    '  padding: 16px; opacity: 0; transition: opacity .14s ease;' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '}' +
+    '.tdf-gate-backdrop.is-open { display: flex; opacity: 1; }' +
+    '.tdf-gate {' +
+    '  background: var(--bg-elevated, #fff); color: var(--fg, #111);' +
+    '  border: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 16px;' +
+    '  box-shadow: 0 24px 60px rgba(11,15,30,0.25);' +
+    '  width: min(460px, 94vw); max-height: 86vh; overflow-y: auto;' +
+    '  transform: translateY(8px) scale(0.985);' +
+    '  transition: transform .14s ease;' +
+    '}' +
+    '.tdf-gate-backdrop.is-open .tdf-gate { transform: translateY(0) scale(1); }' +
+    '.tdf-gate-head { padding: 18px 22px 8px; }' +
+    '.tdf-gate-eyebrow {' +
+    '  display: inline-flex; align-items: center; gap: 6px;' +
+    '  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;' +
+    '  color: var(--fg-muted, #6B7280);' +
+    '}' +
+    '.tdf-gate-title {' +
+    '  font-family: var(--font-display, "Crimson Pro", serif);' +
+    '  font-size: 21px; font-weight: 600; line-height: 1.25;' +
+    '  margin: 8px 0 6px; color: var(--fg, #111);' +
+    '}' +
+    '.tdf-gate-sub { font-size: 13.5px; color: var(--fg-muted, #6B7280); line-height: 1.55; margin: 0; }' +
+    '.tdf-gate-body { padding: 6px 22px 8px; }' +
+    '.tdf-gate-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; }' +
+    '.tdf-gate-list li {' +
+    '  display: flex; align-items: flex-start; gap: 10px;' +
+    '  padding: 9px 11px; border: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 10px; background: var(--bg-muted, #F9FAFB);' +
+    '  font-size: 13px; line-height: 1.5;' +
+    '}' +
+    '.tdf-gate-list li .gl-ico { flex-shrink: 0; font-size: 14px; line-height: 1.3; }' +
+    '.tdf-gate-list li .gl-name { font-weight: 600; color: var(--fg, #111); }' +
+    '.tdf-gate-list li .gl-meta { color: var(--fg-muted, #6B7280); font-size: 12px; }' +
+    '.tdf-gate-actions {' +
+    '  display: flex; flex-direction: column; gap: 8px;' +
+    '  padding: 14px 22px 20px;' +
+    '  border-top: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  margin-top: 10px;' +
+    '}' +
+    '.tdf-gate-actions button {' +
+    '  display: inline-flex; align-items: center; justify-content: center; gap: 8px;' +
+    '  width: 100%; padding: 11px 14px;' +
+    '  border-radius: 10px; cursor: pointer; font-family: inherit;' +
+    '  font-size: 13.5px; font-weight: 600;' +
+    '  border: 1px solid transparent;' +
+    '  transition: background .12s ease, border-color .12s ease;' +
+    '}' +
+    '.tdf-gate-actions .gate-primary { background: var(--brand-primary, #6366F1); color: #fff; }' +
+    '.tdf-gate-actions .gate-primary:hover { background: var(--brand-primary-hover, #4F46E5); }' +
+    '.tdf-gate-actions .gate-secondary { background: var(--bg-elevated, #fff); color: var(--fg, #111); border-color: var(--border-strong, rgba(0,0,0,0.16)); }' +
+    '.tdf-gate-actions .gate-secondary:hover { background: var(--bg-muted, #F9FAFB); }' +
+    '.tdf-gate-actions .gate-ghost { background: transparent; color: var(--fg-muted, #6B7280); }' +
+    '.tdf-gate-actions .gate-ghost:hover { color: var(--fg, #111); }' +
+    'body.dark-mode .tdf-gate { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-gate-list li { background: #0B0F1E; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-gate-list li .gl-name { color: #F3F4F6; }' +
+    'body.dark-mode .tdf-gate-actions { border-top-color: #1F2937; }' +
+    'body.dark-mode .tdf-gate-actions .gate-secondary { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-gate-actions .gate-secondary:hover { background: #1F2937; }' +
+    '@media (prefers-reduced-motion: reduce) {' +
+    '  .tdf-gate-backdrop, .tdf-gate { transition: none !important; }' +
+    '}' +
+    '</style>';
+
+  var tierCssInjected = false;
+  function ensureTierCss() {
+    if (tierCssInjected) return;
+    document.head.insertAdjacentHTML('beforeend', TIER_BADGE_CSS);
+    tierCssInjected = true;
+  }
+
+  /* Render a single tier badge as a string. */
+  function renderTierBadge(tier, opts) {
+    ensureTierCss();
+    tier = (tier || 'pro').toLowerCase();
+    opts = opts || {};
+    var label = TIER_LABEL[tier] || 'Pro';
+    var icon  = tier === 'business' ? '🔒' : (tier === 'pro' ? '✨' : '⭐');
+    var title = opts.tooltip || ('Available on ' + label + ' · click to upgrade');
+    var included = opts.included ? ' is-included' : '';
+    return '<span class="tdf-tier-badge tier-' + tier + included + '"' +
+           ' role="note" tabindex="0"' +
+           ' aria-label="' + escapeAttr(title) + '"' +
+           ' title="' + escapeAttr(title) + '">' +
+             '<span class="tb-ico" aria-hidden="true">' + icon + '</span>' +
+             '<span class="tb-label">' + escapeAttr(label) + '</span>' +
+           '</span>';
+  }
+
+  /* ----------------------------------------------------------------- */
+  /* TierGate — save-time validation modal                              */
+  /*                                                                    */
+  /* Usage:                                                             */
+  /*   TierGate.checkAndProceed({                                       */
+  /*     currentTier: 'free',                                           */
+  /*     features: [                                                    */
+  /*       { id: 'ab', name: 'A/B testing', requires: 'business',       */
+  /*         meta: '50/50 split, auto-pick winner' }                   */
+  /*     ],                                                             */
+  /*     onProceed:    function () { ... tier OK — save ... },          */
+  /*     onSaveWithout: function () { ... save non-premium subset ... },*/
+  /*     onUpgrade:    function (highestTier) { ... open Stripe ... }   */
+  /*   });                                                              */
+  /*                                                                    */
+  /* If currentTier already meets every required tier — onProceed runs */
+  /* immediately, no modal shown. Otherwise the modal lists the gated  */
+  /* features and offers the three branches.                            */
+  /* ----------------------------------------------------------------- */
+  function highestRequired(features) {
+    var highest = 'free';
+    features.forEach(function (f) {
+      if (TIER_RANK[f.requires] > TIER_RANK[highest]) highest = f.requires;
+    });
+    return highest;
+  }
+
+  function ensureGateDom() {
+    if (document.getElementById('tdf-gate-backdrop')) return;
+    ensureTierCss();
+    var html = '' +
+      '<div class="tdf-gate-backdrop" id="tdf-gate-backdrop" role="dialog" aria-modal="true" aria-labelledby="tdf-gate-title" hidden>' +
+        '<div class="tdf-gate">' +
+          '<div class="tdf-gate-head">' +
+            '<span class="tdf-gate-eyebrow">🔒 Upgrade required to apply</span>' +
+            '<h3 class="tdf-gate-title" id="tdf-gate-title">Some changes need a higher plan</h3>' +
+            '<p class="tdf-gate-sub" id="tdf-gate-sub"></p>' +
+          '</div>' +
+          '<div class="tdf-gate-body">' +
+            '<ul class="tdf-gate-list" id="tdf-gate-list"></ul>' +
+          '</div>' +
+          '<div class="tdf-gate-actions">' +
+            '<button type="button" class="gate-primary" id="tdf-gate-upgrade">Upgrade →</button>' +
+            '<button type="button" class="gate-secondary" id="tdf-gate-save-without">Save without premium changes</button>' +
+            '<button type="button" class="gate-ghost" id="tdf-gate-cancel">Cancel — keep editing</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+    var bd = document.getElementById('tdf-gate-backdrop');
+    bd.addEventListener('click', function (e) { if (e.target === bd) closeGate(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && bd.classList.contains('is-open')) closeGate();
+    });
+  }
+
+  function closeGate() {
+    var bd = document.getElementById('tdf-gate-backdrop');
+    if (!bd) return;
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+
+  function openGate(features, currentTier, hooks) {
+    ensureGateDom();
+    var bd = document.getElementById('tdf-gate-backdrop');
+    var sub = document.getElementById('tdf-gate-sub');
+    var list = document.getElementById('tdf-gate-list');
+    var btnUp = document.getElementById('tdf-gate-upgrade');
+    var btnSv = document.getElementById('tdf-gate-save-without');
+    var btnCx = document.getElementById('tdf-gate-cancel');
+
+    var top = highestRequired(features);
+    var topLabel = TIER_LABEL[top] || 'Business';
+    var multi = features.length > 1;
+    sub.textContent = multi
+      ? ('You enabled ' + features.length + ' premium feature' + (features.length === 1 ? '' : 's') + '. Apply them by upgrading to ' + topLabel + ', or save the rest without them.')
+      : (features[0].name + ' is available on ' + topLabel + '. Upgrade to apply this change, or save without it.');
+
+    list.innerHTML = features.map(function (f) {
+      var ico = f.requires === 'business' ? '🔒' : (f.requires === 'pro' ? '✨' : '⭐');
+      var meta = f.meta ? '<div class="gl-meta">' + escapeAttr(f.meta) + '</div>' : '';
+      return '<li>' +
+        '<span class="gl-ico" aria-hidden="true">' + ico + '</span>' +
+        '<div>' +
+          '<div class="gl-name">' + escapeAttr(f.name) + ' <span class="tdf-tier-badge tier-' + f.requires + '" style="margin-left:4px"><span class="tb-ico">' + ico + '</span><span class="tb-label">' + TIER_LABEL[f.requires] + '</span></span></div>' +
+          meta +
+        '</div>' +
+      '</li>';
+    }).join('');
+
+    /* Hide "save without" if there are no non-premium changes to save (caller signals via hooks.allowSaveWithout). */
+    btnSv.style.display = (hooks && hooks.onSaveWithout) ? '' : 'none';
+    btnUp.textContent = 'Upgrade to ' + topLabel + ' →';
+
+    btnUp.onclick = function () { closeGate(); if (hooks && hooks.onUpgrade) hooks.onUpgrade(top); };
+    btnSv.onclick = function () { closeGate(); if (hooks && hooks.onSaveWithout) hooks.onSaveWithout(); };
+    btnCx.onclick = function () { closeGate(); if (hooks && hooks.onCancel) hooks.onCancel(); };
+
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+    setTimeout(function () { btnUp.focus(); }, 60);
+  }
+
+  function checkAndProceed(opts) {
+    opts = opts || {};
+    var current = (opts.currentTier || 'free').toLowerCase();
+    var features = (opts.features || []).filter(function (f) {
+      return TIER_RANK[(f.requires || 'free').toLowerCase()] > TIER_RANK[current];
+    });
+    if (features.length === 0) {
+      if (opts.onProceed) opts.onProceed();
+      return;
+    }
+    openGate(features, current, {
+      onUpgrade:     opts.onUpgrade,
+      onSaveWithout: opts.onSaveWithout,
+      onCancel:      opts.onCancel
+    });
+  }
+
   /* Expose for tests + dynamic re-render (e.g. tier switcher in demo toolbar) */
   window.TadaifyPartials = {
-    renderSidebar: renderSidebar
+    renderSidebar: renderSidebar,
+    renderTierBadge: renderTierBadge
+  };
+  window.TierGate = {
+    checkAndProceed: checkAndProceed,
+    open:  function (features, currentTier, hooks) { openGate(features, currentTier, hooks || {}); },
+    close: closeGate,
+    TIER_RANK:  TIER_RANK,
+    TIER_LABEL: TIER_LABEL
   };
 })();

@@ -527,51 +527,25 @@
     }
     .preview.is-hidden .preview-hidden-flag { display: inline-block; }
 
-    /* Locked state UI for tier-gated features */
-    .locked-card {
+    /* Tier-gated section — full visibility per feedback_no_blur_premium_features (2026-04-26).
+       NO blur, NO overlay, NO opacity. Sections are fully interactive; the .tdf-tier-badge
+       in the section header signals required tier; save-time validation happens in saveBlock(). */
+    .section.tier-gated {
       position: relative;
-      border: 1px dashed var(--border-strong);
-      background: var(--bg-muted);
+      border-color: var(--border);
+      background: var(--bg-elevated);
     }
-    .locked-card[data-locked="true"] .locked-overlay {
-      display: flex;
+    .section.tier-gated .section-head {
+      gap: 8px;
     }
-    .locked-overlay {
-      display: none;
-      position: absolute; inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.95) 50%);
-      backdrop-filter: blur(2px);
-      border-radius: 12px;
-      align-items: center; justify-content: center;
-      padding: 14px;
-      flex-direction: column; gap: 8px; text-align: center;
+    .section.tier-gated .tier-hint {
+      font-size: 11.5px; color: var(--fg-muted);
+      margin-top: 2px; line-height: 1.45;
     }
-    body.dark-mode .locked-overlay {
-      background: linear-gradient(180deg, rgba(20,26,45,0.7), rgba(11,15,30,0.95));
+    .section.tier-gated .tier-hint a {
+      color: var(--brand-primary); font-weight: 600; text-decoration: none;
     }
-    .locked-overlay .lk-title {
-      font-size: 13px; font-weight: 600; color: var(--fg);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .locked-overlay .lk-desc {
-      font-size: 11.5px; color: var(--fg-muted); max-width: 280px;
-    }
-    .locked-overlay .lk-cta {
-      display: inline-flex; gap: 6px; align-items: center;
-      padding: 7px 14px; border-radius: 99px;
-      background: var(--brand-primary); color: #fff; font-size: 12px; font-weight: 600;
-      text-decoration: none;
-      box-shadow: var(--shadow-brand);
-      cursor: pointer; border: 0; font-family: var(--font-sans);
-    }
-    .locked-overlay .lk-cta:hover { background: var(--brand-primary-hover); }
-    .locked-overlay .lk-tier-needed {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 8px; border-radius: 99px;
-      background: rgba(245,158,11,0.14); color: #92400E;
-      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    body.dark-mode .locked-overlay .lk-tier-needed { background: rgba(245,158,11,0.22); color: #FCD34D; }
+    .section.tier-gated .tier-hint a:hover { text-decoration: underline; }
 
     /* Analytics tile */
     .analytics-tile {
@@ -725,7 +699,7 @@
     body.dark-mode .demo-toolbar button { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
     body.dark-mode .demo-toolbar button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
     body.dark-mode .add-block-btn { box-shadow: 0 8px 18px rgba(99,102,241,0.4); }
-    body.dark-mode .locked-card { background: #1F2937; border-color: #374151; }
+    body.dark-mode .section.tier-gated { background: #141A2D; border-color: #1F2937; }
 
     /* Prefer-reduced-motion: kill modal scale/fade */
     @media (prefers-reduced-motion: reduce) {
@@ -846,38 +820,36 @@
             <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
 
-          <!-- ▼ SCHEDULE VISIBILITY (Creator+ feature, locked-state UI for Free) ▼ -->
-          <section class="section locked-card" id="schedule-card" data-locked="false" aria-labelledby="sched-section-h">
+          <!-- ▼ SCHEDULE VISIBILITY (Creator+ — fully visible per feedback_no_blur_premium_features) ▼ -->
+          <section class="section tier-gated" id="schedule-card" data-min-tier="creator" aria-labelledby="sched-section-h">
             <div class="section-head">
               <h4 id="sched-section-h">Schedule visibility</h4>
-              <span class="pill" id="sched-pill" style="display:none">Creator+</span>
+              <span id="schedule-tier-badge" data-tier-badge="creator"></span>
             </div>
             <div class="section-body">
               <div class="field-row">
                 <div class="field">
                   <label for="d-sched-start">Show from</label>
-                  <input id="d-sched-start" type="datetime-local" value=""/>
+                  <input id="d-sched-start" type="datetime-local" value="" oninput="bumpSaveStatus()"/>
                 </div>
                 <div class="field">
                   <label for="d-sched-end">Hide after</label>
-                  <input id="d-sched-end" type="datetime-local" value=""/>
+                  <input id="d-sched-end" type="datetime-local" value="" oninput="bumpSaveStatus()"/>
                 </div>
               </div>
               <div class="help" id="sched-help">Leave both empty to keep the block always visible. Useful for limited-time launches.</div>
-            </div>
-            <div class="locked-overlay">
-              <span class="lk-tier-needed">⏰ Creator</span>
-              <div class="lk-title">Show this block only on certain dates</div>
-              <div class="lk-desc">Schedule visibility — perfect for launch windows, expiring offers, and seasonal pages. Available from Creator ($8/mo).</div>
-              <button class="lk-cta" onclick="openUpgrade('creator')">Upgrade to Creator →</button>
+              <div class="tier-hint" id="sched-tier-hint" style="display:none">
+                Schedule visibility unlocks on <strong>Creator</strong> ($8/mo). You can fill in the dates now — we'll prompt to upgrade when you save.
+                <a href="./pricing.html" onclick="event.preventDefault();openUpgrade('creator')">See plans →</a>
+              </div>
             </div>
           </section>
 
-          <!-- ▼ A/B TESTING (Business-only, locked-state for Free/Creator/Pro) ▼ -->
-          <section class="section locked-card" id="ab-card" data-locked="true" aria-labelledby="ab-section-h">
+          <!-- ▼ A/B TESTING (Business — fully visible per feedback_no_blur_premium_features) ▼ -->
+          <section class="section tier-gated" id="ab-card" data-min-tier="business" aria-labelledby="ab-section-h">
             <div class="section-head">
               <h4 id="ab-section-h">A/B test this block</h4>
-              <span class="pill pill-pro" id="ab-pill">Business</span>
+              <span id="ab-tier-badge" data-tier-badge="business"></span>
             </div>
             <div class="section-body">
               <div class="toggle-row">
@@ -885,18 +857,18 @@
                   <div class="t">Run a 50/50 split test</div>
                   <div class="s">Compare two variants — winning variant auto-applied after 7 days or 1k clicks.</div>
                 </div>
-                <span class="switch" role="switch" aria-checked="false" onclick="this.classList.toggle('on');this.setAttribute('aria-checked', this.classList.contains('on'));"></span>
+                <span class="switch" id="ab-switch" role="switch" aria-checked="false" tabindex="0"
+                      onclick="toggleAb(this)"
+                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAb(this);}"></span>
               </div>
               <div class="field">
-                <label>Variant B label</label>
-                <input type="text" placeholder="Try a different headline…"/>
+                <label for="ab-variant-b">Variant B label</label>
+                <input id="ab-variant-b" type="text" placeholder="Try a different headline…" oninput="bumpSaveStatus()"/>
               </div>
-            </div>
-            <div class="locked-overlay">
-              <span class="lk-tier-needed">⚖️ Business</span>
-              <div class="lk-title">Compare two block variants and ship the winner</div>
-              <div class="lk-desc">Run automatic A/B tests — winning variant promoted after 7 days or 1,000 clicks. Available on Business ($49/mo).</div>
-              <button class="lk-cta" onclick="openUpgrade('business')">Upgrade to Business →</button>
+              <div class="tier-hint" id="ab-tier-hint" style="display:none">
+                A/B testing unlocks on <strong>Business</strong> ($49/mo). Configure the test now — we'll prompt to upgrade when you save.
+                <a href="./pricing.html" onclick="event.preventDefault();openUpgrade('business')">See plans →</a>
+              </div>
             </div>
           </section>
 
@@ -1033,7 +1005,7 @@
       <button data-tier="pro" onclick="setTier('pro')">Pro</button>
       <button data-tier="business" onclick="setTier('business')">Business</button>
     </div>
-    <div class="dt-tip">Switching tier toggles locked-state UIs for Schedule (Creator+) and A/B testing (Business).</div>
+    <div class="dt-tip">Switching tier toggles the inline tier badges + hint copy. The premium UIs stay fully visible and editable on every tier — try clicking <strong>Save</strong> with the A/B toggle on while on Free to see the tier-gate modal.</div>
   </div>
 
   <script src="./shared/partials.js"></script>
@@ -1331,13 +1303,15 @@
     };
 
     /* ------------------------------------------------------------------ */
-    /* TIER GATING                                                        */
+    /* TIER GATING — full visibility, save-time validation                */
     /*                                                                    */
-    /* The locked-state UI for Schedule (Creator+) and A/B (Business)    */
-    /* is driven by data-locked on the .locked-card containers. setTier  */
-    /* recomputes them.                                                   */
+    /* Premium sections (Schedule = Creator+, A/B = Business) are ALWAYS  */
+    /* fully visible and interactive (per feedback_no_blur_premium_       */
+    /* features, locked 2026-04-26). The tier badge in the section head  */
+    /* signals the requirement; saveBlock() validates at submit time.    */
     /* ------------------------------------------------------------------ */
-    var TIER_RANK = { free: 0, creator: 1, pro: 2, business: 3 };
+    var TIER_RANK = (window.TierGate && window.TierGate.TIER_RANK) || { free: 0, creator: 1, pro: 2, business: 3 };
+    var TIER_LABEL = (window.TierGate && window.TierGate.TIER_LABEL) || { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
 
     function setTier(t) {
       document.body.setAttribute('data-tier', t);
@@ -1345,25 +1319,46 @@
       document.querySelectorAll('.demo-toolbar button[data-tier]').forEach(function (b) {
         var on = b.getAttribute('data-tier') === t;
         b.classList.toggle('is-active', on);
-        var raw = ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[b.getAttribute('data-tier')];
+        var raw = TIER_LABEL[b.getAttribute('data-tier')];
         b.textContent = on ? raw + ' ✓' : raw;
       });
       // Update sidebar tier label
       var st = document.getElementById('side-tier');
-      if (st) st.textContent = '@alexandra · ' + ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[t];
-      // Schedule unlocks at Creator+
-      var sched = document.getElementById('schedule-card');
-      sched.setAttribute('data-locked', TIER_RANK[t] < TIER_RANK.creator ? 'true' : 'false');
-      // A/B unlocks at Business
-      var ab = document.getElementById('ab-card');
-      ab.setAttribute('data-locked', TIER_RANK[t] < TIER_RANK.business ? 'true' : 'false');
-      // Custom HTML block: gated at Pro — re-evaluate the current form
-      if (state.type === 'custom-html' && TIER_RANK[t] < TIER_RANK.pro) {
-        // Show inline upgrade hint inside the form section instead of swapping types
-      }
+      if (st) st.textContent = '@alexandra · ' + TIER_LABEL[t];
+
+      // Re-render tier badges (the .tier-gated sections stay fully visible regardless of tier).
+      renderTierBadges();
+
+      // Show inline tier hint only when the current tier is below the requirement.
+      var schedHint = document.getElementById('sched-tier-hint');
+      if (schedHint) schedHint.style.display = TIER_RANK[t] < TIER_RANK.creator ? '' : 'none';
+      var abHint = document.getElementById('ab-tier-hint');
+      if (abHint) abHint.style.display = TIER_RANK[t] < TIER_RANK.business ? '' : 'none';
+
       currentTier = t;
     }
     var currentTier = 'creator';
+
+    /* Render the inline tier-badge pill into every [data-tier-badge] slot.
+       Uses the shared TadaifyPartials.renderTierBadge component. */
+    function renderTierBadges() {
+      if (!window.TadaifyPartials || !window.TadaifyPartials.renderTierBadge) return;
+      document.querySelectorAll('[data-tier-badge]').forEach(function (el) {
+        var tier = el.getAttribute('data-tier-badge');
+        var included = TIER_RANK[currentTier] >= TIER_RANK[tier];
+        var tooltip = included
+          ? 'Available on ' + TIER_LABEL[tier] + '+ — included in your plan'
+          : 'Available on ' + TIER_LABEL[tier] + '. We\'ll prompt to upgrade when you save.';
+        el.innerHTML = window.TadaifyPartials.renderTierBadge(tier, { included: included, tooltip: tooltip });
+      });
+    }
+
+    /* Track A/B switch state explicitly so saveBlock() knows which premium toggles are on. */
+    function toggleAb(el) {
+      el.classList.toggle('on');
+      el.setAttribute('aria-checked', el.classList.contains('on') ? 'true' : 'false');
+      bumpSaveStatus();
+    }
 
     /* ------------------------------------------------------------------ */
     /* MODAL + STATE                                                      */
@@ -1580,8 +1575,43 @@
 
     /* ------------------------------------------------------------------ */
     /* SAVE / DISCARD / DUPLICATE / DELETE                                */
+    /*                                                                    */
+    /* saveBlock() collects the premium features the user enabled on the */
+    /* form and runs them through TierGate.checkAndProceed. If the user's */
+    /* current tier covers everything, the save proceeds silently;       */
+    /* otherwise the upgrade modal lists exactly what's blocking save.   */
     /* ------------------------------------------------------------------ */
-    function saveBlock() {
+    function collectPremiumChanges() {
+      var feats = [];
+
+      // Schedule visibility — Creator+. Triggered when either datetime input has a value.
+      var schedFrom = document.getElementById('d-sched-start');
+      var schedTo   = document.getElementById('d-sched-end');
+      if ((schedFrom && schedFrom.value) || (schedTo && schedTo.value)) {
+        feats.push({
+          id: 'schedule',
+          name: 'Schedule visibility',
+          requires: 'creator',
+          meta: 'Show this block only on the dates you picked'
+        });
+      }
+
+      // A/B test toggle — Business. Triggered when the toggle is on or a Variant B label is set.
+      var abSwitch = document.getElementById('ab-switch');
+      var abLabel  = document.getElementById('ab-variant-b');
+      if ((abSwitch && abSwitch.classList.contains('on')) || (abLabel && abLabel.value.trim())) {
+        feats.push({
+          id: 'ab',
+          name: 'A/B testing',
+          requires: 'business',
+          meta: '50/50 split — winner promoted automatically'
+        });
+      }
+
+      return feats;
+    }
+
+    function applySaveOk() {
       var el = document.getElementById('save-status');
       el.textContent = 'Saved just now';
       el.style.color = 'var(--success)';
@@ -1589,6 +1619,41 @@
         el.textContent = 'Last saved just now';
         el.style.color = '';
       }, 1400);
+    }
+
+    function saveBlock() {
+      var premium = collectPremiumChanges();
+
+      // No premium changes — save immediately.
+      if (premium.length === 0) {
+        applySaveOk();
+        return;
+      }
+
+      // Tier-aware: if user's plan covers all required tiers, also save immediately.
+      // Otherwise the gate modal explains what would unlock and offers three branches.
+      window.TierGate.checkAndProceed({
+        currentTier: currentTier,
+        features: premium,
+        onProceed: applySaveOk,
+        onSaveWithout: function () {
+          // Strip the premium-only inputs from the form, then save the rest.
+          premium.forEach(function (f) {
+            if (f.id === 'schedule') {
+              var a = document.getElementById('d-sched-start'); if (a) a.value = '';
+              var b = document.getElementById('d-sched-end');   if (b) b.value = '';
+            } else if (f.id === 'ab') {
+              var sw = document.getElementById('ab-switch');
+              if (sw) { sw.classList.remove('on'); sw.setAttribute('aria-checked', 'false'); }
+              var lbl = document.getElementById('ab-variant-b'); if (lbl) lbl.value = '';
+            }
+          });
+          applySaveOk();
+        },
+        onUpgrade: function (tier) {
+          openUpgrade(tier);
+        }
+      });
     }
     function discardChanges() {
       if (document.getElementById('save-status').textContent === 'Unsaved changes') {
@@ -1697,6 +1762,9 @@
     window.closeDelete = closeDelete;
     window.doDelete = doDelete;
     window.openUpgrade = openUpgrade;
+    window.toggleAb = toggleAb;
+    window.bumpSaveStatus = bumpSaveStatus;
+    window.setTier = setTier;
     window.setTier = setTier;
     window.toggleTheme = toggleTheme;
   </script>

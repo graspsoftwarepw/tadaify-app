@@ -1042,41 +1042,30 @@
       flex: 1;
       padding: 12px 0;
     }
+    /* Power-feature preview — ALWAYS fully visible per feedback_no_blur_premium_features
+       (locked 2026-04-26). No blur, no overlay, no opacity hack. The user sees the real
+       feature in action; tier requirement is signalled by the .tdf-tier-badge in the card
+       head and the .lc-cta-footer below the preview. */
     .locked-card .lc-preview {
-      filter: blur(0);
       opacity: 1;
-      transition: filter .2s ease, opacity .2s ease;
+      transition: none;
     }
-    .locked-card[data-locked="true"] .lc-preview {
-      filter: blur(2.5px);
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    .locked-card .lc-cta-overlay {
+    .lc-cta-footer {
       display: none;
-      position: absolute; inset: 0;
-      align-items: center; justify-content: center;
-      flex-direction: column; gap: 8px;
-      text-align: center;
-      padding: 16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg-elevated) 90%);
+      align-items: center; gap: 10px;
+      padding: 10px 12px;
+      margin-top: 4px;
+      border-radius: 10px;
+      background: var(--bg-muted);
+      border: 1px dashed var(--border-strong);
+      font-size: 12.5px; color: var(--fg-muted);
+      line-height: 1.45;
     }
-    body.dark-mode .locked-card .lc-cta-overlay {
-      background: linear-gradient(180deg, rgba(20,26,45,0) 0%, var(--bg-elevated) 90%);
-    }
-    .locked-card[data-locked="true"] .lc-cta-overlay { display: flex; }
-    .lc-cta-overlay .lc-lock-icon {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(245,158,11,0.15);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-    .lc-cta-overlay .lc-cta-msg {
-      font-size: 13px; color: var(--fg-muted); margin: 0;
-      max-width: 280px; line-height: 1.55;
-    }
-    .lc-cta-overlay .lc-cta-msg strong { color: var(--fg); font-weight: 600; }
+    body.dark-mode .lc-cta-footer { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.30); }
+    .locked-card[data-locked="true"] .lc-cta-footer { display: flex; }
+    .lc-cta-footer .lc-cta-msg { flex: 1; min-width: 0; }
+    .lc-cta-footer .lc-cta-msg strong { color: var(--fg); font-weight: 600; }
+    .lc-cta-footer .btn { flex-shrink: 0; white-space: nowrap; }
 
     /* Faux preview content inside locked cards */
     .faux-row {
@@ -1265,7 +1254,7 @@
     body.dark-mode .compare-toggle { background: #141A2D; border-color: #374151; }
     body.dark-mode .updated-chip { color: #9CA3AF; }
     body.dark-mode .sources-method { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.25); }
-    body.dark-mode .lc-cta-overlay { background: linear-gradient(180deg, rgba(20,26,45,0) 0%, #141A2D 90%); }
+    /* (legacy .lc-cta-overlay rule removed 2026-04-26 — replaced with non-blurring .lc-cta-footer) */
     body.dark-mode .demo-toolbar button { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
     body.dark-mode .demo-toolbar button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
   </style>
@@ -2133,9 +2122,8 @@
             <span class="saved-view-chip"><span class="sv-dot" style="background:var(--brand-secondary)"></span> Coaching funnel</span>
             <span class="saved-view-chip" style="background:var(--bg-elevated);border-style:dashed;color:var(--fg-muted)">+ Save current view</span>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>You already have all your data.</strong> Saved views lets you bookmark your favourite cross-tab combinations.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Pro.</strong> The preview above is real — drop in any saved view as soon as you upgrade.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Pro →</a>
           </div>
         </div>
@@ -2154,9 +2142,8 @@
             <div class="faux-row"><span class="faux-pic">B</span><span class="faux-name">Stripe checkout — "Start training today"</span><span class="faux-num">241</span></div>
             <div class="faux-row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><span class="faux-pic" style="background:rgba(16,185,129,0.15);color:#059669">✓</span><span class="faux-name" style="color:#059669;font-weight:600">Variant B winning · 95% confidence</span><span class="faux-num">+30%</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>A/B testing — Business tier.</strong> Auto-pick winners, no significance math needed.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> The preview above is the real auto-pick UI — your test runs as soon as you upgrade.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2175,9 +2162,8 @@
             <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">When:</span><span class="saved-view-chip">Monday 9:00 (Europe/Lisbon)</span></div>
             <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">Include:</span><span class="saved-view-chip">KPIs</span><span class="saved-view-chip">Top blocks</span><span class="saved-view-chip">Traffic sources</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Scheduled email digests — Business tier.</strong> Hands-off weekly summary delivered to any inbox.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> Set the recipients and schedule above — your first digest sends Monday after upgrade.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2199,9 +2185,8 @@
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-muted)"><span>← Apr 22, 21:00</span><span style="margin-left:auto">Apr 22, 22:00 →</span></div>
             <div style="display:flex;gap:6px;font-size:11.5px;color:var(--fg-muted)"><span class="saved-view-chip">▶ Play</span><span class="saved-view-chip">1× speed</span><span class="saved-view-chip">+ Mark moment</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Replay scrubber — Business tier.</strong> See your traffic happen, second by second.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> The scrubber above is live — pick any past hour and replay second-by-second.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2220,9 +2205,8 @@
             <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">mark@example.com → 7 visits, 1 coaching</span><span class="faux-num">$49</span></div>
             <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">amelia@example.com → 12 visits, 3 purchases</span><span class="faux-num">$381</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Identity stitching — Business tier.</strong> Bridge anonymous traffic with your email list — privacy-first.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> The matched-visitor list above is what you'll see once your newsletter links are tracked.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
@@ -2241,9 +2225,8 @@
             <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-03.parquet · 1.4 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
             <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-02.parquet · 1.0 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
           </div>
-          <div class="lc-cta-overlay">
-            <span class="lc-lock-icon">🔒</span>
-            <p class="lc-cta-msg"><strong>Parquet R2 archive — Business tier.</strong> Bring your own warehouse, query every event you've ever logged.</p>
+          <div class="lc-cta-footer" role="note">
+            <p class="lc-cta-msg"><strong>Available on Business.</strong> Your monthly snapshots will land here — downloadable Parquet, queryable from your warehouse.</p>
             <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
           </div>
         </div>
