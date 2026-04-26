@@ -728,6 +728,224 @@
     }
     .section.tier-gated .tier-hint a:hover { text-decoration: underline; }
 
+    /* =========================================================================
+       A/B variant tabs (Content section header) + helper bar + dual preview +
+       diff summary. Tokens.css drives every color so light/dark stay clean.
+       The "A" pill is the primary brand indigo; the "B" pill is the warm
+       accent so the two variants are visually balanced and instantly
+       distinguishable in the preview pane and diff card.
+       ========================================================================= */
+    .ab-tabs {
+      display: inline-flex; gap: 4px; align-items: center;
+      padding: 3px; background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .ab-tab {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 11px 5px 5px;
+      border: 0; background: transparent; cursor: pointer;
+      border-radius: 999px;
+      font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      transition: background .14s, color .14s, box-shadow .14s;
+    }
+    .ab-tab:hover { color: var(--fg); }
+    .ab-tab.is-active {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      box-shadow: 0 1px 2px rgba(15,23,42,0.08);
+    }
+    .ab-tab-pill {
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      font-size: 11px; font-weight: 700; color: #fff;
+      letter-spacing: 0;
+      flex-shrink: 0;
+    }
+    .ab-tab-pill-a, .ab-pill-a { background: var(--brand-primary); }
+    .ab-tab-pill-b, .ab-pill-b { background: var(--brand-warm); }
+    .ab-tab-label { white-space: nowrap; }
+    .ab-tab-meta {
+      font-size: 10px; font-weight: 500; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding-left: 6px; border-left: 1px solid var(--border);
+      margin-left: 2px;
+    }
+    @media (max-width: 480px) {
+      .ab-tab-meta { display: none; }
+      .ab-tab { padding: 5px 10px 5px 5px; }
+    }
+
+    /* Helper bar shown only when A/B on AND active tab is B (Copy A→B etc.) */
+    .ab-helper {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      margin-bottom: 10px;
+      background: linear-gradient(0deg, rgba(245,158,11,0.06), rgba(245,158,11,0.06)), var(--bg-elevated);
+      border: 1px dashed var(--brand-warm);
+      border-radius: 10px;
+    }
+    .ab-helper-text {
+      flex: 1; font-size: 11.5px; color: var(--fg-muted); line-height: 1.4;
+    }
+    .ab-helper-actions {
+      display: inline-flex; align-items: center; gap: 8px;
+      flex-shrink: 0;
+    }
+    .ab-helper-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 11px;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+      color: var(--fg);
+      cursor: pointer;
+      transition: background .14s, border-color .14s;
+    }
+    .ab-helper-btn:hover {
+      background: var(--bg-elevated);
+      border-color: var(--brand-warm);
+    }
+    .ab-helper-btn svg { color: var(--brand-warm); }
+    .ab-helper-btn-link {
+      background: transparent; border-color: transparent;
+      color: var(--fg-muted);
+      font-weight: 500;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .ab-helper-btn-link:hover {
+      background: transparent; border-color: transparent;
+      color: var(--fg);
+    }
+
+    /* Explainer rows under the A/B toggle (informational, no interaction) */
+    .ab-explainer {
+      display: flex; flex-direction: column; gap: 7px;
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border-radius: 9px;
+      border: 1px solid var(--border);
+    }
+    .ab-explainer-row {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 11.5px; color: var(--fg-muted); line-height: 1.5;
+    }
+    .ab-explainer-row strong { color: var(--fg); font-weight: 600; }
+    .ab-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 32px; height: 18px; padding: 0 7px;
+      border-radius: 999px;
+      font-size: 9px; font-weight: 700; color: #fff;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .ab-pill-traffic { background: var(--fg-muted); }
+
+    /* Dual preview pane (A/B on) */
+    .preview-pair {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .preview-pair-card {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .preview-pair-head {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+    }
+    .preview-pair-title {
+      font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .preview-pair[data-pv-view="A"] .preview-pair-card[data-pv="B"],
+    .preview-pair[data-pv-view="B"] .preview-pair-card[data-pv="A"] {
+      display: none;
+    }
+    .preview-pair[data-pv-view="A"] .preview-pair-card[data-pv="A"] .preview-pair-title::after,
+    .preview-pair[data-pv-view="B"] .preview-pair-card[data-pv="B"] .preview-pair-title::after {
+      content: " · solo view";
+      color: var(--fg-subtle); font-weight: 500; text-transform: none; letter-spacing: 0;
+    }
+
+    /* Preview-view picker (Both / A / B) */
+    .ab-preview-picker {
+      display: inline-flex; gap: 0; align-items: center;
+      padding: 2px; background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+    }
+    .ab-preview-picker button {
+      padding: 4px 9px;
+      border: 0; background: transparent; cursor: pointer;
+      border-radius: 5px;
+      font-family: var(--font-sans); font-size: 11px; font-weight: 600;
+      color: var(--fg-muted);
+      transition: background .14s, color .14s;
+    }
+    .ab-preview-picker button:hover { color: var(--fg); }
+    .ab-preview-picker button.is-active {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      box-shadow: 0 1px 1.5px rgba(15,23,42,0.08);
+    }
+
+    /* Diff summary card */
+    .ab-diff {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .ab-diff-head {
+      font-size: 11px; font-weight: 600;
+      color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 9px;
+    }
+    .ab-diff-body { display: flex; flex-direction: column; gap: 6px; }
+    .ab-diff-row {
+      display: grid; grid-template-columns: 70px 1fr 1fr;
+      gap: 10px; align-items: start;
+      font-size: 12px;
+      padding: 7px 9px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+    }
+    .ab-diff-field {
+      font-size: 10.5px; font-weight: 600; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding-top: 1px;
+    }
+    .ab-diff-cell {
+      display: flex; align-items: flex-start; gap: 6px;
+      min-width: 0;
+      color: var(--fg);
+      word-break: break-word;
+    }
+    .ab-diff-cell::before {
+      content: ""; flex-shrink: 0;
+      width: 6px; height: 6px; border-radius: 50%;
+      margin-top: 6px;
+    }
+    .ab-diff-cell[data-pv="A"]::before { background: var(--brand-primary); }
+    .ab-diff-cell[data-pv="B"]::before { background: var(--brand-warm); }
+    .ab-diff-cell.is-empty { color: var(--fg-subtle); font-style: italic; }
+    .ab-diff-empty {
+      font-size: 11.5px; color: var(--fg-subtle);
+      text-align: center; padding: 14px 6px;
+      font-style: italic;
+    }
+    .ab-diff-empty strong { color: var(--fg-muted); font-style: normal; }
+    @media (max-width: 480px) {
+      .ab-diff-row { grid-template-columns: 1fr; gap: 4px; }
+      .ab-diff-field { padding-top: 0; }
+    }
+
     /* Analytics tile */
     .analytics-tile {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
@@ -977,16 +1195,52 @@
              ============================================================ -->
         <div class="col-form">
 
-          <!-- ▼ TYPE-SPECIFIC FORM (rendered by JS) ▼ -->
+          <!-- ▼ TYPE-SPECIFIC FORM (rendered by JS) ▼
+               When state.ab.enabled is true, the section header swaps in a
+               Variant A | B tab strip and a "Copy A → B" / "Reset B → A"
+               action. Form fields read/write through the active variant in
+               state.ab.variants[activeTab] — transparent to BLOCK_TYPES.form()
+               which keeps receiving a single content-state object. -->
           <section class="section" id="form-section" aria-labelledby="form-section-h">
             <div class="section-head">
               <h4 id="form-section-h">Content</h4>
+              <div class="ab-tabs" id="ab-tabs" style="display:none" role="tablist" aria-label="A/B variant tabs">
+                <button type="button" class="ab-tab is-active" data-variant="A" role="tab" aria-selected="true"
+                        onclick="setActiveVariant('A')">
+                  <span class="ab-tab-pill ab-tab-pill-a">A</span>
+                  <span class="ab-tab-label">Variant A</span>
+                  <span class="ab-tab-meta" id="ab-tab-meta-a">Original</span>
+                </button>
+                <button type="button" class="ab-tab" data-variant="B" role="tab" aria-selected="false"
+                        onclick="setActiveVariant('B')">
+                  <span class="ab-tab-pill ab-tab-pill-b">B</span>
+                  <span class="ab-tab-label">Variant B</span>
+                  <span class="ab-tab-meta" id="ab-tab-meta-b">Challenger</span>
+                </button>
+              </div>
               <div class="toggle-row" style="gap:6px">
                 <span style="font-size:11px;color:var(--fg-muted);font-weight:600">Visible</span>
                 <span class="switch on" id="d-visible-switch" role="switch" aria-checked="true" tabindex="0"
                       onclick="toggleVisible()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleVisible();}"></span>
               </div>
             </div>
+
+            <!-- Variant B helper bar (only visible when A/B on AND active tab is B) -->
+            <div class="ab-helper" id="ab-helper" style="display:none">
+              <div class="ab-helper-text" id="ab-helper-text">
+                Variant B is a copy of A. Edit any field below to make it differ.
+              </div>
+              <div class="ab-helper-actions">
+                <button type="button" class="ab-helper-btn" id="ab-copy-btn" onclick="copyAtoB()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy A → B
+                </button>
+                <button type="button" class="ab-helper-btn ab-helper-btn-link" id="ab-reset-btn" onclick="resetBtoA()">
+                  Reset B to match A
+                </button>
+              </div>
+            </div>
+
             <div class="section-body" id="form-body">
               <!-- populated by renderForm() -->
             </div>
@@ -1026,7 +1280,13 @@
             </div>
           </section>
 
-          <!-- ▼ A/B TESTING (Business — fully visible per feedback_no_blur_premium_features) ▼ -->
+          <!-- ▼ A/B TESTING (Business — fully visible per feedback_no_blur_premium_features) ▼
+               Toggle controls whether the Content section above renders with
+               Variant A | B tabs. When ON, every field in the Content section
+               becomes variant-aware (label, url, icon, html — all of them, for
+               every block type). The preview pane below stacks A + B so the
+               creator can compare in real time. Save-time tier-gate per the
+               feedback_no_blur_premium_features rule. -->
           <section class="section tier-gated" id="ab-card" data-min-tier="business" aria-labelledby="ab-section-h">
             <div class="section-head">
               <h4 id="ab-section-h">A/B test this block</h4>
@@ -1036,15 +1296,25 @@
               <div class="toggle-row">
                 <div class="lbl">
                   <div class="t">Run a 50/50 split test</div>
-                  <div class="s">Compare two variants — winning variant auto-applied after 7 days or 1k clicks.</div>
+                  <div class="s">Test two completely different versions of this block — different label, URL, icon, thumbnail, anything. Winning variant auto-applied after 7 days or 1,000 clicks.</div>
                 </div>
                 <span class="switch" id="ab-switch" role="switch" aria-checked="false" tabindex="0"
                       onclick="toggleAb(this)"
                       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAb(this);}"></span>
               </div>
-              <div class="field">
-                <label for="ab-variant-b">Variant B label</label>
-                <input id="ab-variant-b" type="text" placeholder="Try a different headline…" oninput="bumpSaveStatus()"/>
+              <div class="ab-explainer" id="ab-explainer" style="display:none">
+                <div class="ab-explainer-row">
+                  <span class="ab-pill ab-pill-a">A</span>
+                  <span>Edit fields in the <strong>Content</strong> section above. Switch tabs to edit Variant B independently.</span>
+                </div>
+                <div class="ab-explainer-row">
+                  <span class="ab-pill ab-pill-b">B</span>
+                  <span>Variant B starts as a copy of A. Change anything that matters — label, URL, icon, schedule.</span>
+                </div>
+                <div class="ab-explainer-row">
+                  <span class="ab-pill ab-pill-traffic">50/50</span>
+                  <span>Visitors split deterministically by visitor hash (cookieless). Both variants log clicks separately in Insights.</span>
+                </div>
               </div>
               <div class="tier-hint" id="ab-tier-hint" style="display:none">
                 A/B testing unlocks on <strong>Business</strong> ($49/mo). Configure the test now — we'll prompt to upgrade when you save.
@@ -1079,10 +1349,49 @@
           <section class="section" aria-labelledby="preview-section-h">
             <div class="section-head">
               <h4 id="preview-section-h">Preview · what visitors see</h4>
+              <div class="ab-preview-picker" id="ab-preview-picker" style="display:none" role="tablist" aria-label="Preview which variant">
+                <button type="button" data-pv="both" class="is-active" onclick="setPreviewView('both')" role="tab" aria-selected="true">Both</button>
+                <button type="button" data-pv="A" onclick="setPreviewView('A')" role="tab" aria-selected="false">A only</button>
+                <button type="button" data-pv="B" onclick="setPreviewView('B')" role="tab" aria-selected="false">B only</button>
+              </div>
             </div>
+
+            <!-- Single-variant preview (A/B off) -->
             <div class="preview" id="preview-pane" aria-live="polite">
               <span class="preview-hidden-flag">Hidden</span>
               <div id="preview-body"></div>
+            </div>
+
+            <!-- Dual-variant preview (A/B on). Hidden until toggle ON. -->
+            <div class="preview-pair" id="preview-pair" style="display:none" aria-live="polite">
+              <div class="preview-pair-card" data-pv="A">
+                <div class="preview-pair-head">
+                  <span class="ab-tab-pill ab-tab-pill-a">A</span>
+                  <span class="preview-pair-title">Variant A · 50% of visitors</span>
+                </div>
+                <div class="preview" id="preview-pane-a">
+                  <span class="preview-hidden-flag">Hidden</span>
+                  <div id="preview-body-a"></div>
+                </div>
+              </div>
+              <div class="preview-pair-card" data-pv="B">
+                <div class="preview-pair-head">
+                  <span class="ab-tab-pill ab-tab-pill-b">B</span>
+                  <span class="preview-pair-title">Variant B · 50% of visitors</span>
+                </div>
+                <div class="preview" id="preview-pane-b">
+                  <span class="preview-hidden-flag">Hidden</span>
+                  <div id="preview-body-b"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Diff summary (A/B on). What's actually different between A and B -->
+            <div class="ab-diff" id="ab-diff" style="display:none" aria-live="polite">
+              <div class="ab-diff-head">What's different between A and B</div>
+              <div class="ab-diff-body" id="ab-diff-body">
+                <!-- rendered by renderAbDiff() -->
+              </div>
             </div>
           </section>
 
@@ -1569,7 +1878,7 @@
       var picker = document.getElementById(pickerId);
       if (!picker) return;
       var fieldName = picker.getAttribute('data-field');
-      state[fieldName] = iconId;
+      writeContent(fieldName, iconId);
       renderForm();
       bumpSaveStatus();
     }
@@ -1936,24 +2245,243 @@
       });
     }
 
-    /* Track A/B switch state explicitly so saveBlock() knows which premium toggles are on. */
-    function toggleAb(el) {
-      el.classList.toggle('on');
-      el.setAttribute('aria-checked', el.classList.contains('on') ? 'true' : 'false');
-      bumpSaveStatus();
-    }
-
     /* ------------------------------------------------------------------ */
     /* MODAL + STATE                                                      */
+    /*                                                                    */
+    /* When state.ab.enabled === false, every content field lives at the  */
+    /* TOP LEVEL of `state` (state.label, state.url, state.icon, ...).    */
+    /* When state.ab.enabled === true, content fields live nested under   */
+    /* state.ab.variants.A and .B, and reads/writes go through            */
+    /* getContentState() / writeContent() — transparent to BLOCK_TYPES.   */
+    /* Non-content top-level keys (type, visible, schedule inputs read    */
+    /* from the DOM, etc.) are NEVER moved into the variants — they       */
+    /* apply equally to both A and B.                                     */
     /* ------------------------------------------------------------------ */
+    var CONTENT_FIELD_KEYS = [
+      'label', 'url', 'icon', 'newtab', 'thumb',           /* link */
+      'src', 'alt', 'href', 'aspect',                      /* image */
+      'provider', 'caption',                               /* embed */
+      'level', 'text', 'align',                            /* heading */
+      'style', 'size',                                     /* divider */
+      'handles', 'shape',                                  /* social */
+      'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', /* newsletter */
+      'product', 'showPrice',                              /* shop */
+      'autoplay', 'loop',                                  /* video */
+      'sectionIcon', 'q1', 'a1', 'q2', 'a2',               /* faq */
+      'html',                                              /* custom */
+      'target', 'theme',                                   /* countdown */
+      'platform', 'channel', 'showWhenOffline'             /* live */
+    ];
+
+    /* Diff field labels — what shows up in the "What's different" card */
+    var AB_DIFF_LABELS = {
+      label: 'Label', url: 'URL', icon: 'Icon', newtab: 'New tab', thumb: 'Thumbnail',
+      src: 'Source', alt: 'Alt text', href: 'Link', aspect: 'Aspect',
+      provider: 'Provider', caption: 'Caption',
+      level: 'Heading level', text: 'Text', align: 'Alignment',
+      style: 'Style', size: 'Size',
+      handles: 'Social handles', shape: 'Icon shape',
+      list: 'List', cta: 'Button label', ctaIcon: 'Button icon',
+      placeholder: 'Placeholder', doubleOptIn: 'Double opt-in',
+      product: 'Product', showPrice: 'Show price',
+      autoplay: 'Autoplay', loop: 'Loop',
+      sectionIcon: 'Section icon', q1: 'Question 1', a1: 'Answer 1',
+      q2: 'Question 2', a2: 'Answer 2',
+      html: 'HTML / CSS / JS',
+      target: 'Target time', theme: 'Theme',
+      platform: 'Platform', channel: 'Channel', showWhenOffline: 'Show when offline'
+    };
+
     var state = {
       type: 'link',
+      visible: true,
+      ab: {
+        enabled: false,
+        activeTab: 'A',
+        previewView: 'both',  /* 'both' | 'A' | 'B' */
+        variants: { A: {}, B: {} }
+      },
       label: 'Listen on Spotify',
       url: 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF',
       icon: 'spotify',
-      newtab: true,
-      visible: true
+      newtab: true
     };
+
+    /* Returns the object that BLOCK_TYPES.form/preview should read from.
+       When A/B is on, that's the active variant; otherwise the top-level state.
+       Critically: every read also FALLS BACK to the top-level state for keys
+       that haven't been written into the variant yet — this means BLOCK_TYPES
+       defaults still resolve correctly when a block-type is loaded fresh
+       inside an active A/B session. */
+    function getContentState() {
+      if (!state.ab || !state.ab.enabled) return state;
+      var variant = state.ab.variants[state.ab.activeTab] || {};
+      // Build a merged view: variant overrides top-level for content fields.
+      // We hand BLOCK_TYPES a Proxy-like plain object — it doesn't mutate.
+      var view = { type: state.type, visible: state.visible };
+      CONTENT_FIELD_KEYS.forEach(function (k) {
+        view[k] = (variant[k] !== undefined) ? variant[k] : state[k];
+      });
+      return view;
+    }
+
+    /* Write a content-field value. When A/B is on, writes into the active
+       variant; otherwise writes top-level. Non-content keys always go top-level. */
+    function writeContent(name, value) {
+      var isContent = CONTENT_FIELD_KEYS.indexOf(name) !== -1;
+      if (state.ab && state.ab.enabled && isContent) {
+        var v = state.ab.variants[state.ab.activeTab];
+        if (!v) { state.ab.variants[state.ab.activeTab] = v = {}; }
+        v[name] = value;
+      } else {
+        state[name] = value;
+      }
+    }
+
+    /* Snapshot all content fields from `source` into a new plain object.
+       Used when seeding variants at A/B-on-time and on Copy A → B. */
+    function snapshotContent(source) {
+      var snap = {};
+      CONTENT_FIELD_KEYS.forEach(function (k) {
+        if (source[k] !== undefined) snap[k] = deepClone(source[k]);
+      });
+      return snap;
+    }
+    function deepClone(v) {
+      if (v == null || typeof v !== 'object') return v;
+      if (Array.isArray(v)) return v.map(deepClone);
+      var out = {};
+      Object.keys(v).forEach(function (k) { out[k] = deepClone(v[k]); });
+      return out;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* A/B switch — toggles the variant tabs, helper bar, dual preview,   */
+    /* and diff card. Seeding both variants from current top-level state  */
+    /* on first ON makes Variant B start as a clone of A so the creator   */
+    /* can edit ONLY what differs without re-entering identical fields.   */
+    /* ------------------------------------------------------------------ */
+    function toggleAb(el) {
+      var goingOn = !el.classList.contains('on');
+
+      if (!goingOn && state.ab.enabled) {
+        // Going OFF — confirm B will be discarded if user customised it.
+        var bIsDistinct = abVariantsDiffer();
+        if (bIsDistinct) {
+          if (!confirm('Disabling A/B test will discard Variant B.\n\nContinue?')) return;
+        }
+        // Collapse: keep variant A's values at top level (so the form continues
+        // editing whatever the user last saw on tab A), wipe ab.
+        var aSnap = state.ab.variants.A || {};
+        CONTENT_FIELD_KEYS.forEach(function (k) {
+          if (aSnap[k] !== undefined) state[k] = deepClone(aSnap[k]);
+        });
+        state.ab.enabled = false;
+        state.ab.activeTab = 'A';
+        state.ab.variants.A = {};
+        state.ab.variants.B = {};
+      } else if (goingOn && !state.ab.enabled) {
+        // Going ON — seed both variants from current top-level state.
+        // Variant B starts as a clone of A; user edits to differ.
+        var seed = snapshotContent(state);
+        state.ab.enabled = true;
+        state.ab.activeTab = 'A';
+        state.ab.variants.A = deepClone(seed);
+        state.ab.variants.B = deepClone(seed);
+      }
+
+      el.classList.toggle('on', state.ab.enabled);
+      el.setAttribute('aria-checked', state.ab.enabled ? 'true' : 'false');
+      applyAbVisibility();
+      renderForm();
+      bumpSaveStatus();
+    }
+
+    /* Returns true if A and B variants have at least one content field
+       that differs (i.e., the test is non-trivial). */
+    function abVariantsDiffer() {
+      if (!state.ab || !state.ab.enabled) return false;
+      var a = state.ab.variants.A || {};
+      var b = state.ab.variants.B || {};
+      var keys = {};
+      CONTENT_FIELD_KEYS.forEach(function (k) { keys[k] = true; });
+      Object.keys(a).forEach(function (k) { keys[k] = true; });
+      Object.keys(b).forEach(function (k) { keys[k] = true; });
+      var differ = false;
+      Object.keys(keys).forEach(function (k) {
+        // Pull from variant if present, else from top-level (so unset variant
+        // fields fall back to the seed).
+        var av = (a[k] !== undefined) ? a[k] : state[k];
+        var bv = (b[k] !== undefined) ? b[k] : state[k];
+        if (JSON.stringify(av) !== JSON.stringify(bv)) differ = true;
+      });
+      return differ;
+    }
+
+    /* Show/hide A/B-specific UI based on state.ab.enabled. */
+    function applyAbVisibility() {
+      var on = state.ab.enabled;
+      document.getElementById('ab-explainer').style.display = on ? '' : 'none';
+      document.getElementById('ab-tabs').style.display = on ? '' : 'none';
+      document.getElementById('ab-preview-picker').style.display = on ? '' : 'none';
+      document.getElementById('preview-pane').style.display = on ? 'none' : '';
+      document.getElementById('preview-pair').style.display = on ? '' : 'none';
+      document.getElementById('ab-diff').style.display = on ? '' : 'none';
+      // Helper bar only when on AND active is B
+      document.getElementById('ab-helper').style.display = (on && state.ab.activeTab === 'B') ? '' : 'none';
+      // Tab active states
+      document.querySelectorAll('.ab-tab').forEach(function (t) {
+        var sel = t.getAttribute('data-variant') === state.ab.activeTab;
+        t.classList.toggle('is-active', sel);
+        t.setAttribute('aria-selected', sel ? 'true' : 'false');
+      });
+      // Preview-view picker active states
+      var pv = (state.ab.previewView || 'both');
+      document.querySelectorAll('.ab-preview-picker button').forEach(function (b) {
+        var sel = b.getAttribute('data-pv') === pv;
+        b.classList.toggle('is-active', sel);
+        b.setAttribute('aria-selected', sel ? 'true' : 'false');
+      });
+      var pair = document.getElementById('preview-pair');
+      if (pv === 'both') pair.removeAttribute('data-pv-view');
+      else pair.setAttribute('data-pv-view', pv);
+    }
+
+    /* Variant tab switch */
+    function setActiveVariant(which) {
+      if (!state.ab.enabled) return;
+      if (which !== 'A' && which !== 'B') return;
+      state.ab.activeTab = which;
+      applyAbVisibility();
+      renderForm();
+    }
+
+    /* Copy variant A's content into variant B (overwrite). */
+    function copyAtoB() {
+      if (!state.ab.enabled) return;
+      state.ab.variants.B = deepClone(state.ab.variants.A || {});
+      // If we're sitting on tab B, re-render so user sees the copy.
+      if (state.ab.activeTab === 'B') renderForm();
+      else renderPreview();
+      bumpSaveStatus();
+    }
+
+    /* Reset B to match A (alias of copyAtoB but with a confirm if B has
+       diverged from A). Same end result; different intent. */
+    function resetBtoA() {
+      if (!state.ab.enabled) return;
+      if (abVariantsDiffer()) {
+        if (!confirm('Reset Variant B to match Variant A?\n\nYour current B edits will be lost.')) return;
+      }
+      copyAtoB();
+    }
+
+    /* Preview view picker — Both / A only / B only */
+    function setPreviewView(which) {
+      if (which !== 'both' && which !== 'A' && which !== 'B') return;
+      state.ab.previewView = which;
+      applyAbVisibility();
+    }
 
     function escapeHtml(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -1963,7 +2491,10 @@
 
     function renderForm() {
       var spec = BLOCK_TYPES[state.type];
-      var fields = spec.form(state);
+      var contentState = getContentState();
+      var fields = spec.form(contentState);
+      // Update variant tab metadata (short summary) when A/B is on.
+      updateVariantTabMeta();
       var html = fields.map(function (f) {
         var id = 'f-' + f.name;
         var aiBtn = f.ai ? '<button class="ai-btn" type="button" onclick="openAi(\'' + f.name + '\')">✨ Suggest</button>' : '';
@@ -2073,13 +2604,94 @@
 
     function renderPreview() {
       var spec = BLOCK_TYPES[state.type];
-      var pane = document.getElementById('preview-pane');
-      pane.classList.toggle('is-hidden', state.visible === false);
-      document.getElementById('preview-body').innerHTML = spec.preview(state);
+      // Single preview (A/B off path)
+      if (!state.ab.enabled) {
+        var pane = document.getElementById('preview-pane');
+        pane.classList.toggle('is-hidden', state.visible === false);
+        document.getElementById('preview-body').innerHTML = spec.preview(state);
+        return;
+      }
+      // Dual preview (A/B on) — render each variant from a synthesised
+      // content-state where the variant's fields override the top-level seed.
+      ['A', 'B'].forEach(function (which) {
+        var variant = state.ab.variants[which] || {};
+        var view = { type: state.type, visible: state.visible };
+        CONTENT_FIELD_KEYS.forEach(function (k) {
+          view[k] = (variant[k] !== undefined) ? variant[k] : state[k];
+        });
+        var paneId = 'preview-pane-' + which.toLowerCase();
+        var bodyId = 'preview-body-' + which.toLowerCase();
+        document.getElementById(paneId).classList.toggle('is-hidden', state.visible === false);
+        document.getElementById(bodyId).innerHTML = spec.preview(view);
+      });
+      renderAbDiff();
+    }
+
+    /* Update the small "Original / Challenger" subtitle on each variant tab
+       to a short summary of the variant's identity (label/text/cta if set). */
+    function updateVariantTabMeta() {
+      if (!state.ab.enabled) return;
+      ['A', 'B'].forEach(function (which) {
+        var v = state.ab.variants[which] || {};
+        var labelKey = ['label', 'cta', 'text', 'caption', 'channel', 'q1'].find(function (k) { return v[k]; });
+        var fallback = (which === 'A') ? 'Original' : 'Challenger';
+        var meta = labelKey ? truncate(String(v[labelKey]), 24) : fallback;
+        var el = document.getElementById('ab-tab-meta-' + which.toLowerCase());
+        if (el) el.textContent = meta;
+      });
+    }
+    function truncate(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+    /* Render the diff card — show only fields where A and B differ. */
+    function renderAbDiff() {
+      var body = document.getElementById('ab-diff-body');
+      if (!body) return;
+      var a = state.ab.variants.A || {};
+      var b = state.ab.variants.B || {};
+      var diffs = [];
+      CONTENT_FIELD_KEYS.forEach(function (k) {
+        // Only compare fields applicable to current block type by checking
+        // whether either variant has the key OR the seed has it.
+        var av = (a[k] !== undefined) ? a[k] : state[k];
+        var bv = (b[k] !== undefined) ? b[k] : state[k];
+        if (av === undefined && bv === undefined) return;
+        if (JSON.stringify(av) === JSON.stringify(bv)) return;
+        diffs.push({ key: k, a: av, b: bv });
+      });
+      if (diffs.length === 0) {
+        body.innerHTML = '<div class="ab-diff-empty"><strong>No differences yet.</strong> Switch to <strong>Variant B</strong> and edit a field — the change will appear here.</div>';
+        return;
+      }
+      body.innerHTML = diffs.map(function (d) {
+        var label = AB_DIFF_LABELS[d.key] || d.key;
+        return '<div class="ab-diff-row">' +
+                 '<div class="ab-diff-field">' + escapeHtml(label) + '</div>' +
+                 renderDiffCell('A', d.a) +
+                 renderDiffCell('B', d.b) +
+               '</div>';
+      }).join('');
+    }
+    function renderDiffCell(which, value) {
+      var display, isEmpty = false;
+      if (value === undefined || value === null || value === '') {
+        display = '(empty)'; isEmpty = true;
+      } else if (typeof value === 'boolean') {
+        display = value ? 'on' : 'off';
+      } else if (typeof value === 'object') {
+        // social handles object — show "ig:@x · tt:@y"
+        display = Object.keys(value).filter(function (k) { return value[k]; })
+                  .map(function (k) { return k.slice(0, 2) + ':' + value[k]; })
+                  .join(' · ') || '(empty)';
+        if (display === '(empty)') isEmpty = true;
+      } else {
+        display = String(value);
+        if (display.length > 64) display = display.slice(0, 61) + '…';
+      }
+      return '<div class="ab-diff-cell' + (isEmpty ? ' is-empty' : '') + '" data-pv="' + which + '">' + escapeHtml(display) + '</div>';
     }
 
     function updateField(name, value) {
-      state[name] = value;
+      writeContent(name, value);
       renderPreview();
       bumpSaveStatus();
     }
@@ -2087,13 +2699,16 @@
       var on = !el.classList.contains('on');
       el.classList.toggle('on', on);
       el.setAttribute('aria-checked', on ? 'true' : 'false');
-      state[name] = on;
+      writeContent(name, on);
       renderPreview();
       bumpSaveStatus();
     }
     function updateSocial(k, v) {
-      if (!state.handles) state.handles = {};
-      state.handles[k] = v;
+      var current = getContentState().handles || {};
+      var next = {};
+      Object.keys(current).forEach(function (kk) { next[kk] = current[kk]; });
+      next[k] = v;
+      writeContent('handles', next);
       renderPreview();
       bumpSaveStatus();
     }
@@ -2117,13 +2732,26 @@
     /* ------------------------------------------------------------------ */
     function loadType(t) {
       // Reset state to type defaults — keep handle for social, etc.
+      // PRESERVE state.ab so the user's A/B configuration survives a
+      // type-switch within the same edit session. Variants get re-seeded
+      // from the new type's defaults when A/B is on (so B starts as a clone
+      // of A under the new type, not a stale clone of the previous type).
+      var preservedAb = state.ab || { enabled: false, activeTab: 'A', previewView: 'both', variants: { A: {}, B: {} } };
       var preserved = { visible: state.visible, handles: state.handles };
-      state = Object.assign({}, preserved, { type: t });
+      state = Object.assign({}, preserved, { type: t, ab: preservedAb });
       var spec = BLOCK_TYPES[t];
       // Pre-populate state with form defaults
       spec.form(state).forEach(function (f) {
         if (state[f.name] === undefined && f.value !== undefined) state[f.name] = f.value;
       });
+      // If A/B is on, re-seed variants from the freshly-defaulted state so
+      // both variants start identical under the new block type.
+      if (state.ab.enabled) {
+        var seed = snapshotContent(state);
+        state.ab.variants.A = deepClone(seed);
+        state.ab.variants.B = deepClone(seed);
+        state.ab.activeTab = 'A';
+      }
       // Update head
       document.getElementById('modal-title').textContent = spec.label;
       document.getElementById('d-type-icon').textContent = spec.icon;
@@ -2136,6 +2764,7 @@
       // Reset save indicator
       document.getElementById('save-status').textContent = 'Last saved 12s ago';
       document.getElementById('save-status').style.color = '';
+      applyAbVisibility();
       renderForm();
     }
 
@@ -2229,19 +2858,36 @@
         });
       }
 
-      // A/B test toggle — Business. Triggered when the toggle is on or a Variant B label is set.
-      var abSwitch = document.getElementById('ab-switch');
-      var abLabel  = document.getElementById('ab-variant-b');
-      if ((abSwitch && abSwitch.classList.contains('on')) || (abLabel && abLabel.value.trim())) {
+      // A/B test toggle — Business. Triggered when state.ab.enabled is true
+      // (full Content-section variant split per the redesign).
+      if (state.ab && state.ab.enabled) {
+        var diffCount = countAbDiffs();
         feats.push({
           id: 'ab',
           name: 'A/B testing',
           requires: 'business',
-          meta: '50/50 split — winner promoted automatically'
+          meta: diffCount > 0
+            ? '50/50 split across ' + diffCount + ' field' + (diffCount === 1 ? '' : 's') + ' — winner promoted automatically'
+            : '50/50 split — winner promoted automatically'
         });
       }
 
       return feats;
+    }
+
+    /* Count how many content fields actually differ between A and B. */
+    function countAbDiffs() {
+      if (!state.ab || !state.ab.enabled) return 0;
+      var a = state.ab.variants.A || {};
+      var b = state.ab.variants.B || {};
+      var n = 0;
+      CONTENT_FIELD_KEYS.forEach(function (k) {
+        var av = (a[k] !== undefined) ? a[k] : state[k];
+        var bv = (b[k] !== undefined) ? b[k] : state[k];
+        if (av === undefined && bv === undefined) return;
+        if (JSON.stringify(av) !== JSON.stringify(bv)) n++;
+      });
+      return n;
     }
 
     function applySaveOk() {
@@ -2255,6 +2901,14 @@
     }
 
     function saveBlock() {
+      // Soft-warn when A/B is on but variants are identical (test would be meaningless).
+      if (state.ab && state.ab.enabled && !abVariantsDiffer()) {
+        var msg = 'Variant B has no changes from Variant A.\n\n' +
+                  'A/B testing identical variants will not produce a winner — ' +
+                  'visitors see the same block on both sides.\n\nSave anyway?';
+        if (!confirm(msg)) return;
+      }
+
       var premium = collectPremiumChanges();
 
       // No premium changes — save immediately.
@@ -2276,9 +2930,24 @@
               var a = document.getElementById('d-sched-start'); if (a) a.value = '';
               var b = document.getElementById('d-sched-end');   if (b) b.value = '';
             } else if (f.id === 'ab') {
-              var sw = document.getElementById('ab-switch');
-              if (sw) { sw.classList.remove('on'); sw.setAttribute('aria-checked', 'false'); }
-              var lbl = document.getElementById('ab-variant-b'); if (lbl) lbl.value = '';
+              // Collapse A/B back to single state — keep variant A's values
+              // at top level (what the creator was seeing on tab A) and
+              // discard variant B silently (TierGate flow already explained
+              // the trade-off in its modal).
+              if (state.ab && state.ab.enabled) {
+                var aSnap = state.ab.variants.A || {};
+                CONTENT_FIELD_KEYS.forEach(function (k) {
+                  if (aSnap[k] !== undefined) state[k] = deepClone(aSnap[k]);
+                });
+                state.ab.enabled = false;
+                state.ab.activeTab = 'A';
+                state.ab.variants.A = {};
+                state.ab.variants.B = {};
+                var sw = document.getElementById('ab-switch');
+                if (sw) { sw.classList.remove('on'); sw.setAttribute('aria-checked', 'false'); }
+                applyAbVisibility();
+                renderForm();
+              }
             }
           });
           applySaveOk();
@@ -2340,7 +3009,7 @@
     function applyAi(btn) {
       if (aiTargetField) {
         var text = btn.querySelector('div:last-child').textContent;
-        state[aiTargetField] = text;
+        writeContent(aiTargetField, text);
         renderForm();
         bumpSaveStatus();
       }
@@ -2398,6 +3067,10 @@
     window.doDelete = doDelete;
     window.openUpgrade = openUpgrade;
     window.toggleAb = toggleAb;
+    window.setActiveVariant = setActiveVariant;
+    window.copyAtoB = copyAtoB;
+    window.resetBtoA = resetBtoA;
+    window.setPreviewView = setPreviewView;
     window.bumpSaveStatus = bumpSaveStatus;
     window.setTier = setTier;
     window.toggleTheme = toggleTheme;
