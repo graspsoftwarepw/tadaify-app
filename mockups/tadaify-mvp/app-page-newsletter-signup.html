@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Newsletter signup page template (creator-facing) — F-PAGE-NEWSLETTER-001 #22
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Editor for the dedicated Newsletter signup PAGE (different from the
+  inline Newsletter signup BLOCK shipped in PR #74). This page is a
+  full-page Substack/Beehiiv-style landing whose only goal is to
+  capture an email subscription.
+
+  Pairs with creator-newsletter-signup-public.html (visitor view).
+
+  Source story: graspsoftwarepw/tadaify-app issues #22 (F-PAGE-NEWSLETTER-001)
+
+  Locked rules honoured:
+    - feedback_tadaify_newsletter_mvp_scope_locked_2026_04_26 (exactly 7
+      provider options: Kit / Beehiiv / MailerLite / Mailchimp / Klaviyo /
+      Google Sheets / Generic webhook — NO Substack, NO Buttondown)
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced
+      toggle; power fields inline empty by default)
+    - feedback_no_blur_premium_features (premium fields fully visible +
+      interactive; tier badge inline; gate at Save via TierGate)
+    - feedback_no_right_side_drawers (the section picker + image picker
+      are CENTERED modals, never drawers)
+    - feedback_mockup_full_feature_vision (every interaction does
+      something — section reorder, provider switch, layout swap, theme
+      pick, modal open/close all wired)
+    - feedback_sidebar_pages_grouping (Pages parent + Newsletter signup
+      sub-page highlighted via canonical app-sidebar partial)
+
+  Reuses BLOCK_TYPES.newsletter visual patterns from app-block-editor.html
+  exactly so creators who learned the block form already know the page
+  form. Markup is duplicated here with HTML comments flagging the
+  shared-partial consolidation point for implementation.
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?provider=kit|beehiiv|mailerlite|mailchimp|klaviyo|google-sheets|webhook
+    ?layout=oneline|twoline|card  (default: oneline)
+    ?tier=free | creator | pro | business   (default: creator)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newsletter signup page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms (mirror app-page-blog.html) ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live  { background: var(--success-bg); color: #065F46; }
+    .chip.draft { background: var(--bg-muted); color: var(--fg-muted); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid; grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 24px 20px 120px; min-width: 0; max-width: 1080px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* ── Sections ── */
+    .section {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; margin-bottom: 18px; overflow: visible;
+    }
+    .section[draggable="true"] { cursor: grab; }
+    .section.is-collapsed .section-body { display: none; }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+    }
+    .section.is-collapsed .section-head { border-bottom: 0; }
+    .section-head .sh-grip {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab; padding: 2px;
+    }
+    .section-head .sh-grip svg { width: 14px; height: 14px; }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-head .sh-actions { display: inline-flex; gap: 4px; align-items: center; }
+    .section-head .sh-collapse {
+      transition: transform .15s ease;
+    }
+    .section.is-collapsed .sh-collapse { transform: rotate(-90deg); }
+    .section-body { padding: 18px; }
+    .section-body.has-pad-lg { padding: 22px; }
+
+    /* ── Field atoms ── */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 80px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px; background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* ── Inline tier hint (per no-blur-premium pattern) ── */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+
+    /* ── Newsletter provider panel — DUPLICATED from BLOCK_TYPES.newsletter
+         (app-block-editor.html). Implementation: extract these styles into
+         shared/newsletter-provider.partial.{html,css,js} and inject. ── */
+    .nlt-panel {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg); padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .nlt-panel-head {
+      display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .nlt-panel-title {
+      font-weight: 600; font-size: 14px; color: var(--fg);
+    }
+    .nlt-panel-sub { color: var(--fg-muted); font-size: 12px; }
+    .nlt-panel .field { gap: 5px; margin-bottom: 12px; }
+    .nlt-panel label, .nlt-panel .field-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); }
+    .nlt-panel input[type="text"], .nlt-panel input[type="url"],
+    .nlt-panel input[type="password"], .nlt-panel select {
+      width: 100%; padding: 8px 11px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13px; outline: 0;
+    }
+    .nlt-panel input:focus, .nlt-panel select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .nlt-panel .help { color: var(--fg-muted); font-size: 11.5px; margin-top: 3px; line-height: 1.45; }
+    .nlt-key-row { display: flex; gap: 6px; align-items: stretch; }
+    .nlt-key-row input { flex: 1; }
+    .nlt-key-show {
+      width: 36px; padding: 0; border: 1px solid var(--border-strong);
+      border-radius: 8px; background: var(--bg-elevated); cursor: pointer;
+      font-size: 14px; color: var(--fg-muted);
+    }
+    .nlt-key-show:hover { background: var(--bg-muted); }
+    .nlt-test-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .nlt-test-btn {
+      padding: 7px 13px; border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--bg-elevated); color: var(--fg); cursor: pointer;
+      font: inherit; font-size: 12.5px; font-weight: 600;
+    }
+    .nlt-test-btn:hover { background: var(--bg-muted); }
+    .nlt-test-badge {
+      padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+    }
+    .nlt-test-badge.is-testing { background: var(--bg-muted); color: var(--fg-muted); }
+    .nlt-test-badge.is-success { background: var(--success-bg); color: #065F46; }
+    .nlt-test-badge.is-error { background: var(--danger-bg); color: var(--danger); }
+    .nlt-toggle-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 14px; padding: 8px 0;
+    }
+    .nlt-toggle-row .lbl .t { font-size: 13px; font-weight: 600; }
+    .nlt-toggle-row .lbl .s { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.4; }
+    .nlt-our-endpoint {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 11px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg-elevated);
+    }
+    .nlt-our-endpoint code {
+      flex: 1; font-family: var(--font-mono); font-size: 12px; color: var(--fg);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .nlt-copy-btn {
+      padding: 4px 9px; border: 1px solid var(--border-strong); border-radius: 6px;
+      background: var(--bg); cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600;
+      color: var(--fg-muted);
+    }
+    .nlt-copy-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+    .nlt-payload-details {
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg-elevated); padding: 8px 11px; margin-top: 6px;
+    }
+    .nlt-payload-details summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--fg-muted); }
+    .nlt-payload {
+      margin: 8px 0 4px;
+      padding: 10px 12px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; color: var(--fg);
+      overflow-x: auto;
+    }
+    .nlt-gsheets-signin, .nlt-gsheets-connected {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 13px;
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--bg-elevated); cursor: pointer;
+      font: inherit; font-size: 13px; font-weight: 500; color: var(--fg);
+    }
+    .nlt-gsheets-signin:hover { background: var(--bg-muted); }
+    .nlt-gsheets-connected { background: var(--success-bg); color: #065F46; cursor: default; }
+    .nlt-gsheets-disconnect {
+      margin-left: auto; padding: 3px 8px;
+      background: transparent; border: 0; color: #065F46;
+      font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; text-decoration: underline;
+    }
+
+    /* ── Form-layout picker ── */
+    .layout-picker {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    .lp-card {
+      border: 2px solid var(--border); border-radius: 12px;
+      background: var(--bg); padding: 12px;
+      cursor: pointer; transition: all .12s ease;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .lp-card:hover { border-color: var(--border-strong); }
+    .lp-card.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .lp-card .lp-name { font-size: 13px; font-weight: 600; color: var(--fg); display: flex; align-items: center; gap: 6px; }
+    .lp-card .lp-name .lp-check {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--brand-primary); color: #fff;
+      display: none; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+    }
+    .lp-card.is-selected .lp-name .lp-check { display: flex; }
+    .lp-card .lp-sub { font-size: 11px; color: var(--fg-muted); }
+    .lp-preview {
+      background: var(--bg-elevated); border: 1px dashed var(--border-strong);
+      border-radius: 8px; padding: 14px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .lp-preview .lp-fake-input {
+      height: 18px; width: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--bg) 70%, transparent);
+      border: 1px solid var(--border-strong);
+    }
+    .lp-preview .lp-fake-btn {
+      height: 18px; width: 60%; border-radius: 4px;
+      background: var(--brand-primary);
+    }
+    .lp-preview.is-oneline { flex-direction: row; gap: 4px; }
+    .lp-preview.is-oneline .lp-fake-input { flex: 1; }
+    .lp-preview.is-oneline .lp-fake-btn { width: 38px; flex-shrink: 0; }
+    .lp-preview.is-card { padding: 18px 14px; border-style: solid; background: var(--bg); }
+    .lp-preview.is-card .lp-fake-icon {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+    }
+    .lp-preview.is-card .lp-fake-btn { width: 100%; }
+
+    /* ── Bullet items ── */
+    .bullet-list { display: flex; flex-direction: column; gap: 6px; }
+    .bullet-item {
+      display: flex; gap: 8px; align-items: center;
+      padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg);
+    }
+    .bullet-item .bl-grip {
+      color: var(--fg-subtle); cursor: grab;
+      width: 14px; height: 14px; flex-shrink: 0;
+    }
+    .bullet-item .bl-emoji {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; cursor: pointer; flex-shrink: 0;
+    }
+    .bullet-item input.bl-text {
+      flex: 1; border: 0; background: transparent; outline: 0;
+      font: inherit; font-size: 13.5px; color: var(--fg);
+    }
+    .bullet-item .bl-x {
+      background: transparent; border: 0; color: var(--fg-subtle);
+      cursor: pointer; padding: 2px 6px; font-size: 14px; line-height: 1;
+    }
+    .bullet-item .bl-x:hover { color: var(--danger); }
+    .add-row-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 11px; border: 1px dashed var(--border-strong); border-radius: 8px;
+      background: transparent; color: var(--fg-muted);
+      font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+      align-self: flex-start;
+    }
+    .add-row-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    /* ── FAQ items ── */
+    .faq-item {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg); padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .faq-item .faq-head {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .faq-item .faq-head .faq-grip { color: var(--fg-subtle); cursor: grab; }
+    .faq-item .faq-q {
+      flex: 1; padding: 7px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); font: inherit; font-size: 13.5px; outline: 0;
+      font-weight: 600;
+    }
+    .faq-item .faq-a {
+      width: 100%; padding: 8px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); font: inherit; font-size: 13px;
+      min-height: 56px; resize: vertical; outline: 0; line-height: 1.5;
+    }
+
+    /* ── Past issues preview cards ── */
+    .past-issues-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+    .past-issue-card {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg-elevated); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .past-issue-card .pic-cover {
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: #fff;
+    }
+    .past-issue-card .pic-cover.t-rose { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .past-issue-card .pic-cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .past-issue-card .pic-cover.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .past-issue-card .pic-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .past-issue-card .pic-title { font-size: 13px; font-weight: 600; line-height: 1.35; }
+    .past-issue-card .pic-excerpt {
+      font-size: 11.5px; color: var(--fg-muted); line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .past-issue-card .pic-meta { font-size: 10.5px; color: var(--fg-subtle); margin-top: 4px; }
+
+    /* ── Sticky save-bar ── */
+    .save-bar {
+      position: sticky; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border-strong);
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 -4px 16px rgba(11,15,30,0.04);
+      margin: 24px -32px -80px;
+    }
+    @media (max-width: 720px) { .save-bar { margin: 24px -20px -120px; padding: 10px 16px; } }
+    .save-bar .save-status {
+      font-size: 12px; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .save-bar .save-status.is-dirty { color: var(--brand-warm-dark); }
+    .save-bar .ss-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+    }
+    .save-bar .save-status.is-dirty .ss-dot { background: var(--brand-warm); }
+    .save-bar .foot-spacer { flex: 1; }
+
+    /* ── Add-section floating button ── */
+    .add-section-row {
+      display: flex; justify-content: center; margin: 18px 0;
+    }
+    .add-section-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px;
+      border: 1.5px dashed var(--border-strong); border-radius: 999px;
+      background: var(--bg-elevated);
+      color: var(--fg-muted); font: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .12s ease;
+    }
+    .add-section-btn:hover {
+      color: var(--brand-primary); border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+
+    /* ── Centered modal — section picker + image picker (per no-drawers) ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(720px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+
+    .section-picker-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    .sp-card {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 14px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg); cursor: pointer; transition: all .12s ease;
+      text-align: left;
+    }
+    .sp-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .sp-card.is-disabled { opacity: 0.55; cursor: not-allowed; }
+    .sp-card.is-disabled:hover { transform: none; box-shadow: none; border-color: var(--border); }
+    .sp-card .sp-emoji { font-size: 24px; }
+    .sp-card .sp-name { font-size: 13.5px; font-weight: 600; }
+    .sp-card .sp-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+    .sp-card .sp-already {
+      align-self: flex-start;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    /* ── Demo toolbar ── */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      flex-wrap: wrap;
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 420px; }
+
+    /* ── Cover-drop ── */
+    .cover-drop {
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      padding: 22px; text-align: center; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      cursor: pointer; transition: border-color .12s ease, background .12s ease;
+    }
+    .cover-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .cover-drop .cd-emoji { font-size: 30px; }
+    .cover-drop .cd-title { font-weight: 600; font-size: 14px; }
+    .cover-drop .cd-sub { color: var(--fg-muted); font-size: 12.5px; }
+
+    /* ── Dark mode (mirror app-page-blog) ── */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode details.expander,
+    body.dark-mode .nlt-panel,
+    body.dark-mode .lp-card,
+    body.dark-mode .bullet-item,
+    body.dark-mode .faq-item,
+    body.dark-mode .past-issue-card,
+    body.dark-mode .modal { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .modal { background: #141A2D; }
+    body.dark-mode .nlt-panel input,
+    body.dark-mode .nlt-panel select,
+    body.dark-mode .faq-q,
+    body.dark-mode .faq-a { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .nlt-test-btn { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .nlt-our-endpoint { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .save-bar { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .lp-card.is-selected { background: rgba(99,102,241,0.10); }
+    body.dark-mode .sp-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .sp-card:hover { border-color: var(--brand-primary); }
+    body.dark-mode .add-section-btn { background: #141A2D; border-color: #1F2937; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator" data-provider="kit" data-layout="oneline">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+  <div class="spacer"></div>
+  <a href="./creator-newsletter-signup-public.html" class="btn btn-ghost btn-sm" data-tip="Open the public subscribe page in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View page
+  </a>
+  <button class="iconbtn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Newsletter signup</span>
+    </nav>
+
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">✉️</span> Newsletter signup</h1>
+        <p class="sub">A dedicated landing page focused on one job: turning a visitor into a subscriber. Substack/Beehiiv-style — no other distractions.</p>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b>subscribe</b>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="window.open('./creator-newsletter-signup-public.html','_blank')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+    </div>
+
+    <!-- ========== EMPTY STATE (state=empty) ========== -->
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="es-emoji">✉️</div>
+      <h3>Your subscribe page is empty</h3>
+      <p>Start with our recommended layout — Hero, Provider, Signup form, What you'll get and FAQ — or pick sections one at a time.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+        <button class="btn btn-primary" onclick="useStarter()">✨ Use recommended layout</button>
+        <button class="btn btn-ghost" onclick="openSectionPicker()">+ Add section</button>
+      </div>
+    </div>
+
+    <!-- ========== FILLED STATE (state=filled, default) ========== -->
+    <div id="filled-state">
+
+      <!-- ===================================================
+           SECTION 0 — Page settings (always present, NOT removable)
+           =================================================== -->
+      <section class="section" data-section-id="page-settings">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Page settings always come first" style="opacity:0.4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>Page settings</h2>
+          <span class="sub">Title, URL, theme &amp; SEO.</span>
+          <span class="head-spacer"></span>
+          <span class="chip live">Live</span>
+        </div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="page-title">Page title <span class="field-hint">shown in the browser tab + on the page</span></label>
+              <input class="field-input" id="page-title" type="text" value="Subscribe" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+              <div class="field-prefix-wrap">
+                <span class="field-prefix">tadaify.com/alexandra/</span>
+                <input id="page-slug" type="text" value="subscribe" />
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label">Publish</label>
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">Page is live</div>
+                  <div class="rt-sub">Visitors can find this page at the URL above.</div>
+                </div>
+                <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Common alternatives <span class="field-hint">click to use as title + slug</span></label>
+              <div style="display:flex; gap:6px; flex-wrap:wrap">
+                <button class="chip" type="button" onclick="useTitleSlug('Subscribe','subscribe')" style="cursor:pointer">Subscribe · /subscribe</button>
+                <button class="chip" type="button" onclick="useTitleSlug('Newsletter','newsletter')" style="cursor:pointer">Newsletter · /newsletter</button>
+                <button class="chip" type="button" onclick="useTitleSlug('Stay in touch','stay-in-touch')" style="cursor:pointer">Stay in touch · /stay-in-touch</button>
+                <button class="chip" type="button" onclick="useTitleSlug('Updates','updates')" style="cursor:pointer">Updates · /updates</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Theme color <span class="field-hint">override theme for this page only</span></label>
+            <div class="swatch-row">
+              <div class="swatch is-selected" style="background: var(--bg);" data-name="Inherit theme" onclick="pickSwatch(this)" title="Inherit theme"></div>
+              <div class="swatch" style="background: #FFFFFF;" data-name="White" onclick="pickSwatch(this)" title="White"></div>
+              <div class="swatch" style="background: #F8F4EE;" data-name="Warm cream" onclick="pickSwatch(this)" title="Warm cream"></div>
+              <div class="swatch" style="background: #1F2937;" data-name="Slate" onclick="pickSwatch(this)" title="Slate"></div>
+              <div class="swatch" style="background: #0B0F1E;" data-name="Dark canvas" onclick="pickSwatch(this)" title="Dark canvas"></div>
+              <div class="swatch" style="background: linear-gradient(135deg,#FDE68A,#F59E0B);" data-name="Sunrise" onclick="pickSwatch(this)" title="Sunrise gradient"></div>
+              <div class="swatch" style="background: linear-gradient(135deg,#6366F1,#8B5CF6);" data-name="Indigo" onclick="pickSwatch(this)" title="Indigo gradient"></div>
+              <div class="swatch" style="background: linear-gradient(135deg,#0F172A,#334155);" data-name="Nightfall" onclick="pickSwatch(this)" title="Nightfall"></div>
+            </div>
+          </div>
+
+          <details class="expander" style="margin-top:14px">
+            <summary>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7"/><path d="M9 12V7a3 3 0 0 1 6 0v5"/><circle cx="12" cy="17" r="3"/></svg>
+              SEO settings <span class="ex-sub">— meta title, description, social card</span>
+              <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+            </summary>
+            <div class="ex-body">
+              <div class="field">
+                <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
+                <div class="field-prefix-wrap">
+                  <input id="seo-title" type="text" value="Subscribe to Strong Not Skinny — by Alexandra Silva" />
+                  <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal with 5 variants')" type="button">✨ Suggest</button>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+                <div class="field-prefix-wrap" style="align-items:flex-start">
+                  <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Honest essays on training, recovery and building strength without burning out. New posts every Tuesday — straight to your inbox.</textarea>
+                  <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">OG image <span class="field-hint">1200×630 — shown when shared on social</span></label>
+                <div class="cover-drop" style="height:auto; padding:14px;" onclick="openImagePicker()">
+                  <span class="cd-emoji">🖼</span>
+                  <div class="cd-title">Drop an image, or click to upload</div>
+                  <div class="cd-sub">Or <a href="#" onclick="event.preventDefault();alert('Mockup — AI generates 4 OG cards')" style="color:var(--brand-primary); font-weight:600">✨ generate one with AI</a></div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Custom domain (Pro+) — fully visible per no-blur-premium, gated at Save -->
+          <div class="field" style="margin-top:14px">
+            <label class="field-label">Custom domain <span data-tier-badge="pro"></span></label>
+            <div class="field-prefix-wrap">
+              <input type="text" placeholder="e.g. subscribe.alexandrasilva.com" />
+              <button class="field-suffix-action" onclick="alert('Mockup — opens Domain page')" type="button">Set up</button>
+            </div>
+            <div class="tier-hint" id="domain-tier-hint" style="display:none">
+              <span class="th-icon">✨</span>
+              <span>Custom domains are a Pro feature. We'll prompt you to upgrade when you save.</span>
+            </div>
+          </div>
+
+          <!-- A/B testing (Business) — fully visible per no-blur-premium, gated at Save -->
+          <div class="field" style="margin-top:14px">
+            <label class="field-label">A/B test variants <span data-tier-badge="business"></span></label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Test two versions of this page</div>
+                <div class="rt-sub">Show different headlines or button labels to your visitors and we'll pick the winner automatically.</div>
+              </div>
+              <button class="toggle" type="button" aria-pressed="false" aria-label="Toggle A/B test" onclick="toggleSwitch(this); checkAbHint(this)"></button>
+            </div>
+            <div class="tier-hint" id="ab-tier-hint" style="display:none">
+              <span class="th-icon">🔒</span>
+              <span>A/B testing is a Business feature. We'll prompt you to upgrade when you save.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 1 — Hero
+           =================================================== -->
+      <section class="section" data-section-id="hero">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>🎯 Hero</h2>
+          <span class="sub">Headline + sub-headline + optional cover image.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="hero-headline">Headline <span class="field-hint">large, friendly, first thing visitors see</span></label>
+            <div class="field-prefix-wrap">
+              <input id="hero-headline" type="text" value="Get my weekly notes on training without burning out." />
+              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest 5 variants')" type="button">✨ Suggest</button>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
+              <button class="chip" type="button" onclick="setHeadline(this)" style="cursor:pointer">Get my weekly notes</button>
+              <button class="chip" type="button" onclick="setHeadline(this)" style="cursor:pointer">Never miss a release</button>
+              <button class="chip" type="button" onclick="setHeadline(this)" style="cursor:pointer">Join 12k creators learning X</button>
+              <button class="chip" type="button" onclick="setHeadline(this)" style="cursor:pointer">Curated insights every Tuesday</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="hero-sub">Sub-headline</label>
+            <div class="field-prefix-wrap" style="align-items:flex-start">
+              <textarea id="hero-sub" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">One short, honest email every Tuesday. Drills, mindset shifts, recovery tactics — no spam, no fluff.</textarea>
+              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Cover image / logo <span class="field-hint">optional — 800×600 recommended</span></label>
+            <div class="cover-drop" onclick="openImagePicker()">
+              <span class="cd-emoji">🖼</span>
+              <div class="cd-title">Drop an image, or click to upload</div>
+              <div class="cd-sub">JPG, PNG, WebP · max 5MB · or <a href="#" onclick="event.preventDefault();alert('Mockup — AI generates 4 hero illustrations')" style="color:var(--brand-primary); font-weight:600">✨ generate with AI</a></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 2 — Provider config (THE primary functional section)
+           Mirrors BLOCK_TYPES.newsletter from app-block-editor.html exactly.
+           Implementation: extract to shared/newsletter-provider.partial.{html,js}
+           =================================================== -->
+      <section class="section" data-section-id="provider">
+        <div class="section-head">
+          <span class="sh-grip" data-tip="Drag to reorder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>🔌 Email provider</h2>
+          <span class="sub">Where new subscribers land.</span>
+          <span class="head-spacer"></span>
+          <span class="chip" id="provider-status">✓ Connected</span>
+        </div>
+        <div class="section-body">
+          <!-- shared with BLOCK_TYPES.newsletter; consolidate to shared partial in implementation -->
+          <div class="field">
+            <label class="field-label" for="provider-select">Email provider <span class="field-hint">all providers free on every tadaify plan (DEC-119)</span></label>
+            <select class="field-select" id="provider-select" onchange="switchProvider(this.value)">
+              <option value="kit" selected>Kit (ConvertKit)</option>
+              <option value="beehiiv">Beehiiv</option>
+              <option value="mailerlite">MailerLite</option>
+              <option value="mailchimp">Mailchimp</option>
+              <option value="klaviyo">Klaviyo</option>
+              <option value="google-sheets">Google Sheets</option>
+              <option value="webhook">Generic webhook</option>
+            </select>
+          </div>
+
+          <!-- KIT (default) -->
+          <div class="nlt-panel" data-provider-panel="kit">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Connect Kit</span>
+              <span class="nlt-panel-sub">Find your API key in Kit Settings → Account → API.</span>
+            </div>
+            <div class="field">
+              <label for="nlt-key-kit">API key</label>
+              <div class="nlt-key-row">
+                <input id="nlt-key-kit" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your Kit API key" value="cnvrt_••••••••••••••••aB42" />
+                <button type="button" class="nlt-key-show" aria-label="Show / hide key" onclick="toggleKeyVis('nlt-key-kit', this)">👁</button>
+              </div>
+              <div class="help">Stored encrypted in tadaify Vault — never shown after save.</div>
+            </div>
+            <div class="field nlt-test-field">
+              <button type="button" class="nlt-test-btn" onclick="testConnection('kit')">Test connection</button>
+              <span class="nlt-test-badge is-success">✓ Connected</span>
+            </div>
+            <div class="field">
+              <label>List / audience</label>
+              <select>
+                <option>Pick a list…</option>
+                <option selected>Main signup form</option>
+                <option>New drops alerts</option>
+                <option>VIP early access</option>
+              </select>
+              <div class="help">Where new subscribers from this page will land.</div>
+            </div>
+            <div class="field">
+              <label for="nlt-tag">Source tag</label>
+              <input id="nlt-tag" type="text" value="tadaify-alexandra-subscribe-page" />
+              <div class="help">Identifies subscribers who came in through this subscribe page — handy for segmenting later.</div>
+            </div>
+          </div>
+
+          <!-- BEEHIIV -->
+          <div class="nlt-panel" data-provider-panel="beehiiv" style="display:none">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Connect Beehiiv</span>
+              <span class="nlt-panel-sub">Find your API key in Beehiiv Settings → Integrations → API.</span>
+            </div>
+            <div class="field">
+              <label>API key</label>
+              <div class="nlt-key-row">
+                <input type="password" placeholder="Paste your Beehiiv API key" />
+                <button type="button" class="nlt-key-show">👁</button>
+              </div>
+              <div class="help">Stored encrypted in tadaify Vault.</div>
+            </div>
+            <div class="field nlt-test-field">
+              <button type="button" class="nlt-test-btn" onclick="testConnection('beehiiv')">Test connection</button>
+            </div>
+            <div class="field">
+              <label>Publication</label>
+              <select>
+                <option>Pick a publication…</option>
+                <option>alexandra.beehiiv.com</option>
+                <option>Alex Weekly</option>
+              </select>
+            </div>
+            <!-- DEC-102 — DOI default ON for Beehiiv -->
+            <div class="nlt-toggle-row">
+              <div class="lbl">
+                <div class="t">Double opt-in (recommended)</div>
+                <div class="s">Sends a confirmation email before adding the subscriber. Improves deliverability and matches GDPR best practice.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <!-- MAILERLITE -->
+          <div class="nlt-panel" data-provider-panel="mailerlite" style="display:none">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Connect MailerLite</span>
+              <span class="nlt-panel-sub">Find your API key in MailerLite Integrations → Developer API.</span>
+            </div>
+            <div class="field">
+              <label>API key</label>
+              <div class="nlt-key-row">
+                <input type="password" placeholder="Paste your MailerLite API key" />
+                <button type="button" class="nlt-key-show">👁</button>
+              </div>
+            </div>
+            <div class="field nlt-test-field">
+              <button type="button" class="nlt-test-btn" onclick="testConnection('mailerlite')">Test connection</button>
+            </div>
+            <div class="field">
+              <label>Group</label>
+              <select>
+                <option>Pick a group…</option>
+                <option>Main subscribers</option>
+                <option>New release alerts</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- MAILCHIMP — DEC-117: NO warning copy -->
+          <div class="nlt-panel" data-provider-panel="mailchimp" style="display:none">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Connect Mailchimp</span>
+              <span class="nlt-panel-sub">Find your API key in Mailchimp Account → Extras → API keys.</span>
+            </div>
+            <div class="field">
+              <label>API key</label>
+              <div class="nlt-key-row">
+                <input type="password" placeholder="Paste your Mailchimp API key (e.g. abc123-us17)" />
+                <button type="button" class="nlt-key-show">👁</button>
+              </div>
+            </div>
+            <div class="field nlt-test-field">
+              <button type="button" class="nlt-test-btn" onclick="testConnection('mailchimp')">Test connection</button>
+            </div>
+            <div class="field">
+              <label>Audience</label>
+              <select>
+                <option>Pick an audience…</option>
+                <option>Main audience</option>
+                <option>Drops &amp; releases</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- KLAVIYO — DEC-120 capture-name toggle ON -->
+          <div class="nlt-panel" data-provider-panel="klaviyo" style="display:none">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Connect Klaviyo</span>
+              <span class="nlt-panel-sub">Find your private API key in Klaviyo Settings → API keys.</span>
+            </div>
+            <div class="field">
+              <label>API key</label>
+              <div class="nlt-key-row">
+                <input type="password" placeholder="Paste your Klaviyo private API key" />
+                <button type="button" class="nlt-key-show">👁</button>
+              </div>
+            </div>
+            <div class="field nlt-test-field">
+              <button type="button" class="nlt-test-btn" onclick="testConnection('klaviyo')">Test connection</button>
+            </div>
+            <div class="field">
+              <label>List</label>
+              <select>
+                <option>Pick a list…</option>
+                <option>Main list</option>
+                <option>VIP segment</option>
+              </select>
+            </div>
+            <div class="nlt-toggle-row">
+              <div class="lbl">
+                <div class="t">Capture name field</div>
+                <div class="s">Show a "Name" input next to the email field on the public page.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <!-- GOOGLE SHEETS -->
+          <div class="nlt-panel" data-provider-panel="google-sheets" style="display:none">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Connect Google Sheets</span>
+              <span class="nlt-panel-sub">Subscribers append to a row in your sheet.</span>
+            </div>
+            <div class="field">
+              <button type="button" class="nlt-gsheets-signin">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
+                <span>Sign in with Google</span>
+              </button>
+              <div class="help">We only request access to the sheet you choose. You can revoke access at any time in your Google account.</div>
+            </div>
+            <div class="field">
+              <label>Sheet</label>
+              <select disabled><option>Sign in first to load sheets</option></select>
+            </div>
+            <div class="field">
+              <label for="nlt-tab">Append to tab</label>
+              <input id="nlt-tab" type="text" value="Subscribers" />
+              <div class="help">If the tab doesn't exist yet, we'll create it on the first signup.</div>
+            </div>
+          </div>
+
+          <!-- GENERIC WEBHOOK — DEC-104 -->
+          <div class="nlt-panel" data-provider-panel="webhook" style="display:none">
+            <div class="nlt-panel-head">
+              <span class="nlt-panel-title">Generic webhook</span>
+              <span class="nlt-panel-sub">Send signups to any HTTPS endpoint you control.</span>
+            </div>
+            <div class="field">
+              <label for="webhook-url">Webhook URL</label>
+              <input id="webhook-url" type="url" placeholder="https://your-server.com/api/newsletter" />
+              <div class="help">We POST a JSON payload to this URL on every signup. Must be HTTPS. Should respond within 5 seconds.</div>
+            </div>
+            <div class="field">
+              <label>Or use our endpoint</label>
+              <div class="nlt-our-endpoint">
+                <code>https://tadaify.com/wh/v1/alexandra</code>
+                <button type="button" class="nlt-copy-btn" onclick="copyEndpoint(this)">Copy</button>
+              </div>
+              <div class="help">If you don't have a server yet, point at this URL — we'll forward signups to your inbox while you set things up.</div>
+            </div>
+            <details class="nlt-payload-details">
+              <summary>Payload schema</summary>
+              <pre class="nlt-payload"><code>{
+  "email": "fan@example.com",
+  "name": "Fan name (if captured)",
+  "source": "tadaify-alexandra-subscribe-page",
+  "page_id": "page_a1b2c3",
+  "submitted_at": "2026-04-26T18:14:22Z"
+}</code></pre>
+              <div class="help">Fields are stable — we add new optional fields without breaking your integration.</div>
+            </details>
+          </div>
+
+          <!-- Per-provider success message -->
+          <div class="field" style="margin-top:14px">
+            <label class="field-label" for="success-msg">Success message <span class="field-hint">shown after a visitor signs up</span></label>
+            <div class="field-prefix-wrap">
+              <input id="success-msg" type="text" value="Thanks! Check your inbox to confirm your subscription." />
+              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button">✨ Suggest</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 3 — Signup form
+           =================================================== -->
+      <section class="section" data-section-id="form">
+        <div class="section-head">
+          <span class="sh-grip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>📝 Signup form</h2>
+          <span class="sub">Layout, copy &amp; consent.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+
+          <div class="field">
+            <label class="field-label">Form layout</label>
+            <div class="layout-picker">
+              <div class="lp-card is-selected" data-layout="oneline" onclick="pickLayout(this)">
+                <div class="lp-name"><span class="lp-check">✓</span> One-line</div>
+                <div class="lp-preview is-oneline">
+                  <div class="lp-fake-input"></div>
+                  <div class="lp-fake-btn"></div>
+                </div>
+                <div class="lp-sub">Email + Subscribe on the same row. Highest conversion for short forms.</div>
+              </div>
+              <div class="lp-card" data-layout="twoline" onclick="pickLayout(this)">
+                <div class="lp-name"><span class="lp-check">✓</span> Two-line</div>
+                <div class="lp-preview">
+                  <div class="lp-fake-input"></div>
+                  <div class="lp-fake-btn" style="width:100%"></div>
+                </div>
+                <div class="lp-sub">Email above, full-width Subscribe button below. Easier on mobile.</div>
+              </div>
+              <div class="lp-card" data-layout="card" onclick="pickLayout(this)">
+                <div class="lp-name"><span class="lp-check">✓</span> Centered card</div>
+                <div class="lp-preview is-card">
+                  <div class="lp-fake-icon"></div>
+                  <div class="lp-fake-input"></div>
+                  <div class="lp-fake-btn"></div>
+                </div>
+                <div class="lp-sub">Stacked card with optional icon. Most editorial.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="form-placeholder">Email placeholder</label>
+              <input class="field-input" id="form-placeholder" type="text" value="you@email.com" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="form-cta">Button label</label>
+              <div class="field-prefix-wrap">
+                <input id="form-cta" type="text" value="Subscribe" />
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">GDPR consent checkbox</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Show consent checkbox</div>
+                <div class="rt-sub">Required for EU visitors. Logs the explicit "I agree" timestamp on every signup.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle consent" onclick="toggleSwitch(this)"></button>
+            </div>
+            <div class="tier-hint">
+              <span class="th-icon">ℹ</span>
+              <span>EU visitors must opt-in explicitly under GDPR Art. 7. We default this on so you stay compliant.</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="consent-copy">Consent copy <span class="field-hint">shown next to the checkbox</span></label>
+            <textarea id="consent-copy" class="field-area" style="min-height:60px">I agree to receive emails from Alexandra and accept the <a href="/privacy">privacy policy</a>.</textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 4 — Social proof
+           =================================================== -->
+      <section class="section" data-section-id="social-proof">
+        <div class="section-head">
+          <span class="sh-grip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>⭐ Social proof</h2>
+          <span class="sub">Build trust with subscriber count or quotes.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="proof-style">Style</label>
+            <select class="field-select" id="proof-style">
+              <option value="count" selected>Subscriber count badge — "Join 24,512 creators"</option>
+              <option value="quotes">Testimonial quotes — 1-3 cards</option>
+              <option value="both">Both — count above quotes</option>
+            </select>
+          </div>
+
+          <!-- Count badge config -->
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="proof-template">Template <span class="field-hint">{count} = live count from your provider</span></label>
+              <input class="field-input" id="proof-template" type="text" value="Join {count} creators learning to train smarter" />
+            </div>
+            <div class="field">
+              <label class="field-label">Live count source</label>
+              <div class="row-toggle">
+                <div>
+                  <div class="rt-name">Pull count from Kit</div>
+                  <div class="rt-sub">Auto-updates daily via API. Currently <b>24,512</b> subscribers.</div>
+                </div>
+                <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Show count to visitors <span data-tier-badge="creator" id="count-public-badge"></span></label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Public subscriber count</div>
+                <div class="rt-sub">Free plan hides the count above 2,500 subscribers. Creator+ plans show your full count to visitors.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <!-- Testimonial quotes (collapsed sub-list) -->
+          <div class="field">
+            <label class="field-label">Testimonial quotes <span class="field-hint">2-3 short quotes work best</span></label>
+            <div class="bullet-list">
+              <div class="bullet-item">
+                <span class="bl-grip">⋮⋮</span>
+                <input class="bl-text" type="text" value="&quot;Best fitness newsletter I read. Honest, no-fluff.&quot; — Mira, Berlin" />
+                <button class="bl-x" onclick="removeRow(this)">✕</button>
+              </div>
+              <div class="bullet-item">
+                <span class="bl-grip">⋮⋮</span>
+                <input class="bl-text" type="text" value="&quot;Alex's Tuesday emails are the only ones I open every week.&quot; — Daniel, NYC" />
+                <button class="bl-x" onclick="removeRow(this)">✕</button>
+              </div>
+              <button class="add-row-btn" onclick="addRow(this, 'bullet-item-quote')">+ Add quote</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 5 — What you'll get
+           =================================================== -->
+      <section class="section" data-section-id="what-youll-get">
+        <div class="section-head">
+          <span class="sh-grip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>📬 What you'll get</h2>
+          <span class="sub">Set expectations on frequency, topics, format.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label" for="wyg-heading">Section heading</label>
+            <input class="field-input" id="wyg-heading" type="text" value="Here's what lands in your inbox:" />
+          </div>
+
+          <div class="field">
+            <label class="field-label">Bullets <span class="field-hint">drag to reorder · click 🎯 to change emoji</span></label>
+            <div class="bullet-list">
+              <div class="bullet-item">
+                <span class="bl-grip">⋮⋮</span>
+                <button class="bl-emoji" onclick="alert('Mockup — emoji picker')">📅</button>
+                <input class="bl-text" type="text" value="One short essay every Tuesday — usually 4-7 minutes to read." />
+                <button class="bl-x" onclick="removeRow(this)">✕</button>
+              </div>
+              <div class="bullet-item">
+                <span class="bl-grip">⋮⋮</span>
+                <button class="bl-emoji" onclick="alert('Mockup — emoji picker')">🏋️</button>
+                <input class="bl-text" type="text" value="Weekly drills you can try in your next session — no fancy gear." />
+                <button class="bl-x" onclick="removeRow(this)">✕</button>
+              </div>
+              <div class="bullet-item">
+                <span class="bl-grip">⋮⋮</span>
+                <button class="bl-emoji" onclick="alert('Mockup — emoji picker')">🛌</button>
+                <input class="bl-text" type="text" value="Recovery + sleep tactics that actually work for non-athletes." />
+                <button class="bl-x" onclick="removeRow(this)">✕</button>
+              </div>
+              <div class="bullet-item">
+                <span class="bl-grip">⋮⋮</span>
+                <button class="bl-emoji" onclick="alert('Mockup — emoji picker')">💌</button>
+                <input class="bl-text" type="text" value="Behind-the-scenes from my own training — the failures included." />
+                <button class="bl-x" onclick="removeRow(this)">✕</button>
+              </div>
+              <button class="add-row-btn" onclick="addRow(this, 'bullet-item-wyg')">+ Add bullet</button>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px">
+              <span style="font-size:11.5px; color:var(--fg-muted); align-self:center">Templates:</span>
+              <button class="chip" type="button" style="cursor:pointer" onclick="alert('Mockup — applies Weekly notes template')">Weekly notes</button>
+              <button class="chip" type="button" style="cursor:pointer" onclick="alert('Mockup — applies Monthly digest template')">Monthly digest</button>
+              <button class="chip" type="button" style="cursor:pointer" onclick="alert('Mockup — applies Drop alerts template')">Drop alerts</button>
+              <button class="chip" type="button" style="cursor:pointer" onclick="alert('Mockup — applies BTS template')">Behind-the-scenes</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 6 — Past issues preview (Creator+)
+           =================================================== -->
+      <section class="section" data-section-id="past-issues">
+        <div class="section-head">
+          <span class="sh-grip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>📰 Past issues preview <span data-tier-badge="creator"></span></h2>
+          <span class="sub">Shows 3 most recent posts pulled from your provider.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label class="field-label">Show past issues</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Display 3 recent posts</div>
+                <div class="rt-sub">Pulled from your <b>Kit</b> archive every hour. Visitors can read a preview before subscribing — boosts conversion ~18%.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+            <div class="tier-hint" id="past-tier-hint" style="display:none">
+              <span class="th-icon">⭐</span>
+              <span>Past issues preview is a Creator feature. We'll prompt you to upgrade when you save.</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Recent posts (live preview)</label>
+            <div class="past-issues-grid">
+              <div class="past-issue-card">
+                <div class="pic-cover t-warm">📈</div>
+                <div class="pic-body">
+                  <div class="pic-title">Why I stopped chasing PRs</div>
+                  <div class="pic-excerpt">Hitting a wall at 165kg taught me more about programming than any deload week ever did.</div>
+                  <div class="pic-meta">Apr 22 · 6 min read</div>
+                </div>
+              </div>
+              <div class="past-issue-card">
+                <div class="pic-cover">💤</div>
+                <div class="pic-body">
+                  <div class="pic-title">Sleep is the cheat code</div>
+                  <div class="pic-excerpt">Three small experiments that doubled my deep-sleep minutes — backed by my Whoop data.</div>
+                  <div class="pic-meta">Apr 15 · 5 min read</div>
+                </div>
+              </div>
+              <div class="past-issue-card">
+                <div class="pic-cover t-rose">🧠</div>
+                <div class="pic-body">
+                  <div class="pic-title">Mental reps &gt; physical reps</div>
+                  <div class="pic-excerpt">Visualisation is real, but only if you do it the way Olympic divers do — not the way Instagram does.</div>
+                  <div class="pic-meta">Apr 08 · 7 min read</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 7 — FAQ
+           =================================================== -->
+      <section class="section" data-section-id="faq">
+        <div class="section-head">
+          <span class="sh-grip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>❓ FAQ</h2>
+          <span class="sub">Tackle common objections before they kill the signup.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="faq-item">
+            <div class="faq-head">
+              <span class="faq-grip">⋮⋮</span>
+              <input class="faq-q" type="text" value="How often will you email me?" />
+              <button class="iconbtn" onclick="removeFaq(this)" data-tip="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <textarea class="faq-a">Once a week, every Tuesday morning. Sometimes a bonus drop alert when something time-sensitive lands. Never daily, never twice in one day.</textarea>
+          </div>
+          <div class="faq-item">
+            <div class="faq-head">
+              <span class="faq-grip">⋮⋮</span>
+              <input class="faq-q" type="text" value="Can I unsubscribe at any time?" />
+              <button class="iconbtn" onclick="removeFaq(this)" data-tip="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <textarea class="faq-a">Yes — every email has a one-click unsubscribe link in the footer. No survey, no "are you sure" — instant.</textarea>
+          </div>
+          <div class="faq-item">
+            <div class="faq-head">
+              <span class="faq-grip">⋮⋮</span>
+              <input class="faq-q" type="text" value="Will you sell or share my email?" />
+              <button class="iconbtn" onclick="removeFaq(this)" data-tip="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <textarea class="faq-a">Never. Your email lives in my Kit account and that's it. I don't sell, share, swap or rent lists. GDPR-compliant by default.</textarea>
+          </div>
+          <button class="add-row-btn" onclick="addFaq()">+ Add question</button>
+        </div>
+      </section>
+
+      <!-- ===================================================
+           SECTION 8 — Footer CTA
+           =================================================== -->
+      <section class="section" data-section-id="footer-cta">
+        <div class="section-head">
+          <span class="sh-grip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+          </span>
+          <h2>🚀 Footer CTA</h2>
+          <span class="sub">Last-chance subscribe + social fallback for hesitant visitors.</span>
+          <span class="head-spacer"></span>
+          <div class="sh-actions">
+            <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="iconbtn" data-tip="Remove section" onclick="removeSection(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="cta-headline">Closing headline</label>
+              <input class="field-input" id="cta-headline" type="text" value="Ready? It's one click + your email." />
+            </div>
+            <div class="field">
+              <label class="field-label" for="cta-button">Button label</label>
+              <input class="field-input" id="cta-button" type="text" value="Subscribe now" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cta-fallback">Social fallback copy</label>
+            <input class="field-input" id="cta-fallback" type="text" value="Or follow on Instagram, TikTok and YouTube — links in your bio." />
+          </div>
+          <div class="field">
+            <label class="field-label">Show social-fallback links</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Use my main page socials</div>
+                <div class="rt-sub">Pulls Instagram / TikTok / YouTube from your Home page. Edit them once and they update everywhere.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- + Add section floating button -->
+      <div class="add-section-row">
+        <button class="add-section-btn" onclick="openSectionPicker()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add section
+        </button>
+      </div>
+
+      <!-- ===================================================
+           Sticky save-bar
+           =================================================== -->
+      <div class="save-bar">
+        <span class="save-status" id="save-status">
+          <span class="ss-dot"></span>
+          <span>All changes saved · 12 sec ago</span>
+        </span>
+        <span class="foot-spacer"></span>
+        <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — Discard changes')">Discard</button>
+        <button class="btn btn-primary" onclick="savePage()">Save changes</button>
+      </div>
+
+    </div><!-- /#filled-state -->
+
+  </main>
+</div><!-- /.layout -->
+
+<!-- ========== SECTION PICKER MODAL (centered, per no-drawers) ========== -->
+<div class="modal-backdrop" id="section-picker-modal" role="dialog" aria-modal="true" aria-labelledby="sp-title">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="sp-title">Add a section</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('section-picker-modal')" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--fg-muted); font-size:13px; margin-top:0; margin-bottom:14px">Pick the kind of section you want to add. Sections you've already added show an "added" badge — click again to add a second one.</p>
+      <div class="section-picker-grid">
+        <button class="sp-card" onclick="addSection('hero')">
+          <span class="sp-emoji">🎯</span>
+          <span class="sp-name">Hero</span>
+          <span class="sp-sub">Big headline + sub-headline + optional image. The first thing visitors read.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('provider')">
+          <span class="sp-emoji">🔌</span>
+          <span class="sp-name">Email provider</span>
+          <span class="sp-sub">Where new subscribers land — Kit, Beehiiv, Mailchimp + 4 more.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('form')">
+          <span class="sp-emoji">📝</span>
+          <span class="sp-name">Signup form</span>
+          <span class="sp-sub">Email field + button. Three layout variants.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('social-proof')">
+          <span class="sp-emoji">⭐</span>
+          <span class="sp-name">Social proof</span>
+          <span class="sp-sub">Subscriber count + testimonial quotes.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('what-youll-get')">
+          <span class="sp-emoji">📬</span>
+          <span class="sp-name">What you'll get</span>
+          <span class="sp-sub">Bullet list — frequency, topics, format.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('past-issues')">
+          <span class="sp-emoji">📰</span>
+          <span class="sp-name">Past issues</span>
+          <span class="sp-sub">3 most recent posts pulled from your provider.</span>
+          <span data-tier-badge="creator"></span>
+        </button>
+        <button class="sp-card" onclick="addSection('faq')">
+          <span class="sp-emoji">❓</span>
+          <span class="sp-name">FAQ</span>
+          <span class="sp-sub">3-5 Q&amp;A pairs. Tackle objections before they kill the signup.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('footer-cta')">
+          <span class="sp-emoji">🚀</span>
+          <span class="sp-name">Footer CTA</span>
+          <span class="sp-sub">Closing button + social fallback for hesitant visitors.</span>
+          <span class="sp-already">Added</span>
+        </button>
+        <button class="sp-card" onclick="addSection('cover-image')">
+          <span class="sp-emoji">🖼</span>
+          <span class="sp-name">Full-width image</span>
+          <span class="sp-sub">A standalone image break between sections.</span>
+        </button>
+        <button class="sp-card" onclick="addSection('quote')">
+          <span class="sp-emoji">💬</span>
+          <span class="sp-name">Pull quote</span>
+          <span class="sp-sub">A single large quote from a subscriber or press mention.</span>
+        </button>
+        <button class="sp-card" onclick="addSection('video')">
+          <span class="sp-emoji">🎬</span>
+          <span class="sp-name">Video intro</span>
+          <span class="sp-sub">YouTube or Vimeo embed — for creators who want a personal hello.</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span style="color:var(--fg-muted); font-size:12px">Sections can be reordered, removed, or added more than once.</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('section-picker-modal')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== IMAGE PICKER MODAL (centered, per no-drawers) ========== -->
+<div class="modal-backdrop" id="image-picker-modal" role="dialog" aria-modal="true" aria-labelledby="ip-title">
+  <div class="modal" style="width:min(640px,96vw)">
+    <div class="modal-head">
+      <h3 id="ip-title">Add an image</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeModal('image-picker-modal')" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="cover-drop" style="height:160px">
+        <span class="cd-emoji">🖼</span>
+        <div class="cd-title">Drop an image here, or click to browse</div>
+        <div class="cd-sub">JPG, PNG, WebP · max 5MB</div>
+      </div>
+      <p style="margin:18px 0 8px; font-weight:600; font-size:13px">Or pick from your library:</p>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px">
+        <div style="aspect-ratio:1; border-radius:8px; background:linear-gradient(135deg,#FDE68A,#F59E0B); cursor:pointer"></div>
+        <div style="aspect-ratio:1; border-radius:8px; background:linear-gradient(135deg,#6366F1,#8B5CF6); cursor:pointer"></div>
+        <div style="aspect-ratio:1; border-radius:8px; background:linear-gradient(135deg,#FB7185,#BE185D); cursor:pointer"></div>
+        <div style="aspect-ratio:1; border-radius:8px; background:linear-gradient(135deg,#34D399,#047857); cursor:pointer"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-warm btn-sm" onclick="alert('Mockup — AI generates 4 hero images')">✨ Generate with AI</button>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('image-picker-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('image-picker-modal')">Use selected</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== DEMO TOOLBAR ========== -->
+<div class="demo-toolbar">
+  <span>Demo:</span>
+  <select onchange="setState(this.value)">
+    <option value="filled" selected>Filled</option>
+    <option value="empty">Empty</option>
+  </select>
+  <select onchange="document.getElementById('provider-select').value=this.value; switchProvider(this.value)">
+    <option value="kit" selected>Kit</option>
+    <option value="beehiiv">Beehiiv</option>
+    <option value="mailerlite">MailerLite</option>
+    <option value="mailchimp">Mailchimp</option>
+    <option value="klaviyo">Klaviyo</option>
+    <option value="google-sheets">Google Sheets</option>
+    <option value="webhook">Webhook</option>
+  </select>
+  <select onchange="setTier(this.value)">
+    <option value="free">Free</option>
+    <option value="creator" selected>Creator</option>
+    <option value="pro">Pro</option>
+    <option value="business">Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // ── Demo state via URL query string ──
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    var st = qs.get('state'); if (st) document.body.setAttribute('data-state', st);
+    var tr = qs.get('tier');  if (tr) document.body.setAttribute('data-tier', tr);
+    var pv = qs.get('provider'); if (pv) document.body.setAttribute('data-provider', pv);
+    var ly = qs.get('layout'); if (ly) document.body.setAttribute('data-layout', ly);
+  })();
+
+  function applyState() {
+    var s = document.body.getAttribute('data-state');
+    document.getElementById('empty-state').style.display = (s === 'empty') ? '' : 'none';
+    document.getElementById('filled-state').style.display = (s === 'empty') ? 'none' : '';
+  }
+  function setState(s) { document.body.setAttribute('data-state', s); applyState(); }
+
+  function setTier(t) {
+    document.body.setAttribute('data-tier', t);
+    renderTierBadges();
+    // Show inline tier hints when below the requirement (no-blur premium pattern)
+    var rank = (window.TierGate && window.TierGate.TIER_RANK) || { free:0, creator:1, pro:2, business:3 };
+    var dh = document.getElementById('domain-tier-hint'); if (dh) dh.style.display = rank[t] < rank.pro ? '' : 'none';
+    var ah = document.getElementById('ab-tier-hint');     if (ah) ah.style.display = rank[t] < rank.business ? '' : 'none';
+    var ph = document.getElementById('past-tier-hint');   if (ph) ph.style.display = rank[t] < rank.creator ? '' : 'none';
+    // Sidebar tier label
+    var st = document.getElementById('side-tier');
+    var label = ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[t];
+    if (st) st.textContent = '@alexandra · ' + label;
+  }
+
+  function renderTierBadges() {
+    if (!window.TadaifyPartials || !window.TadaifyPartials.renderTierBadge) return;
+    var current = document.body.getAttribute('data-tier') || 'creator';
+    var rank = (window.TierGate && window.TierGate.TIER_RANK) || { free:0, creator:1, pro:2, business:3 };
+    var label = (window.TierGate && window.TierGate.TIER_LABEL) || { free:'Free', creator:'Creator', pro:'Pro', business:'Business' };
+    document.querySelectorAll('[data-tier-badge]').forEach(function (el) {
+      var tier = el.getAttribute('data-tier-badge');
+      var included = rank[current] >= rank[tier];
+      var tooltip = included
+        ? 'Available on ' + label[tier] + '+ — included in your plan'
+        : 'Available on ' + label[tier] + '. We\'ll prompt to upgrade when you save.';
+      el.innerHTML = window.TadaifyPartials.renderTierBadge(tier, { included: included, tooltip: tooltip });
+    });
+  }
+
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+  function toggleSwitch(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    bumpDirty();
+  }
+  function pickSwatch(el) {
+    el.parentElement.querySelectorAll('.swatch').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+    bumpDirty();
+  }
+  function pickLayout(card) {
+    card.parentElement.querySelectorAll('.lp-card').forEach(function (c) { c.classList.remove('is-selected'); });
+    card.classList.add('is-selected');
+    document.body.setAttribute('data-layout', card.getAttribute('data-layout'));
+    bumpDirty();
+  }
+  function setHeadline(btn) {
+    document.getElementById('hero-headline').value = btn.textContent;
+    bumpDirty();
+  }
+  function useTitleSlug(t, s) {
+    document.getElementById('page-title').value = t;
+    document.getElementById('page-slug').value = s;
+    bumpDirty();
+  }
+  function toggleCollapse(btn) {
+    var sec = btn.closest('.section');
+    sec.classList.toggle('is-collapsed');
+  }
+  function removeSection(btn) {
+    var sec = btn.closest('.section');
+    if (!confirm('Remove "' + sec.querySelector('h2').textContent.trim() + '" section? You can add it back any time.')) return;
+    sec.style.transition = 'opacity .2s ease, transform .2s ease';
+    sec.style.opacity = '0'; sec.style.transform = 'scale(.95)';
+    setTimeout(function () { sec.remove(); }, 200);
+    bumpDirty();
+  }
+  function addRow(btn, kind) {
+    var list = btn.closest('.bullet-list');
+    var item = document.createElement('div');
+    item.className = 'bullet-item';
+    item.innerHTML =
+      '<span class="bl-grip">⋮⋮</span>' +
+      (kind === 'bullet-item-quote' ? '' : '<button class="bl-emoji" onclick="alert(\'Mockup — emoji picker\')">✨</button>') +
+      '<input class="bl-text" type="text" placeholder="' + (kind === 'bullet-item-quote' ? 'New quote — &quot;…&quot; — author' : 'New bullet') + '" />' +
+      '<button class="bl-x" onclick="removeRow(this)">✕</button>';
+    list.insertBefore(item, btn);
+    item.querySelector('.bl-text').focus();
+    bumpDirty();
+  }
+  function removeRow(btn) { btn.closest('.bullet-item').remove(); bumpDirty(); }
+  function addFaq() {
+    var sec = document.querySelector('[data-section-id="faq"] .section-body');
+    var addBtn = sec.querySelector('.add-row-btn');
+    var item = document.createElement('div');
+    item.className = 'faq-item';
+    item.innerHTML =
+      '<div class="faq-head">' +
+        '<span class="faq-grip">⋮⋮</span>' +
+        '<input class="faq-q" type="text" placeholder="New question" />' +
+        '<button class="iconbtn" onclick="removeFaq(this)" data-tip="Remove">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<textarea class="faq-a" placeholder="Friendly, honest answer in 1-2 sentences."></textarea>';
+    sec.insertBefore(item, addBtn);
+    item.querySelector('.faq-q').focus();
+    bumpDirty();
+  }
+  function removeFaq(btn) { btn.closest('.faq-item').remove(); bumpDirty(); }
+
+  function switchProvider(prov) {
+    document.body.setAttribute('data-provider', prov);
+    document.querySelectorAll('[data-provider-panel]').forEach(function (p) {
+      p.style.display = (p.getAttribute('data-provider-panel') === prov) ? '' : 'none';
+    });
+    // Update connected chip
+    var chip = document.getElementById('provider-status');
+    if (prov === 'kit') chip.textContent = '✓ Connected';
+    else chip.textContent = 'Not connected';
+    chip.classList.toggle('live', prov === 'kit');
+    bumpDirty();
+  }
+  function testConnection(prov) {
+    var btn = event.target;
+    var origText = btn.textContent;
+    btn.textContent = 'Testing…';
+    btn.disabled = true;
+    setTimeout(function () {
+      btn.textContent = origText; btn.disabled = false;
+      var badge = btn.parentElement.querySelector('.nlt-test-badge') || (function () {
+        var b = document.createElement('span');
+        b.className = 'nlt-test-badge';
+        btn.parentElement.appendChild(b);
+        return b;
+      })();
+      badge.className = 'nlt-test-badge is-success';
+      badge.textContent = '✓ Connected';
+    }, 700);
+  }
+  function toggleKeyVis(id, btn) {
+    var inp = document.getElementById(id);
+    var hide = inp.type === 'text';
+    inp.type = hide ? 'password' : 'text';
+    btn.textContent = hide ? '👁' : '🙈';
+  }
+  function copyEndpoint(btn) {
+    btn.textContent = '✓ Copied';
+    setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+  }
+  function checkAbHint(toggle) {
+    var current = document.body.getAttribute('data-tier') || 'creator';
+    var rank = (window.TierGate && window.TierGate.TIER_RANK) || { free:0, creator:1, pro:2, business:3 };
+    document.getElementById('ab-tier-hint').style.display =
+      (toggle.classList.contains('is-on') && rank[current] < rank.business) ? '' : 'none';
+  }
+
+  function openSectionPicker() { openModal('section-picker-modal'); }
+  function openImagePicker() { openModal('image-picker-modal'); }
+  function openModal(id) {
+    var m = document.getElementById(id);
+    m.classList.add('is-open');
+    m.removeAttribute('hidden');
+  }
+  function closeModal(id) {
+    var m = document.getElementById(id);
+    m.classList.remove('is-open');
+    m.setAttribute('hidden', '');
+  }
+  document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+    bd.addEventListener('click', function (e) { if (e.target === bd) bd.classList.remove('is-open'); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.is-open').forEach(function (b) { b.classList.remove('is-open'); });
+  });
+  function addSection(kind) {
+    closeModal('section-picker-modal');
+    bumpDirty();
+    setTimeout(function () { alert('Mockup — added "' + kind + '" section. (In production, scrolls to + focuses the new block.)'); }, 200);
+  }
+  function useStarter() {
+    setState('filled');
+    document.querySelector('[data-state]').setAttribute('data-state', 'filled');
+    document.querySelectorAll('.demo-toolbar select')[0].value = 'filled';
+  }
+
+  // ── Save state ──
+  var saveTimer = null;
+  function bumpDirty() {
+    var st = document.getElementById('save-status');
+    if (!st) return;
+    st.classList.add('is-dirty');
+    st.querySelector('span:last-child').textContent = 'Unsaved changes';
+    clearTimeout(saveTimer);
+  }
+  function savePage() {
+    /* TierGate placeholder — in production, collect every premium feature
+       the creator enabled (custom domain, A/B test, public count >2.5k for
+       Free tier, past-issues preview for Free tier) and call:
+
+         TierGate.checkAndProceed({
+           currentTier: document.body.getAttribute('data-tier'),
+           features: [
+             { id: 'custom-domain', name: 'Custom domain', requires: 'pro',
+               meta: 'subscribe.alexandrasilva.com' },
+             { id: 'ab-test', name: 'A/B test variants', requires: 'business',
+               meta: 'Two headline variants' },
+             { id: 'past-issues', name: 'Past issues preview', requires: 'creator',
+               meta: '3 most recent posts pulled from Kit' },
+             { id: 'public-count', name: 'Show subscriber count >2,500', requires: 'creator',
+               meta: 'Currently 24,512 subscribers' }
+           ],
+           onProceed:     function () { realSave(); },
+           onSaveWithout: function () { realSave({ skipPremium: true }); },
+           onUpgrade:     function (tier) { window.location.href = '/pricing?upgrade=' + tier; }
+         });
+    */
+    var st = document.getElementById('save-status');
+    st.classList.remove('is-dirty');
+    st.querySelector('span:last-child').textContent = 'All changes saved · just now';
+  }
+
+  // ── Init ──
+  applyState();
+  // Re-render badges after partials script loads
+  setTimeout(function () { renderTierBadges(); setTier(document.body.getAttribute('data-tier') || 'creator'); }, 50);
+  // Apply provider on load
+  switchProvider(document.body.getAttribute('data-provider') || 'kit');
+</script>
+</body>
+</html>

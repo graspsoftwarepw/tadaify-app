@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Newsletter signup page render — visitor view at tadaify.com/<handle>/subscribe — F-PAGE-NEWSLETTER-001 #22
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view of the dedicated Newsletter signup page authored via
+  app-page-newsletter-signup.html. A focused, single-purpose conversion
+  page in the Substack/Beehiiv landing tradition.
+
+  All 3 form-layout variants are rendered in-page as anchor sections
+  (#layout-oneline / #layout-twoline / #layout-card) so reviewers can
+  compare them without switching files.
+
+  All 5 confirmation states are rendered in-page as anchor sections
+  (#/, #/submitting, #/success, #/already-subscribed, #/error) using
+  hash routing — same pattern as creator-blog-public.html.
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: hero/form/cards collapse to single column.
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every state and variant
+      actually rendered; provider trust strip mocked live)
+    - No tadaify nav bar on creator pages (creator-public.html convention)
+      — minimal back-link bar instead.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subscribe — Alexandra Silva — tadaify.com/alexandra/subscribe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ── Theme inheritance from tokens.css. Same warm + indigo wash as
+       creator-blog-public.html so the subscribe page feels like a
+       sub-page of the same site. ── */
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      margin: 0;
+    }
+    * { box-sizing: border-box; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+
+    /* Mockup-only top strip */
+    .top-strip {
+      max-width: 980px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+      flex-wrap: wrap; gap: 8px;
+    }
+    .top-strip a { color: var(--fg-muted); padding: 4px 8px; border-radius: 6px; }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle); }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+
+    /* Creator identity row */
+    .creator-row {
+      max-width: 720px; margin: 0 auto;
+      padding: 32px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Hero */
+    .hero {
+      max-width: 720px; margin: 0 auto;
+      padding: 36px 20px 24px;
+      text-align: center;
+    }
+    .hero .hero-cover {
+      width: 88px; height: 88px; border-radius: 22px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 38px;
+      box-shadow: var(--shadow-lg);
+    }
+    .hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 48px);
+      letter-spacing: -0.02em; line-height: 1.15; margin: 0;
+    }
+    .hero .lede {
+      max-width: 520px; margin: 14px auto 0;
+      color: var(--fg-muted);
+      font-size: 17px; line-height: 1.55;
+    }
+
+    /* Provider trust strip (subtle) */
+    .trust-strip {
+      max-width: 720px; margin: 18px auto 0;
+      padding: 0 20px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px;
+      font-size: 12px; color: var(--fg-subtle);
+    }
+    .trust-strip .ts-mark {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: 999px;
+      font-weight: 600; color: var(--fg-muted);
+    }
+    .trust-strip .ts-mark .ts-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-warm); }
+
+    /* Form section host */
+    .form-section {
+      max-width: 720px; margin: 0 auto;
+      padding: 30px 20px 8px;
+    }
+    .form-section.is-anchor {
+      scroll-margin-top: 24px;
+    }
+    .form-section h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 0 0 12px;
+      color: var(--fg-muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-section h2 .form-section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--brand-primary); color: #fff;
+      font-family: var(--font-sans); font-size: 13px; font-weight: 700;
+    }
+
+    /* Form layouts */
+    .form-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .form-input {
+      width: 100%; padding: 13px 16px;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg);
+      font: inherit; font-size: 15px; color: var(--fg);
+      outline: 0;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .form-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .form-btn {
+      padding: 13px 20px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 10px;
+      font: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .form-btn:hover { background: var(--brand-primary-hover); }
+    .form-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    /* Layout 1 — One-line */
+    .form-oneline {
+      display: flex; gap: 8px; align-items: stretch;
+    }
+    .form-oneline .form-input { flex: 1; }
+    @media (max-width: 540px) { .form-oneline { flex-direction: column; } }
+
+    /* Layout 2 — Two-line */
+    .form-twoline { display: flex; flex-direction: column; gap: 10px; }
+    .form-twoline .form-btn { width: 100%; }
+
+    /* Layout 3 — Centered card */
+    .form-cardlayout {
+      text-align: center;
+    }
+    .form-cardlayout .fc-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      font-size: 22px;
+    }
+    .form-cardlayout .fc-prompt {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 18px; margin: 0 0 14px; color: var(--fg);
+    }
+    .form-cardlayout .form-input { margin-bottom: 10px; text-align: center; }
+    .form-cardlayout .form-btn { width: 100%; }
+
+    /* Consent row */
+    .consent {
+      display: flex; gap: 10px; align-items: flex-start;
+      margin-top: 12px;
+      font-size: 12.5px; color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .consent input[type="checkbox"] {
+      width: 16px; height: 16px; margin-top: 2px;
+      accent-color: var(--brand-primary);
+      flex-shrink: 0;
+    }
+    .consent a { color: var(--brand-primary); font-weight: 600; }
+
+    /* Layout switcher chip strip (mockup-only) */
+    .layout-switcher {
+      max-width: 720px; margin: 12px auto 0;
+      padding: 0 20px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .layout-switcher a {
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    .layout-switcher a:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    /* Social proof */
+    .proof-strip {
+      max-width: 720px; margin: 0 auto;
+      padding: 24px 20px 0;
+      text-align: center;
+    }
+    .proof-count {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 17px; color: var(--fg);
+      letter-spacing: -0.005em;
+    }
+    .proof-count b { color: var(--brand-primary); font-weight: 700; }
+    .proof-quotes {
+      display: grid; gap: 12px; margin-top: 18px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 640px) { .proof-quotes { grid-template-columns: 1fr; } }
+    .proof-quote {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      font-size: 13.5px; line-height: 1.55; color: var(--fg);
+      text-align: left;
+    }
+    .proof-quote .pq-author {
+      display: block; margin-top: 8px;
+      color: var(--fg-muted); font-size: 12px; font-weight: 600;
+    }
+
+    /* What you'll get */
+    .wyg {
+      max-width: 720px; margin: 0 auto;
+      padding: 32px 20px 0;
+    }
+    .wyg h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; margin: 0 0 14px;
+      letter-spacing: -0.01em;
+    }
+    .wyg ul {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wyg li {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      border-radius: 12px;
+    }
+    .wyg li .wyg-emoji {
+      font-size: 22px; flex-shrink: 0; line-height: 1.1;
+    }
+    .wyg li .wyg-text { font-size: 14.5px; color: var(--fg); line-height: 1.5; }
+
+    /* Past issues */
+    .past {
+      max-width: 720px; margin: 0 auto;
+      padding: 32px 20px 0;
+    }
+    .past h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; margin: 0 0 14px;
+      letter-spacing: -0.01em;
+    }
+    .past .past-sub { color: var(--fg-muted); font-size: 13.5px; margin-bottom: 14px; }
+    .past-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    @media (max-width: 760px) { .past-grid { grid-template-columns: 1fr; gap: 12px; } }
+    .past-card {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      cursor: pointer;
+    }
+    .past-card:hover {
+      transform: translateY(-2px); box-shadow: var(--shadow-lg);
+      border-color: var(--border-strong);
+    }
+    .past-card .pc-cover {
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; color: #fff;
+    }
+    .past-card .pc-cover.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .past-card .pc-cover.t-rose { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .past-card .pc-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+    .past-card .pc-title { font-family: var(--font-display); font-weight: 600; font-size: 17px; line-height: 1.3; }
+    .past-card .pc-excerpt {
+      color: var(--fg-muted); font-size: 13px; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .past-card .pc-meta { font-size: 11.5px; color: var(--fg-subtle); margin-top: 4px; }
+
+    /* FAQ */
+    .faq {
+      max-width: 720px; margin: 0 auto;
+      padding: 32px 20px 0;
+    }
+    .faq h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; margin: 0 0 14px;
+      letter-spacing: -0.01em;
+    }
+    .faq details {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 4px;
+    }
+    .faq details:first-of-type { border-top: 1px solid var(--border); }
+    .faq summary {
+      list-style: none; cursor: pointer;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 15px; font-weight: 600; color: var(--fg);
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after {
+      content: "+"; margin-left: auto; font-size: 22px; line-height: 1; color: var(--fg-muted);
+      transition: transform .2s ease;
+    }
+    .faq details[open] summary::after { content: "−"; }
+    .faq .faq-a {
+      padding: 10px 0 4px; color: var(--fg-muted); font-size: 14px; line-height: 1.6;
+      max-width: 600px;
+    }
+
+    /* Footer CTA */
+    .closer {
+      max-width: 720px; margin: 0 auto;
+      padding: 40px 20px 8px;
+      text-align: center;
+    }
+    .closer h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(26px, 4vw, 34px);
+      letter-spacing: -0.01em; margin: 0 0 18px;
+    }
+    .closer .closer-btn {
+      padding: 14px 28px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 12px;
+      font: inherit; font-size: 16px; font-weight: 600;
+      cursor: pointer; box-shadow: var(--shadow-sm);
+      transition: background .12s ease, transform .12s ease;
+    }
+    .closer .closer-btn:hover { background: var(--brand-primary-hover); transform: translateY(-1px); }
+    .closer .fallback { margin-top: 14px; color: var(--fg-muted); font-size: 13.5px; }
+    .closer .fallback a { color: var(--brand-primary); font-weight: 600; }
+
+    /* Footer (mirrors creator-public.html) */
+    .public-footer {
+      max-width: 720px; margin: 32px auto 0;
+      padding: 24px 20px 60px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 14px;
+      flex-wrap: wrap;
+      color: var(--fg-muted); font-size: 12.5px;
+    }
+    .public-footer .pf-socials {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .public-footer .pf-socials a {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all .12s ease;
+    }
+    .public-footer .pf-socials a:hover { background: var(--bg-muted); transform: translateY(-1px); }
+    .public-footer .pf-tdf {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .public-footer .pf-tdf .wm {
+      font-family: var(--font-display); font-weight: 600; font-size: 14px;
+    }
+    .public-footer .pf-tdf .wm .ta { color: var(--wm-ta); }
+    .public-footer .pf-tdf .wm .da { color: var(--wm-da); }
+    .public-footer .pf-tdf .wm .ify { color: var(--wm-ify); }
+
+    /* ========== Confirmation states (hash-routed) ========== */
+    .state-host {
+      max-width: 720px; margin: 60px auto;
+      padding: 0 20px;
+    }
+    .state-card {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px 28px; text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .state-card .state-emoji {
+      width: 72px; height: 72px; border-radius: 20px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 36px; margin-bottom: 16px;
+    }
+    .state-card .state-emoji.is-success { background: rgba(16,185,129,0.14); }
+    .state-card .state-emoji.is-pending { background: rgba(99,102,241,0.14); }
+    .state-card .state-emoji.is-info    { background: rgba(245,158,11,0.14); }
+    .state-card .state-emoji.is-error   { background: rgba(239,68,68,0.14); }
+    .state-card h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 26px; margin: 0 0 10px; letter-spacing: -0.01em;
+    }
+    .state-card p {
+      color: var(--fg-muted); font-size: 15px; line-height: 1.55;
+      max-width: 460px; margin: 0 auto;
+    }
+    .state-card .state-actions {
+      margin-top: 22px;
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    }
+    .state-card .state-actions .btn-primary {
+      padding: 10px 18px; background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer;
+    }
+    .state-card .state-actions .btn-ghost {
+      padding: 10px 18px; background: transparent; color: var(--fg);
+      border: 1px solid var(--border-strong); border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer;
+    }
+    .state-card .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid rgba(99,102,241,0.20);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Mockup state-anchor strip */
+    .state-strip {
+      max-width: 720px; margin: 0 auto;
+      padding: 12px 20px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+      border-top: 1px dashed var(--border-strong);
+      margin-top: 30px;
+    }
+    .state-strip a {
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    .state-strip a:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    /* Hide all state-host blocks by default; JS reveals one based on hash. */
+    .state-host { display: none; }
+    .state-host.is-active { display: block; }
+
+    /* The default page (#/) shows the full landing — everything except state-host blocks. */
+    .full-landing { display: none; }
+    .full-landing.is-active { display: block; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .top-strip a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .form-card,
+    body.dark-mode .proof-quote,
+    body.dark-mode .wyg li,
+    body.dark-mode .past-card,
+    body.dark-mode .state-card,
+    body.dark-mode .public-footer .pf-socials a,
+    body.dark-mode .layout-switcher a,
+    body.dark-mode .state-strip a,
+    body.dark-mode .trust-strip .ts-mark { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .form-input { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .faq details, body.dark-mode .faq details:first-of-type, body.dark-mode .public-footer { border-color: #1F2937; }
+    body.dark-mode .state-strip { border-top-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<!-- ========== Mockup-only top strip ========== -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Back to alexandra.tadaify.com</a>
+  <span class="url-mono">tadaify.com/<b>alexandra/subscribe</b></span>
+  <button class="btn" onclick="document.body.classList.toggle('dark-mode')" style="background:var(--bg-elevated); border:1px solid var(--border); padding:4px 10px; border-radius:6px; font-size:12px; color:var(--fg-muted)">Toggle theme</button>
+</div>
+
+<!-- ========== FULL LANDING (hash = #/) ========== -->
+<div class="full-landing" id="state-default">
+
+  <!-- Creator identity row -->
+  <div class="creator-row">
+    <div class="av">A</div>
+    <div class="who">
+      <div class="who-name">Alexandra Silva</div>
+      <div class="who-handle">@alexandra · 24,512 subscribers · weekly</div>
+    </div>
+    <a href="./creator-public.html" class="back-to-main">← Back to main</a>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-cover" aria-hidden="true">✉️</div>
+    <h1>Get my weekly notes on training without burning out.</h1>
+    <p class="lede">One short, honest email every Tuesday. Drills, mindset shifts, recovery tactics — no spam, no fluff.</p>
+  </section>
+
+  <!-- Provider trust strip — small, builds confidence -->
+  <div class="trust-strip">
+    <span class="ts-mark"><span class="ts-dot"></span> Powered by Kit · GDPR-friendly · 1-click unsubscribe</span>
+  </div>
+
+  <!-- ========== FORM LAYOUT 1 — One-line (anchor #layout-oneline) ========== -->
+  <section class="form-section is-anchor" id="layout-oneline">
+    <h2><span class="form-section-num">1</span> One-line layout</h2>
+    <div class="form-card">
+      <form class="form-oneline" onsubmit="event.preventDefault(); location.hash='#/submitting'">
+        <input class="form-input" type="email" placeholder="you@email.com" required />
+        <button class="form-btn" type="submit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:6px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Subscribe
+        </button>
+      </form>
+      <div class="consent">
+        <input type="checkbox" id="consent-1" checked />
+        <label for="consent-1">I agree to receive emails from Alexandra and accept the <a href="#">privacy policy</a>.</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- Layout switcher (mockup-only) -->
+  <div class="layout-switcher">
+    <span>Compare layouts:</span>
+    <a href="#layout-oneline">One-line</a>
+    <a href="#layout-twoline">Two-line</a>
+    <a href="#layout-card">Centered card</a>
+    <span style="opacity:0.6; margin-left:auto">In production, only the layout chosen by the creator renders.</span>
+  </div>
+
+  <!-- ========== FORM LAYOUT 2 — Two-line (anchor #layout-twoline) ========== -->
+  <section class="form-section is-anchor" id="layout-twoline">
+    <h2><span class="form-section-num">2</span> Two-line layout</h2>
+    <div class="form-card">
+      <form class="form-twoline" onsubmit="event.preventDefault(); location.hash='#/submitting'">
+        <input class="form-input" type="email" placeholder="you@email.com" required />
+        <button class="form-btn" type="submit">Subscribe to the newsletter</button>
+      </form>
+      <div class="consent">
+        <input type="checkbox" id="consent-2" checked />
+        <label for="consent-2">I agree to receive emails from Alexandra and accept the <a href="#">privacy policy</a>.</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FORM LAYOUT 3 — Centered card (anchor #layout-card) ========== -->
+  <section class="form-section is-anchor" id="layout-card">
+    <h2><span class="form-section-num">3</span> Centered card layout</h2>
+    <div class="form-card form-cardlayout">
+      <div class="fc-icon" aria-hidden="true">✉️</div>
+      <p class="fc-prompt">Join 24,512 creators training smarter</p>
+      <form class="form-twoline" onsubmit="event.preventDefault(); location.hash='#/submitting'">
+        <input class="form-input" type="email" placeholder="you@email.com" required />
+        <button class="form-btn" type="submit">Count me in</button>
+      </form>
+      <div class="consent" style="justify-content:center">
+        <input type="checkbox" id="consent-3" checked />
+        <label for="consent-3">I agree to receive emails &amp; accept the <a href="#">privacy policy</a>.</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social proof -->
+  <section class="proof-strip">
+    <div class="proof-count">Join <b>24,512</b> creators learning to train smarter</div>
+    <div class="proof-quotes">
+      <div class="proof-quote">
+        "Best fitness newsletter I read. Honest, no-fluff, and the Tuesday cadence is perfect for actually trying things."
+        <span class="pq-author">— Mira K., Berlin</span>
+      </div>
+      <div class="proof-quote">
+        "Alex's Tuesday emails are the only ones I open every week. The recovery section alone changed how I sleep."
+        <span class="pq-author">— Daniel P., NYC</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- What you'll get -->
+  <section class="wyg">
+    <h2>Here's what lands in your inbox:</h2>
+    <ul>
+      <li>
+        <span class="wyg-emoji">📅</span>
+        <span class="wyg-text">One short essay every Tuesday — usually 4-7 minutes to read.</span>
+      </li>
+      <li>
+        <span class="wyg-emoji">🏋️</span>
+        <span class="wyg-text">Weekly drills you can try in your next session — no fancy gear.</span>
+      </li>
+      <li>
+        <span class="wyg-emoji">🛌</span>
+        <span class="wyg-text">Recovery + sleep tactics that actually work for non-athletes.</span>
+      </li>
+      <li>
+        <span class="wyg-emoji">💌</span>
+        <span class="wyg-text">Behind-the-scenes from my own training — the failures included.</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Past issues preview (Creator+ feature) -->
+  <section class="past">
+    <h2>Recent issues you'd have read:</h2>
+    <p class="past-sub">A peek at the last three Tuesdays.</p>
+    <div class="past-grid">
+      <a class="past-card" href="#" onclick="event.preventDefault()">
+        <div class="pc-cover t-warm">📈</div>
+        <div class="pc-body">
+          <div class="pc-title">Why I stopped chasing PRs</div>
+          <div class="pc-excerpt">Hitting a wall at 165kg taught me more about programming than any deload week ever did.</div>
+          <div class="pc-meta">Apr 22 · 6 min read</div>
+        </div>
+      </a>
+      <a class="past-card" href="#" onclick="event.preventDefault()">
+        <div class="pc-cover">💤</div>
+        <div class="pc-body">
+          <div class="pc-title">Sleep is the cheat code</div>
+          <div class="pc-excerpt">Three small experiments that doubled my deep-sleep minutes — backed by my Whoop data.</div>
+          <div class="pc-meta">Apr 15 · 5 min read</div>
+        </div>
+      </a>
+      <a class="past-card" href="#" onclick="event.preventDefault()">
+        <div class="pc-cover t-rose">🧠</div>
+        <div class="pc-body">
+          <div class="pc-title">Mental reps &gt; physical reps</div>
+          <div class="pc-excerpt">Visualisation is real, but only if you do it the way Olympic divers do — not the way Instagram does.</div>
+          <div class="pc-meta">Apr 08 · 7 min read</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq">
+    <h2>Frequently asked</h2>
+    <details>
+      <summary>How often will you email me?</summary>
+      <div class="faq-a">Once a week, every Tuesday morning. Sometimes a bonus drop alert when something time-sensitive lands. Never daily, never twice in one day.</div>
+    </details>
+    <details>
+      <summary>Can I unsubscribe at any time?</summary>
+      <div class="faq-a">Yes — every email has a one-click unsubscribe link in the footer. No survey, no "are you sure" — instant.</div>
+    </details>
+    <details>
+      <summary>Will you sell or share my email?</summary>
+      <div class="faq-a">Never. Your email lives in my Kit account and that's it. I don't sell, share, swap or rent lists. GDPR-compliant by default.</div>
+    </details>
+    <details>
+      <summary>What if I want to read past issues first?</summary>
+      <div class="faq-a">The "Recent issues" cards above show the last three Tuesdays. The full archive lives on my Kit page once you confirm.</div>
+    </details>
+  </section>
+
+  <!-- Footer CTA -->
+  <section class="closer">
+    <h2>Ready? It's one click + your email.</h2>
+    <button class="closer-btn" onclick="document.querySelector('#layout-oneline input').focus(); document.querySelector('#layout-oneline').scrollIntoView({behavior:'smooth'})">Subscribe now</button>
+    <div class="fallback">Or follow on <a href="#">Instagram</a>, <a href="#">TikTok</a> and <a href="#">YouTube</a> — links in your bio.</div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="public-footer">
+    <div class="pf-socials">
+      <a href="#" aria-label="Instagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+      <a href="#" aria-label="TikTok"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></a>
+      <a href="#" aria-label="YouTube"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg></a>
+    </div>
+    <div class="pf-tdf">
+      <span>Made with</span>
+      <a href="./landing.html" class="wm">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </a>
+    </div>
+  </footer>
+</div><!-- /#state-default -->
+
+<!-- ========== STATE: SUBMITTING (#/submitting) ========== -->
+<div class="state-host" id="state-submitting">
+  <div class="state-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <h2>Adding you to the list…</h2>
+    <p>Hold tight — we're handing your email to Kit. This usually takes a second.</p>
+  </div>
+</div>
+
+<!-- ========== STATE: SUCCESS (#/success) ========== -->
+<div class="state-host" id="state-success">
+  <div class="state-card">
+    <div class="state-emoji is-success" aria-hidden="true">🎉</div>
+    <h2>Thanks for subscribing!</h2>
+    <p>Check your inbox for a confirmation email — click the link inside to lock it in. (Sometimes it lands in Promotions; the first one's a doozy of a "drag me to Primary".)</p>
+    <div class="state-actions">
+      <a class="btn-primary" href="./creator-public.html">← Back to alexandra.tadaify.com</a>
+      <a class="btn-ghost" href="#">Add Alexandra to your contacts</a>
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--fg-subtle)">Didn't get the confirmation email? <a href="#" style="color:var(--brand-primary); font-weight:600">Resend it</a>.</p>
+  </div>
+</div>
+
+<!-- ========== STATE: ALREADY-SUBSCRIBED (#/already-subscribed) ========== -->
+<div class="state-host" id="state-already-subscribed">
+  <div class="state-card">
+    <div class="state-emoji is-info" aria-hidden="true">👋</div>
+    <h2>Looks like you're already on the list.</h2>
+    <p>You subscribed with this email back on March 14. No need to sign up again — your next Tuesday note is on the way.</p>
+    <div class="state-actions">
+      <a class="btn-primary" href="#">Manage your subscription on Kit →</a>
+      <a class="btn-ghost" href="./creator-public.html">← Back to main page</a>
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--fg-subtle)">Wrong email? <a href="#/" style="color:var(--brand-primary); font-weight:600">Use a different one</a>.</p>
+  </div>
+</div>
+
+<!-- ========== STATE: ERROR (#/error) ========== -->
+<div class="state-host" id="state-error">
+  <div class="state-card">
+    <div class="state-emoji is-error" aria-hidden="true">😬</div>
+    <h2>Something went wrong on our end.</h2>
+    <p>We couldn't reach Kit just now. Your email isn't saved — could you try again in a moment? If it keeps failing, you can email Alexandra directly.</p>
+    <div class="state-actions">
+      <a class="btn-primary" href="#/">Try again</a>
+      <a class="btn-ghost" href="mailto:hello@alexandrasilva.com">Email Alexandra</a>
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--fg-subtle)">Error code: <code style="font-family:var(--font-mono); font-size:11.5px">KIT_API_502 · req_8a2b…</code></p>
+  </div>
+</div>
+
+<!-- ========== Mockup-only state-anchor strip ========== -->
+<div class="state-strip">
+  <span>Mockup states (try each):</span>
+  <a href="#/">Default</a>
+  <a href="#/submitting">Submitting</a>
+  <a href="#/success">Success</a>
+  <a href="#/already-subscribed">Already subscribed</a>
+  <a href="#/error">Error</a>
+  <span style="opacity:0.6; margin-left:auto">In production, the visitor only ever sees one of these at a time.</span>
+</div>
+
+<script src="./shared/tokens.js"></script>
+<script>
+  // ── Hash router for confirmation states ──
+  function applyHash() {
+    var h = (location.hash || '#/').replace(/^#/, '');
+    var states = {
+      '/': 'state-default',
+      '/submitting': 'state-submitting',
+      '/success': 'state-success',
+      '/already-subscribed': 'state-already-subscribed',
+      '/error': 'state-error'
+    };
+    var target = states[h];
+    if (!target) {
+      // Fallback: anchor links like #layout-oneline / #layout-twoline / #layout-card
+      // remain on the default page; let the browser scroll to them naturally.
+      target = 'state-default';
+    }
+    document.querySelectorAll('.full-landing, .state-host').forEach(function (el) {
+      el.classList.toggle('is-active', el.id === target);
+    });
+
+    // For #/submitting, auto-advance to success after a short delay so the
+    // demo loop feels real.
+    if (target === 'state-submitting') {
+      setTimeout(function () {
+        if (location.hash === '#/submitting') location.hash = '#/success';
+      }, 1500);
+    }
+  }
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+</script>
+</body>
+</html>
