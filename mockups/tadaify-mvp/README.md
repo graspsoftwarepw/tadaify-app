@@ -23,6 +23,9 @@
 | `app-domain.html` | Custom domain management — 3-step add wizard (Enter / DNS / Live) + Free-tier subscription overlay + status states | [#30 F-CUSTOM-DOMAIN-001](https://github.com/graspsoftwarepw/tadaify-app/issues/30) | 2026-04-25 |
 | `app-settings.html` | **Authenticated creator settings** — Account / Billing / Security / GDPR & data / API keys (Pro) / Team (Business) / Danger zone (1-click cancel per AP-010, page-stays-live per AP-029, delete account per F-COMPLIANCE-001) | [#33 Account](https://github.com/graspsoftwarepw/tadaify-app/issues/33) · [#34 Billing](https://github.com/graspsoftwarepw/tadaify-app/issues/34) · [#35 Security](https://github.com/graspsoftwarepw/tadaify-app/issues/35) · [#36 GDPR](https://github.com/graspsoftwarepw/tadaify-app/issues/36) · [#37 API keys](https://github.com/graspsoftwarepw/tadaify-app/issues/37) · [#38 Team](https://github.com/graspsoftwarepw/tadaify-app/issues/38) · [#39 Danger zone](https://github.com/graspsoftwarepw/tadaify-app/issues/39) | 2026-04-25 |
 | `admin-panel.html` | **Founder admin panel — `/admin`** — 8 sections (Overview / Users / Registration & waitlist / Maintenance / Moderation / Legal versioning / Health / Audit log). Distinct admin sidebar, role chip (Super-admin / Admin / Read-only), demo toolbar switches role for testing, all interactive controls do something. Integrates [#55 F-WAITLIST-001](https://github.com/graspsoftwarepw/tadaify-app/issues/55), [#5 F-LEGAL-002](https://github.com/graspsoftwarepw/tadaify-app/issues/5), [#6 F-LEGAL-003](https://github.com/graspsoftwarepw/tadaify-app/issues/6) and orchestrator standard Maintenance Mode. | [#58 F-ADMIN-PANEL-001](https://github.com/graspsoftwarepw/tadaify-app/issues/58) | 2026-04-26 |
+| `app-insights.html` | **Insights tab** — single-handle Phase A scope, KPI tiles, cross-tab analyzer, time series, sources, blocks table, locked-cards for Saved views (Pro+) / A/B (Business) / Replay (Business) / Identity stitching (Business) / Parquet R2 (Business), tier-aware time-window picker | [#45 F-APP-INSIGHTS-001](https://github.com/graspsoftwarepw/tadaify-app/issues/45) | 2026-04-26 |
+| `app-block-editor.html` | **Block editor drawer** — right-side drawer over frozen dashboard, 13 block-type forms with live preview, schedule visibility (Creator+) and A/B testing (Business) as locked-state UI for lower tiers, AI suggest sub-modal, block-level analytics drill-down to Insights, type-to-confirm delete, duplicate, save/discard sticky footer | [#52 F-APP-BLOCK-EDITOR-001](https://github.com/graspsoftwarepw/tadaify-app/issues/52) | 2026-04-26 |
+| `app-block-picker.html` | **Block picker modal** — 720px modal with 3-column gallery of 13 block types, search, 7 category tabs (All / Links / Media / Forms / Shop / Layout / AI ✨), "Most clicked" badges, AI-suggest hero CTA → 5 ready-to-use block sets sub-modal, Pro+ tier badges with locked-state for lower tiers | [#53 F-APP-BLOCK-PICKER-001](https://github.com/graspsoftwarepw/tadaify-app/issues/53) | 2026-04-26 |
 | `pricing.html` | Public pricing matrix — 4 tiers, compare table, Creator API spotlight, FAQ | [F-PRICING-LANDING-001 — TBD] | 2026-04-25 |
 | `creator-public.html` | Public creator page — what visitors see at tadaify.com/handle | implicit (rendered via F-FULLFLOW-001 publish path) | 2026-04-24 |
 | `product-public.html` | Public per-product page — tadaify.com/handle/p/slug | TBD (depends on F-PAGE-SHOP-001 #18) | 2026-04-24 |
@@ -38,8 +41,37 @@
 ## Shared assets
 
 - `shared/tokens.css` — Indigo Serif palette + typography + spacing tokens
-- `shared/partials.js` — nav + footer partials, light/dark toggle wiring
+- `shared/partials.js` — nav + footer + **app-sidebar** partials. Mark a host element with `<div data-partial="app-sidebar" data-active="..." data-tier="..." data-handle="..." data-username="..."></div>` and the canonical Pages-parent sidebar is injected (CSS shipped inline). `data-active` accepts `pages|design|domain|insights|shop|settings|help`. Public marketing nav + footer use the same `data-partial="nav"` / `"footer"` markers as before.
 - `shared/tokens.js` — Motion v10 logo SVG injection + theme bootstrap
+
+## Sidebar consistency audit (2026-04-26)
+
+Scope: every dashboard-style mockup must render the canonical sidebar — Pages parent (Home + disabled Add page per DEC-MULTIPAGE-01) → Design / Domain / Insights / Shop / Settings / Help & docs.
+
+| Mockup | Active tab | Approach | Notes |
+|--------|-----------|----------|-------|
+| `app-dashboard.html` | `pages` (default) | **Inline** (preserved) | Owns the Pages-accordion + Design-accordion + tab-switching state machine; cannot be safely externalised. Cross-link inconsistencies fixed in this PR: Domain link no longer says "soon" (app-domain.html exists), Insights link points to `app-insights.html` (was an internal placeholder tab). |
+| `app-domain.html`    | `domain`   | **Shared partial** | Migrated. |
+| `app-insights.html`  | `insights` | **Shared partial** | Migrated. The partial keeps `id="side-tier"` on the `.uhandle` div so the existing tier-switcher JS keeps working. |
+| `app-settings.html`  | `settings` | **Shared partial** | Migrated. |
+
+### Cross-link inventory (post-migration)
+
+| From → To | Status |
+|-----------|--------|
+| any sidebar → Home (`./app-dashboard.html?tab=page`) | ✅ |
+| any sidebar → Design (`./app-dashboard.html?tab=design`) | ✅ |
+| any sidebar → Domain (`./app-domain.html`) | ✅ |
+| any sidebar → Insights (`./app-insights.html`) | ✅ |
+| any sidebar → Shop (`./app-shop.html`) | ⏳ TODO — file doesn't exist; partial currently shows alert placeholder. Tracked as future work. |
+| any sidebar → Settings (`./app-settings.html`) | ✅ |
+| any sidebar → Help & docs (`./app-help.html`) | ⏳ TODO — file doesn't exist; partial shows alert placeholder. Tracked as future work. |
+| `app-dashboard.html` block click → `app-block-editor.html` | ✅ (mockup demo flow) |
+| `app-dashboard.html` "+ Add block" → `app-block-picker.html` | ✅ (mockup demo flow) |
+| `app-block-picker.html` card click → `app-block-editor.html?type=<id>` | ✅ |
+| `app-block-editor.html` analytics tile → `app-insights.html` | ✅ |
+| `app-block-editor.html` "Add block" → `app-block-picker.html` | ✅ |
+| `app-settings.html` Billing tab → "Custom domain add-ons" → `app-domain.html` | ✅ (existing) |
 
 ## Brand lock (every mockup MUST honour)
 
@@ -117,6 +149,14 @@
 - Add Block modal extensible (43 integrations, 9 categories, search + URL detect)
 - Light/dark mode toggle in dashboard topbar (replaces avatar)
 - Footer panel: opt-in support badge default OFF (DEC-OPT-BADGE refines AP-001)
+
+### 2026-04-26 — Block editor + picker + sidebar partial canon
+- `shared/partials.js` extended with `data-partial="app-sidebar"` injector. Renders the canonical Pages-parent sidebar with `data-active` / `data-tier` / `data-handle` / `data-username` attributes. CSS shipped inline so a single `<script src="./shared/partials.js"></script>` is enough; works over `file://`.
+- `app-settings.html`, `app-domain.html`, `app-insights.html` migrated to use the partial — 73 lines of duplicated sidebar markup removed per file.
+- `app-dashboard.html` keeps in-page sidebar (owns the Pages/Design accordion + tab-switching state) but two cross-link inconsistencies fixed: Domain link no longer says "soon" (app-domain.html exists), Insights links to `./app-insights.html` (was an internal placeholder tab).
+- `app-block-editor.html` NEW — right-side drawer with 13 block-type forms + live preview + future-ready scaffolding (schedule visibility for Creator+, A/B for Business as locked-state UI; AI suggest sub-modal; analytics drill-down to Insights). Issue #52.
+- `app-block-picker.html` NEW — modal gallery with search, category tabs, "Most clicked" badges, AI suggest hero CTA → 5 example block sets sub-modal. Issue #53.
+- Sidebar consistency audit added to README (see "Sidebar consistency audit" section above).
 
 ### 2026-04-25 — Multi-page foundations
 - F-MULTIPAGE-001 issue created (#8) — post-MVP Q+1
