@@ -971,11 +971,62 @@
       margin: 8px 0;
     }
     .preview-divider.dotted {
-      height: 0; border-top: 2px dotted rgba(255,255,255,0.6);
+      height: 0; border-top-width: 2px; border-top-style: dotted;
+      border-top-color: rgba(255,255,255,0.6);
       background: transparent;
     }
     .preview-divider.spacer {
       height: 24px; background: transparent;
+    }
+
+    /* FIX-DIV-001 — theme-color-picker field kind. Reusable across any
+       block that needs a theme-aware color choice. */
+    .tcp { display: flex; flex-direction: column; gap: 10px; }
+    .tcp-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 8px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .tcp-swatch {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      cursor: pointer; padding: 0;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .tcp-swatch:hover { transform: scale(1.08); }
+    .tcp-swatch.is-selected {
+      outline: 2px solid var(--brand-primary);
+      outline-offset: 2px;
+    }
+    .tcp-hex {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .tcp-hex.is-selected { border-color: var(--brand-primary); }
+    .tcp-hex-lbl {
+      font-size: 11px; font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .tcp-hex input {
+      flex: 1; min-width: 0;
+      padding: 6px 8px; font-size: 12px;
+      font-family: var(--font-mono);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-elevated); color: var(--fg);
+    }
+    .tcp-hex-swatch {
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      border: 1px solid var(--border-strong);
+      flex-shrink: 0;
     }
     .preview-social {
       display: flex; gap: 10px; justify-content: center;
@@ -2691,12 +2742,45 @@
               value: state.style || 'line' },
             { kind: 'select', name: 'size', label: 'Size',
               options: [['sm','Small'],['md','Medium'],['lg','Large']],
-              value: state.size || 'md' }
+              value: state.size || 'md' },
+            /* FIX-DIV-001 — theme-aware color picker (reusable kind) */
+            { kind: 'theme-color-picker', name: 'color', label: 'Color',
+              value: state.color || 'theme',
+              help: '"Theme default" follows your chosen theme automatically. Pick a swatch or enter a custom hex to override.' }
           ];
         },
         preview: function (state) {
           var s = state.style || 'line';
-          return '<div class="preview-divider ' + (s === 'dotted' ? 'dotted' : s === 'spacer' ? 'spacer' : '') + '"></div>';
+          var sz = state.size || 'md';
+          /* FIX-DIV-001 — resolve color choice into a CSS color value.
+             "theme" → var(--border) so it adapts when the theme changes.
+             Hex values → used verbatim. Named swatch ids → mapped here. */
+          var colorMap = {
+            'theme':    'var(--border)',
+            'indigo':   '#6366F1',
+            'warm':     '#F59E0B',
+            'success':  '#10B981',
+            'warning':  '#F59E0B',
+            'danger':   '#EF4444',
+            'gray-100': '#F3F4F6',
+            'gray-300': '#D1D5DB',
+            'gray-500': '#6B7280',
+            'gray-700': '#374151',
+            'gray-900': '#111827'
+          };
+          var raw = state.color || 'theme';
+          var resolved = /^#[0-9A-Fa-f]{3,8}$/.test(raw) ? raw : (colorMap[raw] || 'var(--border)');
+          var sizeMap = { sm: '6px 0', md: '12px 0', lg: '20px 0' };
+          var spacerMap = { sm: 12, md: 24, lg: 40 };
+          if (s === 'spacer') {
+            return '<div class="preview-divider spacer" style="height:' + spacerMap[sz] + 'px"></div>';
+          }
+          var thicknessMap = { sm: 1, md: 2, lg: 3 };
+          var thickness = thicknessMap[sz];
+          if (s === 'dotted') {
+            return '<div class="preview-divider dotted" style="margin:' + sizeMap[sz] + ';border-top-width:' + thickness + 'px;border-top-color:' + resolved + '"></div>';
+          }
+          return '<div class="preview-divider" style="margin:' + sizeMap[sz] + ';height:' + thickness + 'px;background:' + resolved + '"></div>';
         },
         analytics: { today: '0', sevenDay: '0', source: '—' }
       },
@@ -2977,7 +3061,7 @@
       'src', 'alt', 'href', 'aspect', 'ctaLabel',          /* image (caption shared with embed below) */
       'provider', 'caption',                               /* embed */
       'level', 'text', 'align',                            /* heading */
-      'style', 'size',                                     /* divider */
+      'style', 'size', 'color',                            /* divider */
       'handles', 'handlesOrder', 'shape',                  /* social */
       'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', /* newsletter */
       'product', 'showPrice',                              /* shop */
@@ -2994,7 +3078,7 @@
       src: 'Source', alt: 'Alt text', href: 'Link', aspect: 'Aspect', ctaLabel: 'CTA label',
       provider: 'Provider', caption: 'Caption',
       level: 'Heading level', text: 'Text', align: 'Alignment',
-      style: 'Style', size: 'Size',
+      style: 'Style', size: 'Size', color: 'Color',
       handles: 'Social handles', handlesOrder: 'Platform order', shape: 'Wrapper shape',
       list: 'List', cta: 'Button label', ctaIcon: 'Button icon',
       placeholder: 'Placeholder', doubleOptIn: 'Double opt-in',
@@ -3334,6 +3418,50 @@
                      '</div>' +
                      '<div class="ipk-meta" id="' + pickerId + '-meta"></div>' +
                      '<div class="ipk-grid" id="' + pickerId + '-grid"></div>' +
+                   '</div>' +
+                 '</div>' +
+                 help + '</div>';
+        }
+        if (f.kind === 'theme-color-picker') {
+          /* FIX-DIV-001 — reusable theme-aware color picker. Used by
+             Divider today; will be reused by Heading text color and
+             other block-level color choices later. The "Theme default"
+             value resolves to var(--border) at render so it adapts when
+             the creator switches theme. */
+          var current = (f.value || 'theme').toString();
+          var swatches = [
+            { id: 'theme',     name: 'Theme default', css: 'var(--border)' },
+            { id: 'indigo',    name: 'Brand indigo',  css: '#6366F1' },
+            { id: 'warm',      name: 'Brand warm',    css: '#F59E0B' },
+            { id: 'success',   name: 'Success',       css: '#10B981' },
+            { id: 'warning',   name: 'Warning',       css: '#F59E0B' },
+            { id: 'danger',    name: 'Danger',        css: '#EF4444' },
+            { id: 'gray-100',  name: 'Gray 100',      css: '#F3F4F6' },
+            { id: 'gray-300',  name: 'Gray 300',      css: '#D1D5DB' },
+            { id: 'gray-500',  name: 'Gray 500',      css: '#6B7280' },
+            { id: 'gray-700',  name: 'Gray 700',      css: '#374151' },
+            { id: 'gray-900',  name: 'Gray 900',      css: '#111827' }
+          ];
+          var isHex = /^#[0-9A-Fa-f]{3,8}$/.test(current);
+          var swatchHtml = swatches.map(function (s) {
+            var sel = (s.id === current) ? ' is-selected' : '';
+            return '<button type="button" class="tcp-swatch' + sel + '" ' +
+                   'title="' + escapeHtml(s.name) + '" ' +
+                   'aria-label="' + escapeHtml(s.name) + '" ' +
+                   'style="background:' + s.css + '" ' +
+                   'onclick="updateField(\'' + f.name + '\', \'' + s.id + '\'); renderForm()">' +
+                   '</button>';
+          }).join('');
+          var hexValue = isHex ? current : '';
+          var hexSel = isHex ? ' is-selected' : '';
+          return '<div class="field"><label>' + escapeHtml(f.label) + '</label>' +
+                 '<div class="tcp">' +
+                   '<div class="tcp-row">' + swatchHtml + '</div>' +
+                   '<div class="tcp-hex' + hexSel + '">' +
+                     '<label class="tcp-hex-lbl">Custom hex</label>' +
+                     '<input type="text" placeholder="#A1B2C3" value="' + escapeHtml(hexValue) + '" ' +
+                       'oninput="updateField(\'' + f.name + '\', this.value); renderPreview()" />' +
+                     (isHex ? '<span class="tcp-hex-swatch" style="background:' + escapeHtml(current) + '"></span>' : '') +
                    '</div>' +
                  '</div>' +
                  help + '</div>';
