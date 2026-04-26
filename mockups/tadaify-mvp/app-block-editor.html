@@ -353,6 +353,54 @@
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 480px) { .field-row { grid-template-columns: 1fr; } }
 
+    /* Icon picker — emoji grid + custom paste/upload */
+    .icon-picker {
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+    }
+    .icon-grid {
+      display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px;
+    }
+    @media (max-width: 480px) { .icon-grid { grid-template-columns: repeat(6, 1fr); } }
+    .icon-tile {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; line-height: 1;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer;
+      transition: border-color .12s, background .12s, transform .08s;
+      padding: 0;
+    }
+    .icon-tile:hover { border-color: var(--border-focus); background: var(--bg-muted); }
+    .icon-tile:active { transform: scale(0.94); }
+    .icon-tile.is-selected {
+      border-color: var(--brand-primary, #6366F1);
+      background: rgba(99,102,241,0.10);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.18);
+    }
+    .icon-custom {
+      display: flex; gap: 8px; align-items: center;
+      padding-top: 8px; border-top: 1px dashed var(--border);
+    }
+    .icon-custom-input {
+      width: 110px !important; flex-shrink: 0;
+      text-align: center; font-size: 16px !important;
+      padding: 8px !important;
+    }
+    .icon-upload-btn {
+      flex: 1;
+      padding: 8px 12px; font-size: 12px; font-weight: 600;
+      background: var(--bg); color: var(--fg-muted);
+      border: 1px dashed var(--border-strong); border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: border-color .12s, color .12s;
+    }
+    .icon-upload-btn:hover { border-color: var(--border-focus); color: var(--fg); }
+    body.dark-mode .icon-picker { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .icon-tile { background: #0B0F1E; border-color: #374151; }
+    body.dark-mode .icon-tile.is-selected { background: rgba(165,180,252,0.18); border-color: #A5B4FC; }
+    body.dark-mode .icon-upload-btn { background: #0B0F1E; color: #9CA3AF; border-color: #374151; }
+
     /* AI suggest CTA next to text fields */
     .with-ai { position: relative; }
     .with-ai .ai-btn {
@@ -1035,9 +1083,9 @@
         category: 'Links',
         form: function (state) {
           return [
-            { kind: 'text', name: 'label', label: 'Button label', value: state.label || 'Listen on Spotify', ai: true, help: 'Short and clickable. Use a verb where you can.' },
+            { kind: 'text', name: 'label', label: 'Button label', value: state.label || 'Listen on Spotify', help: 'Short and clickable. Use a verb where you can.' },
             { kind: 'url',  name: 'url',   label: 'URL', value: state.url || 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF' },
-            { kind: 'text', name: 'icon',  label: 'Icon (emoji or upload)', value: state.icon || '▶' },
+            { kind: 'icon-picker', name: 'icon', label: 'Icon', value: state.icon || '▶' },
             { kind: 'check', name: 'newtab', label: 'Open in new tab', value: state.newtab !== false },
             { kind: 'thumb', name: 'thumb', label: 'Custom thumbnail', value: state.thumb }
           ];
@@ -1411,6 +1459,25 @@
                        'onclick="toggleField(\'' + f.name + '\', this)" ' +
                        'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleField(\'' + f.name + '\', this);}"></span>' +
                  '</div>';
+        }
+        if (f.kind === 'icon-picker') {
+          var ICON_SET = ['▶','🎵','🎬','📷','📺','🛒','📩','💬','📚','🎙️','✏️','🎨','🌟','⚡','🎁','🎯','❤️','🔗'];
+          var current = (f.value || '').trim();
+          var tiles = ICON_SET.map(function (emoji) {
+            var sel = (emoji === current) ? ' is-selected' : '';
+            return '<button type="button" class="icon-tile' + sel + '" onclick="updateField(\'' + f.name + '\', \'' + emoji + '\'); renderForm();" aria-label="Select ' + emoji + '">' + emoji + '</button>';
+          }).join('');
+          var customSelected = (current && ICON_SET.indexOf(current) === -1) ? current : '';
+          return '<div class="field">' +
+                 '<label>' + escapeHtml(f.label) + '</label>' +
+                 '<div class="icon-picker">' +
+                   '<div class="icon-grid">' + tiles + '</div>' +
+                   '<div class="icon-custom">' +
+                     '<input type="text" maxlength="4" class="icon-custom-input" placeholder="or paste emoji" value="' + escapeHtml(customSelected) + '" oninput="updateField(\'' + f.name + '\', this.value); renderForm();" aria-label="Paste custom emoji" />' +
+                     '<button type="button" class="icon-upload-btn" onclick="alert(\'Mockup — SVG/PNG file picker would open here.\')">⬆ Upload SVG / PNG</button>' +
+                   '</div>' +
+                 '</div>' +
+                 help + '</div>';
         }
         if (f.kind === 'thumb' || f.kind === 'upload') {
           return '<div class="field"><label>' + escapeHtml(f.label) + '</label>' +
