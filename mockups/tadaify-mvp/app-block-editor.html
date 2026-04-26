@@ -2984,29 +2984,38 @@
         analytics: { today: '14', sevenDay: '92', source: 'instagram', trending: false }
       },
       'product': {
-        label: 'Shop product',
+        /* FIX-SHOP-001 — Renamed from "Shop product" → "Product".
+           No native commerce in MVP (per feedback_tadaify_no_shop_in_mvp).
+           Block is now an external product link: creator types title +
+           price, uploads image, points at their existing store
+           (Shopify / Stripe / Etsy / Gumroad / etc.). */
+        label: 'Product',
         icon: '🛍',
         category: 'Shop',
         form: function (state) {
           return [
-            { kind: 'select', name: 'product', label: 'Pick a product from your shop',
-              options: [['drop1','Spring drop merch — $24'],['ebook','My productivity playbook (PDF) — $9'],['call','30-min coaching call — $80']],
-              value: state.product || 'drop1' },
-            { kind: 'text', name: 'cta', label: 'Button label', value: state.cta || 'Buy now', ai: true },
-            { kind: 'icon-picker', name: 'ctaIcon', label: 'Button icon', value: state.ctaIcon || 'shopping-cart',
+            { kind: 'text', name: 'title', label: 'Product title', value: state.title || 'Spring drop merch', ai: true },
+            { kind: 'text', name: 'price', label: 'Price (free text — include currency)', value: state.price || '$24',
+              help: 'Type the price exactly as you want it shown, e.g. "$24", "€19.99", "PLN 79".' },
+            { kind: 'upload', name: 'image', label: 'Product image (jpg / png / webp · max 5MB)' },
+            { kind: 'url', name: 'url', label: 'External product URL (required)', value: state.url || 'https://shop.example.com/spring-drop',
+              help: 'Where shoppers land when they click "Buy". Shopify / Stripe / Etsy / Gumroad / your own store — any URL.' },
+            { kind: 'text', name: 'cta', label: 'Buy button label', value: state.cta || 'Buy on Shopify', ai: true,
+              help: 'Tell shoppers where they\'re going, e.g. "Buy on Shopify", "Get yours", "Order now".' },
+            { kind: 'icon-picker', name: 'ctaIcon', label: 'Buy button icon', value: state.ctaIcon || 'shopping-cart',
               help: 'A cart, bag, or download glyph reads instantly. Defaults to shopping cart.' },
             { kind: 'check', name: 'showPrice', label: 'Show price on card', value: state.showPrice !== false }
           ];
         },
         preview: function (state) {
-          var products = { drop1: ['Spring drop merch','$24'], ebook: ['Productivity playbook','$9'], call: ['30-min coaching call','$80'] };
-          var p = products[state.product || 'drop1'];
           var ic = renderIconForPreview(state.ctaIcon, 'shopping-cart');
+          var title = state.title || 'Spring drop merch';
+          var price = state.price || '$24';
           return '<div class="preview-product">' +
                    '<div class="pic"></div>' +
-                   '<div class="info"><div class="t">' + escapeHtml(p[0]) + '</div>' +
-                     (state.showPrice !== false ? '<div class="p">' + p[1] + '</div>' : '') + '</div>' +
-                   '<div class="buy">' + ic + (ic ? ' ' : '') + escapeHtml(state.cta || 'Buy now') + '</div>' +
+                   '<div class="info"><div class="t">' + escapeHtml(title) + '</div>' +
+                     (state.showPrice !== false ? '<div class="p">' + escapeHtml(price) + '</div>' : '') + '</div>' +
+                   '<div class="buy">' + ic + (ic ? ' ' : '') + escapeHtml(state.cta || 'Buy on Shopify') + '</div>' +
                  '</div>';
         },
         analytics: { today: '38', sevenDay: '210', source: 'tiktok' }
@@ -3213,7 +3222,7 @@
       'style', 'size', 'color',                            /* divider */
       'handles', 'handlesOrder', 'shape',                  /* social */
       'list', 'cta', 'ctaIcon', 'placeholder', 'doubleOptIn', /* newsletter */
-      'product', 'showPrice',                              /* shop */
+      'product', 'showPrice', 'title', 'price', 'image',   /* product (was "shop"; product key kept for legacy) */
       'autoplay', 'loop',                                  /* video */
       'sectionIcon', 'items', 'q1', 'a1', 'q2', 'a2',      /* faq (q1..a2 kept for legacy seed migration only) */
       'html',                                              /* custom */
@@ -3231,7 +3240,8 @@
       handles: 'Social handles', handlesOrder: 'Platform order', shape: 'Wrapper shape',
       list: 'List', cta: 'Button label', ctaIcon: 'Button icon',
       placeholder: 'Placeholder', doubleOptIn: 'Double opt-in',
-      product: 'Product', showPrice: 'Show price',
+      product: 'Product (legacy)', showPrice: 'Show price',
+      title: 'Product title', price: 'Price', image: 'Product image',
       autoplay: 'Autoplay', loop: 'Loop',
       sectionIcon: 'Section icon', items: 'Q&A list',
       q1: 'Question 1', a1: 'Answer 1', q2: 'Question 2', a2: 'Answer 2',

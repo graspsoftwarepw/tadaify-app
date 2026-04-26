@@ -217,16 +217,23 @@
 
         '<div class="nav-divider"></div>' +
 
-        /* GROUP 3 — Insights + Shop */
+        /* GROUP 3 — Insights only.
+           FIX-SHOP-001: native Shop is deferred to v2 per
+           feedback_tadaify_no_shop_in_mvp. Sidebar Shop entry hidden in
+           MVP — restore the commented block once the v2 native-shop
+           epic ships. The Product *block* (in app-block-editor) is
+           still available; it just links to the creator's external
+           store (Shopify / Stripe / Etsy / Gumroad / etc.). */
         '<div class="nav-group" style="padding-top:0">' +
           '<a href="./app-insights.html" class="nav-item' + cls('insights') + '" data-tip="Insights"' + aria('insights') + '>' +
             ICON.insights + '<span class="label">Insights</span>' +
           '</a>' +
-          /* TODO: replace href with ./app-shop.html when that mockup exists */
+          /* MVP-hidden — v2 native shop:
           '<button type="button" class="nav-item' + cls('shop') + '" data-tip="Shop — coming soon" onclick="alert(\'Mockup — Shop coming Q+1\')">' +
             ICON.shop + '<span class="label">Shop</span>' +
             '<span class="nav-count">0</span>' +
           '</button>' +
+          */
         '</div>' +
 
         '<div class="nav-divider"></div>' +
