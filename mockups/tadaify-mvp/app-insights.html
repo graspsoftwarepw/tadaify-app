@@ -1,0 +1,2716 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Insights — /app/insights (F-APP-INSIGHTS-001 Phase A)
+  created_at: 2026-04-26
+  author: orchestrator
+  status: draft-for-review
+
+  Phase A: single-handle scope. Multi-handle (Business agency profile switcher)
+  is Phase B work pending a separate multi-handle SPIKE.
+
+  Replaces closed PR #47 (Sonnet draft). Opus 4.7 redesign focused on:
+    - hero KPIs + a real time-series canvas as the primary visual
+    - traffic sources panel that explains itself (replaces opaque heatmap)
+    - cross-tab redesigned with row/column selectors + rich tooltips
+    - methodology disclosed inline (privacy-first never hidden)
+    - tier-gated sections rendered as informative locked cards (not hidden,
+      not blank, not modal — just clearly upgradable)
+
+  Locked decisions reflected:
+    DEC-075  cookieless unique-visitor methodology (marketing pillar #1)
+    DEC-076  Option 9 — full dataset ungated (cross-tab/geo/devices/referrers)
+    DEC-077  every block interaction logged at all tiers
+    DEC-078  D1 rollups forever; Business gets R2 Parquet monthly archive
+    DEC-079  show "unique visitors per day" with verbatim tooltip
+    DEC-080  API access tile in header (Pro 100/h, Business 1000/h)
+    DEC-082  polling architecture (60s) for Pro live view; DO+SSE only for Business replay
+    DEC-083  Pro $19/mo, Business $49/mo
+    DEC-MULTIPAGE-01  multi-page Q+1 (Free=1 / Creator=5 / Pro=20 / Business=∞)
+
+  Architecture summary (TR-INSIGHTS-002):
+    Worker beacon → WAE+KV → cron rollups to D1 → dashboard reads D1
+    Pro live view = HTTP polling 60s (NO Durable Objects, NO WebSocket)
+    Business replay = DO+SSE for scrub sessions only (60min/day cap)
+
+  Anti-patterns enforced: AP-001 / AP-013 / AP-017 / AP-031.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insights · Home — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ---------------------------------------------------------------------
+       Wordmark
+       ------------------------------------------------------------------- */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ---------------------------------------------------------------------
+       Atoms — shared with app-settings / app-domain canon
+       ------------------------------------------------------------------- */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.pro      { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08)); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.3); }
+    .chip.business { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08)); color: var(--brand-primary); border: 1px solid rgba(99,102,241,0.3); }
+    .chip.success  { background: var(--success-bg); color: #065F46; }
+    .chip.warm     { background: rgba(245,158,11,0.12); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.25); }
+    .chip.danger   { background: var(--danger-bg); color: #991B1B; }
+    .chip.muted    { background: var(--bg-muted); color: var(--fg-subtle); border: 1px solid var(--border); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease;
+      line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-sm      { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs      { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* ---------------------------------------------------------------------
+       Top app bar
+       ------------------------------------------------------------------- */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ---------------------------------------------------------------------
+       Layout grid: sidebar / main
+       ------------------------------------------------------------------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px) { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ---------------------------------------------------------------------
+       Sidebar (mirrors app-settings.html canon exactly)
+       ------------------------------------------------------------------- */
+    aside.side {
+      display: none;
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      padding: 18px 10px;
+      flex-direction: column; gap: 8px;
+      position: sticky; top: 54px; align-self: start;
+      height: calc(100vh - 54px);
+      overflow-y: auto;
+    }
+    @media (min-width: 720px) { aside.side { display: flex; } }
+
+    .side-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px; border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .side-user .av {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 15px;
+      flex-shrink: 0;
+    }
+    .side-user .utxt { min-width: 0; flex: 1; }
+    .side-user .uname { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .side-user .uhandle { font-size: 11px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .side-user .chevron { color: var(--fg-subtle); }
+
+    .nav-group { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; }
+    .nav-group + .nav-group { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 9px 10px; border-radius: 9px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg);
+      text-align: left; transition: background .12s ease, color .12s ease;
+    }
+    .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--fg-muted); }
+    .nav-item:hover { background: var(--bg-muted); }
+    .nav-item.active { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+    .nav-item.active svg { color: var(--brand-primary); }
+    .nav-item .nav-count {
+      margin-left: auto;
+      font-size: 11px; font-weight: 600;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .nav-divider { border-top: 1px solid var(--border); margin: 6px 0; }
+
+    .nav-pages-parent .nav-caret {
+      margin-left: 6px; flex-shrink: 0;
+      width: 14px; height: 14px;
+      color: var(--fg-subtle);
+      transform: rotate(90deg);
+    }
+    .nav-sub-list {
+      display: flex; flex-direction: column; gap: 1px;
+      margin: 2px 0 4px 17px;
+      padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+    .nav-sub-item {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 6px 10px; border-radius: 7px;
+      font-size: 12.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; text-decoration: none;
+      transition: background .12s ease, color .12s ease;
+      cursor: pointer;
+    }
+    .nav-sub-item svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--fg-subtle); }
+    .nav-sub-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .nav-sub-item.is-disabled { cursor: not-allowed; opacity: 0.55; font-style: italic; }
+    .nav-sub-item.is-disabled:hover { background: transparent; color: var(--fg-muted); }
+    .nav-sub-item.is-current { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+    .nav-sub-item.is-current svg { color: var(--brand-primary); }
+    .nav-sub-pill {
+      margin-left: auto; font-size: 10px; font-weight: 600;
+      padding: 1px 6px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-subtle);
+      white-space: nowrap;
+    }
+
+    @media (min-width: 720px) and (max-width: 1099px) {
+      aside.side { padding: 14px 8px; }
+      .side-user .utxt, .side-user .chevron { display: none; }
+      .nav-item .label { display: none; }
+      .nav-item { justify-content: center; padding: 10px 6px; }
+      .nav-item > span.label, .nav-item .nav-count { display: none; }
+      .nav-item svg { width: 20px; height: 20px; }
+      .nav-pages-parent .nav-caret { display: none; }
+      .nav-pages-parent .nav-count { display: none; }
+      .nav-sub-list { display: none; }
+    }
+
+    /* ---------------------------------------------------------------------
+       Main content shell
+       ------------------------------------------------------------------- */
+    main.content {
+      padding: 24px 18px 100px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    /* ---------------------------------------------------------------------
+       Page header — title row + tier-aware controls + API tile
+       ------------------------------------------------------------------- */
+    .page-head {
+      display: flex; flex-direction: column; gap: 14px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+    .page-head-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: baseline; gap: 8px;
+    }
+    .page-head h1 .crumb-sep {
+      color: var(--fg-subtle); font-weight: 400; font-size: 22px;
+    }
+    .page-head h1 .crumb-page {
+      font-size: 22px; color: var(--fg-muted);
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; line-height: 1.5; }
+
+    /* Page selector dropdown */
+    .page-selector { position: relative; display: inline-block; }
+    .page-selector-trigger {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .page-selector-trigger:hover { background: var(--bg-muted); border-color: var(--brand-primary); }
+    .page-selector-trigger svg { width: 14px; height: 14px; color: var(--fg-subtle); }
+    .page-selector-menu {
+      position: absolute; top: calc(100% + 6px); left: 0;
+      min-width: 240px; max-width: 320px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: 0 12px 32px rgba(17,24,39,0.10);
+      display: none; z-index: 30;
+    }
+    .page-selector-menu.open { display: block; }
+    .page-menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg);
+      text-align: left; cursor: pointer; width: 100%;
+    }
+    .page-menu-item:hover { background: var(--bg-muted); }
+    .page-menu-item.active { background: rgba(99,102,241,0.10); color: var(--brand-primary); font-weight: 600; }
+    .page-menu-item.is-disabled { color: var(--fg-subtle); cursor: not-allowed; font-style: italic; }
+    .page-menu-item.is-disabled:hover { background: transparent; }
+    .page-menu-item .meta { margin-left: auto; font-size: 11px; color: var(--fg-subtle); font-weight: 500; }
+    .page-menu-divider { border-top: 1px solid var(--border); margin: 4px 2px; }
+    .page-menu-hint {
+      padding: 8px 10px 4px; font-size: 11px; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    }
+
+    /* Header right-side controls cluster */
+    .head-controls {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Time range picker */
+    .time-range {
+      display: inline-flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 9px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+      font-size: 13px;
+    }
+    .time-range button {
+      padding: 7px 12px; border: 0; background: transparent; color: var(--fg-muted);
+      font-weight: 600; cursor: pointer;
+      border-right: 1px solid var(--border);
+      transition: background .12s ease, color .12s ease;
+    }
+    .time-range button:last-child { border-right: 0; }
+    .time-range button.active { background: var(--brand-primary); color: #fff; }
+    .time-range button:not(.active):hover { background: var(--bg-muted); color: var(--fg); }
+    .time-range button.is-locked { color: var(--fg-subtle); cursor: not-allowed; opacity: 0.6; }
+    .time-range button.is-locked:hover { background: transparent; color: var(--fg-subtle); }
+
+    .time-range-static {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+    }
+
+    /* API tile (right-aligned) */
+    .api-tile {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 9px;
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease;
+      border: 1px solid;
+      position: relative;
+    }
+    .api-tile.active {
+      background: rgba(16,185,129,0.10);
+      color: #065F46;
+      border-color: rgba(16,185,129,0.30);
+    }
+    .api-tile.active:hover { background: rgba(16,185,129,0.16); }
+    .api-tile.locked {
+      background: var(--bg-elevated);
+      color: var(--fg-muted);
+      border-color: var(--border-strong);
+    }
+    .api-tile.locked:hover { background: var(--bg-muted); }
+    .api-tile .api-icon { font-size: 14px; }
+    .api-tile .api-meta {
+      font-family: var(--font-mono); font-size: 11.5px;
+      color: inherit; opacity: 0.85;
+    }
+
+    /* Compare toggle (Pro+) */
+    .compare-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 11px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .compare-toggle:hover { background: var(--bg-muted); color: var(--fg); }
+    .compare-toggle.on { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.35); color: var(--brand-primary); }
+    .compare-toggle .check { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid currentColor; display: inline-block; }
+    .compare-toggle.on .check { background: var(--brand-primary); border-color: var(--brand-primary); position: relative; }
+    .compare-toggle.on .check::after { content: ""; position: absolute; left: 1px; top: -2px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+    /* CSV export button (tier-aware) */
+    .csv-btn { padding: 7px 12px; font-size: 12.5px; font-weight: 600; }
+
+    /* Free tier "🎁 most generous Free" pill */
+    .free-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.14), rgba(253,230,138,0.10));
+      border: 1px solid rgba(245,158,11,0.35);
+      font-size: 12.5px; font-weight: 600;
+      color: var(--brand-warm-dark);
+      cursor: help;
+    }
+
+    /* Last-updated chip */
+    .updated-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--fg-muted);
+      padding: 4px 0;
+    }
+    .updated-chip .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+      flex-shrink: 0;
+    }
+    .updated-chip.stale .live-dot { background: var(--fg-subtle); box-shadow: none; }
+
+    /* ---------------------------------------------------------------------
+       Tooltip — universal popover (info icons)
+       ------------------------------------------------------------------- */
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.2px solid var(--fg-subtle);
+      color: var(--fg-subtle);
+      font-size: 11px; font-weight: 700; line-height: 1;
+      cursor: help;
+      transition: color .12s ease, border-color .12s ease;
+      vertical-align: middle;
+      background: transparent;
+      font-family: var(--font-sans);
+    }
+    .info-icon:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    .tooltip-wrap { position: relative; display: inline-block; }
+    .tooltip-popover {
+      visibility: hidden;
+      position: absolute;
+      z-index: 80;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      width: max-content;
+      max-width: min(360px, calc(100vw - 32px));
+      background: var(--bg-dark);
+      color: #F3F4F6;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 12.5px; line-height: 1.55;
+      font-weight: 400;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.30);
+      opacity: 0;
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      text-align: left;
+    }
+    .tooltip-popover::after {
+      content: "";
+      position: absolute;
+      top: 100%; left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--bg-dark);
+    }
+    .tooltip-wrap:hover .tooltip-popover,
+    .tooltip-wrap:focus-within .tooltip-popover {
+      visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+    .tooltip-popover strong { color: #fff; font-weight: 600; }
+    .tooltip-popover a { color: #A5B4FC; text-decoration: underline; pointer-events: auto; }
+    .tooltip-popover.tooltip-wide { max-width: min(420px, calc(100vw - 32px)); }
+    .tooltip-popover.tooltip-right { left: auto; right: 0; transform: translateX(0) translateY(4px); }
+    .tooltip-popover.tooltip-right::after { left: auto; right: 14px; transform: none; }
+    .tooltip-popover.tooltip-right:hover,
+    .tooltip-wrap:hover .tooltip-popover.tooltip-right,
+    .tooltip-wrap:focus-within .tooltip-popover.tooltip-right { transform: translateX(0) translateY(0); }
+
+    /* ---------------------------------------------------------------------
+       Section title pattern
+       ------------------------------------------------------------------- */
+    .panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .panel-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 8px;
+      margin: 0;
+    }
+    .panel-sub {
+      font-size: 12.5px; color: var(--fg-muted); margin-top: -2px; line-height: 1.5;
+      max-width: 720px;
+    }
+    .panel-action {
+      font-size: 12.5px; font-weight: 600; color: var(--brand-primary);
+      background: transparent; border: 0; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .panel-action:hover { background: rgba(99,102,241,0.08); }
+
+    /* ---------------------------------------------------------------------
+       Hero KPI tiles
+       ------------------------------------------------------------------- */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    @media (min-width: 900px) { .kpi-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; } }
+
+    .kpi-tile {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px 14px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .kpi-tile:hover { border-color: var(--border-strong); }
+    .kpi-tile .kpi-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: none;
+      letter-spacing: 0.01em;
+      margin-bottom: 6px;
+    }
+    .kpi-tile .kpi-num {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 38px;
+      line-height: 1.1;
+      color: var(--fg);
+      letter-spacing: -0.02em;
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .kpi-tile .kpi-suffix { font-size: 16px; color: var(--fg-muted); font-weight: 400; }
+    .kpi-tile .kpi-delta {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 12px; font-weight: 600;
+      padding: 2px 7px; border-radius: 999px;
+      margin-top: 4px;
+    }
+    .kpi-tile .kpi-delta.up   { background: rgba(16,185,129,0.10); color: #059669; }
+    .kpi-tile .kpi-delta.down { background: rgba(239,68,68,0.10);  color: var(--danger); }
+    .kpi-tile .kpi-delta.flat { background: var(--bg-muted); color: var(--fg-muted); }
+    .kpi-tile .kpi-spark {
+      margin-top: 12px; height: 36px; width: 100%;
+    }
+    .kpi-tile .kpi-foot {
+      font-size: 11.5px; color: var(--fg-subtle); margin-top: 6px;
+    }
+
+    /* Hide delta on Free tier */
+    body[data-tier="free"] .kpi-delta { display: none; }
+    body[data-tier="free"] .kpi-foot.tier-pro { display: none; }
+
+    /* ---------------------------------------------------------------------
+       Time-series chart
+       ------------------------------------------------------------------- */
+    .chart-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px 14px;
+      margin-bottom: 20px;
+    }
+    .chart-canvas {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      margin-top: 10px;
+    }
+    .chart-canvas svg { display: block; width: 100%; height: 100%; }
+
+    .chart-legend {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .chart-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .chart-legend-dot {
+      width: 10px; height: 10px; border-radius: 3px;
+      background: var(--brand-primary);
+    }
+    .chart-legend-dot.dot-clicks { background: var(--brand-warm); border-radius: 999px; }
+    .chart-legend-dot.dot-prev { background: transparent; border: 1.5px dashed var(--fg-subtle); border-radius: 999px; }
+
+    .chart-toggles { display: inline-flex; gap: 4px; }
+    .chart-toggles button {
+      font-size: 11.5px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .chart-toggles button.active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+    /* Annotation pin on chart (e.g. "TikTok went viral") */
+    .chart-pin {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: var(--bg-elevated);
+      border: 1px solid var(--brand-warm);
+      color: var(--brand-warm-dark);
+      border-radius: 999px;
+      font-size: 10.5px; font-weight: 600;
+      padding: 2px 9px;
+      white-space: nowrap;
+      cursor: help;
+      box-shadow: 0 2px 6px rgba(245,158,11,0.18);
+    }
+    .chart-pin::after {
+      content: ""; position: absolute;
+      top: 100%; left: 50%; transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--brand-warm);
+    }
+
+    /* Hover guide */
+    .chart-hover-guide {
+      position: absolute; top: 0; bottom: 0; width: 1px;
+      background: rgba(99,102,241,0.4);
+      display: none; pointer-events: none;
+      transition: left .04s linear;
+    }
+    .chart-hover-tooltip {
+      position: absolute;
+      transform: translate(-50%, calc(-100% - 12px));
+      background: var(--bg-dark);
+      color: #F3F4F6;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      z-index: 5;
+    }
+    .chart-hover-tooltip .htt-date { font-weight: 600; margin-bottom: 4px; }
+    .chart-hover-tooltip .htt-row { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+    .chart-hover-tooltip .htt-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--brand-primary); }
+    .chart-hover-tooltip .htt-dot.dot-clicks { background: var(--brand-warm); border-radius: 999px; }
+
+    /* ---------------------------------------------------------------------
+       Two-pane: Traffic sources (left) + drill panel (right)
+       ------------------------------------------------------------------- */
+    .sources-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .sources-method {
+      font-size: 12.5px; line-height: 1.55;
+      color: var(--fg-muted);
+      background: rgba(99,102,241,0.05);
+      border: 1px solid rgba(99,102,241,0.15);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .sources-method .lock { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+    .sources-method strong { color: var(--fg); font-weight: 600; }
+
+    .sources-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 900px) { .sources-grid { grid-template-columns: 0.9fr 1.1fr; gap: 22px; } }
+
+    .source-list { display: flex; flex-direction: column; gap: 4px; }
+    .source-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 70px 60px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .12s ease, border-color .12s ease;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+    }
+    .source-row:hover { background: var(--bg-muted); }
+    .source-row.active {
+      background: rgba(99,102,241,0.08);
+      border-color: rgba(99,102,241,0.25);
+    }
+    .source-row .src-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      background: var(--bg-muted);
+      flex-shrink: 0;
+    }
+    .source-row .src-name { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+    .source-row .src-bar-track {
+      grid-column: 2 / 3;
+      height: 4px; border-radius: 999px;
+      background: var(--bg-sunken);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .source-row .src-bar-fill {
+      height: 100%; background: var(--brand-primary);
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .source-row.active .src-bar-fill { background: var(--brand-primary); }
+    .source-row .src-pct {
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      text-align: right;
+    }
+    .source-row .src-count {
+      font-size: 11.5px; color: var(--fg-subtle);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .src-detail {
+      background: var(--bg-muted);
+      border-radius: 12px;
+      padding: 14px 16px;
+      min-height: 240px;
+    }
+    .src-detail-head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .src-detail-head .src-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; background: var(--bg-elevated);
+      border: 1px solid var(--border);
+    }
+    .src-detail-head h4 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 16px; margin: 0;
+    }
+    .src-detail-head .src-detail-meta { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+
+    .top-block-row {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .top-block-row:last-child { border-bottom: 0; }
+    .top-block-row .tb-rank { font-size: 11px; font-weight: 700; color: var(--fg-subtle); font-variant-numeric: tabular-nums; }
+    .top-block-row .tb-name { font-weight: 500; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+    .top-block-row .tb-name .tb-icon { font-size: 13px; flex-shrink: 0; }
+    .top-block-row .tb-name span.tb-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-block-row .tb-clicks { font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+    /* ---------------------------------------------------------------------
+       Top blocks ranking (full table)
+       ------------------------------------------------------------------- */
+    .blocks-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .blocks-table { width: 100%; border-collapse: collapse; }
+    .blocks-table thead th {
+      text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--fg-subtle); padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .blocks-table thead th.num { text-align: right; }
+    .blocks-table tbody td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .blocks-table tbody tr:last-child td { border-bottom: 0; }
+    .blocks-table tbody tr {
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .blocks-table tbody tr:hover { background: var(--bg-muted); }
+    .blocks-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .blocks-table .b-name {
+      display: flex; align-items: center; gap: 8px;
+      min-width: 0;
+    }
+    .blocks-table .b-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      background: var(--bg-muted); flex-shrink: 0;
+    }
+    .blocks-table .b-label { font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .blocks-table .b-page-pill {
+      font-size: 10.5px; font-weight: 600;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-subtle);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .blocks-table .b-spark { width: 84px; height: 22px; }
+    @media (max-width: 700px) {
+      .blocks-table .col-page, .blocks-table .col-spark { display: none; }
+    }
+    .blocks-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--fg-muted);
+    }
+
+    /* ---------------------------------------------------------------------
+       3-up mini-cards: Geo / Devices / Referrers
+       ------------------------------------------------------------------- */
+    .three-up {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 900px) { .three-up { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+    .mini-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .mini-card .mc-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
+    }
+    .mini-card h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 15px; margin: 0;
+    }
+    .mini-card .mc-action {
+      font-size: 11.5px; font-weight: 600;
+      color: var(--brand-primary);
+      background: transparent; border: 0; cursor: pointer;
+    }
+
+    .bar-list { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 50px;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+    }
+    .bar-row .bar-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-weight: 500; color: var(--fg);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bar-row .bar-track {
+      height: 6px; background: var(--bg-sunken); border-radius: 999px; overflow: hidden;
+    }
+    .bar-row .bar-fill {
+      height: 100%; background: var(--brand-primary); border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .bar-row .bar-fill.warm { background: var(--brand-warm); }
+    .bar-row .bar-pct {
+      font-size: 11.5px; font-weight: 600; color: var(--fg-muted);
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+
+    .device-toggle-row {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: 6px; padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      font-size: 11.5px; color: var(--fg-muted);
+    }
+    .device-toggle-row strong { font-weight: 600; color: var(--fg); margin-right: 6px; }
+
+    /* ---------------------------------------------------------------------
+       Cross-tab analysis (redesigned)
+       ------------------------------------------------------------------- */
+    .crosstab-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .crosstab-help {
+      font-size: 12.5px; line-height: 1.55;
+      color: var(--fg-muted);
+      background: var(--bg-muted);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .crosstab-help strong { color: var(--fg); font-weight: 600; }
+    .crosstab-help kbd {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .crosstab-controls {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 12px;
+    }
+    .crosstab-controls label {
+      font-size: 12px; color: var(--fg-muted); font-weight: 600;
+    }
+    .crosstab-controls select {
+      font-family: var(--font-sans); font-size: 12.5px; font-weight: 600;
+      padding: 6px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      cursor: pointer;
+    }
+
+    .crosstab-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid var(--border); }
+    .crosstab-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .crosstab-table th, .crosstab-table td {
+      padding: 7px 10px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .crosstab-table th:last-child, .crosstab-table td:last-child { border-right: 0; }
+    .crosstab-table tbody tr:last-child td { border-bottom: 0; }
+    .crosstab-table th {
+      background: var(--bg-muted);
+      font-weight: 600; color: var(--fg-muted);
+      font-size: 11.5px;
+    }
+    .crosstab-table th.row-header,
+    .crosstab-table td.row-header {
+      text-align: left;
+      font-weight: 600;
+      background: var(--bg-muted);
+      color: var(--fg);
+      position: sticky; left: 0;
+      z-index: 1;
+    }
+    .crosstab-table .ct-cell {
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      transition: transform .08s ease;
+      position: relative;
+    }
+    .crosstab-table .ct-cell:hover {
+      outline: 2px solid var(--brand-primary);
+      outline-offset: -2px;
+      z-index: 2;
+    }
+    .crosstab-table .ct-cell.ct-zero { color: var(--fg-subtle); font-weight: 400; background: var(--bg) !important; }
+
+    /* ---------------------------------------------------------------------
+       Locked panels (tier-gated)
+       ------------------------------------------------------------------- */
+    .locked-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 700px) { .locked-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    .locked-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .locked-card.is-unlocked { border-color: var(--border); }
+    .locked-card-head {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+    .locked-card-head h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 16px; margin: 0;
+    }
+    .locked-card-sub {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .locked-card-body {
+      position: relative;
+      flex: 1;
+      padding: 12px 0;
+    }
+    .locked-card .lc-preview {
+      filter: blur(0);
+      opacity: 1;
+      transition: filter .2s ease, opacity .2s ease;
+    }
+    .locked-card[data-locked="true"] .lc-preview {
+      filter: blur(2.5px);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .locked-card .lc-cta-overlay {
+      display: none;
+      position: absolute; inset: 0;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px;
+      text-align: center;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg-elevated) 90%);
+    }
+    body.dark-mode .locked-card .lc-cta-overlay {
+      background: linear-gradient(180deg, rgba(20,26,45,0) 0%, var(--bg-elevated) 90%);
+    }
+    .locked-card[data-locked="true"] .lc-cta-overlay { display: flex; }
+    .lc-cta-overlay .lc-lock-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(245,158,11,0.15);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+    .lc-cta-overlay .lc-cta-msg {
+      font-size: 13px; color: var(--fg-muted); margin: 0;
+      max-width: 280px; line-height: 1.55;
+    }
+    .lc-cta-overlay .lc-cta-msg strong { color: var(--fg); font-weight: 600; }
+
+    /* Faux preview content inside locked cards */
+    .faux-row {
+      display: grid;
+      grid-template-columns: 22px 1fr 60px;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 12.5px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .faux-row:last-child { border-bottom: 0; }
+    .faux-row .faux-pic {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--bg-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--fg-subtle);
+    }
+    .faux-row .faux-name { font-weight: 500; color: var(--fg-muted); }
+    .faux-row .faux-num { font-variant-numeric: tabular-nums; color: var(--fg-muted); text-align: right; }
+
+    /* Saved view chip */
+    .saved-view-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 600;
+      color: var(--fg);
+    }
+    .saved-view-chip .sv-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-primary); }
+
+    /* ---------------------------------------------------------------------
+       Footer privacy banner (always visible)
+       ------------------------------------------------------------------- */
+    .privacy-footer {
+      margin-top: 28px;
+      padding: 14px 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+      flex-wrap: wrap;
+    }
+    .privacy-footer .lock-icon { font-size: 16px; }
+    .privacy-footer strong { color: var(--fg); font-weight: 600; }
+    .privacy-footer a { color: var(--brand-primary); font-weight: 500; }
+
+    /* ---------------------------------------------------------------------
+       Demo toolbar (mockup reviewer only)
+       ------------------------------------------------------------------- */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px;
+      z-index: 999;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 600; color: var(--fg-subtle);
+      display: flex; flex-direction: column; gap: 6px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      max-width: calc(100vw - 32px);
+    }
+    .demo-toolbar .dt-label {
+      color: var(--fg-subtle); text-transform: uppercase;
+      letter-spacing: .06em; font-size: 10px;
+    }
+    .demo-toolbar .dt-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+    .demo-toolbar button {
+      padding: 4px 10px; border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 11px; font-weight: 600;
+      cursor: pointer; font-family: var(--font-sans);
+      color: var(--fg);
+    }
+    .demo-toolbar button.is-active {
+      background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
+    }
+
+    /* ---------------------------------------------------------------------
+       Section stack
+       ------------------------------------------------------------------- */
+    .stack-section + .stack-section { margin-top: 22px; }
+    .section-heading {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13px; letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--fg-subtle);
+      margin: 22px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ---------------------------------------------------------------------
+       Print styles
+       ------------------------------------------------------------------- */
+    @media print {
+      .appbar, aside.side, .demo-toolbar, .compare-toggle, .panel-action, .mc-action, .csv-btn,
+      .api-tile.locked, .locked-card[data-locked="true"] { display: none !important; }
+      main.content { padding: 0 !important; }
+      .panel, .chart-shell, .sources-shell, .blocks-shell, .crosstab-shell, .mini-card, .kpi-tile {
+        break-inside: avoid; box-shadow: none !important; border-color: #ddd !important;
+      }
+      body { background: #fff !important; }
+    }
+
+    /* ---------------------------------------------------------------------
+       Mobile niceties
+       ------------------------------------------------------------------- */
+    @media (max-width: 599px) {
+      .page-head h1 { font-size: 24px; }
+      .page-head h1 .crumb-page { font-size: 18px; }
+      .kpi-tile .kpi-num { font-size: 30px; }
+      .api-tile { font-size: 11.5px; padding: 6px 9px; }
+      .api-tile .api-meta { font-size: 11px; }
+      .api-tile .api-text-long { display: none; }
+      .api-tile .api-text-short { display: inline; }
+      .panel-title { font-size: 16px; }
+      .crosstab-controls select { font-size: 12px; }
+      .demo-toolbar { font-size: 10px; padding: 8px 10px; }
+    }
+    .api-tile .api-text-short { display: none; }
+    @media (max-width: 599px) {
+      .api-tile .api-text-short { display: inline; }
+    }
+
+    /* ---------------------------------------------------------------------
+       Dark mode overrides
+       ------------------------------------------------------------------- */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #4B5563;
+      --border:      #1F2937;
+      --border-strong: #374151;
+      --wm-ify: #F3F4F6;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode aside.side { background: #141A2D; border-right-color: #1F2937; }
+    body.dark-mode .side-user { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .nav-item { color: #9CA3AF; }
+    body.dark-mode .nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .nav-sub-item.is-current { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .nav-sub-item.is-current svg { color: #A5B4FC; }
+    body.dark-mode .panel,
+    body.dark-mode .chart-shell,
+    body.dark-mode .sources-shell,
+    body.dark-mode .blocks-shell,
+    body.dark-mode .crosstab-shell,
+    body.dark-mode .mini-card,
+    body.dark-mode .kpi-tile,
+    body.dark-mode .locked-card,
+    body.dark-mode .privacy-footer,
+    body.dark-mode .demo-toolbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .src-detail { background: #0B0F1E; }
+    body.dark-mode .crosstab-help { background: #1A2236; }
+    body.dark-mode .blocks-table thead th { color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .blocks-table tbody td { border-bottom-color: #1F2937; }
+    body.dark-mode .blocks-table tbody tr:hover { background: #1A2236; }
+    body.dark-mode .crosstab-table th { background: #1A2236; color: #9CA3AF; }
+    body.dark-mode .crosstab-table th.row-header,
+    body.dark-mode .crosstab-table td.row-header { background: #1A2236; color: #F3F4F6; }
+    body.dark-mode .source-row:hover { background: #1A2236; }
+    body.dark-mode .crosstab-controls select { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+    body.dark-mode .free-pill {
+      background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(253,230,138,0.06));
+      color: #FCD34D;
+    }
+    body.dark-mode .api-tile.active { background: rgba(16,185,129,0.16); color: #6EE7B7; }
+    body.dark-mode .api-tile.locked { background: #141A2D; color: #9CA3AF; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .page-selector-trigger { background: #141A2D; border-color: #374151; }
+    body.dark-mode .page-selector-menu { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .time-range { background: #141A2D; border-color: #374151; }
+    body.dark-mode .compare-toggle { background: #141A2D; border-color: #374151; }
+    body.dark-mode .updated-chip { color: #9CA3AF; }
+    body.dark-mode .sources-method { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.25); }
+    body.dark-mode .lc-cta-overlay { background: linear-gradient(180deg, rgba(20,26,45,0) 0%, #141A2D 90%); }
+    body.dark-mode .demo-toolbar button { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+    body.dark-mode .demo-toolbar button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+  </style>
+</head>
+<body data-tier="pro">
+
+<!-- ============================================================
+     TOP APP BAR (canon — mirrors app-settings.html)
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b id="handle-text">alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout">
+
+  <!-- ====== PRIMARY SIDEBAR (canon) ====== -->
+  <aside class="side" aria-label="Primary navigation">
+    <div class="side-user">
+      <div class="av">A</div>
+      <div class="utxt">
+        <div class="uname">Alexandra Silva</div>
+        <div class="uhandle" id="side-tier">@alexandra · Pro</div>
+      </div>
+      <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 9 12 5 16 9"/><polyline points="8 15 12 19 16 15"/></svg>
+    </div>
+
+    <!-- GROUP 1: Pages (parent always expanded) — canonical -->
+    <div class="nav-group">
+      <a href="./app-dashboard.html?tab=page" class="nav-item nav-pages-parent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="label">Pages</span>
+        <span class="nav-count">1</span>
+        <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <div class="nav-sub-list">
+        <a href="./app-dashboard.html?tab=page" class="nav-sub-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </a>
+        <button class="nav-sub-item is-disabled" aria-disabled="true" title="Multi-page coming Q+1 — DEC-MULTIPAGE-01">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Add page</span>
+          <span class="nav-sub-pill">soon</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- GROUP 2: Design + Domain -->
+    <div class="nav-group" style="padding-top:0">
+      <a href="./app-dashboard.html?tab=design" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
+        <span class="label">Design</span>
+      </a>
+      <a href="./app-domain.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="label">Domain</span>
+      </a>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- GROUP 3: Insights ACTIVE + Shop -->
+    <div class="nav-group" style="padding-top:0">
+      <a href="./app-insights.html" class="nav-item active" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+        <span class="label">Insights</span>
+      </a>
+      <button class="nav-item" onclick="alert('Mockup — Shop coming Q+1')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        <span class="label">Shop</span>
+        <span class="nav-count">0</span>
+      </button>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- GROUP 4: Settings + Help -->
+    <div class="nav-group" style="padding-top:0">
+      <a href="./app-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <span class="label">Settings</span>
+      </a>
+      <button class="nav-item" onclick="alert('Mockup — Help & docs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
+        <span class="label">Help &amp; docs</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="content">
+
+    <!-- ============================================================
+         PAGE HEADER — title + page selector + tier-aware controls + API tile
+         ============================================================ -->
+    <div class="page-head">
+      <div class="page-head-row">
+        <div style="min-width:0;flex:1">
+          <h1>
+            Insights
+            <span class="crumb-sep">·</span>
+            <span class="crumb-page" id="current-page-name">Home</span>
+          </h1>
+          <div class="sub" id="head-subtitle">
+            What worked, what didn't, and where your visitors came from — for the page you're viewing.
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:10px">
+
+            <!-- Page selector dropdown -->
+            <div class="page-selector">
+              <button class="page-selector-trigger" onclick="togglePageMenu(event)" aria-haspopup="true" aria-expanded="false" id="page-selector-trigger">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span id="page-selector-label">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="page-selector-menu" id="page-selector-menu" role="menu">
+                <div class="page-menu-hint">Your pages (1 of <span id="page-quota">20</span>)</div>
+                <button class="page-menu-item active" role="menuitem">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <span>Home</span>
+                  <span class="meta">tadaify.com/alexandra</span>
+                </button>
+                <div class="page-menu-divider"></div>
+                <div class="page-menu-hint">All pages</div>
+                <button class="page-menu-item is-disabled" role="menuitem" aria-disabled="true" title="Cross-page Insights view — coming with multi-page support">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  <span>All pages combined</span>
+                  <span class="meta">soon</span>
+                </button>
+                <div class="page-menu-divider"></div>
+                <button class="page-menu-item is-disabled" role="menuitem" aria-disabled="true" title="Multi-page coming Q+1 — DEC-MULTIPAGE-01">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>Add a new page</span>
+                  <span class="meta">soon</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Last updated chip — tier-aware -->
+            <div class="updated-chip" id="updated-chip">
+              <span class="live-dot"></span>
+              <span id="updated-text">Live · refreshed 23s ago</span>
+            </div>
+
+            <!-- Free pill (Free tier only — DEC-076 "most generous Free" soft signal) -->
+            <span id="free-pill" class="free-pill tooltip-wrap" style="display:none">
+              🎁 Free tier — full dataset, hourly refresh
+              <span class="tooltip-popover tooltip-wide">
+                <strong>Tadaify Free includes all data dimensions</strong> — cross-tab, geo, devices, referrers. Other platforms gate this behind paid tiers. Upgrade to Creator/Pro for faster refresh, longer history, and live view.
+              </span>
+            </span>
+
+          </div>
+        </div>
+
+        <!-- Right cluster: time range + compare + API tile + CSV -->
+        <div class="head-controls">
+
+          <!-- Time-range — tier-aware -->
+          <div id="time-range-host"></div>
+
+          <!-- Compare-to-previous toggle — Pro+ only -->
+          <button id="compare-toggle" class="compare-toggle" onclick="toggleCompare()" style="display:none">
+            <span class="check"></span>
+            <span>Compare to previous</span>
+          </button>
+
+          <!-- CSV export — tier-aware -->
+          <button class="btn btn-ghost csv-btn" id="csv-btn" onclick="alert('Mockup — would download CSV')" style="display:none">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="csv-btn-text">Export CSV</span>
+          </button>
+
+          <!-- API tile — Pro 100/h, Business 1000/h, otherwise locked upgrade pill (DEC-080) -->
+          <a id="api-tile-active" href="./app-settings.html#api" class="api-tile active tooltip-wrap" style="display:inline-flex">
+            <span class="api-icon">🔌</span>
+            <span class="api-text-long">API · <span id="api-meta-used">47</span> / <span id="api-meta-cap">100</span> req/h</span>
+            <span class="api-text-short">🔌 47/100</span>
+            <span class="tooltip-popover tooltip-right">
+              <strong>API access — Pro tier</strong><br>
+              Build your own dashboards, Slack bots, iOS widgets. First creator analytics API in link-in-bio.<br><br>
+              <a href="./app-settings.html#api">Manage API keys →</a>
+            </span>
+          </a>
+          <button id="api-tile-locked" class="api-tile locked tooltip-wrap" onclick="alert('Mockup — would open upgrade flow')" style="display:none">
+            <span class="api-icon">🔌</span>
+            <span class="api-text-long">API access — available on Pro</span>
+            <span class="api-text-short">🔌 Pro</span>
+            <span class="tooltip-popover tooltip-right">
+              <strong>First creator analytics API in link-in-bio</strong><br>
+              Build your own dashboards, Slack bots, iOS widgets — read your own metrics, no scraping.<br><br>
+              <a href="./pricing.html">Upgrade to Pro →</a>
+            </span>
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         HERO KPI ROW
+         ============================================================ -->
+    <div class="kpi-row" id="kpi-row">
+
+      <!-- Pageviews -->
+      <div class="kpi-tile">
+        <div class="kpi-label">
+          Pageviews
+          <span class="tooltip-wrap">
+            <button class="info-icon" type="button" aria-label="What is pageviews?">i</button>
+            <span class="tooltip-popover">
+              Total times your page was loaded in this period. One visitor reloading the page counts as multiple pageviews.
+            </span>
+          </span>
+        </div>
+        <div class="kpi-num">2,007 <span class="kpi-suffix"></span></div>
+        <span class="kpi-delta up">▲ 12.4%</span>
+        <svg class="kpi-spark" viewBox="0 0 200 36" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="spark-grad-pv" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#6366F1" stop-opacity="0.30"/>
+              <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,28 L20,24 L40,22 L60,18 L80,20 L100,14 L120,11 L140,16 L160,9 L180,12 L200,5 L200,36 L0,36 Z" fill="url(#spark-grad-pv)"/>
+          <path d="M0,28 L20,24 L40,22 L60,18 L80,20 L100,14 L120,11 L140,16 L160,9 L180,12 L200,5" fill="none" stroke="#6366F1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="kpi-foot tier-pro">vs 1,786 previous 7 days</div>
+      </div>
+
+      <!-- Unique visitors today (with verbatim DEC-079 tooltip) -->
+      <div class="kpi-tile">
+        <div class="kpi-label" id="uv-label">
+          <span id="uv-label-text">Unique visitors today</span>
+          <span class="tooltip-wrap">
+            <button class="info-icon" type="button" aria-label="About unique visitors">i</button>
+            <!-- TR-INSIGHTS-001 verbatim copy — DO NOT EDIT -->
+            <span class="tooltip-popover tooltip-wide">
+              <strong>About this number</strong><br>
+              This is an approximate count. We don't track you across visits — no cookies, no fingerprinting. We use a privacy-first method that counts unique visitors per day.<br><br>
+              <strong>Trade-off:</strong> if the same person visits Monday and Tuesday, we count them as 2 visitors (not 1).<br><br>
+              <strong>Why we do this:</strong> cookie banners annoy your visitors and hurt your conversion. We chose a slightly fuzzy number over an annoying experience for your audience. Most creators tell us they'd rather have happy visitors than perfectly precise analytics.<br><br>
+              <a href="./landing.html#privacy">Learn more →</a>
+            </span>
+          </span>
+        </div>
+        <div class="kpi-num"><span id="uv-num">412</span></div>
+        <span class="kpi-delta up">▲ 8.1%</span>
+        <svg class="kpi-spark" viewBox="0 0 200 36" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="spark-grad-uv" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.30"/>
+              <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,30 L20,26 L40,24 L60,21 L80,17 L100,20 L120,14 L140,10 L160,12 L180,8 L200,11 L200,36 L0,36 Z" fill="url(#spark-grad-uv)"/>
+          <path d="M0,30 L20,26 L40,24 L60,21 L80,17 L100,20 L120,14 L140,10 L160,12 L180,8 L200,11" fill="none" stroke="#8B5CF6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="kpi-foot tier-pro">vs 381 previous 7 days</div>
+      </div>
+
+      <!-- Total clicks -->
+      <div class="kpi-tile">
+        <div class="kpi-label">
+          Total clicks
+          <span class="tooltip-wrap">
+            <button class="info-icon" type="button" aria-label="What counts as a click?">i</button>
+            <span class="tooltip-popover">
+              Every block interaction — outbound link clicks, Stripe checkouts, social-icon taps, accordion expands. Counted at every tier per <strong>DEC-077</strong>.
+            </span>
+          </span>
+        </div>
+        <div class="kpi-num">847</div>
+        <span class="kpi-delta up">▲ 19.2%</span>
+        <svg class="kpi-spark" viewBox="0 0 200 36" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,30 L20,28 L40,22 L60,18 L80,16 L100,12 L120,18 L140,8 L160,14 L180,6 L200,10" fill="none" stroke="#F59E0B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="kpi-foot tier-pro">vs 711 previous 7 days</div>
+      </div>
+
+      <!-- Conversion rate -->
+      <div class="kpi-tile">
+        <div class="kpi-label">
+          Conversion rate
+          <span class="tooltip-wrap">
+            <button class="info-icon" type="button" aria-label="How is CTR computed?">i</button>
+            <span class="tooltip-popover">
+              Clicks ÷ pageviews. Tells you how often a visit turned into at least one block click. <strong>42% is strong</strong> — most link-in-bio pages run 15-25%.
+            </span>
+          </span>
+        </div>
+        <div class="kpi-num">42<span class="kpi-suffix">%</span></div>
+        <span class="kpi-delta up">▲ 3.2pp</span>
+        <svg class="kpi-spark" viewBox="0 0 200 36" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,22 L20,20 L40,24 L60,18 L80,16 L100,14 L120,18 L140,12 L160,14 L180,10 L200,11" fill="none" stroke="#10B981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="kpi-foot tier-pro">vs 38.8% previous 7 days</div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TIME-SERIES CHART (primary visual canvas)
+         ============================================================ -->
+    <section class="chart-shell">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Activity over time</h2>
+          <p class="panel-sub">Pageviews and clicks for the last 7 days. Hover any day for exact numbers; the spike on Tuesday matched your TikTok going viral.</p>
+        </div>
+        <div class="chart-toggles" role="tablist" aria-label="Chart granularity">
+          <button class="active" data-granularity="day">Daily</button>
+          <button data-granularity="hour" id="hourly-toggle" onclick="alert('Mockup — would re-bucket data to hour-of-day')">Hourly</button>
+        </div>
+      </div>
+
+      <div class="chart-legend" style="margin-top:6px;margin-bottom:6px">
+        <span class="chart-legend-item"><span class="chart-legend-dot"></span> Pageviews</span>
+        <span class="chart-legend-item"><span class="chart-legend-dot dot-clicks"></span> Clicks</span>
+        <span class="chart-legend-item compare-legend" style="display:none"><span class="chart-legend-dot dot-prev"></span> Previous 7 days</span>
+      </div>
+
+      <div class="chart-canvas" id="chart-canvas">
+        <!-- Time-series SVG: hand-drawn area + line, with axes -->
+        <svg viewBox="0 0 800 280" preserveAspectRatio="none" aria-label="7-day activity chart">
+          <defs>
+            <linearGradient id="ts-area-pv" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#6366F1" stop-opacity="0.32"/>
+              <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Y-grid lines -->
+          <g stroke="rgba(156,163,175,0.18)" stroke-dasharray="3 4" stroke-width="1">
+            <line x1="40"  y1="40"  x2="780" y2="40"/>
+            <line x1="40"  y1="100" x2="780" y2="100"/>
+            <line x1="40"  y1="160" x2="780" y2="160"/>
+            <line x1="40"  y1="220" x2="780" y2="220"/>
+          </g>
+
+          <!-- Y-axis labels -->
+          <g font-family="Inter" font-size="10" fill="#9CA3AF">
+            <text x="34" y="44"  text-anchor="end">600</text>
+            <text x="34" y="104" text-anchor="end">400</text>
+            <text x="34" y="164" text-anchor="end">200</text>
+            <text x="34" y="224" text-anchor="end">0</text>
+          </g>
+
+          <!-- X-axis labels (7 days) -->
+          <g font-family="Inter" font-size="10" fill="#9CA3AF" text-anchor="middle">
+            <text x="93"  y="252">Apr 20</text>
+            <text x="200" y="252">Apr 21</text>
+            <text x="307" y="252">Apr 22</text>
+            <text x="414" y="252">Apr 23</text>
+            <text x="521" y="252">Apr 24</text>
+            <text x="628" y="252">Apr 25</text>
+            <text x="735" y="252">Apr 26</text>
+          </g>
+
+          <!-- Previous-period dashed line (Compare mode — initially hidden) -->
+          <g id="ts-compare-group" style="display:none">
+            <path d="M 93,170 L 200,158 L 307,150 L 414,154 L 521,142 L 628,148 L 735,140"
+                  fill="none" stroke="#9CA3AF" stroke-width="1.6" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+
+          <!-- Pageviews — filled area + line. Values: 218, 245, 488 (TikTok spike), 282, 326, 351, 412 -->
+          <path d="M 93,156 L 200,148 L 307,77 L 414,135 L 521,122 L 628,113 L 735,98 L 735,220 L 93,220 Z"
+                fill="url(#ts-area-pv)"/>
+          <path d="M 93,156 L 200,148 L 307,77 L 414,135 L 521,122 L 628,113 L 735,98"
+                fill="none" stroke="#6366F1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Pageview points -->
+          <g fill="#6366F1">
+            <circle cx="93"  cy="156" r="3.5"/>
+            <circle cx="200" cy="148" r="3.5"/>
+            <circle cx="307" cy="77"  r="4.5" stroke="#fff" stroke-width="2"/>
+            <circle cx="414" cy="135" r="3.5"/>
+            <circle cx="521" cy="122" r="3.5"/>
+            <circle cx="628" cy="113" r="3.5"/>
+            <circle cx="735" cy="98"  r="3.5"/>
+          </g>
+
+          <!-- Clicks line. Values: 89, 102, 215, 124, 138, 152, 174 -->
+          <path d="M 93,193 L 200,189 L 307,156 L 414,182 L 521,178 L 628,170 L 735,164"
+                fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="0" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="#F59E0B">
+            <circle cx="93"  cy="193" r="3"/>
+            <circle cx="200" cy="189" r="3"/>
+            <circle cx="307" cy="156" r="3.5" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="414" cy="182" r="3"/>
+            <circle cx="521" cy="178" r="3"/>
+            <circle cx="628" cy="170" r="3"/>
+            <circle cx="735" cy="164" r="3"/>
+          </g>
+        </svg>
+
+        <!-- Annotation pin: Tuesday TikTok spike -->
+        <div class="chart-pin" style="left:38.4%; top:24%" title="Tuesday — TikTok went viral · 488 pageviews, 215 clicks">
+          🎵 TikTok went viral
+        </div>
+
+        <!-- Hover guide + tooltip (positioned by JS) -->
+        <div class="chart-hover-guide" id="chart-hover-guide"></div>
+        <div class="chart-hover-tooltip" id="chart-hover-tooltip">
+          <div class="htt-date">Apr 22</div>
+          <div class="htt-row"><span class="htt-dot"></span> Pageviews <strong style="margin-left:auto">488</strong></div>
+          <div class="htt-row"><span class="htt-dot dot-clicks"></span> Clicks <strong style="margin-left:auto">215</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TRAFFIC SOURCES — explainable two-pane (replaces opaque heatmap)
+         ============================================================ -->
+    <section class="sources-shell">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Traffic sources</h2>
+          <p class="panel-sub">Where your visitors actually came from. Click a source to see the blocks they clicked most.</p>
+        </div>
+      </div>
+
+      <div class="sources-method">
+        <span class="lock">🔒</span>
+        <div>
+          <strong>How we know this:</strong> We detect traffic source from the standard HTTP <code style="font-family:var(--font-mono);font-size:11.5px;background:var(--bg-elevated);padding:1px 5px;border-radius:4px">Referer</code> header your visitor's browser sends — the same way every website has known where you came from since 1995. We never store the specific URL or use cookies. Some traffic appears as <em>Direct</em> when in-app browsers (TikTok, Instagram apps) strip referrer information. Add <code style="font-family:var(--font-mono);font-size:11.5px;background:var(--bg-elevated);padding:1px 5px;border-radius:4px">?utm_source=tiktok</code> to your shared links for 100% accurate attribution.
+        </div>
+      </div>
+
+      <div class="sources-grid">
+
+        <!-- LEFT: source list -->
+        <div class="source-list" role="tablist" aria-label="Traffic sources">
+
+          <button class="source-row active" role="tab" data-source="tiktok" onclick="setSource(this, 'tiktok')">
+            <span class="src-icon" style="background:rgba(255,0,80,0.10);color:#FF0050">🎵</span>
+            <div>
+              <div class="src-name">TikTok</div>
+              <div class="src-bar-track"><div class="src-bar-fill" style="width:42%"></div></div>
+            </div>
+            <div class="src-pct">42<span style="font-size:10px;color:var(--fg-subtle);font-weight:500">%</span></div>
+            <div class="src-count">847 visits</div>
+          </button>
+
+          <button class="source-row" role="tab" data-source="instagram" onclick="setSource(this, 'instagram')">
+            <span class="src-icon" style="background:rgba(237,71,150,0.10);color:#E1306C">📸</span>
+            <div>
+              <div class="src-name">Instagram</div>
+              <div class="src-bar-track"><div class="src-bar-fill" style="width:28%"></div></div>
+            </div>
+            <div class="src-pct">28<span style="font-size:10px;color:var(--fg-subtle);font-weight:500">%</span></div>
+            <div class="src-count">560 visits</div>
+          </button>
+
+          <button class="source-row" role="tab" data-source="direct" onclick="setSource(this, 'direct')">
+            <span class="src-icon" style="background:var(--bg-muted)">🔗</span>
+            <div>
+              <div class="src-name">Direct <span style="font-size:10px;color:var(--fg-subtle);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-left:4px">no referrer</span></div>
+              <div class="src-bar-track"><div class="src-bar-fill" style="width:18%"></div></div>
+            </div>
+            <div class="src-pct">18<span style="font-size:10px;color:var(--fg-subtle);font-weight:500">%</span></div>
+            <div class="src-count">360 visits</div>
+          </button>
+
+          <button class="source-row" role="tab" data-source="youtube" onclick="setSource(this, 'youtube')">
+            <span class="src-icon" style="background:rgba(255,0,0,0.10);color:#FF0000">📺</span>
+            <div>
+              <div class="src-name">YouTube</div>
+              <div class="src-bar-track"><div class="src-bar-fill" style="width:7%"></div></div>
+            </div>
+            <div class="src-pct">7<span style="font-size:10px;color:var(--fg-subtle);font-weight:500">%</span></div>
+            <div class="src-count">140 visits</div>
+          </button>
+
+          <button class="source-row" role="tab" data-source="twitter" onclick="setSource(this, 'twitter')">
+            <span class="src-icon" style="background:rgba(0,0,0,0.06);color:var(--fg)">𝕏</span>
+            <div>
+              <div class="src-name">Twitter / X</div>
+              <div class="src-bar-track"><div class="src-bar-fill" style="width:5%"></div></div>
+            </div>
+            <div class="src-pct">5<span style="font-size:10px;color:var(--fg-subtle);font-weight:500">%</span></div>
+            <div class="src-count">100 visits</div>
+          </button>
+        </div>
+
+        <!-- RIGHT: drill-down panel for selected source -->
+        <div class="src-detail" id="src-detail">
+          <div class="src-detail-head">
+            <span class="src-icon" id="src-detail-icon" style="color:#FF0050">🎵</span>
+            <div>
+              <h4 id="src-detail-title">Most clicked from TikTok</h4>
+              <div class="src-detail-meta" id="src-detail-meta">847 visits → 392 clicks · 46.3% conversion</div>
+            </div>
+          </div>
+          <div id="src-detail-body">
+            <div class="top-block-row">
+              <span class="tb-rank">1.</span>
+              <span class="tb-name"><span class="tb-icon">💳</span> <span class="tb-label">Stripe checkout — Ultimate Fitness Course</span></span>
+              <span class="tb-clicks">186</span>
+            </div>
+            <div class="top-block-row">
+              <span class="tb-rank">2.</span>
+              <span class="tb-name"><span class="tb-icon">🛍️</span> <span class="tb-label">TikTok Shop link</span></span>
+              <span class="tb-clicks">89</span>
+            </div>
+            <div class="top-block-row">
+              <span class="tb-rank">3.</span>
+              <span class="tb-name"><span class="tb-icon">📧</span> <span class="tb-label">Free PDF: 10 Morning Habits</span></span>
+              <span class="tb-clicks">62</span>
+            </div>
+            <div class="top-block-row">
+              <span class="tb-rank">4.</span>
+              <span class="tb-name"><span class="tb-icon">🎯</span> <span class="tb-label">1:1 Coaching Session</span></span>
+              <span class="tb-clicks">31</span>
+            </div>
+            <div class="top-block-row">
+              <span class="tb-rank">5.</span>
+              <span class="tb-name"><span class="tb-icon">🛒</span> <span class="tb-label">Peloton Bike+ (affiliate)</span></span>
+              <span class="tb-clicks">14</span>
+            </div>
+            <div class="top-block-row">
+              <span class="tb-rank">6.</span>
+              <span class="tb-name"><span class="tb-icon">🎙️</span> <span class="tb-label">My podcast: Strong Not Skinny</span></span>
+              <span class="tb-clicks">10</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TOP BLOCKS — full ranked list (ungated per DEC-076 Option 9)
+         ============================================================ -->
+    <section class="blocks-shell">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Top blocks <span class="chip muted" style="margin-left:4px;font-size:10.5px">all tiers</span></h2>
+          <p class="panel-sub">Every block on your page, ranked by clicks. Click a row to see traffic sources, hour-of-day, and time-series for that block.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--fg-subtle)">Sort by:</span>
+          <select style="font-family:var(--font-sans);font-size:12.5px;font-weight:600;padding:5px 8px;border-radius:7px;border:1px solid var(--border-strong);background:var(--bg-elevated);color:var(--fg);cursor:pointer">
+            <option>Clicks (desc)</option>
+            <option>Click-through rate</option>
+            <option>Page position</option>
+            <option>Recently changed</option>
+          </select>
+        </div>
+      </div>
+
+      <table class="blocks-table">
+        <thead>
+          <tr>
+            <th>Block</th>
+            <th class="col-page">On page</th>
+            <th class="num">Clicks</th>
+            <th class="num">CTR</th>
+            <th class="col-spark">Last 7 days</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr onclick="alert('Mockup — would drill into block detail view (sources × time-series × hour-of-day for this block)')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(99,102,241,0.10);color:var(--brand-primary)">💳</span>
+                <span class="b-label">Stripe checkout — Ultimate Fitness Course</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">312</td>
+            <td class="num" style="color:#059669">15.5%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,18 L14,16 L28,8 L42,14 L56,12 L70,10 L84,7" fill="none" stroke="#6366F1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(245,158,11,0.10);color:var(--brand-warm-dark)">🛍️</span>
+                <span class="b-label">TikTok Shop link</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">198</td>
+            <td class="num" style="color:#059669">9.9%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,18 L14,15 L28,4 L42,16 L56,14 L70,12 L84,10" fill="none" stroke="#F59E0B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(139,92,246,0.10);color:var(--brand-secondary)">📧</span>
+                <span class="b-label">Free PDF: 10 Morning Habits of High-Energy Women</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">128</td>
+            <td class="num">6.4%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,16 L14,14 L28,12 L42,10 L56,9 L70,7 L84,6" fill="none" stroke="#8B5CF6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(16,185,129,0.10);color:#059669">🎯</span>
+                <span class="b-label">1:1 Coaching Session</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">76</td>
+            <td class="num">3.8%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,17 L14,16 L28,12 L42,14 L56,11 L70,12 L84,9" fill="none" stroke="#10B981" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(99,102,241,0.10);color:var(--brand-primary)">📸</span>
+                <span class="b-label">Latest on Instagram (embed)</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">52</td>
+            <td class="num">2.6%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,15 L14,15 L28,11 L42,13 L56,14 L70,11 L84,12" fill="none" stroke="#6366F1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(245,158,11,0.10);color:var(--brand-warm-dark)">🛒</span>
+                <span class="b-label">Peloton Bike+ (affiliate)</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">38</td>
+            <td class="num">1.9%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,18 L14,16 L28,15 L42,14 L56,13 L70,11 L84,12" fill="none" stroke="#F59E0B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:rgba(245,158,11,0.10);color:var(--brand-warm-dark)">🛒</span>
+                <span class="b-label">Gymshark — Alexandra's picks</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">29</td>
+            <td class="num">1.5%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,17 L14,16 L28,16 L42,14 L56,12 L70,13 L84,11" fill="none" stroke="#F59E0B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+          <tr onclick="alert('Mockup — would drill into block detail')">
+            <td>
+              <div class="b-name">
+                <span class="b-icon" style="background:#0F1115;color:#fff">🎙️</span>
+                <span class="b-label">My podcast: Strong Not Skinny</span>
+              </div>
+            </td>
+            <td class="col-page"><span class="b-page-pill">Home</span></td>
+            <td class="num">14</td>
+            <td class="num">0.7%</td>
+            <td class="col-spark">
+              <svg class="b-spark" viewBox="0 0 84 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0,17 L14,17 L28,16 L42,17 L56,15 L70,16 L84,14" fill="none" stroke="#0F1115" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="blocks-foot">
+        <span>Showing 8 of 8 blocks · clicks counted at every tier (DEC-077)</span>
+        <button class="panel-action" onclick="alert('Mockup — would drill into per-block detail')">Open block detail view →</button>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         3-UP: Geo / Devices / Referrers (all ungated per DEC-076 Option 9)
+         ============================================================ -->
+    <h2 class="section-heading">Audience breakdown <span class="chip muted">all tiers — DEC-076 Option 9</span></h2>
+
+    <div class="three-up">
+
+      <!-- Geographic -->
+      <div class="mini-card">
+        <div class="mc-head">
+          <h3>🌍 Top countries</h3>
+          <button class="mc-action" id="cities-toggle" onclick="toggleCities()">Show cities</button>
+        </div>
+        <div class="bar-list" id="geo-list">
+          <div class="bar-row">
+            <span class="bar-label">🇺🇸 United States</span>
+            <span class="bar-track"><span class="bar-fill" style="width:38%"></span></span>
+            <span class="bar-pct">38%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">🇵🇹 Portugal</span>
+            <span class="bar-track"><span class="bar-fill" style="width:18%"></span></span>
+            <span class="bar-pct">18%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">🇧🇷 Brazil</span>
+            <span class="bar-track"><span class="bar-fill" style="width:12%"></span></span>
+            <span class="bar-pct">12%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">🇬🇧 United Kingdom</span>
+            <span class="bar-track"><span class="bar-fill" style="width:9%"></span></span>
+            <span class="bar-pct">9%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">🇨🇦 Canada</span>
+            <span class="bar-track"><span class="bar-fill" style="width:7%"></span></span>
+            <span class="bar-pct">7%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">🌐 16 other</span>
+            <span class="bar-track"><span class="bar-fill" style="width:16%;background:var(--fg-subtle)"></span></span>
+            <span class="bar-pct">16%</span>
+          </div>
+        </div>
+        <div class="bar-list" id="cities-list" style="display:none;border-top:1px dashed var(--border);padding-top:10px;margin-top:6px">
+          <div style="font-size:11.5px;color:var(--fg-subtle);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px">Top cities</div>
+          <div class="bar-row"><span class="bar-label">Lisbon, PT</span><span class="bar-track"><span class="bar-fill" style="width:11%"></span></span><span class="bar-pct">11%</span></div>
+          <div class="bar-row"><span class="bar-label">New York, US</span><span class="bar-track"><span class="bar-fill" style="width:8%"></span></span><span class="bar-pct">8%</span></div>
+          <div class="bar-row"><span class="bar-label">São Paulo, BR</span><span class="bar-track"><span class="bar-fill" style="width:6%"></span></span><span class="bar-pct">6%</span></div>
+          <div class="bar-row"><span class="bar-label">London, UK</span><span class="bar-track"><span class="bar-fill" style="width:5%"></span></span><span class="bar-pct">5%</span></div>
+          <div class="bar-row"><span class="bar-label">Los Angeles, US</span><span class="bar-track"><span class="bar-fill" style="width:5%"></span></span><span class="bar-pct">5%</span></div>
+        </div>
+      </div>
+
+      <!-- Devices -->
+      <div class="mini-card">
+        <div class="mc-head">
+          <h3>📱 Devices</h3>
+          <button class="mc-action" onclick="alert('Mockup — would expand device drill-down')">Detail →</button>
+        </div>
+        <div class="bar-list">
+          <div class="bar-row">
+            <span class="bar-label">📱 Mobile</span>
+            <span class="bar-track"><span class="bar-fill warm" style="width:78%"></span></span>
+            <span class="bar-pct">78%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">💻 Desktop</span>
+            <span class="bar-track"><span class="bar-fill warm" style="width:18%"></span></span>
+            <span class="bar-pct">18%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">📲 Tablet</span>
+            <span class="bar-track"><span class="bar-fill warm" style="width:4%"></span></span>
+            <span class="bar-pct">4%</span>
+          </div>
+        </div>
+        <div class="device-toggle-row">
+          <strong>Browsers:</strong>
+          <span>Safari 54%</span>
+          <span>· Chrome 31%</span>
+          <span>· in-app TikTok 11%</span>
+          <span>· Other 4%</span>
+        </div>
+      </div>
+
+      <!-- Top referrers (raw) -->
+      <div class="mini-card">
+        <div class="mc-head">
+          <h3>🔗 Top referrers</h3>
+          <button class="mc-action" onclick="alert('Mockup — would show all referrers')">All →</button>
+        </div>
+        <div class="bar-list">
+          <div class="bar-row"><span class="bar-label" style="font-family:var(--font-mono);font-size:11.5px">tiktok.com</span><span class="bar-track"><span class="bar-fill" style="width:42%"></span></span><span class="bar-pct">42%</span></div>
+          <div class="bar-row"><span class="bar-label" style="font-family:var(--font-mono);font-size:11.5px">l.instagram.com</span><span class="bar-track"><span class="bar-fill" style="width:24%"></span></span><span class="bar-pct">24%</span></div>
+          <div class="bar-row"><span class="bar-label" style="font-family:var(--font-mono);font-size:11.5px">(direct)</span><span class="bar-track"><span class="bar-fill" style="width:18%"></span></span><span class="bar-pct">18%</span></div>
+          <div class="bar-row"><span class="bar-label" style="font-family:var(--font-mono);font-size:11.5px">youtube.com</span><span class="bar-track"><span class="bar-fill" style="width:7%"></span></span><span class="bar-pct">7%</span></div>
+          <div class="bar-row"><span class="bar-label" style="font-family:var(--font-mono);font-size:11.5px">t.co</span><span class="bar-track"><span class="bar-fill" style="width:5%"></span></span><span class="bar-pct">5%</span></div>
+          <div class="bar-row"><span class="bar-label" style="font-family:var(--font-mono);font-size:11.5px">11 others</span><span class="bar-track"><span class="bar-fill" style="width:4%;background:var(--fg-subtle)"></span></span><span class="bar-pct">4%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         CROSS-TAB ANALYSIS — redesigned for self-explanatory drill
+         ============================================================ -->
+    <section class="crosstab-shell">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Cross-tab analysis <span class="chip muted">all tiers</span></h2>
+          <p class="panel-sub">Slice your data along any two dimensions. Default view: source × block. Click any cell to drill in.</p>
+        </div>
+        <button class="panel-action" onclick="alert('Mockup — would reset to default rows=Source, cols=Block')">Reset to default</button>
+      </div>
+
+      <div class="crosstab-help">
+        <strong>How to read this:</strong> rows are one dimension, columns are another, cell value is total clicks where they intersect. Want to know if Tuesday's TikTok post drove Stripe-link clicks at 9 PM? Set <kbd>Rows = Hour of day</kbd>, <kbd>Cols = Block</kbd>, then filter source = TikTok in the source list above. <strong>Hover a cell</strong> for share-of-total + drill-down.
+      </div>
+
+      <div class="crosstab-controls">
+        <label for="ct-rows">Rows:</label>
+        <select id="ct-rows" onchange="alert('Mockup — would re-render the table with the new row dimension')">
+          <option value="source" selected>Source</option>
+          <option value="country">Country</option>
+          <option value="device">Device</option>
+          <option value="day">Day of week</option>
+          <option value="hour">Hour of day</option>
+          <option value="block">Block</option>
+          <option value="referrer">Referrer</option>
+        </select>
+        <label for="ct-cols">Columns:</label>
+        <select id="ct-cols" onchange="alert('Mockup — would re-render the table with the new column dimension')">
+          <option value="source">Source</option>
+          <option value="country">Country</option>
+          <option value="device">Device</option>
+          <option value="day">Day of week</option>
+          <option value="hour">Hour of day</option>
+          <option value="block" selected>Block</option>
+          <option value="referrer">Referrer</option>
+        </select>
+        <span style="margin-left:auto;font-size:11.5px;color:var(--fg-subtle)">Showing <strong>5 sources × 6 blocks</strong> · 7-day window</span>
+      </div>
+
+      <div class="crosstab-table-wrap">
+        <table class="crosstab-table" aria-label="Cross-tab: source × block click counts">
+          <thead>
+            <tr>
+              <th class="row-header" style="text-align:left">Source ↓ / Block →</th>
+              <th>💳 Stripe</th>
+              <th>🛍️ TikTok Shop</th>
+              <th>📧 Free PDF</th>
+              <th>🎯 Coaching</th>
+              <th>📸 IG embed</th>
+              <th>🛒 Affiliates</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-header">🎵 TikTok</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.55);color:#fff" data-share="22.0%">186</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.30);color:#fff" data-share="10.5%">89</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.20);color:var(--fg)" data-share="7.3%">62</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.10);color:var(--fg)" data-share="3.7%">31</td>
+              <td class="ct-cell ct-zero" data-share="0.5%">4</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.05);color:var(--fg)" data-share="2.8%">24</td>
+            </tr>
+            <tr>
+              <td class="row-header">📸 Instagram</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.20);color:var(--fg)" data-share="6.4%">54</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.10);color:var(--fg)" data-share="3.0%">25</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.18);color:var(--fg)" data-share="5.7%">48</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.08);color:var(--fg)" data-share="2.4%">20</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.12);color:var(--fg)" data-share="3.8%">32</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.05);color:var(--fg)" data-share="1.5%">13</td>
+            </tr>
+            <tr>
+              <td class="row-header">🔗 Direct</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.18);color:var(--fg)" data-share="5.7%">48</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.05);color:var(--fg)" data-share="1.4%">12</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.06);color:var(--fg)" data-share="1.8%">15</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.05);color:var(--fg)" data-share="1.7%">14</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.04);color:var(--fg)" data-share="1.5%">13</td>
+              <td class="ct-cell ct-zero" data-share="0.7%">6</td>
+            </tr>
+            <tr>
+              <td class="row-header">📺 YouTube</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.05);color:var(--fg)" data-share="2.4%">20</td>
+              <td class="ct-cell ct-zero" data-share="0.6%">5</td>
+              <td class="ct-cell ct-zero" data-share="0.5%">4</td>
+              <td class="ct-cell ct-zero" data-share="0.7%">6</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.06);color:var(--fg)" data-share="2.0%">17</td>
+              <td class="ct-cell ct-zero" data-share="0.4%">3</td>
+            </tr>
+            <tr>
+              <td class="row-header">𝕏 Twitter</td>
+              <td class="ct-cell" style="background:rgba(99,102,241,0.04);color:var(--fg)" data-share="1.0%">8</td>
+              <td class="ct-cell ct-zero" data-share="0.0%">0</td>
+              <td class="ct-cell ct-zero" data-share="0.5%">4</td>
+              <td class="ct-cell ct-zero" data-share="0.0%">0</td>
+              <td class="ct-cell ct-zero" data-share="0.7%">6</td>
+              <td class="ct-cell ct-zero" data-share="0.4%">3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size:11.5px;color:var(--fg-subtle);margin-top:10px;line-height:1.5">
+        <strong style="color:var(--fg-muted)">Reading the table:</strong> the darker the cell, the more clicks. Empty/dim cells are zero or near-zero. Tip: the brightest cell is your <em>most reliable funnel</em> — TikTok → Stripe checkout (186 clicks, 22% of all clicks).
+      </p>
+    </section>
+
+    <!-- ============================================================
+         POWER FEATURES — tier-gated cards (DEC-076 Option 9)
+         ============================================================ -->
+    <h2 class="section-heading">Power features <span class="chip muted" id="power-tier-label">your tier: Pro</span></h2>
+
+    <div class="locked-grid">
+
+      <!-- 1. Saved views — Pro+ -->
+      <div class="locked-card" id="card-saved-views" data-locked="false" data-min-tier="pro">
+        <div class="locked-card-head">
+          <h3>📌 Saved views</h3>
+          <span class="chip pro">Pro+</span>
+        </div>
+        <p class="locked-card-sub">Bookmark your favourite cross-tab combinations. Switch between "Tuesday post performance" and "USA mobile checkout" with one click.</p>
+        <div class="locked-card-body">
+          <div class="lc-preview" style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="saved-view-chip"><span class="sv-dot"></span> Tuesday TikTok post</span>
+            <span class="saved-view-chip"><span class="sv-dot" style="background:var(--brand-warm)"></span> US mobile checkout</span>
+            <span class="saved-view-chip"><span class="sv-dot" style="background:var(--brand-secondary)"></span> Coaching funnel</span>
+            <span class="saved-view-chip" style="background:var(--bg-elevated);border-style:dashed;color:var(--fg-muted)">+ Save current view</span>
+          </div>
+          <div class="lc-cta-overlay">
+            <span class="lc-lock-icon">🔒</span>
+            <p class="lc-cta-msg"><strong>You already have all your data.</strong> Saved views lets you bookmark your favourite cross-tab combinations.</p>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Pro →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. A/B testing — Business -->
+      <div class="locked-card" id="card-ab" data-locked="true" data-min-tier="business">
+        <div class="locked-card-head">
+          <h3>🧪 A/B testing framework</h3>
+          <span class="chip business">Business</span>
+        </div>
+        <p class="locked-card-sub">Test two variants of any block (label, image, CTA, target URL) at a 50/50 split. We pick the winner automatically when significance threshold is reached.</p>
+        <div class="locked-card-body">
+          <div class="lc-preview">
+            <div class="faux-row"><span class="faux-pic">A</span><span class="faux-name">Stripe checkout — "Get the course $127"</span><span class="faux-num">186</span></div>
+            <div class="faux-row"><span class="faux-pic">B</span><span class="faux-name">Stripe checkout — "Start training today"</span><span class="faux-num">241</span></div>
+            <div class="faux-row" style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"><span class="faux-pic" style="background:rgba(16,185,129,0.15);color:#059669">✓</span><span class="faux-name" style="color:#059669;font-weight:600">Variant B winning · 95% confidence</span><span class="faux-num">+30%</span></div>
+          </div>
+          <div class="lc-cta-overlay">
+            <span class="lc-lock-icon">🔒</span>
+            <p class="lc-cta-msg"><strong>A/B testing — Business tier.</strong> Auto-pick winners, no significance math needed.</p>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Scheduled email digest — Business -->
+      <div class="locked-card" id="card-digest" data-locked="true" data-min-tier="business">
+        <div class="locked-card-head">
+          <h3>📬 Scheduled email digest</h3>
+          <span class="chip business">Business</span>
+        </div>
+        <p class="locked-card-sub">Get this dashboard in your inbox every Monday morning — top blocks, traffic, week-over-week deltas. Send a copy to your manager too.</p>
+        <div class="locked-card-body">
+          <div class="lc-preview" style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">Send to:</span><span class="saved-view-chip">alexandra@example.com</span><span class="saved-view-chip">+ Add</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">When:</span><span class="saved-view-chip">Monday 9:00 (Europe/Lisbon)</span></div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><span style="font-weight:600">Include:</span><span class="saved-view-chip">KPIs</span><span class="saved-view-chip">Top blocks</span><span class="saved-view-chip">Traffic sources</span></div>
+          </div>
+          <div class="lc-cta-overlay">
+            <span class="lc-lock-icon">🔒</span>
+            <p class="lc-cta-msg"><strong>Scheduled email digests — Business tier.</strong> Hands-off weekly summary delivered to any inbox.</p>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Replay (Business) -->
+      <div class="locked-card" id="card-replay" data-locked="true" data-min-tier="business">
+        <div class="locked-card-head">
+          <h3>⏯ Replay traffic minute-by-minute</h3>
+          <span class="chip business">Business</span>
+        </div>
+        <p class="locked-card-sub">Scrub back through any past hour second-by-second. See the exact moment your TikTok went viral. <em style="color:var(--fg-subtle)">Capped at 60 min/day per creator (DEC-082).</em></p>
+        <div class="locked-card-body">
+          <div class="lc-preview" style="display:flex;flex-direction:column;gap:8px">
+            <div style="height:30px;background:linear-gradient(90deg, rgba(99,102,241,0.06) 0%, rgba(99,102,241,0.50) 38%, rgba(99,102,241,0.10) 50%, rgba(99,102,241,0.20) 100%);border-radius:6px;position:relative">
+              <div style="position:absolute;top:-4px;bottom:-4px;left:38%;width:2px;background:var(--brand-primary);border-radius:1px"></div>
+              <div style="position:absolute;left:38%;top:-22px;transform:translateX(-50%);font-size:10.5px;color:var(--brand-primary);font-weight:600;white-space:nowrap">21:14 ▼</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-muted)"><span>← Apr 22, 21:00</span><span style="margin-left:auto">Apr 22, 22:00 →</span></div>
+            <div style="display:flex;gap:6px;font-size:11.5px;color:var(--fg-muted)"><span class="saved-view-chip">▶ Play</span><span class="saved-view-chip">1× speed</span><span class="saved-view-chip">+ Mark moment</span></div>
+          </div>
+          <div class="lc-cta-overlay">
+            <span class="lc-lock-icon">🔒</span>
+            <p class="lc-cta-msg"><strong>Replay scrubber — Business tier.</strong> See your traffic happen, second by second.</p>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Identity stitching — Business -->
+      <div class="locked-card" id="card-identity" data-locked="true" data-min-tier="business">
+        <div class="locked-card-head">
+          <h3>🪡 Identity stitching</h3>
+          <span class="chip business">Business</span>
+        </div>
+        <p class="locked-card-sub">Connect anonymous web visitors to your email subscribers when they click a tracked link from your newsletter. Still cookieless — uses a one-time signed token, never stored long-term.</p>
+        <div class="locked-card-body">
+          <div class="lc-preview">
+            <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">jane@example.com → 4 visits, 2 purchases</span><span class="faux-num">$254</span></div>
+            <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">mark@example.com → 7 visits, 1 coaching</span><span class="faux-num">$49</span></div>
+            <div class="faux-row"><span class="faux-pic">📧</span><span class="faux-name">amelia@example.com → 12 visits, 3 purchases</span><span class="faux-num">$381</span></div>
+          </div>
+          <div class="lc-cta-overlay">
+            <span class="lc-lock-icon">🔒</span>
+            <p class="lc-cta-msg"><strong>Identity stitching — Business tier.</strong> Bridge anonymous traffic with your email list — privacy-first.</p>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Parquet R2 archive — Business (DEC-078) -->
+      <div class="locked-card" id="card-parquet" data-locked="true" data-min-tier="business">
+        <div class="locked-card-head">
+          <h3>📦 Parquet R2 archive</h3>
+          <span class="chip business">Business</span>
+        </div>
+        <p class="locked-card-sub">Monthly snapshot of every event, queryable from your own warehouse (DuckDB, BigQuery, Snowflake). Per <strong>DEC-078</strong>: D1 rollups stay forever; raw events archive monthly.</p>
+        <div class="locked-card-body">
+          <div class="lc-preview" style="display:flex;flex-direction:column;gap:8px">
+            <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-04.parquet · 1.2 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
+            <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-03.parquet · 1.4 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
+            <div class="faux-row"><span class="faux-pic">📦</span><span class="faux-name" style="font-family:var(--font-mono);font-size:11.5px">2026-02.parquet · 1.0 MB</span><span class="faux-num" style="font-family:var(--font-sans);font-weight:600">Download</span></div>
+          </div>
+          <div class="lc-cta-overlay">
+            <span class="lc-lock-icon">🔒</span>
+            <p class="lc-cta-msg"><strong>Parquet R2 archive — Business tier.</strong> Bring your own warehouse, query every event you've ever logged.</p>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Business →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         FOOTER PRIVACY BANNER (verbatim per DEC-075)
+         ============================================================ -->
+    <div class="privacy-footer" role="note">
+      <span class="lock-icon">🔒</span>
+      <div>
+        <strong>Cookieless analytics.</strong> No cookie banner shown to your visitors.
+        We chose this on purpose — fewer interruptions, more conversions, full privacy promise to your audience.
+        <a href="./landing.html#privacy">Read the full methodology →</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     DEMO HELPER TOOLBAR (mockup reviewer only)
+     ============================================================ -->
+<div class="demo-toolbar" aria-hidden="true">
+  <div class="dt-label">Mockup: tier switcher</div>
+  <div class="dt-btns" id="dt-btns">
+    <button data-tier="free" onclick="setTier('free')">Free</button>
+    <button data-tier="creator" onclick="setTier('creator')">Creator</button>
+    <button data-tier="pro" class="is-active" onclick="setTier('pro')">Pro ✓</button>
+    <button data-tier="business" onclick="setTier('business')">Business</button>
+  </div>
+</div>
+
+<script src="./shared/tokens.js"></script>
+<script>
+  /* =====================================================================
+     Theme toggle
+     ===================================================================== */
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+  }
+
+  /* =====================================================================
+     Page selector menu
+     ===================================================================== */
+  function togglePageMenu(ev) {
+    ev.stopPropagation();
+    var menu = document.getElementById('page-selector-menu');
+    var trigger = document.getElementById('page-selector-trigger');
+    var isOpen = menu.classList.toggle('open');
+    trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+  document.addEventListener('click', function() {
+    var menu = document.getElementById('page-selector-menu');
+    if (menu) menu.classList.remove('open');
+    var trigger = document.getElementById('page-selector-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  });
+  document.getElementById('page-selector-menu').addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  /* =====================================================================
+     Time-range picker (tier-aware)
+     ===================================================================== */
+  var TIME_RANGES = {
+    free:    ['7d'],
+    creator: ['7d', '30d', '90d'],
+    pro:     ['7d', '30d', '90d', '1y'],
+    business:['7d', '30d', '90d', '1y', 'all']
+  };
+  var TIME_LABEL = { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days', '1y': 'Last year', 'all': 'All time' };
+  var ACTIVE_RANGE = '7d';
+
+  function renderTimeRange(tier) {
+    var host = document.getElementById('time-range-host');
+    var ranges = TIME_RANGES[tier] || TIME_RANGES.pro;
+
+    if (tier === 'free') {
+      // Free has only 7d — render a static chip with explanation
+      host.innerHTML =
+        '<div class="time-range-static tooltip-wrap">' +
+        '  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+        '  Last 7 days' +
+        '  <span class="tooltip-popover">Free tier window is 7 days. Upgrade to Creator (90d), Pro (1 year), or Business (all-time).</span>' +
+        '</div>';
+      return;
+    }
+
+    var html = '<div class="time-range" role="tablist" aria-label="Time range">';
+    ranges.forEach(function(r) {
+      var label = r === '7d' ? '7d' : r === '30d' ? '30d' : r === '90d' ? '90d' : r === '1y' ? '1y' : 'All';
+      html += '<button data-range="' + r + '" class="' + (r === ACTIVE_RANGE ? 'active' : '') + '" onclick="setRange(\'' + r + '\')">' + label + '</button>';
+    });
+    html += '</div>';
+    host.innerHTML = html;
+  }
+  function setRange(r) {
+    ACTIVE_RANGE = r;
+    document.querySelectorAll('.time-range button').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.range === r);
+    });
+    // Update KPI label per DEC-079: "Unique visitors today" → "Pageviews" when range > 1d (already 7d in mockup but logic is here)
+    var uvLabelText = document.getElementById('uv-label-text');
+    if (uvLabelText) {
+      uvLabelText.textContent = (r === '1d') ? 'Unique visitors today' : 'Unique visitors';
+    }
+    var subtitle = document.getElementById('head-subtitle');
+    if (subtitle) {
+      subtitle.textContent = 'Last ' + (TIME_LABEL[r] || r).toLowerCase().replace('last ', '') + ' on this page · 1 of 1 pages.';
+    }
+  }
+
+  /* =====================================================================
+     Compare-to-previous toggle (Pro+)
+     ===================================================================== */
+  var COMPARE_ON = false;
+  function toggleCompare() {
+    COMPARE_ON = !COMPARE_ON;
+    var btn = document.getElementById('compare-toggle');
+    btn.classList.toggle('on', COMPARE_ON);
+    var grp = document.getElementById('ts-compare-group');
+    if (grp) grp.style.display = COMPARE_ON ? 'inline' : 'none';
+    var legend = document.querySelector('.compare-legend');
+    if (legend) legend.style.display = COMPARE_ON ? 'inline-flex' : 'none';
+  }
+
+  /* =====================================================================
+     Source switcher (drill panel on right)
+     ===================================================================== */
+  var SOURCE_DETAILS = {
+    tiktok: {
+      icon: '🎵', color: '#FF0050', title: 'Most clicked from TikTok',
+      meta: '847 visits → 392 clicks · 46.3% conversion',
+      rows: [
+        ['💳','Stripe checkout — Ultimate Fitness Course', 186],
+        ['🛍️','TikTok Shop link', 89],
+        ['📧','Free PDF: 10 Morning Habits', 62],
+        ['🎯','1:1 Coaching Session', 31],
+        ['🛒','Peloton Bike+ (affiliate)', 14],
+        ['🎙️','My podcast: Strong Not Skinny', 10]
+      ]
+    },
+    instagram: {
+      icon: '📸', color: '#E1306C', title: 'Most clicked from Instagram',
+      meta: '560 visits → 192 clicks · 34.3% conversion',
+      rows: [
+        ['💳','Stripe checkout — Ultimate Fitness Course', 54],
+        ['📧','Free PDF: 10 Morning Habits', 48],
+        ['📸','Latest on Instagram (embed)', 32],
+        ['🛍️','TikTok Shop link', 25],
+        ['🎯','1:1 Coaching Session', 20],
+        ['🛒','Affiliates (combined)', 13]
+      ]
+    },
+    direct: {
+      icon: '🔗', color: 'var(--fg)', title: 'Most clicked from Direct',
+      meta: '360 visits → 108 clicks · 30.0% conversion · likely in-app browsers',
+      rows: [
+        ['💳','Stripe checkout — Ultimate Fitness Course', 48],
+        ['📧','Free PDF: 10 Morning Habits', 15],
+        ['🎯','1:1 Coaching Session', 14],
+        ['📸','Latest on Instagram (embed)', 13],
+        ['🛍️','TikTok Shop link', 12],
+        ['🛒','Affiliates (combined)', 6]
+      ]
+    },
+    youtube: {
+      icon: '📺', color: '#FF0000', title: 'Most clicked from YouTube',
+      meta: '140 visits → 55 clicks · 39.3% conversion',
+      rows: [
+        ['💳','Stripe checkout — Ultimate Fitness Course', 20],
+        ['📸','Latest on Instagram (embed)', 17],
+        ['🎯','1:1 Coaching Session', 6],
+        ['🛍️','TikTok Shop link', 5],
+        ['📧','Free PDF: 10 Morning Habits', 4],
+        ['🛒','Affiliates (combined)', 3]
+      ]
+    },
+    twitter: {
+      icon: '𝕏', color: 'var(--fg)', title: 'Most clicked from Twitter / X',
+      meta: '100 visits → 21 clicks · 21.0% conversion',
+      rows: [
+        ['💳','Stripe checkout — Ultimate Fitness Course', 8],
+        ['📸','Latest on Instagram (embed)', 6],
+        ['📧','Free PDF: 10 Morning Habits', 4],
+        ['🛒','Affiliates (combined)', 3],
+        ['🛍️','TikTok Shop link', 0],
+        ['🎯','1:1 Coaching Session', 0]
+      ]
+    }
+  };
+  function setSource(btn, key) {
+    document.querySelectorAll('.source-row').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var d = SOURCE_DETAILS[key];
+    if (!d) return;
+    document.getElementById('src-detail-icon').textContent = d.icon;
+    document.getElementById('src-detail-icon').style.color = d.color;
+    document.getElementById('src-detail-title').textContent = d.title;
+    document.getElementById('src-detail-meta').textContent = d.meta;
+    var body = document.getElementById('src-detail-body');
+    body.innerHTML = '';
+    d.rows.forEach(function(r, i) {
+      var row = document.createElement('div');
+      row.className = 'top-block-row';
+      row.innerHTML =
+        '<span class="tb-rank">' + (i + 1) + '.</span>' +
+        '<span class="tb-name"><span class="tb-icon">' + r[0] + '</span> <span class="tb-label">' + r[1] + '</span></span>' +
+        '<span class="tb-clicks">' + r[2] + '</span>';
+      body.appendChild(row);
+    });
+  }
+
+  /* =====================================================================
+     Cities toggle on geo card
+     ===================================================================== */
+  function toggleCities() {
+    var el = document.getElementById('cities-list');
+    var btn = document.getElementById('cities-toggle');
+    var open = el.style.display !== 'none' && el.style.display !== '';
+    el.style.display = open ? 'none' : 'block';
+    btn.textContent = open ? 'Show cities' : 'Hide cities';
+  }
+
+  /* =====================================================================
+     Chart hover guide (decorative — for prototyping feel only)
+     ===================================================================== */
+  (function() {
+    var canvas = document.getElementById('chart-canvas');
+    var guide = document.getElementById('chart-hover-guide');
+    var tip = document.getElementById('chart-hover-tooltip');
+    if (!canvas || !guide || !tip) return;
+
+    // 7 day x-positions (svg viewBox 0..800 → percentage 11.6%..91.9%)
+    var dayCols = [
+      { x: 11.6,  label: 'Apr 20', pv: 218, c: 89 },
+      { x: 25.0,  label: 'Apr 21', pv: 245, c: 102 },
+      { x: 38.4,  label: 'Apr 22', pv: 488, c: 215 },
+      { x: 51.8,  label: 'Apr 23', pv: 282, c: 124 },
+      { x: 65.1,  label: 'Apr 24', pv: 326, c: 138 },
+      { x: 78.5,  label: 'Apr 25', pv: 351, c: 152 },
+      { x: 91.9,  label: 'Apr 26', pv: 412, c: 174 }
+    ];
+    canvas.addEventListener('mousemove', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var pct  = (e.clientX - rect.left) / rect.width * 100;
+      // Snap to nearest day
+      var nearest = dayCols.reduce(function(acc, c) {
+        return (Math.abs(c.x - pct) < Math.abs(acc.x - pct)) ? c : acc;
+      }, dayCols[0]);
+      guide.style.left = nearest.x + '%';
+      guide.style.display = 'block';
+      tip.style.left = nearest.x + '%';
+      tip.style.top = '15%';
+      tip.style.display = 'block';
+      tip.querySelector('.htt-date').textContent = nearest.label;
+      var rows = tip.querySelectorAll('.htt-row');
+      rows[0].querySelector('strong').textContent = nearest.pv;
+      rows[1].querySelector('strong').textContent = nearest.c;
+    });
+    canvas.addEventListener('mouseleave', function() {
+      guide.style.display = 'none';
+      tip.style.display = 'none';
+    });
+  })();
+
+  /* =====================================================================
+     Tier switcher — re-renders header controls + locked cards + API tile
+     ===================================================================== */
+  var TIER = 'pro';
+
+  // Tier-gating logic per DEC-076 + DEC-080:
+  //   Saved views unlocked at: pro, business
+  //   A/B testing unlocked at: business
+  //   Scheduled digest unlocked at: business
+  //   Replay unlocked at: business
+  //   Identity stitching unlocked at: business
+  //   Parquet R2 unlocked at: business
+  //   API tile shows used/cap on pro+business; locked pill on free+creator
+  //   CSV export: free=none, creator=monthly, pro=daily, business=daily+parquet
+  //   Compare toggle: pro+business only
+  //   Free pill visible: free only
+  //   Updated chip: free=hourly, creator=5min, pro/business=live 60s
+  //   Page quota label: free=1, creator=5, pro=20, business=∞
+
+  function setTier(tier) {
+    TIER = tier;
+    document.body.setAttribute('data-tier', tier);
+
+    // Sidebar tier label
+    var tierLabel = { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' }[tier] || tier;
+    var sideTier = document.getElementById('side-tier');
+    if (sideTier) sideTier.textContent = '@alexandra · ' + tierLabel;
+
+    // Demo toolbar active state
+    document.querySelectorAll('.demo-toolbar button').forEach(function(b) {
+      b.classList.toggle('is-active', b.dataset.tier === tier);
+      b.textContent = (b.dataset.tier === tier ? tierLabel + ' ✓' : { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' }[b.dataset.tier]);
+    });
+
+    // Power-features tier label
+    var ptl = document.getElementById('power-tier-label');
+    if (ptl) ptl.textContent = 'your tier: ' + tierLabel;
+
+    // Re-render time-range picker
+    renderTimeRange(tier);
+    // Force back to 7d if previous range no longer valid for this tier
+    if ((TIME_RANGES[tier] || []).indexOf(ACTIVE_RANGE) === -1) {
+      ACTIVE_RANGE = '7d';
+      var uvLabelText = document.getElementById('uv-label-text');
+      if (uvLabelText) uvLabelText.textContent = (ACTIVE_RANGE === '1d') ? 'Unique visitors today' : 'Unique visitors';
+    }
+
+    // Compare-to-previous toggle: pro+business only
+    var compareBtn = document.getElementById('compare-toggle');
+    if (compareBtn) {
+      var canCompare = (tier === 'pro' || tier === 'business');
+      compareBtn.style.display = canCompare ? 'inline-flex' : 'none';
+      if (!canCompare && COMPARE_ON) {
+        COMPARE_ON = false;
+        compareBtn.classList.remove('on');
+        var grp = document.getElementById('ts-compare-group');
+        if (grp) grp.style.display = 'none';
+        var legend = document.querySelector('.compare-legend');
+        if (legend) legend.style.display = 'none';
+      }
+    }
+
+    // CSV export tier-aware
+    var csvBtn = document.getElementById('csv-btn');
+    var csvText = document.getElementById('csv-btn-text');
+    if (csvBtn && csvText) {
+      if (tier === 'free') {
+        csvBtn.style.display = 'none';
+      } else if (tier === 'creator') {
+        csvBtn.style.display = 'inline-flex';
+        csvText.textContent = 'Export CSV (monthly)';
+      } else if (tier === 'pro') {
+        csvBtn.style.display = 'inline-flex';
+        csvText.textContent = 'Export CSV (daily)';
+      } else if (tier === 'business') {
+        csvBtn.style.display = 'inline-flex';
+        csvText.textContent = 'Export CSV + Parquet';
+      }
+    }
+
+    // API tile: pro=100/h, business=1000/h, otherwise locked pill
+    var apiActive = document.getElementById('api-tile-active');
+    var apiLocked = document.getElementById('api-tile-locked');
+    var apiCap = document.getElementById('api-meta-cap');
+    if (tier === 'pro') {
+      apiActive.style.display = 'inline-flex';
+      apiLocked.style.display = 'none';
+      apiCap.textContent = '100';
+    } else if (tier === 'business') {
+      apiActive.style.display = 'inline-flex';
+      apiLocked.style.display = 'none';
+      apiCap.textContent = '1,000';
+    } else {
+      apiActive.style.display = 'none';
+      apiLocked.style.display = 'inline-flex';
+    }
+
+    // Free "most generous" pill — Free tier only
+    document.getElementById('free-pill').style.display = (tier === 'free') ? 'inline-flex' : 'none';
+
+    // Updated chip — tier-aware cadence
+    var upText = document.getElementById('updated-text');
+    var upChip = document.getElementById('updated-chip');
+    if (tier === 'free')      { upText.textContent = 'Last updated ~1 hour ago'; upChip.classList.add('stale'); }
+    else if (tier === 'creator') { upText.textContent = 'Last updated 5 min ago'; upChip.classList.add('stale'); }
+    else                       { upText.textContent = 'Live · refreshed 23s ago'; upChip.classList.remove('stale'); }
+
+    // Page quota label inside selector menu
+    var quota = document.getElementById('page-quota');
+    if (quota) quota.textContent = ({ free: '1', creator: '5', pro: '20', business: '∞' }[tier]);
+
+    // Locked cards — flip data-locked attribute per min-tier requirement
+    var rank = { free: 0, creator: 1, pro: 2, business: 3 };
+    document.querySelectorAll('.locked-card').forEach(function(card) {
+      var min = card.dataset.minTier || 'pro';
+      var unlocked = rank[tier] >= rank[min];
+      card.setAttribute('data-locked', unlocked ? 'false' : 'true');
+      card.classList.toggle('is-unlocked', unlocked);
+    });
+  }
+
+  /* =====================================================================
+     Init
+     ===================================================================== */
+  setTier('pro');
+  setSource(document.querySelector('.source-row.active') || document.querySelector('.source-row'), 'tiktok');
+</script>
+</body>
+</html>
