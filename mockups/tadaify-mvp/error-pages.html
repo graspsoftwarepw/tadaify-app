@@ -1,0 +1,1240 @@
+<!--
+  type: mockup
+  project: tadaify
+  title: Error pages — 10 states (404 / 500 / maintenance / offline / handle-released / 403 / suspended / rate-limit / dead-block)
+  created_at: 2026-04-26
+  author: orchestrator
+  status: draft-for-review
+
+  Story: F-ERROR-PAGES-001 (issue #59)
+  Branch: mockup/error-pages
+
+  Brand canon source: ./landing.html (Indigo Serif + Crimson Pro + variant F wordmark).
+  Shared partials: ./shared/partials.js (marketing nav + footer).
+  Tokens: ./shared/tokens.css (palette + buttons + pills + cards).
+
+  Switchable demo:
+    - Bottom-right toolbar lists all 10 states.
+    - Default state = "404 — handle not found" (state=1).
+    - Deep link: ?state=N (1..10). Out-of-range falls back to state=1.
+    - Dark-mode toggle in toolbar (body.dark-mode pattern, mirrors app-domain.html).
+
+  States covered:
+    1  404 — handle not found
+    2  404 — handle released (DEC-074, after 30d redirect ended)
+    3  500 — server error
+    4  Maintenance mode (admin-toggled, F-ADMIN-PANEL-001 §4)
+    5  Offline (PWA / service-worker fallback)
+    6  403 — permission denied (non-admin → /admin)
+    7  Subscription expired — page hidden (creator-billing, AP-029 grace ended)
+    8  Account suspended — creator can't log in
+    9  429 — rate limited (creator dashboard burst, Pro upsell)
+   10  404 — block deleted (outdated bio link clicked)
+
+  Anti-patterns respected:
+    AP-029 (subscription grace tone — never blame visitor for creator billing)
+    AP-031 (no popups; no upgrade banner — Pro hint is inline copy in state #9)
+    AP-046 (free tier is generous — implicit in "claim it" CTAs)
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tadaify — Error pages mockup</title>
+  <meta name="description" content="Mockup of tadaify's 10 error / edge-case states." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Crimson+Pro:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+
+  <style>
+    /* =========================================================================
+       Page-local additions on top of tokens.css.
+       Most colors / type / radii come from tokens — only error-specific layout
+       lives here.
+       ========================================================================= */
+
+    body { background: var(--bg); color: var(--fg); }
+
+    /* Hide every state except the active one */
+    .err-stage { display: none; }
+    .err-stage.is-active { display: block; }
+
+    /* ---- Section wrap ---- */
+    .err-wrap {
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(32px, 6vw, 96px) 24px clamp(48px, 7vw, 120px);
+      background:
+        radial-gradient(900px 400px at 80% -10%, rgba(139, 92, 246, 0.12), transparent 60%),
+        radial-gradient(700px 380px at 10% 0%, rgba(245, 158, 11, 0.10), transparent 60%),
+        var(--bg);
+    }
+    .err-wrap.tone-warm {
+      background:
+        radial-gradient(900px 400px at 80% -10%, rgba(245, 158, 11, 0.16), transparent 60%),
+        radial-gradient(700px 380px at 10% 0%, rgba(139, 92, 246, 0.10), transparent 60%),
+        var(--bg);
+    }
+    .err-wrap.tone-danger {
+      background:
+        radial-gradient(900px 400px at 80% -10%, rgba(239, 68, 68, 0.12), transparent 60%),
+        radial-gradient(700px 380px at 10% 0%, rgba(99, 102, 241, 0.06), transparent 60%),
+        var(--bg);
+    }
+    .err-wrap.tone-calm {
+      background:
+        radial-gradient(900px 400px at 80% -10%, rgba(16, 185, 129, 0.10), transparent 60%),
+        var(--bg);
+    }
+
+    /* ---- Hero card ---- */
+    .err-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: clamp(28px, 4vw, 56px);
+      max-width: 640px;
+      width: 100%;
+      text-align: center;
+    }
+    .err-card.is-wide { max-width: 760px; }
+
+    .err-illustration {
+      margin: 0 auto 24px;
+      width: clamp(120px, 22vw, 180px);
+      height: clamp(120px, 22vw, 180px);
+    }
+    .err-illustration svg { width: 100%; height: 100%; }
+
+    .err-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--bg-muted);
+      color: var(--fg-muted);
+      margin-bottom: 18px;
+    }
+    .err-eyebrow.danger  { background: var(--danger-bg); color: #991B1B; }
+    .err-eyebrow.warm    { background: rgba(245, 158, 11, 0.15); color: #92400E; }
+    .err-eyebrow.primary { background: rgba(99, 102, 241, 0.12); color: var(--brand-primary); }
+    .err-eyebrow.success { background: var(--success-bg); color: #065F46; }
+
+    .err-card h1 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.6vw, 40px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin: 0 0 14px;
+      color: var(--fg);
+    }
+    .err-card .err-lead {
+      font-size: clamp(15px, 1.5vw, 17px);
+      color: var(--fg-muted);
+      margin: 0 auto 24px;
+      max-width: 520px;
+      line-height: 1.6;
+    }
+    .err-card .handle-mono {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+      padding: 1px 8px;
+      border-radius: 6px;
+      background: var(--bg-muted);
+      color: var(--fg);
+    }
+    .err-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .err-secondary-help {
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--fg-muted);
+      line-height: 1.6;
+    }
+    .err-secondary-help a { color: var(--brand-primary); }
+    .err-secondary-help a:hover { text-decoration: underline; }
+
+    /* ---- State 1: search box ---- */
+    .err-search {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      max-width: 440px;
+      margin: 0 auto 22px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-full);
+      padding: 4px 4px 4px 18px;
+    }
+    .err-search:focus-within { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+    .err-search input {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      padding: 12px 8px;
+      font-size: 15px;
+      color: var(--fg);
+    }
+    .err-search input::placeholder { color: var(--fg-subtle); }
+
+    /* ---- State 1: suggested creators ---- */
+    .err-suggestions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 8px 0 16px;
+    }
+    @media (max-width: 600px) { .err-suggestions { grid-template-columns: repeat(2, 1fr); } }
+    .err-suggestion {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      text-align: left;
+      transition: border-color 120ms, transform 120ms;
+    }
+    .err-suggestion:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+    .err-suggestion .sg-av {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 14px;
+      flex-shrink: 0;
+    }
+    .err-suggestion .sg-tx { display: flex; flex-direction: column; min-width: 0; }
+    .err-suggestion .sg-name { font-size: 13px; font-weight: 600; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .err-suggestion .sg-handle { font-size: 11px; color: var(--fg-muted); font-family: var(--font-mono); }
+
+    /* ---- State 4: maintenance countdown + progress ---- */
+    .err-countdown {
+      display: inline-flex;
+      gap: 8px;
+      margin: 12px 0 18px;
+      font-family: var(--font-mono);
+    }
+    .err-countdown .cd-cell {
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      min-width: 64px;
+    }
+    .err-countdown .cd-num { font-size: 22px; font-weight: 700; color: var(--fg); line-height: 1; }
+    .err-countdown .cd-lbl { font-size: 10px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+    .err-progress {
+      width: 100%;
+      max-width: 380px;
+      height: 6px;
+      background: var(--bg-muted);
+      border-radius: 999px;
+      margin: 6px auto 16px;
+      overflow: hidden;
+      position: relative;
+    }
+    .err-progress > span {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 62%;
+      background: linear-gradient(90deg, var(--brand-warm), var(--brand-primary));
+      border-radius: inherit;
+      animation: err-progress-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes err-progress-pulse {
+      0%,100% { opacity: 0.85; }
+      50%     { opacity: 1; }
+    }
+    .err-status-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      background: var(--bg-muted);
+      font-size: 12px;
+      color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .err-status-row .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 0 0 rgba(245,158,11,0.55);
+      animation: err-dot-pulse 1.6s ease-out infinite;
+    }
+    .err-status-row.is-ok .dot { background: var(--success); }
+    .err-status-row.is-busy .dot { background: var(--brand-primary); }
+    .err-status-row.is-down .dot { background: var(--danger); }
+    @keyframes err-dot-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(245,158,11,0.55); }
+      80%  { box-shadow: 0 0 0 10px rgba(245,158,11,0); }
+      100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+    }
+
+    /* ---- State 3: stack-trace details (DEV only) ---- */
+    .err-details {
+      margin-top: 18px;
+      text-align: left;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      padding: 0;
+      background: var(--bg-muted);
+    }
+    .err-details summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--fg-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .err-details summary::-webkit-details-marker { display: none; }
+    .err-details summary::before {
+      content: "▸";
+      transition: transform 140ms ease;
+    }
+    .err-details[open] summary::before { transform: rotate(90deg); }
+    .err-details pre {
+      margin: 0;
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--fg);
+      background: var(--bg);
+      white-space: pre;
+      overflow-x: auto;
+      border-top: 1px dashed var(--border-strong);
+      line-height: 1.55;
+    }
+
+    /* ---- State 5: cached-resource list ---- */
+    .err-cache-list {
+      margin: 14px auto 18px;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: left;
+    }
+    .err-cache-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+    .err-cache-item .cache-tick { color: var(--success); flex-shrink: 0; }
+    .err-cache-item .cache-name { color: var(--fg); font-weight: 500; }
+    .err-cache-item .cache-meta { margin-left: auto; color: var(--fg-muted); font-size: 11px; font-family: var(--font-mono); }
+
+    /* ---- State 6: logged-in info row ---- */
+    .err-userline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      margin-bottom: 18px;
+    }
+    .err-userline .uav {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 11px;
+    }
+    .err-userline b { color: var(--fg); font-weight: 600; }
+
+    /* ---- State 8: appeal form preview ---- */
+    .err-appeal {
+      text-align: left;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin: 18px 0 8px;
+      font-size: 13px;
+      color: var(--fg-muted);
+    }
+    .err-appeal b { color: var(--fg); }
+    .err-appeal .reason-tag {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      background: var(--danger-bg);
+      color: #991B1B;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ---- State 9: rate limit ---- */
+    .err-retry-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--fg);
+      margin-bottom: 16px;
+    }
+    .err-retry-pill .ring {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--border-strong);
+      border-top-color: var(--brand-primary);
+      animation: err-spin 1s linear infinite;
+    }
+    @keyframes err-spin { to { transform: rotate(360deg); } }
+    .err-pro-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+      max-width: 440px;
+      margin: 16px auto 0;
+      padding: 12px 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.20);
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .err-pro-hint .pill { flex-shrink: 0; }
+    .err-pro-hint b { color: var(--fg); }
+    .err-pro-hint a { color: var(--brand-primary); font-weight: 600; }
+
+    /* =========================================================================
+       Demo toolbar (bottom-right) — fixed
+       ========================================================================= */
+    .demo-bar {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 60;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 320px;
+      font-size: 12.5px;
+    }
+    .demo-bar .db-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .demo-bar .db-head .demo-tag {
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--brand-primary);
+      color: #fff;
+      text-transform: uppercase;
+    }
+    .demo-bar .db-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-bar select,
+    .demo-bar button.theme-toggle {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg);
+      color: var(--fg);
+      font: inherit;
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+    .demo-bar button.theme-toggle {
+      flex: 0 0 auto;
+      width: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .demo-bar button.theme-toggle .moon { display: none; }
+    body.dark-mode .demo-bar button.theme-toggle .sun { display: none; }
+    body.dark-mode .demo-bar button.theme-toggle .moon { display: inline; }
+    .demo-bar .db-hint { color: var(--fg-muted); font-size: 11px; line-height: 1.5; }
+    .demo-bar .db-hint code { background: var(--bg-muted); padding: 1px 5px; border-radius: 4px; font-size: 10.5px; }
+
+    @media print {
+      .demo-bar { display: none !important; }
+      .nav, .site-footer { display: none !important; }
+    }
+    @media (max-width: 540px) {
+      .demo-bar { right: 8px; bottom: 8px; left: 8px; max-width: none; }
+    }
+
+    /* =========================================================================
+       Dark mode (mirrors app-domain.html pattern)
+       ========================================================================= */
+    body.dark-mode {
+      --bg: #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted: #1F2937;
+      --bg-sunken: #0A0F1C;
+      --fg: #F3F4F6;
+      --fg-muted: #9CA3AF;
+      --fg-subtle: #6B7280;
+      --border: #1F2937;
+      --border-strong: #374151;
+      --success-bg: rgba(16, 185, 129, 0.18);
+      --danger-bg:  rgba(239, 68, 68, 0.18);
+      --warning-bg: rgba(245, 158, 11, 0.20);
+    }
+    body.dark-mode .nav { background: rgba(11, 15, 30, 0.85); border-bottom-color: #1F2937; }
+    body.dark-mode .nav-links a { color: var(--fg-muted); }
+    body.dark-mode .nav-links a:hover { background: var(--bg-muted); color: var(--fg); }
+    body.dark-mode .wm-ify { color: #F3F4F6; }
+    body.dark-mode .wm-hyphen { color: rgba(255, 255, 255, 0.4); }
+    body.dark-mode .err-card { background: var(--bg-elevated); border-color: var(--border); }
+    body.dark-mode .err-eyebrow { background: var(--bg-muted); color: var(--fg-muted); }
+    body.dark-mode .err-eyebrow.danger  { background: rgba(239, 68, 68, 0.20); color: #FCA5A5; }
+    body.dark-mode .err-eyebrow.warm    { background: rgba(245, 158, 11, 0.22); color: #FCD34D; }
+    body.dark-mode .err-eyebrow.primary { background: rgba(99, 102, 241, 0.22); color: #A5B4FC; }
+    body.dark-mode .err-eyebrow.success { background: rgba(16, 185, 129, 0.22); color: #6EE7B7; }
+    body.dark-mode .site-footer { border-top-color: #1F2937; }
+    body.dark-mode .site-footer a:hover { background: var(--bg-muted); color: var(--fg); }
+    body.dark-mode .err-pro-hint { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.30); }
+    body.dark-mode .err-pro-hint a { color: #A5B4FC; }
+    body.dark-mode .err-appeal .reason-tag { background: rgba(239, 68, 68, 0.20); color: #FCA5A5; }
+    body.dark-mode .demo-bar { background: var(--bg-elevated); border-color: var(--border); }
+    body.dark-mode .demo-bar select,
+    body.dark-mode .demo-bar button.theme-toggle { background: var(--bg); color: var(--fg); border-color: var(--border-strong); }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <main>
+    <!-- ============================================================
+         STATE 1 — 404 handle not found
+         ============================================================ -->
+    <section class="err-stage" data-state="1" data-tone="primary">
+      <div class="err-wrap">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- paper plane lost in clouds -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="60"  cy="150" rx="42" ry="6"  fill="#E5E7EB"/>
+              <ellipse cx="140" cy="156" rx="36" ry="5"  fill="#E5E7EB" opacity=".7"/>
+              <path d="M30 60 Q40 40 70 50 Q90 30 120 50 Q150 40 170 70 Q170 90 140 90 L60 90 Q30 90 30 60Z" fill="#EDE9FE"/>
+              <path d="M40 110 Q60 95 90 105 Q110 90 140 105 Q165 100 170 120 Q165 135 140 135 L60 135 Q35 135 40 110Z" fill="#FEF3C7"/>
+              <g transform="translate(78 60) rotate(-12)">
+                <path d="M0 30 L70 0 L60 70 L40 50 L0 30Z" fill="#6366F1"/>
+                <path d="M40 50 L60 70 L48 42 Z" fill="#4338CA"/>
+                <path d="M0 30 L40 50 L60 14 Z" fill="#818CF8"/>
+              </g>
+              <circle cx="170" cy="40"  r="2.5" fill="#F59E0B"/>
+              <circle cx="20"  cy="90"  r="2"   fill="#8B5CF6"/>
+              <circle cx="180" cy="120" r="2"   fill="#6366F1"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow primary">404 · handle not found</div>
+          <h1>We can't find that creator</h1>
+          <p class="err-lead">
+            We couldn't find anyone with the handle <span class="handle-mono">@nobody</span>.
+            Maybe they've moved, changed it, or you mistyped — happens to the best of us.
+          </p>
+
+          <form class="err-search" onsubmit="event.preventDefault();">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-subtle)">
+              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search for a creator…" />
+            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+          </form>
+
+          <div class="err-suggestions" aria-label="Popular creators">
+            <a href="#" class="err-suggestion">
+              <span class="sg-av">A</span>
+              <span class="sg-tx"><span class="sg-name">Alexandra Silva</span><span class="sg-handle">@alexandra</span></span>
+            </a>
+            <a href="#" class="err-suggestion">
+              <span class="sg-av" style="background: linear-gradient(135deg,#F59E0B,#8B5CF6)">M</span>
+              <span class="sg-tx"><span class="sg-name">Maya Chen</span><span class="sg-handle">@mayareads</span></span>
+            </a>
+            <a href="#" class="err-suggestion">
+              <span class="sg-av" style="background: linear-gradient(135deg,#10B981,#6366F1)">J</span>
+              <span class="sg-tx"><span class="sg-name">Jordan Park</span><span class="sg-handle">@jordanbuilds</span></span>
+            </a>
+          </div>
+
+          <div class="err-actions">
+            <a href="./register.html" class="btn btn-primary">Want this handle? Claim it →</a>
+            <a href="./landing.html" class="btn btn-ghost">Back home</a>
+          </div>
+
+          <p class="err-secondary-help">
+            Looking for a specific creator? Try the search above, or
+            <a href="./landing.html#how-it-works">browse popular pages</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 2 — 404 handle released (DEC-074)
+         ============================================================ -->
+    <section class="err-stage" data-state="2" data-tone="warm">
+      <div class="err-wrap tone-warm">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- key + tag — "available" feel -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="60" ry="6" fill="#FDE68A" opacity=".6"/>
+              <g transform="translate(40 40) rotate(-12)">
+                <circle cx="40" cy="40" r="36" fill="none" stroke="#F59E0B" stroke-width="6"/>
+                <circle cx="40" cy="40" r="14" fill="#FEF3C7" stroke="#F59E0B" stroke-width="3"/>
+                <rect x="72" y="36" width="80" height="10" rx="3" fill="#F59E0B"/>
+                <rect x="138" y="32" width="8" height="18" rx="2" fill="#F59E0B"/>
+                <rect x="124" y="32" width="6" height="14" rx="2" fill="#F59E0B"/>
+              </g>
+              <g transform="translate(140 90) rotate(15)">
+                <rect x="0" y="0" width="42" height="32" rx="4" fill="#6366F1"/>
+                <line x1="6" y1="10" x2="36" y2="10" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+                <line x1="6" y1="18" x2="28" y2="18" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+              </g>
+              <circle cx="30" cy="120" r="3" fill="#8B5CF6"/>
+              <circle cx="170" cy="60" r="2" fill="#F59E0B"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow warm">Handle available</div>
+          <h1>This handle was released</h1>
+          <p class="err-lead">
+            <span class="handle-mono">@alex</span> used to belong to a creator who changed their handle.
+            After our 30-day redirect grace period, this URL is now available — first to claim it gets it.
+          </p>
+
+          <div class="err-actions">
+            <a href="./register.html?handle=alex" class="btn btn-warm">Claim @alex →</a>
+            <a href="#" class="btn btn-ghost">Looking for someone? Search</a>
+          </div>
+
+          <p class="err-secondary-help">
+            <strong>Why does this happen?</strong> When a creator changes their handle, we redirect the old URL
+            for 30 days so their audience can find them. After that, the handle goes back into the pool —
+            short, memorable handles get a second life this way.
+            <br/>
+            <a href="./landing.html">Browse other creators</a> · <a href="./pricing.html">See pricing</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 3 — 500 server error
+         ============================================================ -->
+    <section class="err-stage" data-state="3" data-tone="danger">
+      <div class="err-wrap tone-danger">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- broken / unplugged cable -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="62" ry="6" fill="#FEE2E2" opacity=".7"/>
+              <g stroke="#EF4444" stroke-width="6" stroke-linecap="round" fill="none">
+                <path d="M30 90 Q56 60 80 90 Q100 110 90 130"/>
+                <path d="M170 90 Q144 60 120 90 Q100 110 110 130"/>
+              </g>
+              <g transform="translate(78 76)">
+                <rect x="0" y="0" width="20" height="36" rx="4" fill="#6366F1"/>
+                <rect x="2" y="6" width="6" height="4" rx="1" fill="#fff" opacity=".7"/>
+                <rect x="12" y="6" width="6" height="4" rx="1" fill="#fff" opacity=".7"/>
+                <rect x="2" y="14" width="6" height="4" rx="1" fill="#fff" opacity=".4"/>
+                <rect x="12" y="14" width="6" height="4" rx="1" fill="#fff" opacity=".4"/>
+              </g>
+              <g transform="translate(102 76)">
+                <rect x="0" y="0" width="20" height="36" rx="4" fill="#F59E0B"/>
+                <circle cx="10" cy="14" r="3" fill="#fff" opacity=".8"/>
+                <rect x="6" y="22" width="8" height="3" rx="1" fill="#fff" opacity=".5"/>
+              </g>
+              <path d="M96 60 L100 40 L104 60 L108 50" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" fill="none"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow danger">500 · server error</div>
+          <h1>Something broke on our side</h1>
+          <p class="err-lead">
+            We've been notified and our team is investigating. This isn't your fault —
+            give it a minute and try again, or follow the status link below for updates.
+          </p>
+
+          <div class="err-status-row is-busy" role="status">
+            <span class="dot" aria-hidden="true"></span>
+            <span><b style="color:var(--fg)">Status:</b> investigating · <a href="https://tadaify.statuspage.io" target="_blank" rel="noopener" style="color:var(--brand-primary)">tadaify.statuspage.io ↗</a></span>
+          </div>
+
+          <div class="err-actions">
+            <button type="button" class="btn btn-primary" onclick="location.reload()">Retry</button>
+            <a href="./landing.html" class="btn btn-ghost">Back home</a>
+          </div>
+
+          <p class="err-secondary-help">
+            If this keeps happening, please email <a href="mailto:support@tadaify.com">support@tadaify.com</a> and
+            include the request ID below — it helps us trace the issue faster.
+          </p>
+
+          <details class="err-details">
+            <summary>Request ID · <code>req_8FaB3qLp_2026-04-26T14:12:08Z</code> · stack trace (DEV)</summary>
+<pre>TypeError: Cannot read property 'handle' of undefined
+    at loader (app/routes/$.tsx:42:17)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+    at async Object.handleRequest (workers://tadaify/handler.ts:88:20)
+    at async fetch (workers://tadaify/index.ts:14:9)
+
+Caused by: NetworkError: upstream timeout
+    cf-ray: 8aa8c2e3f4d09c1f-WAW
+    upstream: supabase (ihnvcuhabtzaxkdzjhhy.supabase.co)
+    elapsed: 5012ms (limit 5000ms)</pre>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 4 — Maintenance mode
+         ============================================================ -->
+    <section class="err-stage" data-state="4" data-tone="warm">
+      <div class="err-wrap tone-warm">
+        <div class="err-card is-wide">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- toolbox + gear -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="68" ry="6" fill="#FDE68A" opacity=".6"/>
+              <rect x="40" y="80"  width="120" height="70" rx="8" fill="#F59E0B"/>
+              <rect x="40" y="100" width="120" height="50" rx="0" fill="#D97706"/>
+              <rect x="84" y="64"  width="32" height="22" rx="3" fill="#92400E"/>
+              <rect x="92" y="56"  width="16" height="10" rx="2" fill="#92400E"/>
+              <rect x="58" y="118" width="24" height="14" rx="2" fill="#FEF3C7"/>
+              <rect x="118" y="118" width="24" height="14" rx="2" fill="#FEF3C7"/>
+              <g transform="translate(140 36)">
+                <circle cx="14" cy="14" r="14" fill="#6366F1"/>
+                <circle cx="14" cy="14" r="5"  fill="#FFFFFF"/>
+                <g fill="#6366F1">
+                  <rect x="12" y="0"  width="4" height="6" rx="1"/>
+                  <rect x="12" y="22" width="4" height="6" rx="1"/>
+                  <rect x="0"  y="12" width="6" height="4" rx="1"/>
+                  <rect x="22" y="12" width="6" height="4" rx="1"/>
+                </g>
+              </g>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow warm">Scheduled maintenance</div>
+          <h1>tadaify is under maintenance</h1>
+          <p class="err-lead">
+            We're upgrading our analytics pipeline so your insights get faster and more accurate.
+            We'll be back shortly — thanks for your patience.
+          </p>
+
+          <div class="err-status-row is-busy">
+            <span class="dot"></span>
+            <span><b style="color:var(--fg)">Reason (set by admin):</b> Analytics pipeline upgrade · cookieless rollout</span>
+          </div>
+
+          <div class="err-countdown" aria-label="Time until estimated end">
+            <div class="cd-cell"><div class="cd-num" id="cd-h">00</div><div class="cd-lbl">Hours</div></div>
+            <div class="cd-cell"><div class="cd-num" id="cd-m">42</div><div class="cd-lbl">Minutes</div></div>
+            <div class="cd-cell"><div class="cd-num" id="cd-s">17</div><div class="cd-lbl">Seconds</div></div>
+          </div>
+
+          <div class="err-progress" aria-label="Service restoration progress"><span></span></div>
+          <p class="err-secondary-help" style="margin-top:0; padding-top:0; border:0;">
+            Estimated end: <b style="color:var(--fg)">14:30 UTC</b> · All services restoring…
+          </p>
+
+          <div class="err-actions" style="margin-top:18px;">
+            <a href="https://twitter.com/tadaifyhq" target="_blank" rel="noopener" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.65L12.21 14.7l-6.49 7.05H2.41l7.73-8.836L1.94 2.25h6.81l4.71 6.231 5.787-6.231Zm-2.318 18.05h1.83L7.71 4.13H5.79l10.14 16.17Z"/></svg>
+              Updates on X ↗
+            </a>
+            <a href="https://discord.gg/tadaify" target="_blank" rel="noopener" class="btn btn-secondary">Discord ↗</a>
+            <a href="https://tadaify.statuspage.io" target="_blank" rel="noopener" class="btn btn-ghost">Status page ↗</a>
+          </div>
+
+          <p class="err-secondary-help">
+            <strong>Admin?</strong> You're not affected — admins bypass maintenance mode automatically.
+            Manage the toggle from <span class="handle-mono">/admin → Maintenance</span>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 5 — Offline (PWA)
+         ============================================================ -->
+    <section class="err-stage" data-state="5" data-tone="calm">
+      <div class="err-wrap tone-calm">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- crossed-out wifi waves -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="56" ry="6" fill="#E5E7EB" opacity=".7"/>
+              <g stroke="#9CA3AF" stroke-width="6" stroke-linecap="round" fill="none">
+                <path d="M40 100 Q100 50 160 100"/>
+                <path d="M58 118 Q100 80 142 118"/>
+                <path d="M76 136 Q100 116 124 136"/>
+              </g>
+              <circle cx="100" cy="150" r="6" fill="#9CA3AF"/>
+              <line x1="40" y1="50" x2="160" y2="160" stroke="#EF4444" stroke-width="6" stroke-linecap="round"/>
+              <line x1="40" y1="50" x2="160" y2="160" stroke="#FCA5A5" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow">You're offline</div>
+          <h1>No connection right now</h1>
+          <p class="err-lead">
+            Some pages may not work until you're back online. We're showing you the last data we cached on this device —
+            it's read-only until your connection returns.
+          </p>
+
+          <div class="err-cache-list">
+            <div class="err-cache-item">
+              <svg class="cache-tick" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span class="cache-name">Your dashboard skeleton</span>
+              <span class="cache-meta">2 min ago</span>
+            </div>
+            <div class="err-cache-item">
+              <svg class="cache-tick" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span class="cache-name">Block editor (last saved draft)</span>
+              <span class="cache-meta">8 min ago</span>
+            </div>
+            <div class="err-cache-item">
+              <svg class="cache-tick" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span class="cache-name">Your public page preview</span>
+              <span class="cache-meta">cached</span>
+            </div>
+          </div>
+
+          <div class="err-actions">
+            <button type="button" class="btn btn-primary" onclick="location.reload()">Try again</button>
+            <a href="./landing.html" class="btn btn-ghost">Go to cached home</a>
+          </div>
+
+          <p class="err-secondary-help">
+            New edits made offline will sync automatically when you're back online.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 6 — 403 permission denied
+         ============================================================ -->
+    <section class="err-stage" data-state="6" data-tone="danger">
+      <div class="err-wrap tone-danger">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- shield with lock -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="58" ry="6" fill="#FEE2E2" opacity=".7"/>
+              <path d="M100 30 L150 50 V100 Q150 140 100 160 Q50 140 50 100 V50 Z" fill="#EF4444"/>
+              <path d="M100 30 L150 50 V100 Q150 140 100 160 Q50 140 50 100 V50 Z" fill="none" stroke="#991B1B" stroke-width="3"/>
+              <rect x="80" y="86" width="40" height="36" rx="4" fill="#fff"/>
+              <path d="M88 86 V74 Q88 64 100 64 Q112 64 112 74 V86" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/>
+              <circle cx="100" cy="104" r="4" fill="#EF4444"/>
+              <rect x="98" y="104" width="4" height="10" fill="#EF4444"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow danger">403 · permission denied</div>
+          <h1>You don't have access here</h1>
+          <p class="err-lead">
+            This area is restricted to admins. If you think you should have access, the team can sort it out.
+          </p>
+
+          <div class="err-userline">
+            <span class="uav">A</span>
+            Logged in as <b>alexandra@tadaify.com</b>
+          </div>
+
+          <div class="err-actions">
+            <a href="./app-dashboard.html" class="btn btn-primary">Back to your dashboard</a>
+            <a href="mailto:support@tadaify.com?subject=Admin%20access%20request" class="btn btn-secondary">Request access</a>
+            <a href="#" class="btn btn-ghost">Sign out</a>
+          </div>
+
+          <p class="err-secondary-help">
+            Need help? <a href="mailto:support@tadaify.com">Contact support</a> and we'll route your request
+            to the right person.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 7 — Subscription expired (page hidden)
+         ============================================================ -->
+    <section class="err-stage" data-state="7" data-tone="primary">
+      <div class="err-wrap">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- sleeping cat / "zzz" page -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="60" ry="6" fill="#E5E7EB" opacity=".7"/>
+              <rect x="40" y="60" width="120" height="100" rx="14" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="2"/>
+              <path d="M50 90 Q70 80 90 90 Q110 100 130 90 Q150 80 160 90 V160 Q40 160 40 160 V90 Q40 80 50 90Z" fill="#E5E7EB"/>
+              <g transform="translate(80 100)">
+                <ellipse cx="20" cy="22" rx="22" ry="14" fill="#9CA3AF"/>
+                <path d="M2 18 L0 8 L8 14 Z" fill="#9CA3AF"/>
+                <path d="M38 18 L40 8 L32 14 Z" fill="#9CA3AF"/>
+                <circle cx="14" cy="22" r="1.5" fill="#374151"/>
+                <circle cx="26" cy="22" r="1.5" fill="#374151"/>
+                <path d="M16 26 Q20 28 24 26" stroke="#374151" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </g>
+              <text x="142" y="78" font-family="Crimson Pro, serif" font-size="14" fill="#9CA3AF">z</text>
+              <text x="150" y="68" font-family="Crimson Pro, serif" font-size="18" fill="#9CA3AF">z</text>
+              <text x="160" y="56" font-family="Crimson Pro, serif" font-size="22" fill="#9CA3AF">z</text>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow">Page is currently inactive</div>
+          <h1>This page is taking a quick break</h1>
+          <p class="err-lead">
+            <span class="handle-mono">@maya</span>'s page is temporarily inactive while their account is between subscriptions.
+            Check back soon — or if you're trying to reach them, try their other channels.
+          </p>
+
+          <div class="err-actions">
+            <a href="./landing.html" class="btn btn-primary">Discover other creators →</a>
+            <a href="./try.html" class="btn btn-ghost">Want your own page? Try tadaify free</a>
+          </div>
+
+          <p class="err-secondary-help">
+            <strong>If you're @maya:</strong> sign in to your dashboard to reactivate your subscription —
+            your page comes right back online once billing is restored.
+            <br/><a href="./login.html">Sign in to tadaify →</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 8 — Account suspended
+         ============================================================ -->
+    <section class="err-stage" data-state="8" data-tone="danger">
+      <div class="err-wrap tone-danger">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- pause symbol on shield -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="56" ry="6" fill="#FEE2E2" opacity=".7"/>
+              <circle cx="100" cy="100" r="64" fill="#FEE2E2"/>
+              <circle cx="100" cy="100" r="64" fill="none" stroke="#EF4444" stroke-width="4"/>
+              <rect x="80"  y="70" width="14" height="60" rx="3" fill="#EF4444"/>
+              <rect x="106" y="70" width="14" height="60" rx="3" fill="#EF4444"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow danger">Account suspended</div>
+          <h1>Your account is on hold</h1>
+          <p class="err-lead">
+            Your tadaify account has been suspended pending review. Your public page is currently hidden —
+            visitors will see an inactive notice.
+          </p>
+
+          <div class="err-appeal">
+            <div><b>Reason category:</b> <span class="reason-tag">Terms of Service · pending review</span></div>
+            <div style="margin-top:8px"><b>Reviewer notes:</b> Manual moderation queue · expected response within 48h.</div>
+            <div style="margin-top:8px"><b>Reference:</b> <span class="handle-mono">case_2026_04_26_alex_204</span></div>
+          </div>
+
+          <div class="err-actions">
+            <a href="mailto:appeals@tadaify.com?subject=Appeal%20case_2026_04_26_alex_204" class="btn btn-primary">Submit an appeal</a>
+            <a href="./landing.html" class="btn btn-ghost">Sign out</a>
+          </div>
+
+          <p class="err-secondary-help">
+            Believe this is a mistake? Email <a href="mailto:appeals@tadaify.com">appeals@tadaify.com</a> with
+            your case reference. Read our <a href="#">Terms of Service</a> · <a href="#">Acceptable Use Policy</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 9 — 429 rate limited
+         ============================================================ -->
+    <section class="err-stage" data-state="9" data-tone="warm">
+      <div class="err-wrap tone-warm">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- hourglass -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="172" rx="48" ry="6" fill="#FDE68A" opacity=".6"/>
+              <rect x="62" y="38"  width="76" height="10" rx="2" fill="#92400E"/>
+              <rect x="62" y="152" width="76" height="10" rx="2" fill="#92400E"/>
+              <path d="M70 48 L130 48 L130 70 Q130 90 100 100 Q70 90 70 70 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="3"/>
+              <path d="M70 152 L130 152 L130 130 Q130 110 100 100 Q70 110 70 130 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="3"/>
+              <path d="M78 56 L122 56 L122 68 Q122 80 100 88 Q78 80 78 68 Z" fill="#F59E0B"/>
+              <path d="M84 152 L116 152 L116 134 Q116 122 100 116 Q84 122 84 134 Z" fill="#F59E0B"/>
+              <line x1="100" y1="98" x2="100" y2="120" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="100" cy="120" r="2.5" fill="#F59E0B"/>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow warm">429 · slow down</div>
+          <h1>You're moving fast!</h1>
+          <p class="err-lead">
+            We've temporarily throttled requests from your account so tadaify stays fast for everyone.
+            This is automatic — no action needed except a short pause.
+          </p>
+
+          <div class="err-retry-pill" role="status">
+            <span class="ring" aria-hidden="true"></span>
+            Retry in <b id="retry-after">00:42</b>
+          </div>
+
+          <div class="err-actions">
+            <button type="button" class="btn btn-secondary" onclick="location.reload()">Retry now</button>
+            <a href="./app-dashboard.html" class="btn btn-ghost">Back to dashboard</a>
+          </div>
+
+          <div class="err-pro-hint">
+            <span class="pill pill-pro">Pro</span>
+            <div>
+              <b>Hitting the limit often?</b> API access on <b>Pro</b> includes <b>10× higher rate limits</b> (100 req/h on Pro,
+              1000 req/h on Business per DEC-080). Bigger workflows + scripts run smoothly there.
+              <br/><a href="./pricing.html">See plans →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         STATE 10 — 404 block deleted
+         ============================================================ -->
+    <section class="err-stage" data-state="10" data-tone="primary">
+      <div class="err-wrap">
+        <div class="err-card">
+          <div class="err-illustration" aria-hidden="true">
+            <!-- broken link -->
+            <svg viewBox="0 0 200 200" fill="none">
+              <ellipse cx="100" cy="170" rx="60" ry="6" fill="#E5E7EB" opacity=".7"/>
+              <g stroke="#6366F1" stroke-width="10" stroke-linecap="round" fill="none">
+                <path d="M58 70 Q40 70 40 90 Q40 108 56 110"/>
+                <path d="M142 130 Q160 130 160 110 Q160 92 144 90"/>
+              </g>
+              <line x1="60" y1="100" x2="80" y2="100" stroke="#6366F1" stroke-width="10" stroke-linecap="round"/>
+              <line x1="120" y1="100" x2="140" y2="100" stroke="#6366F1" stroke-width="10" stroke-linecap="round"/>
+              <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round">
+                <line x1="86" y1="92"  x2="98"  y2="80"/>
+                <line x1="92" y1="100" x2="108" y2="100"/>
+                <line x1="86" y1="108" x2="98"  y2="120"/>
+              </g>
+            </svg>
+          </div>
+
+          <div class="err-eyebrow primary">Link no longer available</div>
+          <h1>This link has been removed</h1>
+          <p class="err-lead">
+            The block you clicked is no longer part of <span class="handle-mono">@alexandra</span>'s page.
+            Their content moves around — try heading to their main page for the latest.
+          </p>
+
+          <div class="err-actions">
+            <a href="./creator-public.html" class="btn btn-primary">Visit @alexandra's page →</a>
+            <a href="./landing.html" class="btn btn-ghost">Browse creators</a>
+          </div>
+
+          <p class="err-secondary-help">
+            Saw this from a bookmark or external link? Bookmarks to specific blocks may break when creators
+            update their page — bookmark <span class="handle-mono">tadaify.com/alexandra</span> instead.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-partial="footer"></div>
+
+  <!-- ============================================================
+       Demo toolbar
+       ============================================================ -->
+  <div class="demo-bar" role="region" aria-label="Mockup demo controls">
+    <div class="db-head">
+      <span>Error state demo</span>
+      <span class="demo-tag">mockup</span>
+    </div>
+    <div class="db-row">
+      <select id="state-select" aria-label="Select error state">
+        <option value="1">1 · 404 — handle not found</option>
+        <option value="2">2 · 404 — handle released (DEC-074)</option>
+        <option value="3">3 · 500 — server error</option>
+        <option value="4">4 · Maintenance mode</option>
+        <option value="5">5 · Offline (PWA)</option>
+        <option value="6">6 · 403 — permission denied</option>
+        <option value="7">7 · Subscription expired</option>
+        <option value="8">8 · Account suspended</option>
+        <option value="9">9 · 429 — rate limited</option>
+        <option value="10">10 · 404 — block deleted</option>
+      </select>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="sun" aria-hidden="true">☀️</span><span class="moon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+    <div class="db-hint">
+      Deep link: <code>?state=4</code>. Default: state 1. Out-of-range falls back to 1.
+    </div>
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var stages = document.querySelectorAll('.err-stage');
+      var select = document.getElementById('state-select');
+      var totalStates = stages.length; // 10
+
+      function clamp(n) {
+        n = parseInt(n, 10);
+        if (!isFinite(n) || n < 1 || n > totalStates) return 1;
+        return n;
+      }
+
+      function show(stateNum) {
+        stateNum = clamp(stateNum);
+        stages.forEach(function (s) {
+          s.classList.toggle('is-active', String(s.dataset.state) === String(stateNum));
+        });
+        if (select) select.value = String(stateNum);
+        // Update URL without scroll jump
+        try {
+          var url = new URL(location.href);
+          url.searchParams.set('state', String(stateNum));
+          history.replaceState(null, '', url);
+        } catch (e) { /* file:// silently ignores */ }
+        // Reset scroll
+        window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+      }
+
+      // Initial state from ?state=N
+      var params = new URLSearchParams(location.search);
+      var initial = clamp(params.get('state') || '1');
+      show(initial);
+
+      if (select) {
+        select.addEventListener('change', function () { show(this.value); });
+      }
+
+      // Keyboard nav: ←/→
+      document.addEventListener('keydown', function (e) {
+        if (e.target && /^(input|textarea|select)$/i.test(e.target.tagName)) return;
+        if (e.key === 'ArrowRight') {
+          var cur = parseInt(select.value, 10);
+          show(cur >= totalStates ? 1 : cur + 1);
+        } else if (e.key === 'ArrowLeft') {
+          var cur2 = parseInt(select.value, 10);
+          show(cur2 <= 1 ? totalStates : cur2 - 1);
+        }
+      });
+
+      // Theme toggle (dark mode mirrors app-domain.html pattern)
+      var themeBtn = document.getElementById('theme-toggle');
+      function applyTheme(mode) {
+        document.body.classList.toggle('dark-mode', mode === 'dark');
+        try { localStorage.setItem('tadaify-error-theme', mode); } catch (e) {}
+      }
+      try {
+        var saved = localStorage.getItem('tadaify-error-theme');
+        if (saved === 'dark') applyTheme('dark');
+      } catch (e) {}
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function () {
+          applyTheme(document.body.classList.contains('dark-mode') ? 'light' : 'dark');
+        });
+      }
+
+      // ----- State 4: countdown ticker -----
+      var endTs = Date.now() + (42 * 60 + 17) * 1000;
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      function tickCountdown() {
+        var diff = Math.max(0, endTs - Date.now());
+        var s = Math.floor(diff / 1000);
+        var h = Math.floor(s / 3600);
+        var m = Math.floor((s % 3600) / 60);
+        var sec = s % 60;
+        var hEl = document.getElementById('cd-h');
+        var mEl = document.getElementById('cd-m');
+        var sEl = document.getElementById('cd-s');
+        if (hEl) hEl.textContent = pad(h);
+        if (mEl) mEl.textContent = pad(m);
+        if (sEl) sEl.textContent = pad(sec);
+      }
+      tickCountdown();
+      setInterval(tickCountdown, 1000);
+
+      // ----- State 9: retry-after ticker -----
+      var retryEnd = Date.now() + 42 * 1000;
+      function tickRetry() {
+        var diff = Math.max(0, retryEnd - Date.now());
+        var s = Math.floor(diff / 1000);
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        var el = document.getElementById('retry-after');
+        if (el) {
+          if (s === 0) {
+            el.textContent = 'now';
+            retryEnd = Date.now() + 42 * 1000; // loop for demo
+          } else {
+            el.textContent = pad(m) + ':' + pad(sec);
+          }
+        }
+      }
+      tickRetry();
+      setInterval(tickRetry, 1000);
+    })();
+  </script>
+</body>
+</html>
