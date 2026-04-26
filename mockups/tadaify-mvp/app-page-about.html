@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — About page template (creator-facing) — F-PAGE-ABOUT-001 #15
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Surfaces the editor a creator sees when they open Pages > About.
+  Pairs with creator-about-public.html (visitor view at tadaify.com/<handle>/about).
+
+  Source story: graspsoftwarepw/tadaify-app issues #15 (F-PAGE-ABOUT-001)
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced toggle; power fields inline empty by default)
+    - feedback_no_blur_premium_features (premium fields fully visible + interactive; tier badge inline; gate at Save via TierGate)
+    - feedback_no_right_side_drawers (Add section picker is a centered modal, NEVER a drawer)
+    - feedback_mockup_full_feature_vision (every interaction does something — empty state ↔ filled state ↔ modal all wired)
+    - feedback_sidebar_pages_grouping (Pages parent + Home first page; About highlighted as a sub-item below)
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content ── */
+    main.content {
+      padding: 24px 20px 120px;
+      min-width: 0;
+      max-width: 1080px;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    /* Breadcrumb */
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    /* Page header */
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Page-level card (settings) */
+    .panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+    }
+    .panel-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .panel-head .head-spacer { flex: 1; }
+    .panel-body { padding: 18px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker (FIX-DIV-001 — page background) */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* ───────────────────────────────────────────────
+       Section cards — the meat of the About editor
+       Each "section" is a collapsible card of one of
+       6 section types (hero / bio / highlights /
+       timeline / press / contact-cta).
+       ─────────────────────────────────────────────── */
+    .sections-stack {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .sec-card {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      position: relative;
+    }
+    .sec-card.is-dragging { opacity: 0.4; }
+    .sec-card.is-drag-over { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.14); }
+    .sec-card .sec-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--bg-elevated), var(--bg));
+    }
+    .sec-card.is-collapsed .sec-head { border-bottom-color: transparent; }
+    .sec-card .sec-grip {
+      width: 22px; height: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab;
+      flex-shrink: 0;
+    }
+    .sec-card .sec-grip:active { cursor: grabbing; }
+    .sec-card .sec-grip svg { width: 14px; height: 14px; }
+    .sec-card .sec-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .sec-card .sec-icon.warm { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .sec-card .sec-icon.rose { background: rgba(251,113,133,0.14); color: #BE185D; }
+    .sec-card .sec-icon.emerald { background: rgba(52,211,153,0.16); color: #047857; }
+    .sec-card .sec-icon.indigo { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+    .sec-card .sec-icon.slate { background: rgba(71,85,105,0.14); color: #1F2937; }
+    .sec-card .sec-meta { flex: 1; min-width: 0; }
+    .sec-card .sec-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 15.5px; line-height: 1.3;
+      color: var(--fg); margin: 0;
+      display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .sec-card .sec-sub {
+      font-size: 12px; color: var(--fg-muted);
+      margin: 1px 0 0;
+    }
+    .sec-card .sec-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .sec-card .sec-toggle {
+      background: transparent; border: 0; color: var(--fg-subtle);
+      padding: 6px 8px; border-radius: 6px; cursor: pointer;
+    }
+    .sec-card .sec-toggle:hover { background: var(--bg-muted); color: var(--fg); }
+    .sec-card .sec-toggle svg { width: 14px; height: 14px; transition: transform .15s ease; }
+    .sec-card.is-collapsed .sec-toggle svg { transform: rotate(-90deg); }
+    .sec-card .sec-body { padding: 18px; }
+    .sec-card.is-collapsed .sec-body { display: none; }
+
+    /* Hero section editor */
+    .hero-editor { display: grid; gap: 14px; grid-template-columns: 220px 1fr; }
+    @media (max-width: 720px) { .hero-editor { grid-template-columns: 1fr; } }
+    .photo-drop {
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      background: var(--bg);
+      aspect-ratio: 1 / 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      text-align: center; padding: 14px; cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .photo-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .photo-drop.has-photo {
+      border: 0; padding: 0;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      color: #7C2D12;
+      font-family: var(--font-display); font-weight: 600; font-size: 64px;
+      position: relative; overflow: hidden;
+    }
+    .photo-drop.has-photo .photo-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-end; justify-content: flex-end;
+      padding: 8px;
+      background: linear-gradient(0deg, rgba(0,0,0,0.4), transparent 50%);
+      opacity: 0; transition: opacity .15s ease;
+    }
+    .photo-drop.has-photo:hover .photo-overlay { opacity: 1; }
+    .photo-drop .photo-replace-btn {
+      background: rgba(255,255,255,0.92); color: var(--fg);
+      border: 0; border-radius: 8px;
+      padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .photo-drop .pd-emoji { font-size: 30px; line-height: 1; }
+    .photo-drop .pd-title { font-weight: 600; font-size: 13.5px; color: var(--fg); }
+    .photo-drop .pd-sub { color: var(--fg-muted); font-size: 12px; }
+
+    .hero-fields { display: flex; flex-direction: column; gap: 14px; }
+    .social-proof-line {
+      display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .social-proof-line .sp-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .social-proof-line b { color: var(--fg); font-weight: 600; }
+
+    /* Bio rich-text */
+    .rt-toolbar {
+      display: flex; gap: 2px; flex-wrap: wrap;
+      padding: 6px; border: 1px solid var(--border-strong);
+      border-bottom: 0; border-radius: 10px 10px 0 0;
+      background: var(--bg-muted);
+    }
+    .rt-toolbar button {
+      width: 30px; height: 30px;
+      border: 0; border-radius: 6px;
+      background: transparent; color: var(--fg-muted);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600;
+    }
+    .rt-toolbar button:hover { background: var(--bg-elevated); color: var(--fg); }
+    .rt-toolbar .rt-sep { width: 1px; height: 18px; background: var(--border); margin: 6px 4px; }
+    .rt-area {
+      width: 100%;
+      min-height: 180px;
+      padding: 14px 16px;
+      border: 1px solid var(--border-strong); border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: var(--bg-elevated);
+      font-family: var(--font-display); font-size: 16px; line-height: 1.65;
+      outline: 0; resize: vertical;
+      color: var(--fg);
+    }
+    .rt-area:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .rt-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; flex-wrap: wrap;
+      font-size: 11.5px; color: var(--fg-subtle);
+      margin-top: 6px;
+    }
+    .rt-meta .word-count.is-good { color: var(--success); }
+
+    /* Highlights grid editor */
+    .highlights-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 720px) { .highlights-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .highlights-grid { grid-template-columns: 1fr; } }
+    .highlight-card {
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      padding: 12px; background: var(--bg-elevated);
+      display: flex; flex-direction: column; gap: 8px;
+      position: relative;
+    }
+    .highlight-card .hc-icon-row {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .highlight-card .hc-icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 1px solid var(--border-strong); background: var(--bg);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .highlight-card .hc-icon-btn:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .highlight-card .hc-remove {
+      margin-left: auto; opacity: 0; transition: opacity .12s ease;
+    }
+    .highlight-card:hover .hc-remove { opacity: 1; }
+    .highlight-card .hc-value {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px;
+      border: 0; outline: 0; background: transparent;
+      color: var(--fg); padding: 0; margin: 0;
+      width: 100%;
+    }
+    .highlight-card .hc-caption {
+      font-size: 12.5px; color: var(--fg-muted);
+      border: 0; outline: 0; background: transparent;
+      width: 100%; padding: 0;
+    }
+    .highlight-add {
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      padding: 12px; background: transparent;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer;
+      min-height: 110px;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+    }
+    .highlight-add:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .highlight-add svg { width: 18px; height: 18px; }
+
+    /* Timeline editor */
+    .timeline-editor { display: flex; flex-direction: column; gap: 10px; }
+    .tl-entry {
+      display: grid;
+      grid-template-columns: 24px 90px 1fr auto;
+      gap: 10px; align-items: flex-start;
+      padding: 12px;
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      background: var(--bg-elevated);
+    }
+    .tl-entry .tl-grip {
+      cursor: grab; color: var(--fg-subtle);
+      display: inline-flex; align-items: center; justify-content: center;
+      padding-top: 8px;
+    }
+    .tl-entry .tl-grip svg { width: 14px; height: 14px; }
+    .tl-entry .tl-year {
+      padding: 8px 10px; border-radius: 8px;
+      border: 1px solid var(--border-strong); background: var(--bg);
+      font-family: var(--font-display); font-weight: 600; font-size: 15px;
+      text-align: center; outline: 0;
+      color: var(--fg);
+    }
+    .tl-entry .tl-fields { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .tl-entry .tl-title-input {
+      border: 0; outline: 0; background: transparent;
+      font-weight: 600; font-size: 14px; color: var(--fg);
+      padding: 4px 0;
+    }
+    .tl-entry .tl-desc-input {
+      border: 0; outline: 0; background: transparent;
+      font-size: 13px; color: var(--fg-muted);
+      padding: 0;
+      resize: none;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+    .tl-entry .tl-actions { display: flex; align-items: center; gap: 4px; }
+    .tl-add {
+      align-self: flex-start;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 9px;
+      border: 1.5px dashed var(--border-strong); background: transparent;
+      color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+    }
+    .tl-add:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .tl-style-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; margin-bottom: 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .tl-style-row b { color: var(--fg); font-weight: 600; }
+    .tl-style-pills { display: inline-flex; gap: 4px; padding: 3px; background: var(--bg-elevated); border-radius: 8px; border: 1px solid var(--border); }
+    .tl-style-pills button {
+      padding: 5px 11px; border: 0; border-radius: 6px;
+      background: transparent; color: var(--fg-muted);
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: all .12s ease;
+    }
+    .tl-style-pills button.is-active { background: var(--brand-primary); color: #fff; }
+
+    /* Press / quotes editor */
+    .quotes-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 720px) { .quotes-grid { grid-template-columns: 1fr; } }
+    .quote-card {
+      border: 1px solid var(--border-strong); border-radius: 12px;
+      padding: 14px; background: var(--bg-elevated);
+      display: flex; flex-direction: column; gap: 10px;
+      position: relative;
+    }
+    .quote-card .qc-text {
+      border: 0; outline: 0; background: transparent;
+      font-family: var(--font-display); font-style: italic; font-size: 15px;
+      color: var(--fg); line-height: 1.5;
+      width: 100%; resize: vertical; min-height: 60px;
+    }
+    .quote-card .qc-attribution {
+      display: flex; align-items: center; gap: 8px;
+      padding-top: 8px; border-top: 1px solid var(--border);
+    }
+    .quote-card .qc-attr-input {
+      flex: 1;
+      border: 0; outline: 0; background: transparent;
+      font-size: 13px; color: var(--fg-muted); font-weight: 600;
+    }
+    .quote-card .qc-remove { opacity: 0; transition: opacity .12s ease; }
+    .quote-card:hover .qc-remove { opacity: 1; }
+
+    /* Contact CTA editor */
+    .cta-fields { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 720px) { .cta-fields { grid-template-columns: 1fr; } }
+    .cta-style-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .cta-style-pills { display: inline-flex; gap: 4px; padding: 3px; background: var(--bg-muted); border-radius: 8px; }
+    .cta-style-pills button {
+      padding: 6px 12px; border: 0; border-radius: 6px;
+      background: transparent; color: var(--fg-muted);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all .12s ease;
+    }
+    .cta-style-pills button.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+
+    /* Add-section CTA + sections empty state */
+    .add-section-row {
+      display: flex; justify-content: center;
+      margin-top: 14px;
+    }
+    .add-section-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: 999px;
+      background: var(--brand-primary); color: #fff;
+      border: 0; font-size: 14px; font-weight: 600; cursor: pointer;
+      box-shadow: var(--shadow-brand);
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .add-section-cta:hover { background: var(--brand-primary-hover); transform: translateY(-1px); }
+    .add-section-cta svg { width: 16px; height: 16px; }
+
+    /* Empty state when no sections added */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 460px; }
+    .empty-state .es-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    /* ───────────────────────────────────────────────
+       Centered modal — Add section picker
+       (per feedback_no_right_side_drawers — NEVER drawer)
+       ─────────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(820px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    /* Section type picker tiles */
+    .types-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 600px) { .types-grid { grid-template-columns: 1fr; } }
+    .type-tile {
+      border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 14px; background: var(--bg-elevated);
+      display: flex; flex-direction: column; gap: 8px;
+      cursor: pointer; text-align: left;
+      transition: border-color .12s ease, transform .12s ease, box-shadow .12s ease;
+      position: relative;
+    }
+    .type-tile:hover { border-color: var(--brand-primary); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .type-tile .tt-row { display: flex; align-items: center; gap: 10px; }
+    .type-tile .tt-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .type-tile .tt-icon.warm { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .type-tile .tt-icon.rose { background: rgba(251,113,133,0.14); color: #BE185D; }
+    .type-tile .tt-icon.emerald { background: rgba(52,211,153,0.16); color: #047857; }
+    .type-tile .tt-icon.slate { background: rgba(71,85,105,0.14); color: #1F2937; }
+    .type-tile .tt-name {
+      font-family: var(--font-display); font-weight: 600; font-size: 15.5px;
+      color: var(--fg); margin: 0;
+    }
+    .type-tile .tt-desc { font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; margin: 0; }
+    .type-tile.is-disabled { opacity: 0.55; cursor: not-allowed; }
+    .type-tile.is-disabled:hover { transform: none; box-shadow: none; border-color: var(--border); }
+
+    /* AI starter templates inside modal */
+    .starter-row {
+      margin-top: 18px; padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .starter-row h4 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 14.5px; margin: 0 0 8px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .starter-row .star-sub { color: var(--fg-muted); font-size: 12.5px; margin: 0 0 12px; }
+    .starter-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 600px) { .starter-grid { grid-template-columns: 1fr; } }
+    .starter-card {
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      padding: 12px; background: var(--bg);
+      cursor: pointer; transition: border-color .12s ease, background .12s ease;
+    }
+    .starter-card:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .starter-card .sc-emoji { font-size: 22px; line-height: 1; margin-bottom: 6px; }
+    .starter-card .sc-name { font-weight: 600; font-size: 13.5px; color: var(--fg); }
+    .starter-card .sc-meta { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Inline tier hint (per no-blur-premium pattern) */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+
+    /* Per-section tier badge (rendered inline next to section title) */
+    .sec-tier-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 7px; border-radius: 99px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      vertical-align: middle;
+    }
+    .sec-tier-badge.tier-creator {
+      background: rgba(16,185,129,0.12); color: #047857;
+    }
+    .sec-tier-badge.tier-pro {
+      background: rgba(99,102,241,0.13); color: #4338CA;
+    }
+    .sec-tier-badge.tier-business {
+      background: rgba(245,158,11,0.14); color: #92400E;
+    }
+
+    /* Demo-toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Sticky save bar (bottom of editor) */
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      padding: 10px 16px; z-index: 30;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 -4px 20px rgba(17,24,39,0.05);
+    }
+    @media (min-width: 720px)  { .save-bar { padding-left: 88px; } }
+    @media (min-width: 1180px) { .save-bar { padding-left: 256px; } }
+    .save-bar .save-status { font-size: 12px; color: var(--fg-muted); }
+    .save-bar .save-status .save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block; margin-right: 5px; }
+    .save-bar .save-spacer { flex: 1; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .panel,
+    body.dark-mode .sec-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .panel-head,
+    body.dark-mode .sec-card .sec-head { border-bottom-color: #1F2937; background: linear-gradient(180deg, #141A2D, #0B0F1E); }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode .photo-drop:not(.has-photo),
+    body.dark-mode .highlight-card,
+    body.dark-mode .quote-card,
+    body.dark-mode .tl-entry,
+    body.dark-mode details.expander {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area { color: #F3F4F6; }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .rt-toolbar { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .rt-area { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .save-bar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .type-tile { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .starter-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .social-proof-line { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .social-proof-line b { color: #F3F4F6; }
+    body.dark-mode .tl-style-row { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .tl-style-pills { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .sec-card .sec-title { color: #F3F4F6; }
+    body.dark-mode .highlight-card .hc-value,
+    body.dark-mode .quote-card .qc-text,
+    body.dark-mode .tl-entry .tl-title-input,
+    body.dark-mode .tl-entry .tl-year { color: #F3F4F6; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <a href="./creator-about-public.html" class="btn btn-ghost btn-sm" data-tip="Open the public About page in a new tab" target="_blank" rel="noopener">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View public
+  </a>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+
+  <!-- Canonical sidebar (Pages active, About sub-page highlighted via post-inject) -->
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ========== MAIN ========== -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">About</span>
+    </nav>
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">👤</span> About</h1>
+        <p class="sub">A long-form story page — bio, timeline, highlights, press. For creators who want richer storytelling than the homepage hero.</p>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b>about</b>
+        </span>
+        <a href="./creator-about-public.html" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </a>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         SECTION 1 — Page settings (title, slug, publish, SEO, theme)
+         =================================================== -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Page settings</h2>
+        <span class="sub">Title, URL, visibility, theme and SEO for the About page.</span>
+      </div>
+      <div class="panel-body">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="page-title">Page title <span class="field-hint">also used as the &lt;h1&gt; if Hero section is empty</span></label>
+            <input class="field-input" id="page-title" type="text" value="About" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">tadaify.com/alexandra/</span>
+              <input id="page-slug" type="text" value="about" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Publish</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Page is live</div>
+                <div class="rt-sub">Visitors can find it at the URL above.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Show in nav</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Link from main page</div>
+                <div class="rt-sub">"About" appears in your top navigation.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle nav link" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Page background <span class="field-hint">override theme colour for this page only</span></label>
+          <div class="swatch-row">
+            <div class="swatch is-selected" style="background: var(--bg);"               data-name="Inherit theme"  onclick="pickSwatch(this)" title="Inherit theme"></div>
+            <div class="swatch"             style="background: #FFFFFF;"                  data-name="White"          onclick="pickSwatch(this)" title="White"></div>
+            <div class="swatch"             style="background: #F8F4EE;"                  data-name="Warm cream"     onclick="pickSwatch(this)" title="Warm cream"></div>
+            <div class="swatch"             style="background: #1F2937;"                  data-name="Slate"          onclick="pickSwatch(this)" title="Slate"></div>
+            <div class="swatch"             style="background: #0B0F1E;"                  data-name="Dark canvas"    onclick="pickSwatch(this)" title="Dark canvas"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#FDE68A,#F59E0B);" data-name="Sunrise" onclick="pickSwatch(this)" title="Sunrise gradient"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#6366F1,#8B5CF6);" data-name="Indigo"  onclick="pickSwatch(this)" title="Indigo gradient"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#0F172A,#334155);" data-name="Nightfall" onclick="pickSwatch(this)" title="Nightfall"></div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:14px">
+          <label class="field-label">Custom domain <span class="sec-tier-badge tier-pro">✨ Pro</span> <span class="field-hint">e.g. about.alexandrasilva.com instead of tadaify.com/alexandra/about</span></label>
+          <div class="field-prefix-wrap">
+            <input id="custom-domain" type="text" placeholder="about.yourdomain.com" />
+            <button class="field-suffix-action" onclick="alert('Mockup — custom domain wizard opens')" type="button">Set up →</button>
+          </div>
+          <div class="tier-hint">
+            <span class="th-icon" aria-hidden="true">💡</span>
+            Per-page custom domains are part of the <b>Pro</b> plan. We'll prompt to upgrade when you save if you set one.
+          </div>
+        </div>
+
+        <details class="expander" style="margin-top:14px">
+          <summary>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7"/><path d="M9 12V7a3 3 0 0 1 6 0v5"/><circle cx="12" cy="17" r="3"/></svg>
+            SEO settings <span class="ex-sub">— meta title, description, social card</span>
+            <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+          </summary>
+          <div class="ex-body">
+            <div class="field">
+              <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
+              <div class="field-prefix-wrap">
+                <input id="seo-title" type="text" value="About Alexandra Silva — strength coach & writer" />
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+              <div class="field-prefix-wrap" style="align-items:flex-start">
+                <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Strength coach since 2018. I help busy women train hard without burning out. Author of "Rest Days Are Workouts." Based in Lisbon.</textarea>
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">OG image <span class="field-hint">1200×630 — shown when shared on social</span></label>
+              <div class="photo-drop" style="aspect-ratio:auto; height:120px;" onclick="alert('Mockup — image picker opens')">
+                <span class="pd-emoji">🖼</span>
+                <div class="pd-title">Drop an image, or click to upload</div>
+                <div class="pd-sub">Or <a href="#" onclick="event.preventDefault();alert('Mockup — AI generates 4 OG cards')" style="color:var(--brand-primary); font-weight:600">✨ generate one with AI</a></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 2 — About page content (the actual editor)
+         =================================================== -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Page content</h2>
+        <span class="sub">Drag sections to reorder. Click a card header to collapse / expand.</span>
+        <span class="head-spacer"></span>
+        <span class="chip">5 sections</span>
+      </div>
+
+      <div class="panel-body">
+
+        <!-- =====================
+             FILLED STATE (default)
+             ===================== -->
+        <div id="state-filled">
+
+          <div class="sections-stack" id="sections-stack" data-can-drop="true">
+
+            <!-- Section: Hero -->
+            <article class="sec-card" draggable="true" data-section-id="hero" data-section-type="hero">
+              <header class="sec-head">
+                <span class="sec-grip" aria-label="Drag to reorder" data-tip="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <span class="sec-icon warm" aria-hidden="true">🌅</span>
+                <div class="sec-meta">
+                  <h3 class="sec-title">Hero</h3>
+                  <p class="sec-sub">Photo + name + one-line tagline + social proof.</p>
+                </div>
+                <div class="sec-actions">
+                  <button class="iconbtn" data-tip="Remove section" aria-label="Remove section" onclick="confirmRemoveSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                  <button class="sec-toggle" data-tip="Collapse" aria-label="Toggle section" onclick="toggleSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+              </header>
+              <div class="sec-body">
+                <div class="hero-editor">
+                  <div class="photo-drop has-photo" data-tip="Click to replace" onclick="alert('Mockup — image picker opens')">
+                    A
+                    <div class="photo-overlay">
+                      <button class="photo-replace-btn">Replace</button>
+                    </div>
+                  </div>
+                  <div class="hero-fields">
+                    <div class="field" style="margin:0">
+                      <label class="field-label" for="hero-name">Display name</label>
+                      <input class="field-input" id="hero-name" type="text" value="Alexandra Silva" />
+                    </div>
+                    <div class="field" style="margin:0">
+                      <label class="field-label" for="hero-tagline">One-line tagline</label>
+                      <div class="field-prefix-wrap">
+                        <input id="hero-tagline" type="text" value="Strength coach for women who hate gymtok." />
+                        <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens')" type="button">✨ Suggest</button>
+                      </div>
+                    </div>
+                    <div class="field" style="margin:0">
+                      <label class="field-label">Social proof line <span class="field-hint">handle · followers · timeframe</span></label>
+                      <div class="social-proof-line">
+                        <b>@alexandra</b>
+                        <span class="sp-dot"></span>
+                        <span><b>24k</b> followers</span>
+                        <span class="sp-dot"></span>
+                        <span>since <b>2018</b></span>
+                        <button class="iconbtn" data-tip="Edit" aria-label="Edit social proof" onclick="alert('Mockup — inline editor opens')" style="margin-left:auto">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Section: Bio -->
+            <article class="sec-card" draggable="true" data-section-id="bio" data-section-type="bio">
+              <header class="sec-head">
+                <span class="sec-grip" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <span class="sec-icon indigo" aria-hidden="true">📝</span>
+                <div class="sec-meta">
+                  <h3 class="sec-title">Bio</h3>
+                  <p class="sec-sub">Tell visitors who you are. ~150 words is the sweet spot.</p>
+                </div>
+                <div class="sec-actions">
+                  <button class="iconbtn" data-tip="Remove section" aria-label="Remove section" onclick="confirmRemoveSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                  <button class="sec-toggle" data-tip="Collapse" aria-label="Toggle section" onclick="toggleSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+              </header>
+              <div class="sec-body">
+                <div class="rt-toolbar" role="toolbar" aria-label="Formatting">
+                  <button data-tip="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button>
+                  <button data-tip="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button>
+                  <span class="rt-sep"></span>
+                  <button data-tip="Heading" aria-label="Heading">H</button>
+                  <button data-tip="Quote" aria-label="Quote">❝</button>
+                  <span class="rt-sep"></span>
+                  <button data-tip="Link" aria-label="Link">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </button>
+                  <span class="rt-sep"></span>
+                  <button data-tip="Bullet list" aria-label="Bullet list">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+                  </button>
+                  <button data-tip="Numbered list" aria-label="Numbered list">1.</button>
+                  <span class="rt-sep" style="margin-left:auto"></span>
+                  <button data-tip="Generate paragraph with AI" aria-label="AI suggest" onclick="alert('Mockup — AI generates a paragraph based on your handle + tagline')">✨ AI</button>
+                </div>
+                <textarea class="rt-area" id="bio-text">I'm Alexandra. I coach busy women who want to get strong without making the gym their personality.
+
+I started lifting at 24 to fix a back I'd wrecked sitting at a desk. Five years later I'd quit my consulting job and was coaching full-time. Today I work with about 40 women a year — most of them mums, founders, or runners who'd hit a wall trying to "just do more cardio."
+
+My method is unsexy: heavy basics, real recovery, and exactly enough volume to keep moving forward. No 4 AM cold-plunge content. No 30-day shred programs. Just the boring stuff that actually works for the next ten years.</textarea>
+                <div class="rt-meta">
+                  <span><span class="word-count is-good">147 words</span> · ~45 sec read</span>
+                  <span>Sweet spot: 100–200 words</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Section: Highlights -->
+            <article class="sec-card" draggable="true" data-section-id="highlights" data-section-type="highlights">
+              <header class="sec-head">
+                <span class="sec-grip" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <span class="sec-icon emerald" aria-hidden="true">⭐</span>
+                <div class="sec-meta">
+                  <h3 class="sec-title">Highlights</h3>
+                  <p class="sec-sub">3–6 stat cards. Pick an icon, set the value + caption.</p>
+                </div>
+                <div class="sec-actions">
+                  <button class="iconbtn" data-tip="Remove section" aria-label="Remove section" onclick="confirmRemoveSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                  <button class="sec-toggle" data-tip="Collapse" aria-label="Toggle section" onclick="toggleSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+              </header>
+              <div class="sec-body">
+                <div class="highlights-grid">
+                  <div class="highlight-card">
+                    <div class="hc-icon-row">
+                      <button class="hc-icon-btn" aria-label="Pick icon" data-tip="Pick icon" onclick="alert('Mockup — opens icon picker')">💪</button>
+                      <button class="iconbtn hc-remove" aria-label="Remove" data-tip="Remove" onclick="alert('Mockup — removes card')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                    <input class="hc-value" type="text" value="40 women / year" />
+                    <input class="hc-caption" type="text" value="coached 1:1 since 2020" />
+                  </div>
+                  <div class="highlight-card">
+                    <div class="hc-icon-row">
+                      <button class="hc-icon-btn" aria-label="Pick icon" data-tip="Pick icon" onclick="alert('Mockup — opens icon picker')">📚</button>
+                      <button class="iconbtn hc-remove" aria-label="Remove" data-tip="Remove" onclick="alert('Mockup — removes card')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                    <input class="hc-value" type="text" value="1 book published" />
+                    <input class="hc-caption" type="text" value="Rest Days Are Workouts (2024)" />
+                  </div>
+                  <div class="highlight-card">
+                    <div class="hc-icon-row">
+                      <button class="hc-icon-btn" aria-label="Pick icon" data-tip="Pick icon" onclick="alert('Mockup — opens icon picker')">🌍</button>
+                      <button class="iconbtn hc-remove" aria-label="Remove" data-tip="Remove" onclick="alert('Mockup — removes card')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                    <input class="hc-value" type="text" value="Lisbon, Portugal" />
+                    <input class="hc-caption" type="text" value="working remotely since 2022" />
+                  </div>
+                  <div class="highlight-card">
+                    <div class="hc-icon-row">
+                      <button class="hc-icon-btn" aria-label="Pick icon" data-tip="Pick icon" onclick="alert('Mockup — opens icon picker')">📅</button>
+                      <button class="iconbtn hc-remove" aria-label="Remove" data-tip="Remove" onclick="alert('Mockup — removes card')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                    <input class="hc-value" type="text" value="6 yrs coaching" />
+                    <input class="hc-caption" type="text" value="started 2018, full-time since 2020" />
+                  </div>
+                  <div class="highlight-card">
+                    <div class="hc-icon-row">
+                      <button class="hc-icon-btn" aria-label="Pick icon" data-tip="Pick icon" onclick="alert('Mockup — opens icon picker')">🎙</button>
+                      <button class="iconbtn hc-remove" aria-label="Remove" data-tip="Remove" onclick="alert('Mockup — removes card')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                    <input class="hc-value" type="text" value="40+ podcasts" />
+                    <input class="hc-caption" type="text" value="guest on training & longevity shows" />
+                  </div>
+                  <button class="highlight-add" onclick="alert('Mockup — adds an empty highlight card (max 6)')" aria-label="Add highlight">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add highlight
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <!-- Section: Story timeline -->
+            <article class="sec-card" draggable="true" data-section-id="timeline" data-section-type="timeline">
+              <header class="sec-head">
+                <span class="sec-grip" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <span class="sec-icon rose" aria-hidden="true">📅</span>
+                <div class="sec-meta">
+                  <h3 class="sec-title">Story timeline</h3>
+                  <p class="sec-sub">Year-by-year milestones. Drag entries within the section.</p>
+                </div>
+                <div class="sec-actions">
+                  <button class="iconbtn" data-tip="Remove section" aria-label="Remove section" onclick="confirmRemoveSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                  <button class="sec-toggle" data-tip="Collapse" aria-label="Toggle section" onclick="toggleSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+              </header>
+              <div class="sec-body">
+
+                <div class="tl-style-row">
+                  <span>Visual style:</span>
+                  <div class="tl-style-pills" role="tablist" aria-label="Timeline style">
+                    <button class="is-active" type="button" onclick="pickTlStyle(this)">List (alternating)</button>
+                    <button type="button" onclick="pickTlStyle(this)">Cards</button>
+                  </div>
+                  <span style="margin-left:auto">5 milestones</span>
+                </div>
+
+                <div class="timeline-editor">
+                  <div class="tl-entry">
+                    <span class="tl-grip" aria-label="Drag to reorder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <input class="tl-year" type="text" value="2018" />
+                    <div class="tl-fields">
+                      <input class="tl-title-input" type="text" value="First barbell" />
+                      <textarea class="tl-desc-input" rows="2">Joined a powerlifting gym in Berlin to fix back pain. Stayed for the community.</textarea>
+                    </div>
+                    <div class="tl-actions">
+                      <button class="iconbtn" data-tip="Add photo" aria-label="Add photo" onclick="alert('Mockup — image picker opens')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="Remove" aria-label="Remove milestone" onclick="alert('Mockup — confirm remove')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="tl-entry">
+                    <span class="tl-grip" aria-label="Drag to reorder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <input class="tl-year" type="text" value="2020" />
+                    <div class="tl-fields">
+                      <input class="tl-title-input" type="text" value="Quit consulting" />
+                      <textarea class="tl-desc-input" rows="2">Took a sabbatical to certify as a strength coach. Never went back to the office.</textarea>
+                    </div>
+                    <div class="tl-actions">
+                      <button class="iconbtn" data-tip="Add photo" aria-label="Add photo" onclick="alert('Mockup — image picker opens')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="Remove" aria-label="Remove milestone" onclick="alert('Mockup — confirm remove')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="tl-entry">
+                    <span class="tl-grip" aria-label="Drag to reorder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <input class="tl-year" type="text" value="2022" />
+                    <div class="tl-fields">
+                      <input class="tl-title-input" type="text" value="Moved to Lisbon" />
+                      <textarea class="tl-desc-input" rows="2">Switched to remote-first coaching. Built the first cohort of online clients.</textarea>
+                    </div>
+                    <div class="tl-actions">
+                      <button class="iconbtn" data-tip="Add photo" aria-label="Add photo" onclick="alert('Mockup — image picker opens')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="Remove" aria-label="Remove milestone" onclick="alert('Mockup — confirm remove')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="tl-entry">
+                    <span class="tl-grip" aria-label="Drag to reorder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <input class="tl-year" type="text" value="2024" />
+                    <div class="tl-fields">
+                      <input class="tl-title-input" type="text" value="Published Rest Days Are Workouts" />
+                      <textarea class="tl-desc-input" rows="2">Self-published the book on recovery. Sold out the first run in 6 weeks.</textarea>
+                    </div>
+                    <div class="tl-actions">
+                      <button class="iconbtn" data-tip="Add photo" aria-label="Add photo" onclick="alert('Mockup — image picker opens')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="Remove" aria-label="Remove milestone" onclick="alert('Mockup — confirm remove')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="tl-entry">
+                    <span class="tl-grip" aria-label="Drag to reorder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <input class="tl-year" type="text" value="2026" />
+                    <div class="tl-fields">
+                      <input class="tl-title-input" type="text" value="Now" />
+                      <textarea class="tl-desc-input" rows="2">Building Strong Not Skinny — a small group program for busy women.</textarea>
+                    </div>
+                    <div class="tl-actions">
+                      <button class="iconbtn" data-tip="Add photo" aria-label="Add photo" onclick="alert('Mockup — image picker opens')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="Remove" aria-label="Remove milestone" onclick="alert('Mockup — confirm remove')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="tl-add" onclick="alert('Mockup — adds a blank milestone row')" style="margin-top:10px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add milestone
+                </button>
+              </div>
+            </article>
+
+            <!-- Section: Press / quotes (Creator+ feature) -->
+            <article class="sec-card" draggable="true" data-section-id="press" data-section-type="press">
+              <header class="sec-head">
+                <span class="sec-grip" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <span class="sec-icon slate" aria-hidden="true">📰</span>
+                <div class="sec-meta">
+                  <h3 class="sec-title">Press / quotes <span class="sec-tier-badge tier-creator">⭐ Creator</span></h3>
+                  <p class="sec-sub">2–3 quote cards with attribution. Renders as a carousel on the public page.</p>
+                </div>
+                <div class="sec-actions">
+                  <button class="iconbtn" data-tip="Remove section" aria-label="Remove section" onclick="confirmRemoveSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                  <button class="sec-toggle" data-tip="Collapse" aria-label="Toggle section" onclick="toggleSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+              </header>
+              <div class="sec-body">
+                <div class="quotes-grid">
+                  <div class="quote-card">
+                    <button class="iconbtn qc-remove" aria-label="Remove quote" data-tip="Remove" onclick="alert('Mockup — removes quote')" style="position:absolute; top:6px; right:6px">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    <textarea class="qc-text">"Alexandra is the rare coach who treats rest as a workout. Her programs are quietly the best I've followed."</textarea>
+                    <div class="qc-attribution">
+                      <span class="sec-icon" style="background:rgba(0,0,0,0.06); color:#1F2937; font-size:11px; font-family:var(--font-display); font-weight:700; width:24px; height:24px; border-radius:6px">FT</span>
+                      <input class="qc-attr-input" type="text" value="The Fitness Times — issue 47" />
+                    </div>
+                  </div>
+                  <div class="quote-card">
+                    <button class="iconbtn qc-remove" aria-label="Remove quote" data-tip="Remove" onclick="alert('Mockup — removes quote')" style="position:absolute; top:6px; right:6px">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    <textarea class="qc-text">"Honest, no-nonsense coaching. She's the one I send my friends to when they ask where to start lifting."</textarea>
+                    <div class="qc-attribution">
+                      <span class="sec-icon warm" style="font-size:11px; font-family:var(--font-display); font-weight:700; width:24px; height:24px; border-radius:6px">RH</span>
+                      <input class="qc-attr-input" type="text" value="Run Happy podcast · @robinhuxley" />
+                    </div>
+                  </div>
+                  <div class="quote-card">
+                    <button class="iconbtn qc-remove" aria-label="Remove quote" data-tip="Remove" onclick="alert('Mockup — removes quote')" style="position:absolute; top:6px; right:6px">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    <textarea class="qc-text">"The book Rest Days Are Workouts is the antidote to the cult of grind. Required reading for any tired lifter."</textarea>
+                    <div class="qc-attribution">
+                      <span class="sec-icon emerald" style="font-size:11px; font-family:var(--font-display); font-weight:700; width:24px; height:24px; border-radius:6px">SH</span>
+                      <input class="qc-attr-input" type="text" value="Strong Habits Newsletter" />
+                    </div>
+                  </div>
+                  <button class="highlight-add" onclick="alert('Mockup — adds a blank quote card')" style="aspect-ratio: auto; min-height: 110px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add quote
+                  </button>
+                </div>
+                <div class="tier-hint" style="margin-top:14px">
+                  <span class="th-icon" aria-hidden="true">💡</span>
+                  Press / quotes is part of the <b>Creator</b> plan (Free is limited to the first 4 sections of any About page). We'll prompt to upgrade when you save if it's still here.
+                </div>
+              </div>
+            </article>
+
+            <!-- Section: Contact CTA -->
+            <article class="sec-card" draggable="true" data-section-id="contact" data-section-type="contact">
+              <header class="sec-head">
+                <span class="sec-grip" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <span class="sec-icon" aria-hidden="true">✉️</span>
+                <div class="sec-meta">
+                  <h3 class="sec-title">Contact CTA</h3>
+                  <p class="sec-sub">A "Get in touch" button at the bottom of the page.</p>
+                </div>
+                <div class="sec-actions">
+                  <button class="iconbtn" data-tip="Remove section" aria-label="Remove section" onclick="confirmRemoveSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                  <button class="sec-toggle" data-tip="Collapse" aria-label="Toggle section" onclick="toggleSection(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                </div>
+              </header>
+              <div class="sec-body">
+                <div class="cta-fields">
+                  <div class="field" style="margin:0">
+                    <label class="field-label" for="cta-label">Button label</label>
+                    <div class="field-prefix-wrap">
+                      <input id="cta-label" type="text" value="Work with me" />
+                      <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button">✨ Suggest</button>
+                    </div>
+                  </div>
+                  <div class="field" style="margin:0">
+                    <label class="field-label" for="cta-target">Where it goes</label>
+                    <select class="field-select" id="cta-target">
+                      <option selected>Contact page (tadaify.com/alexandra/contact)</option>
+                      <option>External email — mailto:hello@alexandrasilva.com</option>
+                      <option>External URL</option>
+                      <option>Booking link (Calendly / Cal.com)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field" style="margin-top:14px">
+                  <label class="field-label">Button style <span class="sec-tier-badge tier-pro">✨ Pro</span> <span class="field-hint">custom button styles unlock branded shapes</span></label>
+                  <div class="cta-style-row">
+                    <div class="cta-style-pills">
+                      <button class="is-active" onclick="pickCtaStyle(this)">Pill (default)</button>
+                      <button onclick="pickCtaStyle(this)">Rounded square</button>
+                      <button onclick="pickCtaStyle(this)">Square</button>
+                      <button onclick="pickCtaStyle(this)">Outline</button>
+                    </div>
+                    <span style="font-size:12px; color:var(--fg-muted)">Brand colour from theme.</span>
+                  </div>
+                  <div class="tier-hint">
+                    <span class="th-icon" aria-hidden="true">💡</span>
+                    Anything other than <b>Pill</b> is part of the <b>Pro</b> plan. We'll prompt to upgrade when you save if you change it.
+                  </div>
+                </div>
+              </div>
+            </article>
+
+          </div><!-- /.sections-stack -->
+
+          <div class="add-section-row">
+            <button class="add-section-cta" type="button" onclick="openSectionPicker()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add section
+            </button>
+          </div>
+
+        </div><!-- /#state-filled -->
+
+        <!-- =====================
+             EMPTY STATE (no sections added)
+             ===================== -->
+        <div id="state-empty" style="display:none">
+          <div class="empty-state">
+            <div class="es-emoji" aria-hidden="true">👋</div>
+            <h3>Tell visitors who you are</h3>
+            <p>Build your About page section by section — hero photo, bio, highlights, story timeline. Or pick a starter template and tweak it.</p>
+            <div class="es-actions">
+              <button class="btn btn-primary" onclick="openSectionPicker()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add your first section
+              </button>
+              <button class="btn btn-ghost" onclick="openSectionPicker(true)">
+                ✨ Use a starter template
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Sticky save bar -->
+<div class="save-bar" role="status" aria-live="polite">
+  <span class="save-status"><span class="save-dot" aria-hidden="true"></span>Auto-saved 2 min ago</span>
+  <span class="save-spacer"></span>
+  <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — discard unsaved changes')">Discard</button>
+  <button class="btn btn-primary btn-sm" onclick="trySave()">Save changes</button>
+</div>
+
+<!-- ============================================================
+     CENTERED MODAL — Add section picker
+     (per feedback_no_right_side_drawers — NEVER a drawer)
+
+     TierGate placeholder: when free-tier creator picks a section
+     that would push the total above 4, openSectionPicker triggers
+     TierGate.checkAndProceed before actually inserting the card.
+     ============================================================ -->
+<div class="modal-backdrop" id="section-picker" role="dialog" aria-modal="true" aria-labelledby="sp-title" hidden>
+  <div class="modal">
+
+    <div class="modal-head">
+      <h3 id="sp-title">Add a section</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeSectionPicker()" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <p style="margin:0 0 14px; color: var(--fg-muted); font-size: 13.5px">
+        Pick a section type to add to your About page. You can reorder, edit and remove any section after adding it.
+      </p>
+
+      <div class="types-grid">
+        <button class="type-tile" type="button" onclick="addSection('hero')">
+          <div class="tt-row">
+            <div class="tt-icon warm">🌅</div>
+            <h4 class="tt-name">Hero</h4>
+          </div>
+          <p class="tt-desc">Photo + name + tagline + social proof line. The first thing visitors see.</p>
+        </button>
+
+        <button class="type-tile" type="button" onclick="addSection('bio')">
+          <div class="tt-row">
+            <div class="tt-icon indigo">📝</div>
+            <h4 class="tt-name">Bio</h4>
+          </div>
+          <p class="tt-desc">Long-form story in your own words. Rich-text editor with ✨ AI assist.</p>
+        </button>
+
+        <button class="type-tile" type="button" onclick="addSection('highlights')">
+          <div class="tt-row">
+            <div class="tt-icon emerald">⭐</div>
+            <h4 class="tt-name">Highlights</h4>
+          </div>
+          <p class="tt-desc">3–6 stat cards. Clients coached, books published, places lived.</p>
+        </button>
+
+        <button class="type-tile" type="button" onclick="addSection('timeline')">
+          <div class="tt-row">
+            <div class="tt-icon rose">📅</div>
+            <h4 class="tt-name">Story timeline</h4>
+          </div>
+          <p class="tt-desc">Year-by-year milestones. List or card style on the public page.</p>
+        </button>
+
+        <button class="type-tile" type="button" onclick="addSection('press')">
+          <div class="tt-row">
+            <div class="tt-icon slate">📰</div>
+            <h4 class="tt-name">Press / quotes <span class="sec-tier-badge tier-creator" style="margin-left:6px">⭐ Creator</span></h4>
+          </div>
+          <p class="tt-desc">Quote cards with attribution. Renders as a carousel for visitors.</p>
+        </button>
+
+        <button class="type-tile" type="button" onclick="addSection('contact')">
+          <div class="tt-row">
+            <div class="tt-icon">✉️</div>
+            <h4 class="tt-name">Contact CTA</h4>
+          </div>
+          <p class="tt-desc">A "Get in touch" button. Links to contact page, mailto, or external URL.</p>
+        </button>
+      </div>
+
+      <div class="starter-row">
+        <h4>✨ Or start from a template</h4>
+        <p class="star-sub">Three ready-made compositions. You can edit everything after.</p>
+        <div class="starter-grid">
+          <button class="starter-card" type="button" onclick="useStarter('musician')">
+            <div class="sc-emoji">🎵</div>
+            <div class="sc-name">Musician</div>
+            <div class="sc-meta">Hero · Bio · Highlights · Press · Contact</div>
+          </button>
+          <button class="starter-card" type="button" onclick="useStarter('author')">
+            <div class="sc-emoji">📚</div>
+            <div class="sc-name">Author</div>
+            <div class="sc-meta">Hero · Bio · Timeline · Press · Contact</div>
+          </button>
+          <button class="starter-card" type="button" onclick="useStarter('coach')">
+            <div class="sc-emoji">💪</div>
+            <div class="sc-name">Coach</div>
+            <div class="sc-meta">Hero · Bio · Highlights · Timeline · Contact</div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-foot">
+      <span style="font-size:12px; color:var(--fg-muted)">Free plan: up to 4 sections per About page. <a href="./pricing.html" style="color:var(--brand-primary); font-weight:600">See plans →</a></span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeSectionPicker()">Cancel</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Demo toolbar — switch state + tier without page reload -->
+<div class="demo-toolbar" aria-hidden="true">
+  <span style="opacity:0.65">Demo</span>
+  <select onchange="setState(this.value)" aria-label="State">
+    <option value="filled" selected>State: filled (5 sections)</option>
+    <option value="empty">State: empty</option>
+  </select>
+  <select onchange="setTier(this.value)" aria-label="Tier">
+    <option value="free">Tier: Free</option>
+    <option value="creator" selected>Tier: Creator</option>
+    <option value="pro">Tier: Pro</option>
+    <option value="business">Tier: Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // ----- Demo state machinery -----
+  function urlParam(k, fb) {
+    var u = new URL(location.href);
+    return u.searchParams.get(k) || fb;
+  }
+  function setState(v) {
+    document.body.dataset.state = v;
+    document.getElementById('state-filled').style.display = (v === 'filled') ? '' : 'none';
+    document.getElementById('state-empty').style.display  = (v === 'empty')  ? '' : 'none';
+  }
+  function setTier(v) {
+    document.body.dataset.tier = v;
+    var pill = document.querySelector('.tdf-side .uhandle');
+    if (pill) pill.textContent = '@alexandra · ' + (v.charAt(0).toUpperCase() + v.slice(1));
+  }
+
+  // ----- Toggles -----
+  function toggleSwitch(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  // ----- Swatch picker -----
+  function pickSwatch(el) {
+    document.querySelectorAll('.swatch.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+  }
+
+  // ----- Theme -----
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  // ----- Section card collapse / remove -----
+  function toggleSection(btn) {
+    var card = btn.closest('.sec-card');
+    if (card) card.classList.toggle('is-collapsed');
+  }
+  function confirmRemoveSection(btn) {
+    var card = btn.closest('.sec-card');
+    if (!card) return;
+    var title = (card.querySelector('.sec-title') || {}).textContent || 'this section';
+    if (window.confirm('Remove "' + title.trim() + '"? You can add it back later.')) {
+      card.parentNode.removeChild(card);
+      updateSectionCount();
+    }
+  }
+  function updateSectionCount() {
+    var n = document.querySelectorAll('#sections-stack .sec-card').length;
+    var chip = document.querySelector('.panel-head .chip');
+    if (chip) chip.textContent = n + ' section' + (n === 1 ? '' : 's');
+    if (n === 0) {
+      // Auto-flip to empty state when last section removed
+      setState('empty');
+    }
+  }
+
+  // ----- Timeline style picker -----
+  function pickTlStyle(btn) {
+    var row = btn.parentNode;
+    Array.prototype.forEach.call(row.children, function (b) { b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+  }
+
+  // ----- Contact CTA style picker -----
+  function pickCtaStyle(btn) {
+    var row = btn.parentNode;
+    Array.prototype.forEach.call(row.children, function (b) { b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+  }
+
+  // ----- Section picker modal -----
+  function openSectionPicker(starterFocus) {
+    var bd = document.getElementById('section-picker');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+    if (starterFocus) {
+      setTimeout(function () {
+        var st = document.querySelector('.starter-card');
+        if (st) st.focus();
+      }, 80);
+    }
+  }
+  function closeSectionPicker() {
+    var bd = document.getElementById('section-picker');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+
+  function addSection(type) {
+    // Mockup: in real app, this builds + appends the section card from a registry.
+    closeSectionPicker();
+    setTimeout(function () { alert('Mockup — added "' + type + '" section. Scroll up to see it. Free tier max 4 sections is enforced at Save.'); }, 80);
+  }
+  function useStarter(name) {
+    closeSectionPicker();
+    setTimeout(function () { alert('Mockup — applied "' + name + '" starter template. Existing sections kept; new ones appended. Edit anything from here.'); }, 80);
+  }
+
+  // ----- Save: TierGate placeholder
+  // Per feedback_no_blur_premium_features, premium UI stays visible + interactive;
+  // gate triggers at Save based on what creator actually changed.
+  function trySave() {
+    var tier = document.body.dataset.tier || 'creator';
+    var features = [];
+
+    // Custom domain (Pro+)
+    var dom = document.getElementById('custom-domain');
+    if (dom && dom.value && dom.value.trim()) {
+      features.push({
+        id: 'custom-domain', name: 'Per-page custom domain', requires: 'pro',
+        meta: dom.value.trim()
+      });
+    }
+
+    // Free-tier section limit (4)
+    var n = document.querySelectorAll('#sections-stack .sec-card').length;
+    if (n > 4) {
+      features.push({
+        id: 'sections-over-4', name: 'More than 4 sections',
+        requires: 'creator',
+        meta: n + ' sections — Free is limited to 4. Section types beyond the limit go on a higher plan.'
+      });
+    }
+
+    // Press / quotes section (Creator+)
+    var pressCard = document.querySelector('.sec-card[data-section-type="press"]');
+    if (pressCard) {
+      features.push({
+        id: 'press-section', name: 'Press / quotes section',
+        requires: 'creator',
+        meta: 'Quote carousel for visitors.'
+      });
+    }
+
+    // Custom Contact CTA button style (Pro+) — anything except first option
+    var styleRow = document.querySelector('.cta-style-pills');
+    if (styleRow) {
+      var idx = Array.prototype.indexOf.call(styleRow.children, styleRow.querySelector('.is-active'));
+      if (idx > 0) {
+        features.push({
+          id: 'cta-style', name: 'Custom Contact CTA button style',
+          requires: 'pro',
+          meta: 'Branded shape variant.'
+        });
+      }
+    }
+
+    if (window.TierGate) {
+      TierGate.checkAndProceed({
+        currentTier: tier,
+        features: features,
+        onProceed:    function () { alert('Mockup — saved. Public page updated.'); },
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onSaveWithout: features.length ? function () { alert('Mockup — saved without premium changes (custom domain cleared, premium sections kept as drafts).'); } : null,
+        onCancel: function () {}
+      });
+    } else {
+      alert('Mockup — saved.');
+    }
+  }
+
+  // ----- Drag-and-drop reorder for sections (lightweight) -----
+  (function () {
+    var dragSrc = null;
+    var stack = document.getElementById('sections-stack');
+    if (!stack) return;
+
+    Array.prototype.forEach.call(stack.querySelectorAll('.sec-card'), function (card) {
+      card.addEventListener('dragstart', function (e) {
+        dragSrc = card;
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', card.dataset.sectionId || ''); } catch (err) {}
+      });
+      card.addEventListener('dragend', function () {
+        card.classList.remove('is-dragging');
+        Array.prototype.forEach.call(stack.querySelectorAll('.is-drag-over'), function (c) { c.classList.remove('is-drag-over'); });
+        dragSrc = null;
+      });
+      card.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragSrc && dragSrc !== card) card.classList.add('is-drag-over');
+      });
+      card.addEventListener('dragleave', function () {
+        card.classList.remove('is-drag-over');
+      });
+      card.addEventListener('drop', function (e) {
+        e.preventDefault();
+        card.classList.remove('is-drag-over');
+        if (!dragSrc || dragSrc === card) return;
+        var rect = card.getBoundingClientRect();
+        var after = (e.clientY - rect.top) > rect.height / 2;
+        if (after) card.parentNode.insertBefore(dragSrc, card.nextSibling);
+        else       card.parentNode.insertBefore(dragSrc, card);
+      });
+    });
+  })();
+
+  // ----- Esc closes the modal -----
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      var bd = document.getElementById('section-picker');
+      if (bd && bd.classList.contains('is-open')) closeSectionPicker();
+    }
+  });
+
+  // ----- Boot from URL -----
+  setState(urlParam('state', 'filled'));
+  var initTier = urlParam('tier', 'creator');
+  if (initTier !== 'creator') setTier(initTier);
+  updateSectionCount();
+
+  // Post-injection: add an "About" sub-item under Pages parent so the active
+  // page is highlighted in the sidebar. Mirrors the trick used by the Blog
+  // page editor — production drops this once DEC-MULTIPAGE-01 ships native
+  // multi-page sub-listing.
+  setTimeout(function () {
+    var subList = document.querySelector('.tdf-side .nav-sub-list');
+    if (!subList) return;
+    var aboutItem = document.createElement('a');
+    aboutItem.href = './app-page-about.html';
+    aboutItem.className = 'nav-sub-item is-current';
+    aboutItem.setAttribute('data-tip', 'About');
+    aboutItem.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>About</span>';
+    var addPage = subList.querySelector('.is-disabled');
+    if (addPage) subList.insertBefore(aboutItem, addPage);
+    else subList.appendChild(aboutItem);
+    Array.prototype.forEach.call(subList.querySelectorAll('.nav-sub-item.is-current'), function (el) {
+      if (el !== aboutItem) el.classList.remove('is-current');
+    });
+  }, 30);
+</script>
+</body>
+</html>
