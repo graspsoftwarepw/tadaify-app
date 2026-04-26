@@ -1068,6 +1068,74 @@
       font-size: 12.5px; font-weight: 500;
       text-align: center;
     }
+    /* FIX-EMB-001 — Embed auto-detect chip + provider-list reminder.
+       Empty / recognized / unsupported visual states. */
+    .embed-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .embed-chip.is-empty {
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .embed-chip.is-recognized {
+      background: rgba(16,185,129,0.14); color: #047857;
+      border-color: rgba(16,185,129,0.4);
+    }
+    body.dark-mode .embed-chip.is-recognized { color: #6EE7B7; }
+    .embed-chip.is-unsupported {
+      background: rgba(239,68,68,0.10); color: #B91C1C;
+      border-color: rgba(239,68,68,0.4);
+    }
+    body.dark-mode .embed-chip.is-unsupported { color: #FCA5A5; }
+    .embed-chip .ec-icon { font-size: 14px; line-height: 1; }
+    .embed-chip .ec-text strong { font-weight: 700; }
+    .embed-chip .ec-link {
+      background: transparent; border: 0; padding: 0;
+      color: inherit; font-weight: 700; cursor: pointer;
+      text-decoration: underline; font-size: inherit;
+      font-family: inherit;
+    }
+    .embed-provider-reminder {
+      margin-top: 14px;
+      padding: 10px 12px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px dashed var(--border);
+    }
+    .embed-provider-reminder .epr-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .embed-provider-reminder .epr-list {
+      font-size: 12px; color: var(--fg);
+      line-height: 1.5;
+    }
+
+    /* Embed live-preview empty state — shown until a recognized URL is
+       pasted. Distinct from the previous .preview-embed (still used by
+       Video block). */
+    .preview-embed-empty {
+      width: 100%; aspect-ratio: 16/9; border-radius: 10px;
+      background: rgba(255,255,255,0.10);
+      border: 1px dashed rgba(255,255,255,0.4);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.85);
+      text-align: center; padding: 14px;
+    }
+    .preview-embed-empty .pee-icon { font-size: 22px; opacity: 0.85; }
+    .preview-embed-empty .pee-msg { font-size: 12px; font-weight: 500; line-height: 1.4; max-width: 220px; }
+    .preview-embed-frame { width: 100%; }
+    .preview-embed-frame .pef-caption {
+      margin-top: 6px;
+      font-size: 12px; opacity: 0.85; color: #fff;
+      font-style: italic; text-align: center;
+    }
+
     .preview-form { text-align: center; }
     .preview-form .pf-heading {
       font-size: 16px; font-weight: 700; margin-bottom: 4px;
@@ -2954,6 +3022,115 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /* FIX-EMB-001 — Embed provider whitelist + safe-by-construction      */
+    /*               detector + iframe URL builder.                       */
+    /*                                                                    */
+    /* Locked MVP scope = exactly 12 providers (DEC-109): Spotify ·       */
+    /* SoundCloud · Bandcamp · Apple Podcasts · Apple Music · YouTube ·   */
+    /* Vimeo · TikTok · Twitter/X · Bluesky · Instagram · Loom.           */
+    /*                                                                    */
+    /* Detection rules:                                                   */
+    /*   { kind: 'empty' }       — no URL pasted                          */
+    /*   { kind: 'recognized', providerId, providerLabel, icon, iframeSrc } */
+    /*   { kind: 'unsupported' } — URL parsed but not in whitelist        */
+    /* ------------------------------------------------------------------ */
+    var EMBED_PROVIDERS = [
+      { id: 'spotify',         label: 'Spotify',         icon: '🎵', detect: /^https?:\/\/open\.spotify\.com\/(track|album|playlist|episode|show|artist)\/([A-Za-z0-9]+)/ },
+      { id: 'soundcloud',      label: 'SoundCloud',      icon: '🔊', detect: /^https?:\/\/(?:www\.|m\.)?soundcloud\.com\/([\w-]+\/[\w-]+)/ },
+      { id: 'bandcamp',        label: 'Bandcamp',        icon: '🎸', detect: /^https?:\/\/([\w-]+)\.bandcamp\.com\/(track|album)\/([\w-]+)/ },
+      { id: 'apple-podcasts',  label: 'Apple Podcasts',  icon: '🎙', detect: /^https?:\/\/podcasts\.apple\.com\/(?:[a-z]{2}\/)?podcast\/[^/]+\/id(\d+)/ },
+      { id: 'apple-music',     label: 'Apple Music',     icon: '🍎', detect: /^https?:\/\/music\.apple\.com\/(?:[a-z]{2}\/)?(album|playlist|song)\/[^/]+\/(\d+)/ },
+      { id: 'youtube',         label: 'YouTube',         icon: '🎬', detect: /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/ },
+      { id: 'vimeo',           label: 'Vimeo',           icon: '🎥', detect: /^https?:\/\/(?:www\.|player\.)?vimeo\.com\/(?:video\/)?(\d+)/ },
+      { id: 'tiktok',          label: 'TikTok',          icon: '🎵', detect: /^https?:\/\/(?:www\.|m\.)?tiktok\.com\/@[\w.-]+\/video\/(\d+)/ },
+      { id: 'twitter',         label: 'Twitter / X',     icon: '𝕏',  detect: /^https?:\/\/(?:www\.)?(?:twitter|x)\.com\/[\w]+\/status\/(\d+)/ },
+      { id: 'bluesky',         label: 'Bluesky',         icon: '🦋', detect: /^https?:\/\/bsky\.app\/profile\/([\w.-]+)\/post\/([\w]+)/ },
+      { id: 'instagram',       label: 'Instagram',       icon: '📷', detect: /^https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/([\w-]+)/ },
+      { id: 'loom',            label: 'Loom',            icon: '📹', detect: /^https?:\/\/(?:www\.)?loom\.com\/share\/([a-f0-9]+)/ }
+    ];
+
+    function detectEmbedProvider(url) {
+      var u = (url || '').trim();
+      if (!u) return { kind: 'empty' };
+      for (var i = 0; i < EMBED_PROVIDERS.length; i++) {
+        var p = EMBED_PROVIDERS[i];
+        var m = u.match(p.detect);
+        if (m) {
+          return {
+            kind: 'recognized',
+            providerId: p.id,
+            providerLabel: p.label,
+            icon: p.icon,
+            iframeSrc: buildEmbedIframeSrc(p.id, m, u)
+          };
+        }
+      }
+      // Some shape of URL was pasted but no provider matched.
+      return /^https?:\/\//i.test(u) ? { kind: 'unsupported' } : { kind: 'empty' };
+    }
+
+    /* Build a safe iframe src by RECONSTRUCTING the provider's official
+       embed URL from extracted IDs — never pass the raw user URL. */
+    function buildEmbedIframeSrc(providerId, match, originalUrl) {
+      switch (providerId) {
+        case 'spotify':
+          // /embed/<type>/<id>
+          return 'https://open.spotify.com/embed/' + match[1] + '/' + match[2] + '?utm_source=tadaify';
+        case 'soundcloud':
+          return 'https://w.soundcloud.com/player/?url=' + encodeURIComponent('https://soundcloud.com/' + match[1]) + '&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false';
+        case 'bandcamp':
+          // Real Bandcamp embeds need an album/track numeric ID — mockup uses a stable placeholder iframe.
+          return 'https://bandcamp.com/EmbeddedPlayer/album=12345/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=true/transparent=true/';
+        case 'apple-podcasts':
+          return 'https://embed.podcasts.apple.com/podcast/id' + match[1];
+        case 'apple-music':
+          return 'https://embed.music.apple.com/' + (match[1] === 'song' ? 'song' : match[1]) + '/' + match[2];
+        case 'youtube':
+          return 'https://www.youtube-nocookie.com/embed/' + match[1] + '?rel=0&modestbranding=1&color=white&playsinline=1';
+        case 'vimeo':
+          return 'https://player.vimeo.com/video/' + match[1] + '?dnt=1&title=0&byline=0&portrait=0';
+        case 'tiktok':
+          return 'https://www.tiktok.com/embed/v2/' + match[1];
+        case 'twitter':
+          // Twitter widget embeds via tadaify resolver (publish.twitter.com pattern).
+          return 'https://platform.twitter.com/embed/Tweet.html?id=' + match[1];
+        case 'bluesky':
+          return 'https://embed.bsky.app/embed/' + match[1] + '/' + match[2];
+        case 'instagram':
+          return 'https://www.instagram.com/p/' + match[1] + '/embed';
+        case 'loom':
+          return 'https://www.loom.com/embed/' + match[1];
+      }
+      return '';
+    }
+
+    function renderEmbedDetectChip(detection) {
+      var cls = 'embed-chip';
+      var content;
+      if (detection.kind === 'empty') {
+        cls += ' is-empty';
+        content = '<span class="ec-icon">🔍</span><span class="ec-text">Paste a URL from Spotify, YouTube, TikTok, or 9 more</span>';
+      } else if (detection.kind === 'unsupported') {
+        cls += ' is-unsupported';
+        content = '<span class="ec-icon">❌</span><span class="ec-text">Provider not supported. ' +
+                  '<button type="button" class="ec-link" onclick="loadType(\'link\')">Try a Link button instead →</button></span>';
+      } else {
+        cls += ' is-recognized';
+        content = '<span class="ec-icon">' + escapeHtml(detection.icon) + '</span>' +
+                  '<span class="ec-text"><strong>' + escapeHtml(detection.providerLabel) + '</strong> detected</span>';
+      }
+      return '<div class="field"><div class="' + cls + '">' + content + '</div></div>';
+    }
+
+    function renderEmbedProviderListReminder() {
+      var labels = EMBED_PROVIDERS.map(function (p) { return p.label; }).join(' · ');
+      return '<div class="field embed-provider-reminder">' +
+        '<div class="epr-title">Supports embeds from</div>' +
+        '<div class="epr-list">' + escapeHtml(labels) + '</div>' +
+      '</div>';
+    }
+
+    /* ------------------------------------------------------------------ */
     /* FIX-NLT-001 — Newsletter provider catalog + per-provider panels    */
     /*                                                                    */
     /* 7 options total per locked MVP scope (DEC-116/117/118/119):        */
@@ -3350,32 +3527,55 @@
         label: 'Embed',
         icon: '📺',
         category: 'Media',
+        /* FIX-EMB-001 — Embedded block per locked scope (DEC-108/109/111/112).
+           - URL paste with live auto-detect chip.
+           - 12-provider whitelist (no more, no less): Spotify · SoundCloud
+             · Bandcamp · Apple Podcasts · Apple Music · YouTube · Vimeo
+             · TikTok · Twitter/X · Bluesky · Instagram · Loom.
+           - "Safe by construction" — preview iframe is built by tadaify's
+             resolver, NOT raw user URL pass-through (DEC-108).
+           - No tier gating, no tier badge — free for everyone (DEC-111). */
         form: function (state) {
+          var url = state.url || 'https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT';
+          var detection = detectEmbedProvider(url);
           return [
-            { kind: 'url',  name: 'url',  label: 'Paste a URL — YouTube, Vimeo, Spotify, SoundCloud, Twitter, Instagram, TikTok',
-              value: state.url || 'https://youtu.be/dQw4w9WgXcQ',
-              help: 'Provider auto-detected. Preview updates instantly.' },
-            { kind: 'select', name: 'provider', label: 'Detected provider',
-              options: [['youtube','YouTube'],['vimeo','Vimeo'],['spotify','Spotify'],['soundcloud','SoundCloud'],['twitter','Twitter'],['instagram','Instagram'],['tiktok','TikTok']],
-              value: state.provider || 'youtube', readonly: true },
-            { kind: 'text', name: 'caption', label: 'Caption (optional)', value: state.caption || '', ai: true }
+            { kind: 'url', name: 'url', label: 'Paste a URL',
+              value: url,
+              help: 'YouTube, Spotify, TikTok, and 9 more — see the full list at the bottom.' },
+            { kind: 'raw', name: 'detectChip', html: renderEmbedDetectChip(detection) },
+            { kind: 'text', name: 'caption', label: 'Caption (optional)', value: state.caption || '', ai: true,
+              help: 'Shown under the embedded card on the public page.' },
+            { kind: 'raw', name: 'providerList', html: renderEmbedProviderListReminder() }
           ];
         },
         preview: function (state) {
-          var prov = state.provider || 'youtube';
-          var icons = { youtube: '▶', vimeo: '▶', spotify: '♫', soundcloud: '♪', twitter: '𝕏', instagram: '📷', tiktok: '🎵' };
-          /* youtube-nocookie + minimal-branding params per DEC-097 §15 / feedback_no_native_video_upload_youtube_nocookie_only.md */
-          if (prov === 'youtube' || prov === 'vimeo') {
-            var src = buildVideoIframeUrl(prov, state.url);
-            return '<div class="preview-embed" style="padding:0;overflow:hidden">' +
-                     '<iframe src="' + escapeHtml(src) + '" ' +
-                       'style="width:100%;aspect-ratio:16/9;border:0;display:block" ' +
-                       'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-                       'allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin">' +
-                     '</iframe>' +
+          /* Resolver pattern (DEC-108): we never pass the raw user URL to
+             an iframe src. We detect the provider, extract the canonical
+             ID, then build a known-good iframe URL from a whitelist. */
+          var url = state.url || '';
+          var detection = detectEmbedProvider(url);
+          if (detection.kind !== 'recognized') {
+            return '<div class="preview-embed-empty">' +
+                     '<div class="pee-icon">🔍</div>' +
+                     '<div class="pee-msg">' +
+                       (detection.kind === 'unsupported'
+                         ? 'Provider not supported — try a Link button instead.'
+                         : 'Paste a URL to see the embed preview.') +
+                     '</div>' +
                    '</div>';
           }
-          return '<div class="preview-embed">' + (icons[prov] || '▶') + ' &nbsp; ' + escapeHtml(prov.toUpperCase()) + ' embed</div>';
+          var src = detection.iframeSrc;
+          if (!src) {
+            return '<div class="preview-embed">' + escapeHtml(detection.providerLabel) + ' embed</div>';
+          }
+          return '<div class="preview-embed-frame" data-provider="' + escapeHtml(detection.providerId) + '">' +
+                   '<iframe src="' + escapeHtml(src) + '" ' +
+                     'style="width:100%;aspect-ratio:16/9;border:0;display:block;border-radius:10px" ' +
+                     'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+                     'allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin">' +
+                   '</iframe>' +
+                   (state.caption ? '<div class="pef-caption">' + escapeHtml(state.caption) + '</div>' : '') +
+                 '</div>';
         },
         analytics: { today: '92', sevenDay: '760', source: 'youtube' }
       },
