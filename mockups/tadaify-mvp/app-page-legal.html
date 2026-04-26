@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Legal page template (creator-facing) — F-PAGE-LEGAL-001 #17
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Multi-policy single page editor — Terms / Privacy / Cookie / Refund / DMCA / Accessibility / AUP.
+  Creators publish the legal documents needed for ad platforms (Meta Ads, Google Ads),
+  GDPR/CCPA compliance, and refund policy disclosure for paid offerings.
+
+  Pairs with creator-legal-public.html (visitor view).
+  Source story: graspsoftwarepw/tadaify-app issue #17 (F-PAGE-LEGAL-001)
+
+  Relationship to admin Legal versioning:
+    - admin-panel.html owns founder-side Legal versioning (F-LEGAL-002 #5, F-LEGAL-003 #6)
+      for the tadaify ToS / Privacy that every creator agrees to.
+    - app-page-legal.html (this file) is the creator-side editor for THEIR public
+      Legal page. Distinct concept; reuses the version-tracking pattern but per-creator-policy.
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced toggle; power fields inline)
+    - feedback_no_blur_premium_features (premium fields fully visible + interactive; tier badge inline; gate at Save via TierGate)
+    - feedback_no_right_side_drawers (Add policy + Templates picker + Version history are centered modals)
+    - feedback_mockup_full_feature_vision (templates, version history, compliance helper all wired with mock data)
+    - feedback_sidebar_pages_grouping (Pages parent + Home first page; Legal sub-page highlighted post-inject)
+    - feedback_tadaify_no_shop_in_mvp (sidebar Shop hidden — handled by shared partial)
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+
+  IMPORTANT: All starter-template content is mockup-only PLACEHOLDER text — clearly
+  marked "Mockup placeholder text — replace before publishing. Have a lawyer review."
+  This mockup does NOT ship vetted legal content; the production templates will
+  carry their own disclaimer + jurisdiction selection.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legal page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.warning   { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .chip.version   { background: rgba(99,102,241,0.10); color: var(--brand-primary); font-family: var(--font-mono); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content with right helper sidebar ── */
+    main.content {
+      padding: 24px 20px 120px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    /* Two-column on wide screens: main + right helper */
+    .work-grid { display: grid; gap: 18px; grid-template-columns: 1fr; }
+    @media (min-width: 1280px) { .work-grid { grid-template-columns: 1fr 320px; } }
+
+    /* Breadcrumb */
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    /* Page header */
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Title quick-pick chips */
+    .title-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .title-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 11.5px; color: var(--fg-muted); cursor: pointer;
+      transition: border-color .12s ease, color .12s ease;
+    }
+    .title-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+    /* Sections */
+    .section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+    .field-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 720px) { .field-row.three-col { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* Policy card list (the meat — multi-policy single page) */
+    .pol-list { display: flex; flex-direction: column; gap: 12px; }
+    .pol-card {
+      border: 1px solid var(--border); border-radius: 14px;
+      background: var(--bg);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .pol-card.is-collapsed .pol-body { display: none; }
+    .pol-card.is-drag-over { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+    .pol-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+      border-radius: 14px 14px 0 0;
+    }
+    .pol-card.is-collapsed .pol-head { border-bottom: 0; border-radius: 14px; }
+    .pol-head .pol-grip {
+      width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab; flex-shrink: 0;
+    }
+    .pol-head .pol-grip svg { width: 14px; height: 14px; }
+    .pol-head .pol-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(245,158,11,0.10));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .pol-head .pol-meta { min-width: 0; flex: 1; }
+    .pol-head .pol-name {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 16px; color: var(--fg);
+      border: 0; background: transparent; outline: 0;
+      padding: 2px 4px; border-radius: 6px;
+      width: 100%; max-width: 360px;
+    }
+    .pol-head .pol-name:focus { background: var(--bg); box-shadow: 0 0 0 2px rgba(99,102,241,0.20) inset; }
+    .pol-head .pol-line {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+      margin-top: 2px;
+    }
+    .pol-head .pol-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .pol-head .pol-actions { display: flex; align-items: center; gap: 4px; }
+    .pol-head .pol-collapse {
+      background: transparent; border: 0; cursor: pointer;
+      width: 28px; height: 28px; border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); transition: background .12s ease;
+    }
+    .pol-head .pol-collapse:hover { background: var(--bg-muted); color: var(--fg); }
+    .pol-head .pol-collapse svg { width: 14px; height: 14px; transition: transform .15s ease; }
+    .pol-card.is-collapsed .pol-head .pol-collapse svg { transform: rotate(-90deg); }
+    .pol-body { padding: 16px; }
+
+    /* Per-policy meta row (version + dates) */
+    .meta-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: 1fr 1fr 1fr;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 720px) { .meta-grid { grid-template-columns: 1fr; } }
+    .meta-cell {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg-elevated);
+    }
+    .meta-cell .mc-label {
+      font-size: 10.5px; font-weight: 600; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    .meta-cell .mc-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .meta-cell input.mc-input {
+      flex: 1; min-width: 0;
+      border: 0; background: transparent; padding: 0; outline: 0;
+      font: inherit; font-size: 13px; color: var(--fg); font-weight: 500;
+      font-family: var(--font-mono);
+    }
+    .meta-cell .mc-bump {
+      background: transparent; border: 0; padding: 2px 6px; border-radius: 5px;
+      font-size: 11px; color: var(--brand-primary); cursor: pointer; font-weight: 600;
+    }
+    .meta-cell .mc-bump:hover { background: rgba(99,102,241,0.10); }
+
+    /* Rich-text editor (matches FAQ pattern) */
+    .rt-toolbar {
+      display: flex; gap: 2px; flex-wrap: wrap;
+      padding: 6px; border: 1px solid var(--border-strong);
+      border-bottom: 0; border-radius: 10px 10px 0 0;
+      background: var(--bg-muted);
+    }
+    .rt-toolbar button {
+      width: 30px; height: 30px;
+      border: 0; border-radius: 6px;
+      background: transparent; color: var(--fg-muted);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600;
+    }
+    .rt-toolbar button:hover { background: var(--bg-elevated); color: var(--fg); }
+    .rt-toolbar .rt-sep { width: 1px; height: 18px; background: var(--border); margin: 6px 4px; }
+    .rt-toolbar .rt-suggest {
+      width: auto; padding: 0 9px; gap: 4px;
+      color: var(--brand-primary); font-size: 12px;
+      display: inline-flex; align-items: center;
+    }
+    .rt-toolbar .rt-suggest:hover { background: rgba(99,102,241,0.10); }
+    .rt-area {
+      width: 100%;
+      min-height: 280px;
+      padding: 14px 16px;
+      border: 1px solid var(--border-strong); border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: var(--bg-elevated);
+      font-family: var(--font-display); font-size: 16px; line-height: 1.65;
+      outline: 0; resize: vertical;
+    }
+    .rt-area:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+
+    /* Mockup-only placeholder warning banner inside each rich-text editor */
+    .placeholder-warn {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 12px; margin: 8px 0 0;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E; line-height: 1.5;
+    }
+    .placeholder-warn strong { color: #7C2D12; }
+    body.dark-mode .placeholder-warn { color: #FCD34D; }
+    body.dark-mode .placeholder-warn strong { color: #FDE68A; }
+
+    /* Auto-generated TOC entries preview */
+    .toc-preview {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px dashed var(--border-strong); border-radius: 9px;
+      background: var(--bg);
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .toc-preview .toc-label {
+      font-size: 10.5px; font-weight: 600; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
+    }
+    .toc-preview ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+    .toc-preview li {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .toc-preview li .toc-num {
+      font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-subtle); flex-shrink: 0;
+      width: 22px;
+    }
+    .toc-preview li .toc-text { color: var(--fg); }
+
+    /* Per-policy footer (version history + delete) */
+    .pol-foot {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      padding: 10px 14px;
+      border-top: 1px dashed var(--border);
+      background: var(--bg);
+      border-radius: 0 0 14px 14px;
+    }
+    .pol-foot .ver-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 9px; border-radius: 7px;
+      color: var(--brand-primary); font-size: 12px; font-weight: 600;
+      background: transparent; border: 0; cursor: pointer;
+    }
+    .pol-foot .ver-link:hover { background: rgba(99,102,241,0.10); }
+    .pol-foot .ver-link svg { width: 12px; height: 12px; }
+    .pol-foot .spacer { flex: 1; }
+
+    /* Policies-section actions row */
+    .sec-actions-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      padding: 14px;
+      border-top: 1px dashed var(--border);
+      background: var(--bg);
+      border-radius: 0 0 14px 14px;
+      margin-top: -1px;
+    }
+    .sec-actions-row .spacer { flex: 1; }
+
+    /* Kebab popover */
+    .kebab-pop {
+      position: absolute; right: 12px; top: 42px; z-index: 5;
+      min-width: 200px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-lg); padding: 4px;
+      display: none;
+    }
+    .kebab-pop.is-open { display: block; }
+    .kebab-pop button {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 8px 10px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--fg);
+      font-size: 13px; text-align: left; cursor: pointer;
+    }
+    .kebab-pop button:hover { background: var(--bg-muted); }
+    .kebab-pop button.danger { color: var(--danger); }
+    .kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+    .kebab-pop button.danger svg { color: var(--danger); }
+    .kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+    .pol-head { position: relative; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 460px; }
+    .empty-state .templates-row {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px; margin-top: 10px; max-width: 560px; width: 100%;
+    }
+    @media (min-width: 720px) { .empty-state .templates-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .empty-state .templ-tile {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 12px 10px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated); cursor: pointer;
+      transition: border-color .12s ease, transform .12s ease;
+      text-align: center;
+    }
+    .empty-state .templ-tile:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+    .empty-state .templ-tile .tt-emoji { font-size: 22px; }
+    .empty-state .templ-tile .tt-name { font-size: 12px; font-weight: 600; color: var(--fg); }
+    .empty-state .templ-tile .tt-sub  { font-size: 10.5px; color: var(--fg-muted); }
+
+    /* Centered modals */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(820px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal.modal-sm { width: min(560px, 96vw); }
+    .modal.modal-md { width: min(720px, 96vw); }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+    .modal-foot .foot-meta { font-size: 12px; color: var(--fg-muted); }
+
+    /* Add-policy type tiles */
+    .type-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+    @media (min-width: 720px) { .type-grid { grid-template-columns: repeat(3, 1fr); } }
+    .type-tile {
+      cursor: pointer;
+      padding: 14px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      background: var(--bg);
+      display: flex; flex-direction: column; gap: 6px;
+      transition: border-color .12s ease, background .12s ease;
+      position: relative;
+    }
+    .type-tile:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .type-tile.is-already-added { opacity: 0.55; cursor: not-allowed; }
+    .type-tile.is-already-added:hover { border-color: var(--border); background: var(--bg); }
+    .type-tile .tt-icon { font-size: 22px; line-height: 1; }
+    .type-tile .tt-name { font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px; }
+    .type-tile .tt-sub  { font-size: 11.5px; color: var(--fg-muted); line-height: 1.4; }
+    .type-tile .tt-already {
+      position: absolute; top: 8px; right: 8px;
+      font-size: 10px; color: var(--success); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* Templates picker — pre-vetted starter templates with disclaimer */
+    .templ-disclaimer {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px; margin-bottom: 16px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 10px 10px 0;
+      font-size: 13px; color: #92400E; line-height: 1.55;
+    }
+    .templ-disclaimer .td-icon { font-size: 18px; flex-shrink: 0; line-height: 1.2; }
+    .templ-disclaimer strong { color: #7C2D12; }
+    body.dark-mode .templ-disclaimer { color: #FCD34D; }
+    body.dark-mode .templ-disclaimer strong { color: #FDE68A; }
+
+    .templates-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .templates-grid { grid-template-columns: 1fr 1fr; } }
+    .templ-card {
+      cursor: pointer;
+      padding: 14px;
+      border: 1.5px solid rgba(99,102,241,0.30); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));
+      display: flex; flex-direction: column; gap: 6px;
+      transition: border-color .12s ease, transform .12s ease;
+    }
+    .templ-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+    .templ-card .tc-emoji { font-size: 22px; }
+    .templ-card .tc-name {
+      font-weight: 600; font-size: 14px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .templ-card .tc-sub { font-size: 12px; color: var(--fg-muted); line-height: 1.5; }
+    .templ-card .tc-list {
+      list-style: none; padding: 0; margin: 4px 0 0;
+      font-size: 11px; color: var(--fg-muted); line-height: 1.5;
+    }
+    .templ-card .tc-list li::before { content: "• "; color: var(--brand-primary); }
+
+    /* Version history modal — list of past versions */
+    .version-list { display: flex; flex-direction: column; gap: 8px; }
+    .version-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px; align-items: center;
+      padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .version-row.is-current {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .version-row .vr-version {
+      font-family: var(--font-mono); font-weight: 600;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--bg-elevated); color: var(--brand-primary);
+      font-size: 12.5px;
+      border: 1px solid var(--border);
+    }
+    .version-row.is-current .vr-version {
+      background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
+    }
+    .version-row .vr-meta { min-width: 0; }
+    .version-row .vr-eff {
+      font-weight: 600; font-size: 13px;
+    }
+    .version-row .vr-changes {
+      font-size: 11.5px; color: var(--fg-muted); margin-top: 2px;
+      line-height: 1.45;
+    }
+    .version-row .vr-actions { display: flex; gap: 4px; }
+
+    /* Compliance helper sidebar (right column on desktop) */
+    .helper {
+      position: sticky; top: 70px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px;
+      max-height: calc(100vh - 90px);
+      overflow-y: auto;
+      align-self: start;
+    }
+    @media (max-width: 1279px) {
+      .helper { position: static; max-height: none; }
+    }
+    .helper h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 15px; margin: 0 0 4px; letter-spacing: -0.01em;
+    }
+    .helper .h-sub { font-size: 11.5px; color: var(--fg-muted); margin-bottom: 14px; }
+    .helper .h-block { margin-bottom: 18px; }
+    .helper .h-block:last-child { margin-bottom: 0; }
+    .helper .h-block-title {
+      font-size: 11px; font-weight: 700; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 8px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .check-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .check-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 8px; align-items: flex-start;
+      padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg);
+      font-size: 12.5px; line-height: 1.45;
+    }
+    .check-list li.is-needed { border-color: rgba(245,158,11,0.40); background: rgba(245,158,11,0.06); }
+    .check-list li.is-met    { border-color: rgba(16,185,129,0.40); background: rgba(16,185,129,0.06); }
+    .check-list li .cl-ico {
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .check-list li.is-needed .cl-ico { background: var(--brand-warm); color: #7C2D12; }
+    .check-list li.is-met    .cl-ico { background: var(--success); color: #fff; }
+    .check-list li.is-na     .cl-ico { background: var(--bg-muted); color: var(--fg-subtle); }
+    .check-list li .cl-name { font-weight: 600; color: var(--fg); }
+    .check-list li .cl-sub  { color: var(--fg-muted); font-size: 11.5px; margin-top: 1px; }
+
+    .review-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 9px;
+      background: var(--bg);
+      font-size: 12.5px;
+    }
+    .review-row .rr-meta { flex: 1; min-width: 0; }
+    .review-row .rr-name { font-weight: 600; color: var(--fg); }
+    .review-row .rr-sub { color: var(--fg-muted); font-size: 11.5px; margin-top: 1px; }
+    .review-row.is-stale { border-color: rgba(245,158,11,0.40); background: rgba(245,158,11,0.06); }
+
+    /* Translation list (Pro+) */
+    .translation-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+    .translation-list li {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg);
+      font-size: 12.5px;
+    }
+    .translation-list li .tl-flag { font-size: 14px; line-height: 1; flex-shrink: 0; }
+    .translation-list li .tl-name { flex: 1; font-weight: 500; }
+    .translation-list li .tl-status {
+      font-size: 10.5px; font-weight: 700;
+      padding: 2px 7px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .translation-list li .tl-status.is-done { background: var(--success-bg); color: #065F46; }
+    .translation-list li .tl-status.is-todo { background: var(--bg-muted); color: var(--fg-muted); }
+
+    /* Cookie banner integration link */
+    .cookie-banner-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 9px;
+      color: var(--brand-primary); font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: border-color .12s ease;
+    }
+    .cookie-banner-link:hover { border-color: var(--brand-primary); }
+    .cookie-banner-link svg { width: 13px; height: 13px; }
+
+    /* Inline tier hint */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+    body.dark-mode .tier-hint { color: #FCD34D; }
+
+    /* Sticky save bar */
+    .savebar {
+      position: sticky; bottom: 0; z-index: 30;
+      margin: 18px -20px -120px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.95);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    @media (min-width: 720px) { .savebar { margin: 18px -32px -80px; padding: 12px 32px; } }
+    .savebar .sb-status { font-size: 12.5px; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+    .savebar .sb-status .sb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+    .savebar .sb-spacer { flex: 1; }
+    body.dark-mode .savebar { background: rgba(11,15,30,0.95); border-top-color: #1F2937; }
+
+    /* Demo-toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode details.expander {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .pol-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .pol-head { background: #141A2D; border-bottom-color: #1F2937; }
+    body.dark-mode .meta-cell { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .toc-preview { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .pol-foot { background: #0B0F1E; border-top-color: #1F2937; }
+    body.dark-mode .sec-actions-row { background: #0B0F1E; border-top-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .rt-toolbar { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .rt-area { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .empty-state .templ-tile { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .kebab-pop { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .kebab-pop button { color: #F3F4F6; }
+    body.dark-mode .kebab-pop button:hover { background: #1F2937; }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .helper { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .check-list li { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .check-list li.is-needed { border-color: rgba(245,158,11,0.50); background: rgba(245,158,11,0.10); }
+    body.dark-mode .check-list li.is-met { border-color: rgba(16,185,129,0.50); background: rgba(16,185,129,0.10); }
+    body.dark-mode .review-row { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .review-row.is-stale { border-color: rgba(245,158,11,0.50); background: rgba(245,158,11,0.10); }
+    body.dark-mode .translation-list li { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .cookie-banner-link { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .version-row { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .version-row.is-current { background: rgba(99,102,241,0.08); border-color: var(--brand-primary); }
+    body.dark-mode .version-row .vr-version { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .templ-card { border-color: rgba(99,102,241,0.40); background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08)); }
+    body.dark-mode .type-tile { background: #0B0F1E; border-color: #1F2937; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <a href="./creator-legal-public.html" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" data-tip="Open the public Legal page in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View Legal page
+  </a>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+
+  <!-- Canonical sidebar (Pages active, Legal sub-page highlighted via post-inject) -->
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ========== MAIN ========== -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Legal</span>
+    </nav>
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">⚖️</span> Legal</h1>
+        <p class="sub">All your legal documents in one place. Required for selling on Meta Ads / Google Ads, GDPR compliance, and refund disclosure for paid offers.</p>
+        <div class="title-chips" aria-label="Title quick-pick">
+          <button class="title-chip" onclick="setTitle('Legal', 'legal')">Legal</button>
+          <button class="title-chip" onclick="setTitle('Policies', 'policies')">Policies</button>
+          <button class="title-chip" onclick="setTitle('Terms &amp; Privacy', 'terms')">Terms &amp; Privacy</button>
+          <button class="title-chip" onclick="setTitle('Legal Center', 'legal-center')">Legal Center</button>
+        </div>
+      </div>
+      <div class="actions">
+        <span class="url-pill" id="page-url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b id="page-url-slug">legal</b>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="window.open('./creator-legal-public.html', '_blank')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+    </div>
+
+    <!-- Two-column work area: main editor + right helper sidebar (1280+) -->
+    <div class="work-grid">
+
+      <!-- ============== MAIN COLUMN ============== -->
+      <div>
+
+        <!-- ===================================================
+             SECTION 1 — Page settings
+             =================================================== -->
+        <section class="section">
+          <div class="section-head">
+            <h2>Page settings</h2>
+            <span class="sub">Title, URL, visibility, search-engine indexing.</span>
+          </div>
+          <div class="section-body">
+
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="page-title">Page title <span class="field-hint">shown as &lt;h1&gt; on the public page</span></label>
+                <input class="field-input" id="page-title" type="text" value="Legal" oninput="syncTitleToUrlPill()" />
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+                <div class="field-prefix-wrap">
+                  <span class="field-prefix">tadaify.com/alexandra/</span>
+                  <input id="page-slug" type="text" value="legal" oninput="syncSlugToUrlPill()" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label">Publish</label>
+                <div class="row-toggle">
+                  <div>
+                    <div class="rt-name">Page is live</div>
+                    <div class="rt-sub">Visitors can find your Legal page at the URL above.</div>
+                  </div>
+                  <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="field-label">Show in main page footer</label>
+                <div class="row-toggle">
+                  <div>
+                    <div class="rt-name">Footer link from your homepage</div>
+                    <div class="rt-sub">Adds a "Legal" link to the footer of <span class="mono" style="font-family:var(--font-mono)">/alexandra</span>.</div>
+                  </div>
+                  <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle nav visibility" onclick="toggleSwitch(this)"></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Page background <span class="field-hint">legal pages read best with high-contrast neutrals</span></label>
+              <div class="swatch-row">
+                <div class="swatch is-selected" style="background: var(--bg);"               data-name="Inherit theme"  onclick="pickSwatch(this)" title="Inherit theme"></div>
+                <div class="swatch"             style="background: #FFFFFF;"                  data-name="White"          onclick="pickSwatch(this)" title="White (best for readability)"></div>
+                <div class="swatch"             style="background: #F8F4EE;"                  data-name="Warm cream"     onclick="pickSwatch(this)" title="Warm cream"></div>
+                <div class="swatch"             style="background: #F9FAFB;"                  data-name="Cool grey"      onclick="pickSwatch(this)" title="Cool grey"></div>
+                <div class="swatch"             style="background: #1F2937;"                  data-name="Slate"          onclick="pickSwatch(this)" title="Slate"></div>
+                <div class="swatch"             style="background: #0B0F1E;"                  data-name="Dark canvas"    onclick="pickSwatch(this)" title="Dark canvas"></div>
+              </div>
+            </div>
+
+            <details class="expander" open style="margin-top:14px">
+              <summary>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                SEO &amp; search-engine settings <span class="ex-sub">— legal pages typically excluded from search results</span>
+                <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+              </summary>
+              <div class="ex-body">
+                <div class="row-toggle" style="margin-bottom:12px">
+                  <div>
+                    <div class="rt-name">Hide from search engines (<span style="font-family:var(--font-mono)">noindex,follow</span>)</div>
+                    <div class="rt-sub">Recommended for Legal pages — Google won't show them in results, but links to/from the page still work normally.</div>
+                  </div>
+                  <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle noindex" onclick="toggleSwitch(this)"></button>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · only used if a visitor shares the link</span></label>
+                  <div class="field-prefix-wrap">
+                    <input id="seo-title" type="text" value="Legal — Strong Not Skinny by Alexandra Silva" />
+                    <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal')" type="button">✨ Suggest</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+                  <div class="field-prefix-wrap" style="align-items:flex-start">
+                    <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Terms of Service, Privacy Policy, Refund Policy, and Cookie Policy for Strong Not Skinny products and coaching.</textarea>
+                    <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+          </div>
+        </section>
+
+        <!-- ===================================================
+             SECTION 2 — Policies (the meat — multi-policy single page)
+             =================================================== -->
+        <section class="section">
+          <div class="section-head">
+            <h2>Policies</h2>
+            <span class="sub">Drag to reorder. Each policy renders as its own section on the public page.</span>
+            <span class="head-spacer"></span>
+            <button class="btn btn-ghost btn-sm" onclick="openTemplatesModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Use template
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openAddPolicyModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add policy
+            </button>
+          </div>
+
+          <div class="section-body" style="padding:18px">
+
+            <!-- ============ FILLED STATE (default) ============ -->
+            <div id="state-filled">
+
+              <div class="pol-list" id="pol-list">
+
+                <!-- ============== POLICY 1 — Terms of Service ============== -->
+                <div class="pol-card" data-policy-id="terms">
+                  <div class="pol-head">
+                    <span class="pol-grip" aria-label="Drag policy">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <span class="pol-icon" aria-hidden="true">📜</span>
+                    <div class="pol-meta">
+                      <input class="pol-name" type="text" value="Terms of Service" aria-label="Policy name" />
+                      <div class="pol-line">
+                        <span class="chip version">v1.2</span>
+                        <span>Effective Apr 1, 2026</span>
+                        <span class="dot"></span>
+                        <span>Updated Mar 28, 2026</span>
+                      </div>
+                    </div>
+                    <div class="pol-actions">
+                      <button class="iconbtn" data-tip="Version history" onclick="openVersionHistoryModal('Terms of Service')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="More" onclick="togglePop(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="18" r="1"/></svg>
+                      </button>
+                      <div class="kebab-pop">
+                        <button onclick="alert('Mockup — copies the public anchor URL: tadaify.com/alexandra/legal#terms')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Copy public link</button>
+                        <button onclick="alert('Mockup — duplicates this policy (e.g. to draft v2 alongside v1)')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplicate</button>
+                        <button onclick="alert('Mockup — exports as PDF for offline review')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export as PDF</button>
+                        <hr/>
+                        <button class="danger" onclick="if (confirm('Remove Terms of Service from this Legal page? Past versions stay archived for 7 years.')) alert('Mockup — removed (still in version history)')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Remove</button>
+                      </div>
+                      <button class="pol-collapse" data-tip="Collapse" onclick="togglePolicyCollapse(this)" aria-label="Collapse policy">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="pol-body">
+                    <div class="meta-grid">
+                      <div class="meta-cell">
+                        <div class="mc-label">Version</div>
+                        <div class="mc-row">
+                          <input class="mc-input" type="text" value="1.2" />
+                          <button class="mc-bump" onclick="alert('Mockup — bumps to 1.3 (PATCH) on next publish')" type="button">+ patch</button>
+                        </div>
+                      </div>
+                      <div class="meta-cell">
+                        <div class="mc-label">Effective date</div>
+                        <div class="mc-row">
+                          <input class="mc-input" type="date" value="2026-04-01" />
+                        </div>
+                      </div>
+                      <div class="meta-cell">
+                        <div class="mc-label">Last updated</div>
+                        <div class="mc-row">
+                          <input class="mc-input" type="date" value="2026-03-28" />
+                          <button class="mc-bump" onclick="document.querySelectorAll('.mc-input[type=date]')[2].value = new Date().toISOString().slice(0,10); alert('Mockup — set to today')" type="button">today</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="field-label" style="margin-bottom:6px">Body</label>
+                      <div class="rt-toolbar" aria-label="Formatting">
+                        <button data-tip="Bold (⌘B)" onclick="alert('Mockup — bold')"><b>B</b></button>
+                        <button data-tip="Italic (⌘I)" onclick="alert('Mockup — italic')"><i>I</i></button>
+                        <span class="rt-sep"></span>
+                        <button data-tip="Heading 2" onclick="alert('Mockup — H2 (becomes a TOC entry)')">H2</button>
+                        <button data-tip="Heading 3" onclick="alert('Mockup — H3 (sub-heading)')">H3</button>
+                        <span class="rt-sep"></span>
+                        <button data-tip="Quote" onclick="alert('Mockup — block quote')">"</button>
+                        <button data-tip="Link (⌘K)" onclick="alert('Mockup — link picker')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button>
+                        <button data-tip="Bulleted list" onclick="alert('Mockup — bullet list')">•</button>
+                        <button data-tip="Numbered list" onclick="alert('Mockup — numbered list')">1.</button>
+                        <span class="rt-sep"></span>
+                        <button class="rt-suggest" onclick="alert('Mockup — opens AI suggester to clean up + tighten the wording (does NOT generate legal advice)')" type="button">✨ Suggest section</button>
+                      </div>
+                      <textarea class="rt-area" id="rt-terms">## 1. Acceptance of terms
+
+By accessing strongnotskinny.com (the "Site") and any products or services we offer, you agree to be bound by these Terms of Service.
+
+## 2. Eligibility
+
+You must be at least 18 years old, or the age of majority in your jurisdiction, to purchase services or products from us.
+
+## 3. Subscriptions and payments
+
+Coaching subscriptions auto-renew monthly. You may cancel at any time from your account dashboard; cancellation takes effect at the end of the current billing period.
+
+## 4. Intellectual property
+
+All training plans, video content, and written materials are owned by Alexandra Silva and may not be redistributed, resold, or reproduced without written permission.
+
+## 5. Disclaimer of warranties
+
+Our content is for informational and educational purposes only and is not medical advice. Consult a qualified healthcare provider before starting any new fitness program.
+
+## 6. Limitation of liability
+
+To the maximum extent permitted by law, our total liability for any claim arising from your use of the Site is limited to the amount you paid us in the 12 months preceding the claim.
+
+## 7. Governing law
+
+These Terms are governed by the laws of England and Wales. Any dispute will be resolved in the courts of London, United Kingdom.</textarea>
+                      <div class="placeholder-warn">
+                        <span aria-hidden="true">⚠️</span>
+                        <div><strong>Mockup placeholder text — replace before publishing.</strong> Have a lawyer review the final wording. tadaify provides starter templates as a convenience; we do not provide legal advice.</div>
+                      </div>
+
+                      <div class="toc-preview" aria-hidden="true">
+                        <div class="toc-label">Auto-generated TOC entries (from H2 / H3 headings)</div>
+                        <ul>
+                          <li><span class="toc-num">§ 1</span><span class="toc-text">Acceptance of terms</span></li>
+                          <li><span class="toc-num">§ 2</span><span class="toc-text">Eligibility</span></li>
+                          <li><span class="toc-num">§ 3</span><span class="toc-text">Subscriptions and payments</span></li>
+                          <li><span class="toc-num">§ 4</span><span class="toc-text">Intellectual property</span></li>
+                          <li><span class="toc-num">§ 5</span><span class="toc-text">Disclaimer of warranties</span></li>
+                          <li><span class="toc-num">§ 6</span><span class="toc-text">Limitation of liability</span></li>
+                          <li><span class="toc-num">§ 7</span><span class="toc-text">Governing law</span></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pol-foot">
+                    <button class="ver-link" onclick="openVersionHistoryModal('Terms of Service')">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      View 3 past versions
+                    </button>
+                    <span class="spacer"></span>
+                    <span class="chip">Anchor: <span style="font-family:var(--font-mono); margin-left:4px">#terms</span></span>
+                  </div>
+                </div>
+
+                <!-- ============== POLICY 2 — Privacy Policy ============== -->
+                <div class="pol-card" data-policy-id="privacy">
+                  <div class="pol-head">
+                    <span class="pol-grip" aria-label="Drag policy">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <span class="pol-icon" aria-hidden="true">🔒</span>
+                    <div class="pol-meta">
+                      <input class="pol-name" type="text" value="Privacy Policy" aria-label="Policy name" />
+                      <div class="pol-line">
+                        <span class="chip version">v2.0</span>
+                        <span>Effective Apr 15, 2026</span>
+                        <span class="dot"></span>
+                        <span>Updated Apr 15, 2026</span>
+                        <span class="dot"></span>
+                        <span class="chip warning" style="font-size:10.5px">GDPR variant</span>
+                      </div>
+                    </div>
+                    <div class="pol-actions">
+                      <button class="iconbtn" data-tip="Version history" onclick="openVersionHistoryModal('Privacy Policy')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="More" onclick="togglePop(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="18" r="1"/></svg>
+                      </button>
+                      <div class="kebab-pop">
+                        <button onclick="alert('Mockup — copies the public anchor URL')">Copy public link</button>
+                        <button onclick="alert('Mockup — duplicates this policy')">Duplicate</button>
+                        <button onclick="alert('Mockup — exports as PDF')">Export as PDF</button>
+                        <hr/>
+                        <button class="danger" onclick="if (confirm('Remove Privacy Policy?')) alert('Mockup — removed')">Remove</button>
+                      </div>
+                      <button class="pol-collapse" data-tip="Expand" onclick="togglePolicyCollapse(this)" aria-label="Expand policy">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="pol-body">
+                    <div class="meta-grid">
+                      <div class="meta-cell">
+                        <div class="mc-label">Version</div>
+                        <div class="mc-row">
+                          <input class="mc-input" type="text" value="2.0" />
+                          <button class="mc-bump" onclick="alert('Mockup — bumps to 2.1')" type="button">+ patch</button>
+                        </div>
+                      </div>
+                      <div class="meta-cell">
+                        <div class="mc-label">Effective date</div>
+                        <div class="mc-row">
+                          <input class="mc-input" type="date" value="2026-04-15" />
+                        </div>
+                      </div>
+                      <div class="meta-cell">
+                        <div class="mc-label">Last updated</div>
+                        <div class="mc-row">
+                          <input class="mc-input" type="date" value="2026-04-15" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="field-label" style="margin-bottom:6px">Body</label>
+                      <div class="rt-toolbar" aria-label="Formatting">
+                        <button data-tip="Bold (⌘B)"><b>B</b></button>
+                        <button data-tip="Italic (⌘I)"><i>I</i></button>
+                        <span class="rt-sep"></span>
+                        <button data-tip="Heading 2">H2</button>
+                        <button data-tip="Heading 3">H3</button>
+                        <span class="rt-sep"></span>
+                        <button data-tip="Quote">"</button>
+                        <button data-tip="Link (⌘K)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></button>
+                        <button data-tip="Bulleted list">•</button>
+                        <button data-tip="Numbered list">1.</button>
+                        <span class="rt-sep"></span>
+                        <button class="rt-suggest" type="button">✨ Suggest section</button>
+                      </div>
+                      <textarea class="rt-area">## 1. What we collect
+
+We collect personal data you give us directly (name, email, billing address) and data automatically generated by your use of the Site (IP address, device type, pages visited, time on page).
+
+## 2. Why we collect it (legal basis under GDPR Art. 6)
+
+- **Performance of contract** — to deliver the products and coaching you've purchased.
+- **Legitimate interest** — to keep the Site secure and improve our services.
+- **Consent** — for marketing emails and non-essential cookies.
+
+## 3. How long we keep it
+
+Account data: as long as your account is active, plus 7 years for tax purposes after account closure (UK requirement).
+Anonymised analytics: 26 months (Google Analytics default).
+
+## 4. Your rights
+
+Under GDPR you have the right to access, rectify, erase, restrict processing of, port, and object to processing of your personal data. Email <a href="mailto:hello@strongnotskinny.com">hello@strongnotskinny.com</a> to exercise any of these rights — we respond within 30 days.
+
+## 5. International transfers
+
+Some of our processors (Stripe, Google Workspace, Cloudflare) are based in the United States. Where data leaves the EU/UK, we rely on Standard Contractual Clauses (SCCs) approved by the European Commission.
+
+## 6. Data Protection Officer
+
+We are not legally required to appoint a DPO, but data protection inquiries are handled by Alexandra Silva personally — <a href="mailto:privacy@strongnotskinny.com">privacy@strongnotskinny.com</a>.</textarea>
+                      <div class="placeholder-warn">
+                        <span aria-hidden="true">⚠️</span>
+                        <div><strong>Mockup placeholder text — replace before publishing.</strong> GDPR requires accurate disclosure of every processor and data flow. Have a lawyer or DPO review.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pol-foot">
+                    <button class="ver-link" onclick="openVersionHistoryModal('Privacy Policy')">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      View 2 past versions
+                    </button>
+                    <span class="spacer"></span>
+                    <span class="chip">Anchor: <span style="font-family:var(--font-mono); margin-left:4px">#privacy</span></span>
+                  </div>
+                </div>
+
+                <!-- ============== POLICY 3 — Cookie Policy ============== -->
+                <div class="pol-card is-collapsed" data-policy-id="cookie">
+                  <div class="pol-head">
+                    <span class="pol-grip" aria-label="Drag policy">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <span class="pol-icon" aria-hidden="true">🍪</span>
+                    <div class="pol-meta">
+                      <input class="pol-name" type="text" value="Cookie Policy" aria-label="Policy name" />
+                      <div class="pol-line">
+                        <span class="chip version">v1.0</span>
+                        <span>Effective Mar 1, 2026</span>
+                        <span class="dot"></span>
+                        <span>Updated Mar 1, 2026</span>
+                      </div>
+                    </div>
+                    <div class="pol-actions">
+                      <button class="iconbtn" data-tip="Version history" onclick="openVersionHistoryModal('Cookie Policy')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="More" onclick="togglePop(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="18" r="1"/></svg>
+                      </button>
+                      <div class="kebab-pop">
+                        <button onclick="alert('Mockup — copies anchor URL')">Copy public link</button>
+                        <button onclick="alert('Mockup — duplicates')">Duplicate</button>
+                        <button onclick="alert('Mockup — exports as PDF')">Export as PDF</button>
+                        <hr/>
+                        <button class="danger" onclick="if (confirm('Remove Cookie Policy?')) alert('Mockup — removed')">Remove</button>
+                      </div>
+                      <button class="pol-collapse" data-tip="Expand" onclick="togglePolicyCollapse(this)" aria-label="Expand policy">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="pol-body">
+                    <p style="font-size:13px; color:var(--fg-muted); margin:0">Body collapsed — click the chevron to expand and edit.</p>
+                  </div>
+                </div>
+
+                <!-- ============== POLICY 4 — Refund Policy ============== -->
+                <div class="pol-card is-collapsed" data-policy-id="refund">
+                  <div class="pol-head">
+                    <span class="pol-grip" aria-label="Drag policy">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <span class="pol-icon" aria-hidden="true">💸</span>
+                    <div class="pol-meta">
+                      <input class="pol-name" type="text" value="Refund Policy" aria-label="Policy name" />
+                      <div class="pol-line">
+                        <span class="chip version">v1.1</span>
+                        <span>Effective Apr 1, 2026</span>
+                        <span class="dot"></span>
+                        <span>Updated Apr 1, 2026</span>
+                      </div>
+                    </div>
+                    <div class="pol-actions">
+                      <button class="iconbtn" data-tip="Version history" onclick="openVersionHistoryModal('Refund Policy')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="More" onclick="togglePop(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="18" r="1"/></svg>
+                      </button>
+                      <div class="kebab-pop">
+                        <button onclick="alert('Mockup — copies anchor URL')">Copy public link</button>
+                        <button onclick="alert('Mockup — duplicates')">Duplicate</button>
+                        <button onclick="alert('Mockup — exports as PDF')">Export as PDF</button>
+                        <hr/>
+                        <button class="danger" onclick="if (confirm('Remove Refund Policy?')) alert('Mockup — removed')">Remove</button>
+                      </div>
+                      <button class="pol-collapse" data-tip="Expand" onclick="togglePolicyCollapse(this)" aria-label="Expand policy">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="pol-body">
+                    <p style="font-size:13px; color:var(--fg-muted); margin:0">Body collapsed — click the chevron to expand and edit.</p>
+                  </div>
+                </div>
+
+                <!-- ============== POLICY 5 — DMCA / Copyright Policy (Creator+) ============== -->
+                <div class="pol-card is-collapsed" data-policy-id="dmca">
+                  <div class="pol-head">
+                    <span class="pol-grip" aria-label="Drag policy">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                    </span>
+                    <span class="pol-icon" aria-hidden="true">©️</span>
+                    <div class="pol-meta">
+                      <input class="pol-name" type="text" value="DMCA / Copyright Policy" aria-label="Policy name" />
+                      <div class="pol-line">
+                        <span class="chip version">v1.0</span>
+                        <span>Effective Mar 15, 2026</span>
+                        <span class="dot"></span>
+                        <span id="badge-dmca"></span>
+                      </div>
+                    </div>
+                    <div class="pol-actions">
+                      <button class="iconbtn" data-tip="Version history" onclick="openVersionHistoryModal('DMCA / Copyright Policy')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      </button>
+                      <button class="iconbtn" data-tip="More" onclick="togglePop(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="18" r="1"/></svg>
+                      </button>
+                      <div class="kebab-pop">
+                        <button onclick="alert('Mockup — copies anchor URL')">Copy public link</button>
+                        <button onclick="alert('Mockup — duplicates')">Duplicate</button>
+                        <button onclick="alert('Mockup — exports as PDF')">Export as PDF</button>
+                        <hr/>
+                        <button class="danger" onclick="if (confirm('Remove DMCA Policy?')) alert('Mockup — removed')">Remove</button>
+                      </div>
+                      <button class="pol-collapse" data-tip="Expand" onclick="togglePolicyCollapse(this)" aria-label="Expand policy">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="pol-body">
+                    <p style="font-size:13px; color:var(--fg-muted); margin:0 0 8px">Body collapsed — click the chevron to expand and edit.</p>
+                    <div class="tier-hint">
+                      <span class="th-icon" aria-hidden="true">💡</span>
+                      DMCA Policy is part of <b>Creator</b>. Recommended if you host user-submitted content (comments, contact-form attachments, community submissions).
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Section actions row -->
+              <div class="sec-actions-row">
+                <span class="spacer"></span>
+                <button class="btn btn-ghost btn-sm" onclick="openTemplatesModal()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Browse templates
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="openAddPolicyModal()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add another policy
+                </button>
+              </div>
+
+            </div>
+
+            <!-- ============ EMPTY STATE ============ -->
+            <div id="state-empty" style="display:none">
+              <div class="empty-state">
+                <span class="es-emoji" aria-hidden="true">⚖️</span>
+                <h3>Start with a vetted template</h3>
+                <p>Six pre-written starter policies cover the most common creator needs. Replace the placeholders, have a lawyer review, then publish.</p>
+                <div class="templates-row">
+                  <button class="templ-tile" onclick="openTemplatesModal()">
+                    <span class="tt-emoji">📜</span>
+                    <span class="tt-name">Terms of Service</span>
+                    <span class="tt-sub">Generic — works for most creators</span>
+                  </button>
+                  <button class="templ-tile" onclick="openTemplatesModal()">
+                    <span class="tt-emoji">🔒</span>
+                    <span class="tt-name">Privacy Policy</span>
+                    <span class="tt-sub">GDPR (EU) variant</span>
+                  </button>
+                  <button class="templ-tile" onclick="openTemplatesModal()">
+                    <span class="tt-emoji">🇺🇸</span>
+                    <span class="tt-name">Privacy Policy</span>
+                    <span class="tt-sub">US-only / CCPA variant</span>
+                  </button>
+                  <button class="templ-tile" onclick="openTemplatesModal()">
+                    <span class="tt-emoji">🍪</span>
+                    <span class="tt-name">Cookie Policy</span>
+                    <span class="tt-sub">Cookies + opt-out</span>
+                  </button>
+                  <button class="templ-tile" onclick="openTemplatesModal()">
+                    <span class="tt-emoji">💸</span>
+                    <span class="tt-name">Refund Policy</span>
+                    <span class="tt-sub">Digital / physical / service</span>
+                  </button>
+                  <button class="templ-tile" onclick="openTemplatesModal()">
+                    <span class="tt-emoji">©️</span>
+                    <span class="tt-name">DMCA Counter-notice</span>
+                    <span class="tt-sub">For user-generated content</span>
+                  </button>
+                </div>
+                <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center">
+                  <button class="btn btn-ghost btn-sm" onclick="openAddPolicyModal()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add a custom policy from scratch
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================
+             SECTION 3 — Cookie banner integration
+             =================================================== -->
+        <section class="section">
+          <div class="section-head">
+            <h2>Cookie banner integration</h2>
+            <span class="sub">The cookie banner that pops up for first-time visitors lives elsewhere — this is just the policy text it links to.</span>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13.5px; color:var(--fg-muted); margin:0 0 12px; line-height:1.6">
+              Your Cookie Policy on this page is automatically linked from the cookie consent banner. Visitors click "Cookie Policy" in the banner → land on <span class="mono" style="font-family:var(--font-mono); font-size:12.5px; padding:1px 6px; background:var(--bg-muted); border-radius:5px">tadaify.com/alexandra/legal#cookie</span>.
+            </p>
+            <a class="cookie-banner-link" href="./app-settings.html#cookie-banner" onclick="alert('Mockup — opens cookie banner config in Settings')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="13" r="1"/><circle cx="11" cy="15" r="1"/></svg>
+              Configure cookie banner →
+            </a>
+          </div>
+        </section>
+
+        <!-- Sticky save bar -->
+        <div class="savebar">
+          <span class="sb-status"><span class="sb-dot"></span> Auto-saved · 2 min ago</span>
+          <span class="sb-spacer"></span>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — discards local changes')">Discard changes</button>
+          <button class="btn btn-ghost btn-sm" onclick="trySave('save-draft')">Save as draft</button>
+          <button class="btn btn-primary btn-sm" onclick="trySave('publish')">
+            Save &amp; publish
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+
+      </div><!-- /main column -->
+
+      <!-- ============== RIGHT HELPER SIDEBAR ============== -->
+      <aside class="helper" aria-label="Compliance helper">
+        <h3>Compliance helper</h3>
+        <p class="h-sub">Auto-detected from your account setup. Updates as you add products, install integrations, or change account settings.</p>
+
+        <div class="h-block">
+          <div class="h-block-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Required for your setup
+          </div>
+          <ul class="check-list">
+            <li class="is-met">
+              <span class="cl-ico" aria-hidden="true">✓</span>
+              <div>
+                <div class="cl-name">Terms of Service</div>
+                <div class="cl-sub">You're selling 3 products via Stripe.</div>
+              </div>
+            </li>
+            <li class="is-met">
+              <span class="cl-ico" aria-hidden="true">✓</span>
+              <div>
+                <div class="cl-name">Privacy Policy (GDPR)</div>
+                <div class="cl-sub">EU visitors detected (38% of traffic).</div>
+              </div>
+            </li>
+            <li class="is-met">
+              <span class="cl-ico" aria-hidden="true">✓</span>
+              <div>
+                <div class="cl-name">Refund Policy</div>
+                <div class="cl-sub">Required by Stripe for paid offers.</div>
+              </div>
+            </li>
+            <li class="is-needed">
+              <span class="cl-ico" aria-hidden="true">!</span>
+              <div>
+                <div class="cl-name">Cookie Policy</div>
+                <div class="cl-sub">You use Google Analytics — add a Cookie Policy + consent banner.</div>
+              </div>
+            </li>
+            <li class="is-met">
+              <span class="cl-ico" aria-hidden="true">✓</span>
+              <div>
+                <div class="cl-name">DMCA Counter-notice</div>
+                <div class="cl-sub">Your contact form accepts attachments.</div>
+              </div>
+            </li>
+            <li class="is-na">
+              <span class="cl-ico" aria-hidden="true">·</span>
+              <div>
+                <div class="cl-name">Accessibility Statement</div>
+                <div class="cl-sub">Optional — required by some EU/US jurisdictions for businesses.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="h-block">
+          <div class="h-block-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>
+            Annual review reminder
+          </div>
+          <div class="review-row is-stale">
+            <div class="rr-meta">
+              <div class="rr-name">Last reviewed: Apr 1, 2026</div>
+              <div class="rr-sub">All policies due for review by Apr 1, 2027 (12-month cycle).</div>
+            </div>
+            <button class="btn btn-warm btn-xs" onclick="alert('Mockup — marks all policies reviewed today + bumps minor version on each')">
+              Mark reviewed
+            </button>
+          </div>
+        </div>
+
+        <div class="h-block">
+          <div class="h-block-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+            Translations <span id="badge-translations"></span>
+          </div>
+          <ul class="translation-list">
+            <li>
+              <span class="tl-flag" aria-hidden="true">🇬🇧</span>
+              <span class="tl-name">English (default)</span>
+              <span class="tl-status is-done">Done</span>
+            </li>
+            <li>
+              <span class="tl-flag" aria-hidden="true">🇵🇱</span>
+              <span class="tl-name">Polski</span>
+              <span class="tl-status is-todo">Add</span>
+            </li>
+            <li>
+              <span class="tl-flag" aria-hidden="true">🇩🇪</span>
+              <span class="tl-name">Deutsch</span>
+              <span class="tl-status is-todo">Add</span>
+            </li>
+            <li>
+              <span class="tl-flag" aria-hidden="true">🇪🇸</span>
+              <span class="tl-name">Español</span>
+              <span class="tl-status is-todo">Add</span>
+            </li>
+          </ul>
+          <div class="tier-hint" style="margin-top:8px">
+            <span class="th-icon" aria-hidden="true">💡</span>
+            Multi-language Legal pages are part of <b>Pro</b>. We'll prompt to upgrade at save.
+          </div>
+        </div>
+
+        <div class="h-block">
+          <div class="h-block-title">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            Need help?
+          </div>
+          <p style="font-size:12px; color:var(--fg-muted); line-height:1.55; margin:0 0 8px">
+            Templates are starting points, not legal advice. We recommend booking a 30-min review with a lawyer before going live with paid offers.
+          </p>
+          <a href="#" onclick="event.preventDefault();alert('Mockup — opens curated lawyer directory partner page')" style="font-size:12.5px; color:var(--brand-primary); font-weight:600">
+            Find a creator-friendly lawyer →
+          </a>
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ============== ADD POLICY MODAL ============== -->
+<div class="modal-backdrop" id="add-policy-modal" role="dialog" aria-modal="true" aria-labelledby="add-policy-title" hidden>
+  <div class="modal modal-md" role="document">
+    <div class="modal-head">
+      <h3 id="add-policy-title">Add a policy</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeAddPolicyModal()" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px; color:var(--fg-muted); margin:0 0 16px">Pick a policy type. Each one becomes its own section on this Legal page with version tracking + last-updated date.</p>
+
+      <div class="type-grid">
+        <button class="type-tile is-already-added" type="button" disabled>
+          <span class="tt-already">Added</span>
+          <span class="tt-icon">📜</span>
+          <span class="tt-name">Terms of Service</span>
+          <span class="tt-sub">Conditions for using your site, products, services.</span>
+        </button>
+        <button class="type-tile is-already-added" type="button" disabled>
+          <span class="tt-already">Added</span>
+          <span class="tt-icon">🔒</span>
+          <span class="tt-name">Privacy Policy</span>
+          <span class="tt-sub">What data you collect, why, how long you keep it.</span>
+        </button>
+        <button class="type-tile is-already-added" type="button" disabled>
+          <span class="tt-already">Added</span>
+          <span class="tt-icon">🍪</span>
+          <span class="tt-name">Cookie Policy</span>
+          <span class="tt-sub">Cookies you set + opt-out instructions.</span>
+        </button>
+        <button class="type-tile is-already-added" type="button" disabled>
+          <span class="tt-already">Added</span>
+          <span class="tt-icon">💸</span>
+          <span class="tt-name">Refund Policy</span>
+          <span class="tt-sub">Refund window, eligibility, how to request.</span>
+        </button>
+        <button class="type-tile is-already-added" type="button" disabled>
+          <span class="tt-already">Added</span>
+          <span class="tt-icon">©️</span>
+          <span class="tt-name">DMCA / Copyright Policy</span>
+          <span class="tt-sub">For sites with user-generated content.</span>
+        </button>
+        <button class="type-tile" onclick="addPolicy('accessibility'); closeAddPolicyModal()">
+          <span class="tt-icon">♿</span>
+          <span class="tt-name">Accessibility Statement <span id="badge-acc"></span></span>
+          <span class="tt-sub">Required by some EU/US jurisdictions for businesses.</span>
+        </button>
+        <button class="type-tile" onclick="addPolicy('aup'); closeAddPolicyModal()">
+          <span class="tt-icon">🤝</span>
+          <span class="tt-name">Acceptable Use Policy <span id="badge-aup"></span></span>
+          <span class="tt-sub">Rules for community / team / commenter behaviour.</span>
+        </button>
+        <button class="type-tile" onclick="addPolicy('imprint'); closeAddPolicyModal()">
+          <span class="tt-icon">🏛️</span>
+          <span class="tt-name">Imprint / Impressum</span>
+          <span class="tt-sub">Required for German + Austrian businesses (Telemediengesetz §5).</span>
+        </button>
+        <button class="type-tile" onclick="addPolicy('custom'); closeAddPolicyModal()">
+          <span class="tt-icon">📄</span>
+          <span class="tt-name">Custom policy</span>
+          <span class="tt-sub">Blank — name it yourself (e.g. "Affiliate disclosure").</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="foot-meta">All policy types support version tracking + multi-language (Pro+).</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddPolicyModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== TEMPLATES PICKER MODAL ============== -->
+<div class="modal-backdrop" id="templates-modal" role="dialog" aria-modal="true" aria-labelledby="templates-title" hidden>
+  <div class="modal modal-md" role="document">
+    <div class="modal-head">
+      <h3 id="templates-title">Pick a starter template</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeTemplatesModal()" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="templ-disclaimer">
+        <span class="td-icon" aria-hidden="true">⚖️</span>
+        <div>
+          <strong>Templates are starting points, not legal advice.</strong> tadaify provides these as a convenience based on common creator scenarios. Have a lawyer review before publishing — especially if you sell to EU/UK/CA customers, hold sensitive data, or operate in regulated industries.
+        </div>
+      </div>
+
+      <div class="templates-grid">
+        <button class="templ-card" onclick="useTemplate('tos-generic'); closeTemplatesModal()">
+          <span class="tc-emoji">📜</span>
+          <span class="tc-name">Generic Terms of Service</span>
+          <span class="tc-sub">Works for most creators selling digital products, courses, services, or coaching.</span>
+          <ul class="tc-list">
+            <li>7 sections (Acceptance / Eligibility / Payments / IP / Disclaimer / Liability / Governing law)</li>
+            <li>~1,200 words · ~5 min read</li>
+            <li>UK / generic-EN governing law (editable)</li>
+          </ul>
+        </button>
+
+        <button class="templ-card" onclick="useTemplate('privacy-gdpr'); closeTemplatesModal()">
+          <span class="tc-emoji">🔒</span>
+          <span class="tc-name">Privacy Policy (GDPR)</span>
+          <span class="tc-sub">EU-friendly default. Covers Art. 6 legal bases, retention, data subject rights, international transfers.</span>
+          <ul class="tc-list">
+            <li>6 sections + DPO section</li>
+            <li>~1,500 words</li>
+            <li>SCC clause for US processors</li>
+          </ul>
+        </button>
+
+        <button class="templ-card" onclick="useTemplate('privacy-ccpa'); closeTemplatesModal()">
+          <span class="tc-emoji">🇺🇸</span>
+          <span class="tc-name">Privacy Policy (US-only)</span>
+          <span class="tc-sub">CCPA / CPRA-friendly for California residents. Lighter than GDPR but still covers "Do Not Sell".</span>
+          <ul class="tc-list">
+            <li>5 sections</li>
+            <li>~900 words</li>
+            <li>Includes "Do Not Sell My Personal Info" section</li>
+          </ul>
+        </button>
+
+        <button class="templ-card" onclick="useTemplate('cookie'); closeTemplatesModal()">
+          <span class="tc-emoji">🍪</span>
+          <span class="tc-name">Cookie Policy</span>
+          <span class="tc-sub">Explains the cookies your site sets (Stripe, Google Analytics, tadaify session) + opt-out instructions.</span>
+          <ul class="tc-list">
+            <li>3 sections + per-cookie table</li>
+            <li>~600 words</li>
+            <li>Pre-fills cookies based on integrations you've enabled</li>
+          </ul>
+        </button>
+
+        <button class="templ-card" onclick="useTemplate('refund-digital'); closeTemplatesModal()">
+          <span class="tc-emoji">💸</span>
+          <span class="tc-name">Refund Policy — Digital products</span>
+          <span class="tc-sub">14-day money-back guarantee for digital downloads / courses (matches EU Distance Selling defaults).</span>
+          <ul class="tc-list">
+            <li>4 sections</li>
+            <li>~500 words</li>
+            <li>Sister templates: Physical / Service / Subscription</li>
+          </ul>
+        </button>
+
+        <button class="templ-card" onclick="useTemplate('dmca'); closeTemplatesModal()">
+          <span class="tc-emoji">©️</span>
+          <span class="tc-name">DMCA Counter-notice</span>
+          <span class="tc-sub">For sites that host visitor-submitted content (comments, contact form attachments). Includes designated agent fields.</span>
+          <ul class="tc-list">
+            <li>5 sections + agent contact block</li>
+            <li>~800 words</li>
+            <li>17 USC §512 safe-harbor compliant</li>
+          </ul>
+        </button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="foot-meta">Picking a template adds it as a new policy on this page (or replaces the current draft if a policy of the same type already exists).</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeTemplatesModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== VERSION HISTORY MODAL ============== -->
+<div class="modal-backdrop" id="version-modal" role="dialog" aria-modal="true" aria-labelledby="version-title" hidden>
+  <div class="modal modal-sm" role="document">
+    <div class="modal-head">
+      <h3 id="version-title">Version history</h3>
+      <span class="head-spacer"></span>
+      <button class="iconbtn" onclick="closeVersionHistoryModal()" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--fg-muted); margin:0 0 14px">Past versions are kept for 7 years (UK/EU compliance retention). Visitors can view archived versions via direct link.</p>
+
+      <div class="version-list">
+        <div class="version-row is-current">
+          <span class="vr-version" id="ver-current-label">v1.2</span>
+          <div class="vr-meta">
+            <div class="vr-eff">Effective Apr 1, 2026 (current)</div>
+            <div class="vr-changes">Tightened cancellation language · Added jurisdiction clarification for non-UK customers · Updated contact email.</div>
+          </div>
+          <div class="vr-actions">
+            <span class="chip live">Live</span>
+          </div>
+        </div>
+
+        <div class="version-row">
+          <span class="vr-version">v1.1</span>
+          <div class="vr-meta">
+            <div class="vr-eff">Effective Jan 15, 2026</div>
+            <div class="vr-changes">Added subscription auto-renewal language for Coaching Plus tier · Clarified IP ownership for downloadable PDFs.</div>
+          </div>
+          <div class="vr-actions">
+            <button class="iconbtn" data-tip="View archived version" onclick="alert('Mockup — opens tadaify.com/alexandra/legal#/version/terms/1.1 in a new tab')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="version-row">
+          <span class="vr-version">v1.0</span>
+          <div class="vr-meta">
+            <div class="vr-eff">Effective Sep 1, 2025</div>
+            <div class="vr-changes">Initial publication. Based on Generic ToS template, customised for fitness coaching business.</div>
+          </div>
+          <div class="vr-actions">
+            <button class="iconbtn" data-tip="View archived version" onclick="alert('Mockup — opens archived v1.0 in a new tab')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tier-hint" style="margin-top:14px">
+        <span class="th-icon" aria-hidden="true">💡</span>
+        Version history with retention is part of <b>Creator</b>. Free plans keep current + previous version only.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="foot-meta">Each save bumps version automatically. You can override the version number per save.</span>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeVersionHistoryModal()">Close</button>
+      <button class="btn btn-primary btn-sm" onclick="alert('Mockup — exports full version history as PDF bundle (one PDF per version, zipped)')">Export all as PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Demo toolbar — switch state + tier without page reload -->
+<div class="demo-toolbar" aria-hidden="true">
+  <span style="opacity:0.65">Demo</span>
+  <select onchange="setState(this.value)" aria-label="State">
+    <option value="filled" selected>State: filled (5 policies)</option>
+    <option value="empty">State: empty</option>
+  </select>
+  <select onchange="setTier(this.value)" aria-label="Tier">
+    <option value="free">Tier: Free</option>
+    <option value="creator" selected>Tier: Creator</option>
+    <option value="pro">Tier: Pro</option>
+    <option value="business">Tier: Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // ----- Demo state machinery -----
+  function urlParam(k, fb) {
+    var u = new URL(location.href);
+    return u.searchParams.get(k) || fb;
+  }
+  function setState(v) {
+    document.body.dataset.state = v;
+    document.getElementById('state-filled').style.display = (v === 'filled') ? '' : 'none';
+    document.getElementById('state-empty').style.display  = (v === 'empty')  ? '' : 'none';
+  }
+  function setTier(v) {
+    document.body.dataset.tier = v;
+    var pill = document.querySelector('.tdf-side .uhandle');
+    if (pill) pill.textContent = '@alexandra · ' + (v.charAt(0).toUpperCase() + v.slice(1));
+    refreshTierBadges();
+  }
+
+  // ----- Tier badges (no-blur premium pattern) -----
+  function refreshTierBadges() {
+    if (!window.TadaifyPartials) return;
+    var current = document.body.dataset.tier || 'free';
+    var renderBadge = window.TadaifyPartials.renderTierBadge;
+    var TIER_RANK = window.TierGate ? window.TierGate.TIER_RANK : { free: 0, creator: 1, pro: 2, business: 3 };
+    function set(id, requires) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var included = TIER_RANK[current] >= TIER_RANK[requires];
+      el.innerHTML = renderBadge(requires, { included: included, tooltip: included ? ('Included in your ' + (current.charAt(0).toUpperCase() + current.slice(1)) + ' plan') : ('Available on ' + (requires.charAt(0).toUpperCase() + requires.slice(1)) + ' · click to upgrade') });
+    }
+    set('badge-dmca', 'creator');
+    set('badge-acc', 'pro');
+    set('badge-aup', 'business');
+    set('badge-translations', 'pro');
+  }
+
+  // ----- Title + slug sync -----
+  function setTitle(title, slug) {
+    document.getElementById('page-title').value = title;
+    document.getElementById('page-slug').value = slug;
+    document.getElementById('page-url-slug').textContent = slug;
+  }
+  function syncTitleToUrlPill() { /* slug is the source of truth */ }
+  function syncSlugToUrlPill() {
+    var slug = document.getElementById('page-slug').value || 'legal';
+    document.getElementById('page-url-slug').textContent = slug;
+  }
+
+  // ----- Toggles -----
+  function toggleSwitch(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  // ----- Swatch picker -----
+  function pickSwatch(el) {
+    document.querySelectorAll('.swatch.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+  }
+
+  // ----- Theme -----
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  // ----- Policy management -----
+  function togglePolicyCollapse(btn) {
+    var card = btn.closest('.pol-card');
+    if (!card) return;
+    var collapsed = card.classList.toggle('is-collapsed');
+    btn.setAttribute('data-tip', collapsed ? 'Expand' : 'Collapse');
+    btn.setAttribute('aria-label', collapsed ? 'Expand policy' : 'Collapse policy');
+  }
+  function addPolicy(type) {
+    alert('Mockup — adds a new "' + type + '" policy card above the section actions row. In production, lifts to a real reducer that updates legal_policies.');
+  }
+  function useTemplate(id) {
+    alert('Mockup — applies template "' + id + '". Pre-fills body with placeholder text + adds [YOUR BUSINESS NAME] / [YOUR EMAIL] / [JURISDICTION] tokens for you to replace.');
+  }
+
+  // ----- Modals -----
+  function openAddPolicyModal() {
+    closePops();
+    var bd = document.getElementById('add-policy-modal');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closeAddPolicyModal() {
+    var bd = document.getElementById('add-policy-modal');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+  function openTemplatesModal() {
+    closePops();
+    var bd = document.getElementById('templates-modal');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closeTemplatesModal() {
+    var bd = document.getElementById('templates-modal');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+  function openVersionHistoryModal(policyName) {
+    closePops();
+    document.getElementById('version-title').textContent = 'Version history — ' + policyName;
+    var bd = document.getElementById('version-modal');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closeVersionHistoryModal() {
+    var bd = document.getElementById('version-modal');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+
+  // ----- Save handler with TierGate -----
+  function trySave(action) {
+    var tier = document.body.dataset.tier || 'creator';
+    // Mocked: detect which premium features the creator has touched.
+    // In real impl, this comes from a dirty-tracker. Here we always include
+    // the "version retention beyond 1" check so the gate is demoable.
+    var features = [];
+    var hasMultiLang = false; // demo: untouched in this mockup
+    var hasVersionRetention = true; // demo: retention >2 versions = Creator
+    var hasDmca = !!document.querySelector('[data-policy-id="dmca"]');
+    var hasTranslation = false; // toggled when creator clicks an "Add" tl-status
+
+    if (hasDmca) {
+      features.push({ id: 'dmca', name: 'DMCA Policy', requires: 'creator', meta: 'Per-policy archive + counter-notice flow.' });
+    }
+    if (hasVersionRetention) {
+      features.push({ id: 'ver-retention', name: 'Version history retention (7 years)', requires: 'creator', meta: 'Free plans keep current + previous only.' });
+    }
+    if (hasMultiLang) {
+      features.push({ id: 'multilang', name: 'Multi-language Legal page', requires: 'pro', meta: 'Polski / Deutsch / Español per-policy.' });
+    }
+
+    if (window.TierGate) {
+      TierGate.checkAndProceed({
+        currentTier: tier,
+        features: features,
+        onProceed:    function () { alert('Mockup — page saved (' + action + '). Versions auto-bumped.'); },
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onSaveWithout: features.length ? function () { alert('Mockup — saved without premium features (current version only)'); } : null,
+        onCancel:     function () {}
+      });
+    } else {
+      alert('Mockup — saved (' + action + ')');
+    }
+  }
+
+  // ----- Kebab popovers -----
+  function togglePop(btn) {
+    var pop = btn.nextElementSibling;
+    if (!pop || !pop.classList || !pop.classList.contains('kebab-pop')) {
+      var container = btn.closest('.pol-actions');
+      pop = container ? container.querySelector('.kebab-pop') : null;
+    }
+    if (!pop) return;
+    var wasOpen = pop.classList.contains('is-open');
+    closePops();
+    if (!wasOpen) pop.classList.add('is-open');
+  }
+  function closePops() { document.querySelectorAll('.kebab-pop.is-open').forEach(function (p) { p.classList.remove('is-open'); }); }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.pol-actions') && !e.target.closest('.kebab-pop')) closePops();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closePops();
+      ['add-policy-modal', 'templates-modal', 'version-modal'].forEach(function (id) {
+        var bd = document.getElementById(id);
+        if (bd && bd.classList.contains('is-open')) {
+          bd.classList.remove('is-open');
+          bd.setAttribute('hidden', '');
+        }
+      });
+    }
+  });
+
+  // ----- Translation list interactions (demo only) -----
+  document.querySelectorAll('.translation-list .tl-status.is-todo').forEach(function (el) {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function () {
+      alert('Mockup — opens AI translation flow for this language (Pro+). Triggers TierGate at save if on Free/Creator.');
+    });
+  });
+
+  // ----- Boot from URL -----
+  setState(urlParam('state', 'filled'));
+  var initTier = urlParam('tier', 'creator');
+  setTier(initTier);
+
+  // After partials inject, mark Legal as the current sub-page.
+  setTimeout(function () {
+    var subList = document.querySelector('.tdf-side .nav-sub-list');
+    if (!subList) return;
+    var legalItem = document.createElement('a');
+    legalItem.href = './app-page-legal.html';
+    legalItem.className = 'nav-sub-item is-current';
+    legalItem.setAttribute('data-tip', 'Legal');
+    legalItem.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8l7-5 7 5"/><path d="M5 8l3 8h-6z"/><path d="M19 8l3 8h-6z"/></svg><span>Legal</span>';
+    var addPage = subList.querySelector('.is-disabled');
+    if (addPage) subList.insertBefore(legalItem, addPage);
+    else subList.appendChild(legalItem);
+    Array.prototype.forEach.call(subList.querySelectorAll('.nav-sub-item.is-current'), function (el) {
+      if (el !== legalItem) el.classList.remove('is-current');
+    });
+    refreshTierBadges();
+  }, 30);
+</script>
+</body>
+</html>

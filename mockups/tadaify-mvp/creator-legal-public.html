@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Legal page render — creator view at tadaify.com/<handle>/legal — F-PAGE-LEGAL-001 #17
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view that renders the policies written via app-page-legal.html.
+  Designed for compliance-readability — high-contrast typography, generous
+  line-height, sticky TOC, scroll-spy, deep-link anchors, archived versions
+  accessible. Visitors typically arrive from:
+    - cookie consent banner (#cookie)
+    - footer link from the creator's homepage
+    - Stripe checkout (#refund)
+    - Meta Ads / Google Ads policy URL field (#privacy)
+
+  Sub-views via in-page hash routing:
+    #/                           → full Legal page (all policies)
+    #/policy/<slug>              → single-policy focused reading mode
+    #/version/<slug>/<version>   → archived version with "this is archived" banner
+    #/print                      → print-optimized layout
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: TOC collapses to top accordion; print mode strips colors.
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every link works in-page; sub-views switchable; archived banner reachable)
+    - No tadaify nav bar on creator pages (creator-public.html convention) — minimal back-link bar.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,follow" />
+  <title>Legal — Alexandra Silva — tadaify.com/alexandra/legal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values come from tokens.css (Indigo Serif).
+       Body uses high-contrast neutral background per legal-page best
+       practice (overrides any creator gradient that hurts readability).
+       ============================================================ */
+    body {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    * { box-sizing: border-box; }
+    a { color: var(--brand-primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Mockup-only top strip (back-link + URL pill + theme toggle). */
+    .top-strip {
+      max-width: 1200px; margin: 0 auto;
+      padding: 14px 24px 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a {
+      color: var(--fg-muted);
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); text-decoration: none; }
+    .top-strip .url-mono { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle); }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+    .top-strip .theme-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 8px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--fg-muted); cursor: pointer;
+    }
+    .top-strip .theme-toggle:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .theme-toggle svg { width: 14px; height: 14px; }
+    .top-strip .theme-icon-moon { display: none; }
+    body.dark-mode .top-strip .theme-icon-sun  { display: none; }
+    body.dark-mode .top-strip .theme-icon-moon { display: inline; }
+
+    /* Creator identity row */
+    .creator-row {
+      max-width: 1200px; margin: 0 auto;
+      padding: 24px 24px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 19px;
+      border: 3px solid var(--bg-elevated); box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+    .creator-row .who-handle { font-size: 12.5px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    /* Page hero */
+    .page-hero {
+      max-width: 1200px; margin: 0 auto;
+      padding: 18px 24px 8px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 48px);
+      letter-spacing: -0.02em; margin: 0 0 8px;
+    }
+    .page-hero .lede {
+      max-width: 700px; color: var(--fg-muted);
+      font-size: 15.5px; line-height: 1.6; margin: 0;
+    }
+    .page-hero .meta-line {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 16px; font-size: 12.5px; color: var(--fg-muted);
+    }
+    .page-hero .meta-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .page-hero .meta-line .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Policy chooser pills (top of page) */
+    .pill-bar {
+      max-width: 1200px; margin: 0 auto;
+      padding: 12px 24px 0;
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .pill-bar .pb-label {
+      font-size: 12px; color: var(--fg-muted); margin-right: 6px;
+      align-self: center; font-weight: 600;
+    }
+    .pill-bar .pb-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      font-size: 12.5px; font-weight: 500;
+      color: var(--fg-muted);
+      cursor: pointer; transition: all .12s ease;
+    }
+    .pill-bar .pb-pill:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      text-decoration: none;
+    }
+    .pill-bar .pb-pill.is-active {
+      background: var(--brand-primary); color: #fff;
+      border-color: var(--brand-primary);
+    }
+    .pill-bar .pb-pill .pb-emoji { font-size: 13px; }
+
+    /* Print button */
+    .toolbar-row {
+      max-width: 1200px; margin: 0 auto;
+      padding: 14px 24px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar-row .tr-spacer { flex: 1; }
+    .btn-tool {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 9px;
+      background: var(--bg); border: 1px solid var(--border-strong);
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      cursor: pointer; transition: all .12s ease;
+    }
+    .btn-tool:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .btn-tool svg { width: 13px; height: 13px; }
+
+    /* ============================================================
+       Layout grid: TOC sidebar + content
+       ============================================================ */
+    .legal-grid {
+      max-width: 1200px; margin: 0 auto;
+      padding: 28px 24px 80px;
+      display: grid; gap: 36px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 960px) {
+      .legal-grid { grid-template-columns: 240px 1fr; gap: 48px; }
+    }
+
+    /* TOC sidebar */
+    .toc {
+      align-self: start;
+      position: relative;
+    }
+    @media (min-width: 960px) {
+      .toc { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
+    }
+    .toc .toc-mobile-toggle {
+      display: flex; width: 100%; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border-strong); border-radius: 10px;
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      cursor: pointer;
+    }
+    .toc .toc-mobile-toggle svg { width: 14px; height: 14px; transition: transform .15s ease; margin-left: auto; }
+    .toc.is-open .toc-mobile-toggle svg { transform: rotate(180deg); }
+    .toc-list {
+      list-style: none; padding: 0; margin: 12px 0 0;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    @media (max-width: 959px) {
+      .toc-list { display: none; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+      .toc.is-open .toc-list { display: flex; }
+    }
+    .toc-list .toc-section {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+      font-weight: 600;
+    }
+    .toc-list .toc-section .ts-emoji { font-size: 14px; flex-shrink: 0; line-height: 1; }
+    .toc-list .toc-section:hover { background: var(--bg-muted); color: var(--fg); text-decoration: none; }
+    .toc-list .toc-section.is-current {
+      background: rgba(99,102,241,0.08); color: var(--brand-primary);
+    }
+    .toc-list .toc-sub {
+      list-style: none; padding: 0; margin: 2px 0 4px 26px;
+      display: flex; flex-direction: column; gap: 1px;
+      border-left: 1px solid var(--border);
+      padding-left: 10px;
+    }
+    .toc-list .toc-sub li a {
+      display: block; padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 12px; color: var(--fg-muted);
+      font-weight: 400;
+    }
+    .toc-list .toc-sub li a:hover { background: var(--bg-muted); color: var(--fg); text-decoration: none; }
+    .toc-list .toc-sub li a.is-current { color: var(--brand-primary); font-weight: 600; }
+
+    /* Content column */
+    .content {
+      min-width: 0;
+      max-width: 760px;
+    }
+    .content .policy {
+      margin-bottom: 56px;
+      scroll-margin-top: 24px;
+    }
+    .content .policy:last-child { margin-bottom: 0; }
+    .content .policy-head {
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border-strong);
+      margin-bottom: 24px;
+      display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
+    }
+    .content .policy-head .ph-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(245,158,11,0.10));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .content .policy-head .ph-meta { flex: 1; min-width: 200px; }
+    .content .policy-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(26px, 3.5vw, 34px);
+      letter-spacing: -0.015em; margin: 0;
+    }
+    .content .policy-head .ph-line {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-top: 8px;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .content .policy-head .ph-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .content .policy-head .ph-version {
+      font-family: var(--font-mono); font-weight: 600;
+      padding: 3px 9px; border-radius: 999px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 11.5px;
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+    .content .policy-head .ph-effective {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-weight: 500;
+    }
+    .content .policy-head .ph-actions {
+      display: flex; gap: 6px;
+    }
+    .content .policy-head .ph-action {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--fg-muted); cursor: pointer; transition: all .12s ease;
+    }
+    .content .policy-head .ph-action:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .content .policy-head .ph-action svg { width: 13px; height: 13px; }
+
+    /* Policy body — high-contrast typography for readability */
+    .policy-body {
+      font-family: var(--font-display);
+      font-size: 17px;
+      line-height: 1.75;
+      color: var(--fg);
+    }
+    .policy-body h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; letter-spacing: -0.01em;
+      margin: 36px 0 12px;
+      scroll-margin-top: 24px;
+    }
+    .policy-body h3:first-child { margin-top: 0; }
+    .policy-body h4 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 18px; margin: 24px 0 8px;
+    }
+    .policy-body p { margin: 0 0 16px; }
+    .policy-body ul, .policy-body ol {
+      margin: 0 0 16px; padding-left: 24px;
+    }
+    .policy-body ul li, .policy-body ol li { margin-bottom: 8px; }
+    .policy-body strong { font-weight: 600; }
+    .policy-body code {
+      font-family: var(--font-mono); font-size: 14.5px;
+      background: var(--bg); padding: 1px 6px; border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+    .policy-body blockquote {
+      margin: 16px 0; padding: 12px 18px;
+      border-left: 3px solid var(--brand-primary);
+      background: var(--bg);
+      color: var(--fg-muted); font-style: italic;
+    }
+    .policy-body a { color: var(--brand-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+    /* Per-policy footer — version history + permalink */
+    .policy-foot {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .policy-foot .pf-spacer { flex: 1; }
+    .policy-foot a { color: var(--brand-primary); font-weight: 600; }
+
+    /* Version history collapsible */
+    details.ver-history {
+      margin: 12px 0 0; padding: 0;
+    }
+    details.ver-history summary {
+      list-style: none; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; color: var(--fg-muted);
+      transition: border-color .12s ease;
+    }
+    details.ver-history summary:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    details.ver-history summary::-webkit-details-marker { display: none; }
+    details.ver-history summary svg {
+      width: 12px; height: 12px; transition: transform .15s ease;
+    }
+    details.ver-history[open] summary svg { transform: rotate(180deg); }
+    details.ver-history .vh-list {
+      list-style: none; padding: 12px 0 0; margin: 0;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    details.ver-history .vh-list li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    details.ver-history .vh-list .vh-version {
+      font-family: var(--font-mono); font-weight: 600;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--bg-elevated); color: var(--brand-primary);
+      font-size: 11px; border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    details.ver-history .vh-list .vh-eff { flex: 1; }
+    details.ver-history .vh-list a { font-weight: 600; }
+
+    /* Last reviewed footer for the WHOLE page */
+    .page-foot {
+      max-width: 1200px; margin: 24px auto 0;
+      padding: 24px 24px 32px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .page-foot .pf-meta { display: flex; gap: 6px; align-items: center; }
+    .page-foot .pf-meta b { color: var(--fg); font-weight: 600; }
+
+    /* Public footer (mirrors creator-public.html) */
+    .creator-foot {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+    }
+    .creator-foot-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .creator-foot-inner .cf-social {
+      display: flex; gap: 8px;
+    }
+    .creator-foot-inner .cf-social a {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--fg-muted);
+    }
+    .creator-foot-inner .cf-social a:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+    .creator-foot-inner .cf-social svg { width: 14px; height: 14px; }
+    .creator-foot-inner .cf-tdf {
+      font-size: 11px; color: var(--fg-subtle);
+    }
+    .creator-foot-inner .cf-tdf a { color: var(--fg-subtle); }
+
+    /* ============================================================
+       Sub-view: archived version banner (#/version/<slug>/<v>)
+       ============================================================ */
+    .archive-banner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 12px 24px;
+      background: rgba(245,158,11,0.10);
+      border-bottom: 2px solid var(--brand-warm);
+      display: none;
+      gap: 12px; align-items: center; flex-wrap: wrap;
+      font-size: 13.5px; color: #92400E;
+    }
+    body.is-archive .archive-banner { display: flex; }
+    body.dark-mode .archive-banner { color: #FCD34D; background: rgba(245,158,11,0.18); }
+    .archive-banner .ab-icon { font-size: 18px; line-height: 1; }
+    .archive-banner .ab-meta { flex: 1; }
+    .archive-banner .ab-meta strong { color: #7C2D12; }
+    body.dark-mode .archive-banner .ab-meta strong { color: #FDE68A; }
+    .archive-banner a {
+      color: #7C2D12; font-weight: 700; text-decoration: underline;
+    }
+    body.dark-mode .archive-banner a { color: #FDE68A; }
+
+    /* Single-policy view — hide the others */
+    body.is-single-policy .policy { display: none; }
+    body.is-single-policy .policy.is-current-policy { display: block; }
+
+    /* ============================================================
+       Print mode (#/print) — also fires when window.print() called
+       ============================================================ */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      .top-strip, .creator-row, .pill-bar, .toolbar-row, .toc, .archive-banner,
+      .creator-foot, .demo-toolbar, .policy-head .ph-actions {
+        display: none !important;
+      }
+      .legal-grid { grid-template-columns: 1fr; padding: 0 !important; max-width: none; }
+      .content { max-width: none; }
+      .policy { page-break-after: always; margin-bottom: 0; }
+      .policy:last-child { page-break-after: auto; }
+      .policy-body { font-size: 12pt; line-height: 1.6; color: #000; }
+      .policy-body h3 { font-size: 16pt; color: #000; }
+      .policy-body a { color: #000; text-decoration: underline; }
+      .policy-body a::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      .policy-foot, details.ver-history, .page-foot { display: none !important; }
+    }
+    body.is-print-preview {
+      background: #fff !important;
+    }
+    body.is-print-preview .top-strip,
+    body.is-print-preview .creator-row,
+    body.is-print-preview .pill-bar,
+    body.is-print-preview .toolbar-row,
+    body.is-print-preview .toc,
+    body.is-print-preview .creator-foot,
+    body.is-print-preview .policy-head .ph-actions,
+    body.is-print-preview .policy-foot {
+      display: none !important;
+    }
+    body.is-print-preview .legal-grid {
+      grid-template-columns: 1fr; padding: 24px; max-width: 740px;
+    }
+
+    /* Mockup-only sub-view picker pill (bottom-left) */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; left: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      max-width: calc(100vw - 28px);
+      flex-wrap: wrap;
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .pb-pill { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .toc-list .toc-section.is-current { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .toc-list .toc-sub { border-left-color: #1F2937; }
+    body.dark-mode .btn-tool { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .creator-row .av { border-color: #141A2D; }
+    body.dark-mode .toolbar-row, body.dark-mode .page-foot, body.dark-mode .creator-foot { border-color: #1F2937; }
+    body.dark-mode .content .policy-head { border-bottom-color: #1F2937; }
+    body.dark-mode .content .policy-head .ph-action { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .content .policy-head .ph-version { background: rgba(99,102,241,0.20); border-color: rgba(99,102,241,0.45); color: #A5B4FC; }
+    body.dark-mode .policy-foot { border-top-color: #1F2937; }
+    body.dark-mode .policy-body code { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .policy-body blockquote { background: #141A2D; }
+    body.dark-mode details.ver-history summary { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode details.ver-history .vh-list li { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode details.ver-history .vh-list .vh-version { background: #0B0F1E; border-color: #1F2937; color: #A5B4FC; }
+    body.dark-mode .creator-foot-inner .cf-social a { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .toc .toc-mobile-toggle { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .toc-list { background: #141A2D; border-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup-only top strip -->
+  <div class="top-strip">
+    <a href="./creator-public.html">← Back to alexandra.silva</a>
+    <span class="url-mono">tadaify.com/<b>alexandra/legal</b></span>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+      <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+      <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+
+  <!-- Archive banner (only visible when on #/version/<slug>/<v>) -->
+  <div class="archive-banner" role="alert">
+    <span class="ab-icon" aria-hidden="true">📜</span>
+    <div class="ab-meta">
+      <strong>You're viewing an archived version.</strong>
+      <span id="archive-meta">This is Terms of Service v1.1 — effective Jan 15, 2026 to Mar 31, 2026.</span>
+    </div>
+    <a href="#/" onclick="window.scrollTo(0,0)">View current version →</a>
+  </div>
+
+  <!-- Creator identity -->
+  <div class="creator-row">
+    <div class="av" aria-hidden="true">A</div>
+    <div class="who">
+      <div class="who-name">Alexandra Silva</div>
+      <div class="who-handle">@alexandra · Strong Not Skinny</div>
+    </div>
+    <a href="./creator-public.html" class="back-to-main">
+      ← Main page
+    </a>
+  </div>
+
+  <!-- Page hero -->
+  <header class="page-hero">
+    <h1>Legal</h1>
+    <p class="lede">All the policies that apply to your use of Strong Not Skinny — the website, the courses, the coaching subscriptions, and any communications we send you.</p>
+    <div class="meta-line">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span>Last reviewed <b style="color:var(--fg)">Apr 1, 2026</b></span>
+      <span class="dot"></span>
+      <span>5 policies</span>
+      <span class="dot"></span>
+      <span>Available languages: 🇬🇧 English</span>
+    </div>
+  </header>
+
+  <!-- Policy chooser pills -->
+  <nav class="pill-bar" aria-label="Policy chooser">
+    <span class="pb-label">Choose a section:</span>
+    <a href="#terms" class="pb-pill" data-pill="terms"><span class="pb-emoji" aria-hidden="true">📜</span> Terms of Service</a>
+    <a href="#privacy" class="pb-pill" data-pill="privacy"><span class="pb-emoji" aria-hidden="true">🔒</span> Privacy Policy</a>
+    <a href="#cookie" class="pb-pill" data-pill="cookie"><span class="pb-emoji" aria-hidden="true">🍪</span> Cookie Policy</a>
+    <a href="#refund" class="pb-pill" data-pill="refund"><span class="pb-emoji" aria-hidden="true">💸</span> Refund Policy</a>
+    <a href="#dmca" class="pb-pill" data-pill="dmca"><span class="pb-emoji" aria-hidden="true">©️</span> DMCA / Copyright</a>
+  </nav>
+
+  <!-- Toolbar (print + language) -->
+  <div class="toolbar-row">
+    <span style="font-size:12.5px; color:var(--fg-muted)">Showing all policies. Use the menu above to jump to a specific one.</span>
+    <span class="tr-spacer"></span>
+    <button class="btn-tool" onclick="enterPrintPreview()" title="Open print-friendly view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print this page
+    </button>
+    <button class="btn-tool" onclick="alert('Mockup — copies the canonical legal-page URL for sharing on Meta Ads / Google Ads policy fields')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+      Copy page link
+    </button>
+  </div>
+
+  <!-- ============================================================
+       MAIN GRID
+       ============================================================ -->
+  <div class="legal-grid">
+
+    <!-- TOC sidebar -->
+    <aside class="toc" id="toc" aria-label="Policy contents">
+      <button class="toc-mobile-toggle" type="button" onclick="toggleToc()" aria-expanded="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        Table of contents
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <ul class="toc-list">
+        <li>
+          <a href="#terms" class="toc-section" data-section="terms">
+            <span class="ts-emoji" aria-hidden="true">📜</span>
+            <span>Terms of Service</span>
+          </a>
+          <ul class="toc-sub">
+            <li><a href="#terms-acceptance">Acceptance of terms</a></li>
+            <li><a href="#terms-eligibility">Eligibility</a></li>
+            <li><a href="#terms-payments">Subscriptions and payments</a></li>
+            <li><a href="#terms-ip">Intellectual property</a></li>
+            <li><a href="#terms-disclaimer">Disclaimer of warranties</a></li>
+            <li><a href="#terms-liability">Limitation of liability</a></li>
+            <li><a href="#terms-law">Governing law</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#privacy" class="toc-section" data-section="privacy">
+            <span class="ts-emoji" aria-hidden="true">🔒</span>
+            <span>Privacy Policy</span>
+          </a>
+          <ul class="toc-sub">
+            <li><a href="#privacy-collect">What we collect</a></li>
+            <li><a href="#privacy-why">Why we collect it</a></li>
+            <li><a href="#privacy-retention">How long we keep it</a></li>
+            <li><a href="#privacy-rights">Your rights</a></li>
+            <li><a href="#privacy-transfers">International transfers</a></li>
+            <li><a href="#privacy-dpo">Data Protection Officer</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#cookie" class="toc-section" data-section="cookie">
+            <span class="ts-emoji" aria-hidden="true">🍪</span>
+            <span>Cookie Policy</span>
+          </a>
+          <ul class="toc-sub">
+            <li><a href="#cookie-what">What cookies we set</a></li>
+            <li><a href="#cookie-optout">How to opt out</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#refund" class="toc-section" data-section="refund">
+            <span class="ts-emoji" aria-hidden="true">💸</span>
+            <span>Refund Policy</span>
+          </a>
+          <ul class="toc-sub">
+            <li><a href="#refund-window">14-day refund window</a></li>
+            <li><a href="#refund-eligibility">Eligibility</a></li>
+            <li><a href="#refund-howto">How to request</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="#dmca" class="toc-section" data-section="dmca">
+            <span class="ts-emoji" aria-hidden="true">©️</span>
+            <span>DMCA / Copyright</span>
+          </a>
+          <ul class="toc-sub">
+            <li><a href="#dmca-notice">Filing a notice</a></li>
+            <li><a href="#dmca-counter">Counter-notice procedure</a></li>
+            <li><a href="#dmca-agent">Designated agent</a></li>
+          </ul>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- ============== POLICIES CONTENT ============== -->
+    <main class="content">
+
+      <!-- POLICY 1 — Terms of Service -->
+      <article class="policy" id="terms">
+        <div class="policy-head">
+          <div class="ph-icon" aria-hidden="true">📜</div>
+          <div class="ph-meta">
+            <h2>Terms of Service</h2>
+            <div class="ph-line">
+              <span class="ph-version">v1.2</span>
+              <span class="ph-effective">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                Effective Apr 1, 2026
+              </span>
+              <span class="dot"></span>
+              <span>Updated Mar 28, 2026</span>
+            </div>
+          </div>
+          <div class="ph-actions">
+            <button class="ph-action" data-tip="Copy permalink to this section" onclick="copyPermalink('terms')" aria-label="Copy permalink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+            </button>
+            <button class="ph-action" data-tip="Read in single-policy mode" onclick="location.hash = '#/policy/terms'" aria-label="Single-policy mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="policy-body">
+          <h3 id="terms-acceptance">1. Acceptance of terms</h3>
+          <p>By accessing <a href="https://strongnotskinny.com">strongnotskinny.com</a> (the "Site") and any products or services we offer, you agree to be bound by these Terms of Service. If you do not agree, please do not use the Site.</p>
+
+          <h3 id="terms-eligibility">2. Eligibility</h3>
+          <p>You must be at least 18 years old, or the age of majority in your jurisdiction, to purchase services or products from us. By placing an order, you represent that you meet this requirement.</p>
+
+          <h3 id="terms-payments">3. Subscriptions and payments</h3>
+          <p>Coaching subscriptions auto-renew monthly at the price displayed at the time of your initial purchase. You may cancel at any time from your account dashboard; cancellation takes effect at the end of the current billing period. We do not provide pro-rated refunds for unused portions of an already-billed period.</p>
+          <p>All payments are processed by Stripe. We do not store your card details on our servers.</p>
+
+          <h3 id="terms-ip">4. Intellectual property</h3>
+          <p>All training plans, video content, and written materials are owned by Alexandra Silva and may not be redistributed, resold, or reproduced without written permission. You may use our materials for your own personal, non-commercial use as the customer.</p>
+
+          <h3 id="terms-disclaimer">5. Disclaimer of warranties</h3>
+          <blockquote>Our content is for informational and educational purposes only and is not medical advice. Consult a qualified healthcare provider before starting any new fitness program.</blockquote>
+
+          <h3 id="terms-liability">6. Limitation of liability</h3>
+          <p>To the maximum extent permitted by law, our total liability for any claim arising from your use of the Site is limited to the amount you paid us in the 12 months preceding the claim.</p>
+
+          <h3 id="terms-law">7. Governing law</h3>
+          <p>These Terms are governed by the laws of England and Wales. Any dispute will be resolved in the courts of London, United Kingdom.</p>
+        </div>
+
+        <div class="policy-foot">
+          <span>Permalink: <code style="font-family:var(--font-mono); font-size:12px; padding:1px 6px; background:var(--bg); border-radius:5px; border:1px solid var(--border)">tadaify.com/alexandra/legal#terms</code></span>
+          <span class="pf-spacer"></span>
+          <details class="ver-history">
+            <summary>
+              View 2 past versions
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <ul class="vh-list">
+              <li>
+                <span class="vh-version">v1.1</span>
+                <span class="vh-eff">Effective Jan 15, 2026 to Mar 31, 2026</span>
+                <a href="#/version/terms/1.1" onclick="goArchive('terms', '1.1')">View archived</a>
+              </li>
+              <li>
+                <span class="vh-version">v1.0</span>
+                <span class="vh-eff">Effective Sep 1, 2025 to Jan 14, 2026</span>
+                <a href="#/version/terms/1.0" onclick="goArchive('terms', '1.0')">View archived</a>
+              </li>
+            </ul>
+          </details>
+        </div>
+      </article>
+
+      <!-- POLICY 2 — Privacy Policy -->
+      <article class="policy" id="privacy">
+        <div class="policy-head">
+          <div class="ph-icon" aria-hidden="true">🔒</div>
+          <div class="ph-meta">
+            <h2>Privacy Policy</h2>
+            <div class="ph-line">
+              <span class="ph-version">v2.0</span>
+              <span class="ph-effective">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                Effective Apr 15, 2026
+              </span>
+              <span class="dot"></span>
+              <span>GDPR variant</span>
+            </div>
+          </div>
+          <div class="ph-actions">
+            <button class="ph-action" data-tip="Copy permalink" onclick="copyPermalink('privacy')" aria-label="Copy permalink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+            </button>
+            <button class="ph-action" data-tip="Read in single-policy mode" onclick="location.hash = '#/policy/privacy'" aria-label="Single-policy mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="policy-body">
+          <h3 id="privacy-collect">1. What we collect</h3>
+          <p>We collect personal data you give us directly (name, email, billing address) and data automatically generated by your use of the Site (IP address, device type, pages visited, time on page).</p>
+
+          <h3 id="privacy-why">2. Why we collect it (legal basis under GDPR Art. 6)</h3>
+          <ul>
+            <li><strong>Performance of contract</strong> — to deliver the products and coaching you've purchased.</li>
+            <li><strong>Legitimate interest</strong> — to keep the Site secure and improve our services.</li>
+            <li><strong>Consent</strong> — for marketing emails and non-essential cookies. You can withdraw at any time.</li>
+          </ul>
+
+          <h3 id="privacy-retention">3. How long we keep it</h3>
+          <p>Account data: as long as your account is active, plus 7 years for tax purposes after account closure (UK requirement).</p>
+          <p>Anonymised analytics: 26 months (Google Analytics default).</p>
+
+          <h3 id="privacy-rights">4. Your rights</h3>
+          <p>Under GDPR you have the right to access, rectify, erase, restrict processing of, port, and object to processing of your personal data. Email <a href="mailto:hello@strongnotskinny.com">hello@strongnotskinny.com</a> to exercise any of these rights — we respond within 30 days.</p>
+
+          <h3 id="privacy-transfers">5. International transfers</h3>
+          <p>Some of our processors (Stripe, Google Workspace, Cloudflare) are based in the United States. Where data leaves the EU/UK, we rely on Standard Contractual Clauses (SCCs) approved by the European Commission.</p>
+
+          <h3 id="privacy-dpo">6. Data Protection Officer</h3>
+          <p>We are not legally required to appoint a DPO, but data protection inquiries are handled by Alexandra Silva personally — <a href="mailto:privacy@strongnotskinny.com">privacy@strongnotskinny.com</a>.</p>
+        </div>
+
+        <div class="policy-foot">
+          <span>Permalink: <code style="font-family:var(--font-mono); font-size:12px; padding:1px 6px; background:var(--bg); border-radius:5px; border:1px solid var(--border)">tadaify.com/alexandra/legal#privacy</code></span>
+          <span class="pf-spacer"></span>
+          <details class="ver-history">
+            <summary>
+              View 1 past version
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <ul class="vh-list">
+              <li>
+                <span class="vh-version">v1.0</span>
+                <span class="vh-eff">Effective Sep 1, 2025 to Apr 14, 2026</span>
+                <a href="#/version/privacy/1.0" onclick="goArchive('privacy', '1.0')">View archived</a>
+              </li>
+            </ul>
+          </details>
+        </div>
+      </article>
+
+      <!-- POLICY 3 — Cookie Policy -->
+      <article class="policy" id="cookie">
+        <div class="policy-head">
+          <div class="ph-icon" aria-hidden="true">🍪</div>
+          <div class="ph-meta">
+            <h2>Cookie Policy</h2>
+            <div class="ph-line">
+              <span class="ph-version">v1.0</span>
+              <span class="ph-effective">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                Effective Mar 1, 2026
+              </span>
+            </div>
+          </div>
+          <div class="ph-actions">
+            <button class="ph-action" data-tip="Copy permalink" onclick="copyPermalink('cookie')" aria-label="Copy permalink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+            </button>
+            <button class="ph-action" data-tip="Read in single-policy mode" onclick="location.hash = '#/policy/cookie'" aria-label="Single-policy mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="policy-body">
+          <h3 id="cookie-what">1. What cookies we set</h3>
+          <p>We use the following cookies on this Site:</p>
+          <ul>
+            <li><strong>Essential</strong> — <code>session_id</code>, <code>csrf_token</code> (set by tadaify, lifetime: session). Required for the Site to function. Cannot be disabled.</li>
+            <li><strong>Analytics</strong> — <code>_ga</code>, <code>_gid</code> (Google Analytics, lifetime: 2 years and 24 hours). Help us understand how visitors use the Site. Set only with your consent.</li>
+            <li><strong>Payment</strong> — <code>__stripe_mid</code>, <code>__stripe_sid</code> (Stripe, lifetime: 1 year and 30 minutes). Set when you visit a checkout page; required to prevent fraud.</li>
+          </ul>
+
+          <h3 id="cookie-optout">2. How to opt out</h3>
+          <p>You can manage your cookie preferences at any time via the cookie banner that appears on first visit, or by clicking <a href="#" onclick="event.preventDefault();alert('Mockup — re-opens the cookie consent banner')">"Cookie preferences"</a> in our footer. You can also block cookies in your browser settings — note that blocking essential cookies will prevent the Site from working.</p>
+        </div>
+
+        <div class="policy-foot">
+          <span>Permalink: <code style="font-family:var(--font-mono); font-size:12px; padding:1px 6px; background:var(--bg); border-radius:5px; border:1px solid var(--border)">tadaify.com/alexandra/legal#cookie</code></span>
+        </div>
+      </article>
+
+      <!-- POLICY 4 — Refund Policy -->
+      <article class="policy" id="refund">
+        <div class="policy-head">
+          <div class="ph-icon" aria-hidden="true">💸</div>
+          <div class="ph-meta">
+            <h2>Refund Policy</h2>
+            <div class="ph-line">
+              <span class="ph-version">v1.1</span>
+              <span class="ph-effective">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                Effective Apr 1, 2026
+              </span>
+            </div>
+          </div>
+          <div class="ph-actions">
+            <button class="ph-action" data-tip="Copy permalink" onclick="copyPermalink('refund')" aria-label="Copy permalink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+            </button>
+            <button class="ph-action" data-tip="Read in single-policy mode" onclick="location.hash = '#/policy/refund'" aria-label="Single-policy mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="policy-body">
+          <h3 id="refund-window">1. 14-day refund window</h3>
+          <p>We offer a 14-day money-back guarantee on all digital products and one-time coaching purchases. If you're not satisfied within 14 days of purchase, email us and we'll refund your payment in full — no questions asked.</p>
+
+          <h3 id="refund-eligibility">2. Eligibility</h3>
+          <ul>
+            <li><strong>One-time digital products</strong> (training plans, video courses, ebooks) — refundable within 14 days of purchase.</li>
+            <li><strong>Monthly coaching subscriptions</strong> — your first month is fully refundable within 14 days. After 14 days, cancel anytime to stop future renewals; we don't refund partial months.</li>
+            <li><strong>1:1 coaching sessions</strong> — refundable up to 24 hours before the scheduled session. Inside 24 hours, no refund (the slot is reserved for you).</li>
+          </ul>
+
+          <h3 id="refund-howto">3. How to request</h3>
+          <p>Email <a href="mailto:refunds@strongnotskinny.com">refunds@strongnotskinny.com</a> with your order number. We process refunds via Stripe within 5 business days; the refund typically appears on your statement within 5-10 business days after that, depending on your bank.</p>
+        </div>
+
+        <div class="policy-foot">
+          <span>Permalink: <code style="font-family:var(--font-mono); font-size:12px; padding:1px 6px; background:var(--bg); border-radius:5px; border:1px solid var(--border)">tadaify.com/alexandra/legal#refund</code></span>
+        </div>
+      </article>
+
+      <!-- POLICY 5 — DMCA -->
+      <article class="policy" id="dmca">
+        <div class="policy-head">
+          <div class="ph-icon" aria-hidden="true">©️</div>
+          <div class="ph-meta">
+            <h2>DMCA / Copyright Policy</h2>
+            <div class="ph-line">
+              <span class="ph-version">v1.0</span>
+              <span class="ph-effective">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                Effective Mar 15, 2026
+              </span>
+            </div>
+          </div>
+          <div class="ph-actions">
+            <button class="ph-action" data-tip="Copy permalink" onclick="copyPermalink('dmca')" aria-label="Copy permalink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+            </button>
+            <button class="ph-action" data-tip="Read in single-policy mode" onclick="location.hash = '#/policy/dmca'" aria-label="Single-policy mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="policy-body">
+          <h3 id="dmca-notice">1. Filing a copyright notice</h3>
+          <p>If you believe any content on this Site infringes your copyright, send a written notice to our designated agent (below) including:</p>
+          <ol>
+            <li>A physical or electronic signature of the copyright owner or an authorized representative.</li>
+            <li>Identification of the copyrighted work claimed to have been infringed.</li>
+            <li>Identification of the material claimed to be infringing, with information sufficient to locate it (URL).</li>
+            <li>Your contact information (name, address, email, phone).</li>
+            <li>A statement that you have a good faith belief that use of the material is not authorized.</li>
+            <li>A statement, under penalty of perjury, that the information in your notice is accurate and that you are authorized to act.</li>
+          </ol>
+
+          <h3 id="dmca-counter">2. Counter-notice procedure</h3>
+          <p>If your content has been removed in response to a DMCA notice and you believe the removal was a mistake, you may file a counter-notice with the same information requirements (per 17 USC §512(g)). We will reinstate the content 10-14 business days after receiving a valid counter-notice, unless the original complainant files a court action.</p>
+
+          <h3 id="dmca-agent">3. Designated agent for DMCA notices</h3>
+          <blockquote>
+            Alexandra Silva — DMCA Designated Agent<br/>
+            Email: <a href="mailto:dmca@strongnotskinny.com">dmca@strongnotskinny.com</a><br/>
+            Postal: 12 Example Street, London EC1A 1BB, United Kingdom<br/>
+            Phone: +44 20 0000 0000
+          </blockquote>
+        </div>
+
+        <div class="policy-foot">
+          <span>Permalink: <code style="font-family:var(--font-mono); font-size:12px; padding:1px 6px; background:var(--bg); border-radius:5px; border:1px solid var(--border)">tadaify.com/alexandra/legal#dmca</code></span>
+        </div>
+      </article>
+
+    </main>
+  </div>
+
+  <!-- Last reviewed footer -->
+  <div class="page-foot">
+    <div class="pf-meta">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+      Last reviewed: <b>Apr 1, 2026</b> · Next review due Apr 1, 2027
+    </div>
+    <div>
+      Have a legal question? Email <a href="mailto:hello@strongnotskinny.com">hello@strongnotskinny.com</a>
+    </div>
+  </div>
+
+  <!-- Public footer (mirrors creator-public.html) -->
+  <footer class="creator-foot">
+    <div class="creator-foot-inner">
+      <div>© 2026 Strong Not Skinny by Alexandra Silva</div>
+      <div class="cf-social" aria-label="Social links">
+        <a href="https://instagram.com/alexandra.silva" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <a href="https://tiktok.com/@alexandra" aria-label="TikTok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </a>
+        <a href="https://youtube.com/@alexandra" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 8.5a3 3 0 0 0-2.1-2.1C18 6 12 6 12 6s-6 0-7.9.4A3 3 0 0 0 2 8.5C1.6 10.4 1.6 12 1.6 12s0 1.6.4 3.5a3 3 0 0 0 2.1 2.1C6 18 12 18 12 18s6 0 7.9-.4a3 3 0 0 0 2.1-2.1c.4-1.9.4-3.5.4-3.5s0-1.6-.4-3.5z"/><polygon points="10 15 15 12 10 9 10 15"/></svg>
+        </a>
+      </div>
+      <div class="cf-tdf">
+        Built with <a href="../landing.html">tadaify</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mockup-only sub-view picker -->
+  <div class="demo-toolbar" aria-hidden="true">
+    <span style="opacity:0.65">Sub-view</span>
+    <select onchange="goSubView(this.value)" id="sub-view-select" aria-label="Sub-view">
+      <option value="#/" selected>Full Legal page</option>
+      <option value="#/policy/terms">Single policy — Terms only</option>
+      <option value="#/policy/privacy">Single policy — Privacy only</option>
+      <option value="#/policy/cookie">Single policy — Cookie only</option>
+      <option value="#/policy/refund">Single policy — Refund only</option>
+      <option value="#/policy/dmca">Single policy — DMCA only</option>
+      <option value="#/version/terms/1.1">Archived: Terms v1.1</option>
+      <option value="#/version/privacy/1.0">Archived: Privacy v1.0</option>
+      <option value="#/print">Print-friendly</option>
+    </select>
+  </div>
+
+  <script>
+    /* ---------- Theme ---------- */
+    function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+    /* ---------- TOC mobile toggle ---------- */
+    function toggleToc() {
+      var t = document.getElementById('toc');
+      var isOpen = t.classList.toggle('is-open');
+      t.querySelector('.toc-mobile-toggle').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    /* ---------- Scroll-spy: highlight TOC section + chooser pill in view ---------- */
+    var sections = ['terms','privacy','cookie','refund','dmca'];
+    function highlightCurrent() {
+      var scrollY = window.scrollY + 120;
+      var current = sections[0];
+      sections.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollY) current = id;
+      });
+      document.querySelectorAll('.toc-section').forEach(function (el) {
+        el.classList.toggle('is-current', el.getAttribute('data-section') === current);
+      });
+      document.querySelectorAll('.pb-pill').forEach(function (el) {
+        el.classList.toggle('is-active', el.getAttribute('data-pill') === current);
+      });
+    }
+    window.addEventListener('scroll', highlightCurrent, { passive: true });
+
+    /* ---------- Permalink copy ---------- */
+    function copyPermalink(slug) {
+      var url = 'https://tadaify.com/alexandra/legal#' + slug;
+      try {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url).then(function () {
+            showToast('Copied: ' + url);
+          });
+        } else {
+          showToast('Mockup — would copy: ' + url);
+        }
+      } catch (e) {
+        showToast('Mockup — would copy: ' + url);
+      }
+    }
+    function showToast(msg) {
+      var t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = 'position:fixed; bottom:60px; left:50%; transform:translateX(-50%); background:#0B0F1E; color:#fff; padding:10px 16px; border-radius:999px; font-size:12.5px; font-weight:500; z-index:200; box-shadow:0 12px 32px rgba(0,0,0,0.25);';
+      document.body.appendChild(t);
+      setTimeout(function () { t.style.transition = 'opacity .25s ease'; t.style.opacity = '0'; }, 1800);
+      setTimeout(function () { t.remove(); }, 2200);
+    }
+
+    /* ---------- Hash routing for sub-views ---------- */
+    function applyRoute() {
+      var h = location.hash || '#/';
+      document.body.classList.remove('is-archive', 'is-single-policy', 'is-print-preview');
+      document.querySelectorAll('.policy.is-current-policy').forEach(function (el) { el.classList.remove('is-current-policy'); });
+
+      // Default
+      if (h === '#/' || h === '' || h === '#') {
+        var sel = document.getElementById('sub-view-select');
+        if (sel) sel.value = '#/';
+        return;
+      }
+
+      // Single-policy mode
+      var sp = h.match(/^#\/policy\/([a-z]+)/);
+      if (sp) {
+        var slug = sp[1];
+        var el = document.getElementById(slug);
+        if (el) {
+          el.classList.add('is-current-policy');
+          document.body.classList.add('is-single-policy');
+        }
+        var sel2 = document.getElementById('sub-view-select');
+        if (sel2) sel2.value = h;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // Archived version
+      var av = h.match(/^#\/version\/([a-z]+)\/([0-9.]+)/);
+      if (av) {
+        var slug2 = av[1], ver = av[2];
+        document.body.classList.add('is-archive');
+        var policyName = ({
+          terms: 'Terms of Service',
+          privacy: 'Privacy Policy',
+          cookie: 'Cookie Policy',
+          refund: 'Refund Policy',
+          dmca: 'DMCA / Copyright Policy'
+        })[slug2] || 'Policy';
+        var meta = document.getElementById('archive-meta');
+        if (meta) {
+          var ranges = {
+            'terms-1.1': 'Jan 15, 2026 to Mar 31, 2026',
+            'terms-1.0': 'Sep 1, 2025 to Jan 14, 2026',
+            'privacy-1.0': 'Sep 1, 2025 to Apr 14, 2026'
+          };
+          var range = ranges[slug2 + '-' + ver] || 'a previous period';
+          meta.textContent = 'This is ' + policyName + ' v' + ver + ' — effective ' + range + '.';
+        }
+        var el2 = document.getElementById(slug2);
+        if (el2) el2.classList.add('is-current-policy');
+        document.body.classList.add('is-single-policy');
+        var sel3 = document.getElementById('sub-view-select');
+        if (sel3) sel3.value = h;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // Print preview
+      if (h === '#/print') {
+        document.body.classList.add('is-print-preview');
+        var sel4 = document.getElementById('sub-view-select');
+        if (sel4) sel4.value = h;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // Plain anchor like #terms — let browser do its thing, scroll-spy will highlight
+      var anchor = document.getElementById(h.replace('#',''));
+      if (anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function goSubView(value) {
+      location.hash = value;
+    }
+    function goArchive(slug, version) {
+      location.hash = '#/version/' + slug + '/' + version;
+    }
+    function enterPrintPreview() {
+      location.hash = '#/print';
+      // Give the browser a tick to apply the body class, then call print().
+      // In production, print() opens the OS print dialog — here we just show
+      // the print-preview body class so reviewers see how it looks.
+      setTimeout(function () {
+        if (confirm('Mockup — open the OS print dialog now? (Cancel = stay in print-preview view)')) {
+          window.print();
+        }
+      }, 80);
+    }
+
+    window.addEventListener('hashchange', applyRoute);
+    applyRoute();
+    highlightCurrent();
+  </script>
+</body>
+</html>
