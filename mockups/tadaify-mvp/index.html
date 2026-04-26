@@ -388,6 +388,52 @@
   </section>
 
   <section class="section container" style="border-top: 1px solid var(--border); padding-top: 64px">
+    <h2>Page templates — Schedule / Booking (F-PAGE-SCHEDULE-001 #20)</h2>
+    <p class="text-muted" style="margin-top:8px; margin-bottom:24px">
+      Booking page for coaches, consultants, freelancers, instructors. Visitors pick a session type, then a time, then fill details (free or paid via Stripe). Calendar OAuth providers are designed for the long-term picture; MVP ships the standalone "Manual / Tadaify-only" provider per locked DEC-APIPAGES-01 = C.
+    </p>
+    <div class="grid grid-3">
+
+      <a href="./app-page-schedule.html" class="card" style="color:inherit; text-decoration:none">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span class="pill pill-primary">📅 editor</span>
+          <span class="text-subtle text-sm mono">/app/pages/schedule</span>
+        </div>
+        <h3>Schedule page editor</h3>
+        <p class="text-muted">Page settings · 4-provider calendar picker (Google / Apple / Outlook post-MVP + Manual recommended) · OAuth status panel · 7-row working-hours grid · drag-reorder booking-types list with centered-modal composer (duration / Free-or-Paid / form fields builder / cancellation policy) · Availability rules with month-grid visualizer · Notifications (creator + visitor, with 24h/1h reminders gated Creator+/Pro+) · Stripe Connect payments. Tier-gates at Save (no blur).</p>
+        <p class="text-sm" style="margin-top:12px; color: var(--brand-primary);">
+          Differentiator → <strong>tadaify is the front-end</strong>; calendar lives in Google/Apple/Outlook OR right here
+        </p>
+      </a>
+
+      <a href="./creator-schedule-public.html" class="card" style="color:inherit; text-decoration:none">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span class="pill pill-warm">🌐 public</span>
+          <span class="text-subtle text-sm mono">/alexandra/book</span>
+        </div>
+        <h3>Public Schedule render</h3>
+        <p class="text-muted">7 sub-views in one file via hash routing — Step 1 pick a session (4 cards), Step 2 pick a time (calendar grid + time-slot list, mobile collapses to month-strip), Step 3 fill details (form + Stripe Elements + side recap), Booked confirmation (.ics + Google Calendar add + Reschedule/Cancel links), friendly Error retry, Cancel page, Reschedule page (3 quick-pick day cards + full-calendar fallback).</p>
+        <p class="text-sm" style="margin-top:12px; color: var(--brand-primary);">
+          Differentiator → <strong>3-step flow + 4 follow-ups</strong> in a single themed render
+        </p>
+      </a>
+
+      <a href="https://github.com/graspsoftwarepw/tadaify-app/issues/20" class="card" style="color:inherit; text-decoration:none" target="_blank" rel="noopener">
+        <div class="flex items-center justify-between" style="margin-bottom:12px">
+          <span class="pill">📋 spec</span>
+          <span class="text-subtle text-sm mono">issue #20</span>
+        </div>
+        <h3>F-PAGE-SCHEDULE-001 issue</h3>
+        <p class="text-muted">Architecture (page-type id `schedule`, type_config schema with timezone/slot_duration_min/booking_window_days/buffer_min/currency/free_or_paid/deposit_required, admin module for availability + bookings list, calendar_picker required block, ICS attachment, cancellation flow), in-scope vs out-of-scope, acceptance criteria, dependencies (F-MULTIPAGE-001 #8 + F-PAGE-TEMPLATE-FRAMEWORK-001 + Stripe + Resend).</p>
+        <p class="text-sm" style="margin-top:12px; color: var(--brand-primary);">
+          DEC trail → DEC-MULTIPAGE-01 (B) · DEC-APIPAGES-01 (C — standalone scheduler, no OAuth in MVP)
+        </p>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="section container" style="border-top: 1px solid var(--border); padding-top: 64px">
     <h2>Phase 2 — Registration + Onboarding</h2>
     <p class="text-muted" style="margin-top:8px; margin-bottom:24px">
       Full 7-screen flow from handle claim to live page. Walk through end-to-end —

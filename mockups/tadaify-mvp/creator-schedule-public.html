@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Schedule / Booking page render — creator view at tadaify.com/<handle>/book — F-PAGE-SCHEDULE-001 #20
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view of the booking page set up via app-page-schedule.html.
+  7 sub-views demoed in one file via in-page hash routing:
+    #/                            → Step 1 — pick a booking type
+    #/type/<slug>                 → Step 2 — pick a time
+    #/type/<slug>/time/<iso>      → Step 3 — fill details + (paid) checkout
+    #/booked                      → Confirmation
+    #/error                       → Friendly retry
+    #/cancel/<token>              → Cancellation page (returns from email link)
+    #/reschedule/<token>          → Reschedule page (returns from email link)
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive:
+    - Calendar widget collapses to a horizontal month-strip on narrow viewports
+    - 3-step layout becomes single-column
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every interaction wires through; calendar clicks pick days; time slots advance to step 3)
+    - feedback_no_blur_premium_features (no blur — paid bookings show price + Stripe CTA cleanly)
+    - feedback_no_right_side_drawers (calendar is in-flow; modals are centered)
+    - No tadaify nav bar on creator pages (creator-public.html convention) — minimal top strip + identity row instead.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book a session — Alexandra Silva — tadaify.com/alexandra/book</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values come from tokens.css (Indigo Serif).
+       Body background mirrors creator-public.html — soft warm + indigo
+       wash so the booking page feels like a sub-page of the same site.
+       ============================================================ */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* Mockup-only top strip — back to creator + URL pill (replicates browser bar context). */
+    .top-strip {
+      max-width: 980px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a { color: var(--fg-muted); padding: 4px 8px; border-radius: 6px; }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle); }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+
+    /* Creator identity row */
+    .creator-row {
+      max-width: 980px; margin: 0 auto;
+      padding: 32px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Page hero */
+    .page-hero {
+      max-width: 980px; margin: 0 auto;
+      padding: 18px 20px 12px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 52px);
+      letter-spacing: -0.02em; margin: 0;
+    }
+    .page-hero .lede {
+      max-width: 620px; color: var(--fg-muted);
+      font-size: 16.5px; line-height: 1.55; margin-top: 12px;
+    }
+
+    /* Step indicator (3 steps) */
+    .step-bar {
+      max-width: 980px; margin: 0 auto;
+      padding: 18px 20px 6px;
+      display: flex; align-items: center; gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .step-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      transition: border-color .15s ease, background .15s ease;
+    }
+    .step-pill .sp-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 11px; font-weight: 700;
+    }
+    .step-pill.is-active {
+      border-color: var(--brand-primary); background: rgba(99,102,241,0.06); color: var(--brand-primary);
+    }
+    .step-pill.is-active .sp-num { background: var(--brand-primary); color: #fff; }
+    .step-pill.is-done {
+      background: var(--success-bg); border-color: rgba(16,185,129,0.36); color: #047857;
+    }
+    .step-pill.is-done .sp-num { background: var(--success); color: #fff; }
+    .step-bar .sp-arrow { color: var(--fg-subtle); }
+
+    /* Sections */
+    .section {
+      max-width: 980px; margin: 0 auto;
+      padding: 18px 20px 60px;
+    }
+
+    /* ============================================================
+       Step 1 — Booking type cards
+       ============================================================ */
+    .types-grid {
+      display: grid; gap: 18px;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 12px;
+    }
+    @media (max-width: 720px) { .types-grid { grid-template-columns: 1fr; gap: 14px; } }
+
+    .type-card {
+      display: flex; flex-direction: column;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      text-decoration: none; color: inherit;
+    }
+    .type-card:hover {
+      transform: translateY(-3px); box-shadow: var(--shadow-lg);
+      border-color: var(--brand-primary);
+    }
+    .type-card .tc-cover {
+      aspect-ratio: 16 / 7;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; color: #fff;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    }
+    .type-card .tc-cover.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); color: #7C2D12; }
+    .type-card .tc-cover.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .type-card .tc-cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .type-card .tc-cover.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+
+    .type-card .tc-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+    .type-card .tc-row1 {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .type-card .tc-pill {
+      padding: 2px 9px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 11.5px; font-weight: 600;
+    }
+    .type-card .tc-pill.is-free { background: rgba(16,185,129,0.14); color: #047857; }
+    .type-card .tc-pill.is-paid { background: rgba(99,102,241,0.13); color: var(--brand-primary); }
+    .type-card .tc-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 24px; line-height: 1.2; letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .type-card .tc-desc {
+      color: var(--fg-muted); font-size: 14.5px; line-height: 1.55;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .type-card .tc-cta {
+      margin-top: 4px;
+      display: inline-flex; align-items: center; gap: 6px;
+      align-self: flex-start;
+      padding: 10px 16px; border-radius: 10px;
+      background: var(--brand-primary); color: #fff;
+      font-weight: 600; font-size: 14px;
+      transition: background .12s ease;
+    }
+    .type-card:hover .tc-cta { background: var(--brand-primary-hover); }
+
+    /* ============================================================
+       Step 2 — Calendar + time-slot picker
+       ============================================================ */
+    .step2-grid {
+      display: grid; gap: 24px;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: flex-start;
+      margin-top: 14px;
+    }
+    @media (max-width: 880px) { .step2-grid { grid-template-columns: 1fr; gap: 18px; } }
+
+    .panel {
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px 20px;
+    }
+    .panel h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 18px; margin: 0 0 12px; letter-spacing: -0.01em;
+    }
+
+    /* Selected-type recap chip */
+    .recap {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.20);
+      border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    .recap .rc-mark {
+      width: 38px; height: 38px; border-radius: 9px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B); color: #7C2D12;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .recap .rc-meta { min-width: 0; flex: 1; }
+    .recap .rc-title { font-weight: 600; font-size: 14px; }
+    .recap .rc-line { color: var(--fg-muted); font-size: 12.5px; }
+    .recap .rc-change {
+      color: var(--brand-primary); font-weight: 600; font-size: 12.5px;
+    }
+
+    /* Calendar widget — month grid (desktop) */
+    .cal-head {
+      display: flex; align-items: center; gap: 10px; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .cal-head .cal-month { font-weight: 600; font-size: 15px; }
+    .cal-head button {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      color: var(--fg); display: inline-flex; align-items: center; justify-content: center;
+    }
+    .cal-head button:hover { background: var(--bg-elevated); }
+    .cal-head .cal-tz {
+      margin-left: auto; font-size: 12px; color: var(--fg-muted);
+    }
+    .cal-head .cal-tz select {
+      background: transparent; border: 0; color: var(--brand-primary); font-weight: 600;
+      cursor: pointer; outline: 0;
+    }
+
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    }
+    .cal-grid .cg-dow {
+      font-size: 11.5px; color: var(--fg-subtle); text-align: center;
+      font-weight: 600; padding: 6px 0;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13.5px; font-weight: 500;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease, transform .12s ease;
+    }
+    .cal-day:hover:not(:disabled) { transform: scale(1.06); border-color: var(--brand-primary); }
+    .cal-day.is-other     { opacity: 0.32; cursor: default; }
+    .cal-day.has-slots    { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.24); color: var(--brand-primary); font-weight: 600; }
+    .cal-day.is-selected  { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .cal-day.is-today     { outline: 2px dashed var(--brand-warm); outline-offset: 1px; }
+    .cal-day:disabled, .cal-day.is-blocked { background: var(--bg-muted); color: var(--fg-subtle); cursor: not-allowed; opacity: 0.55; }
+
+    .cal-find-next {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 10px;
+      padding: 7px 12px; border-radius: 999px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      font-size: 12.5px; font-weight: 500; color: var(--brand-primary);
+    }
+    .cal-find-next:hover { background: var(--bg-elevated); }
+
+    /* Mobile horizontal month-strip alternative */
+    .month-strip {
+      display: none;
+      gap: 6px; overflow-x: auto;
+      padding: 4px 0 8px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .month-strip .ms-day {
+      flex: 0 0 56px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 10px 0; border-radius: 10px;
+      background: var(--bg); border: 1px solid var(--border);
+      scroll-snap-align: start;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .month-strip .ms-day .ms-dow { color: var(--fg-muted); font-size: 11px; font-weight: 600; }
+    .month-strip .ms-day .ms-num { font-size: 17px; font-weight: 600; margin-top: 2px; }
+    .month-strip .ms-day.has-slots { color: var(--brand-primary); border-color: rgba(99,102,241,0.32); }
+    .month-strip .ms-day.is-selected { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .month-strip .ms-day.is-blocked { opacity: 0.4; cursor: not-allowed; }
+    @media (max-width: 480px) {
+      .cal-grid { display: none; }
+      .month-strip { display: flex; }
+    }
+
+    /* Time-slot list */
+    .slot-list {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      max-height: 360px; overflow-y: auto;
+      padding-right: 4px;
+    }
+    @media (max-width: 720px) { .slot-list { grid-template-columns: 1fr 1fr 1fr; } }
+    @media (max-width: 480px) { .slot-list { grid-template-columns: 1fr 1fr; } }
+
+    .slot-btn {
+      padding: 11px 12px;
+      border: 1.5px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px; font-weight: 500;
+      cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+      text-align: center;
+    }
+    .slot-btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .slot-btn.is-selected { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .slot-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .slot-empty {
+      padding: 30px 16px; text-align: center;
+      color: var(--fg-muted); font-size: 13px;
+      border: 1.5px dashed var(--border); border-radius: 12px;
+      background: var(--bg);
+    }
+
+    /* ============================================================
+       Step 3 — booking form
+       ============================================================ */
+    .step3-grid {
+      display: grid; gap: 24px;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: flex-start;
+      margin-top: 14px;
+    }
+    @media (max-width: 880px) { .step3-grid { grid-template-columns: 1fr; gap: 18px; } }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .req { color: var(--danger); font-weight: 700; }
+    .field-input, .field-area {
+      width: 100%;
+      padding: 11px 13px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14.5px;
+      outline: 0;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.55; }
+    .field-input:focus, .field-area:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+
+    /* Cancellation policy preview block */
+    .policy-block {
+      padding: 12px 14px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .policy-block b { color: var(--fg); }
+
+    /* Stripe checkout pretend block */
+    .stripe-elements {
+      padding: 16px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,91,255,0.04), rgba(99,102,241,0.05));
+    }
+    .stripe-elements .se-row {
+      display: grid; grid-template-columns: 1fr; gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      font-family: var(--font-mono); font-size: 13.5px;
+    }
+    .stripe-elements .se-row.split {
+      grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .stripe-elements .se-label {
+      font-family: var(--font-sans); font-size: 11px;
+      color: var(--fg-muted); font-weight: 600;
+    }
+    .stripe-elements .se-trust {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11.5px; color: var(--fg-subtle); margin-top: 4px;
+    }
+
+    /* CTA buttons */
+    .btn {
+      font-family: var(--font-sans); font-weight: 600; font-size: 15px;
+      border-radius: 10px; padding: 12px 18px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-block { width: 100%; }
+    .btn-lg { padding: 14px 22px; font-size: 16px; }
+
+    .price-tag {
+      display: inline-flex; align-items: baseline; gap: 4px;
+      font-family: var(--font-display); font-weight: 600;
+      color: var(--brand-primary);
+    }
+    .price-tag .pt-amt { font-size: 28px; }
+    .price-tag .pt-cur { font-size: 16px; opacity: 0.65; }
+
+    /* ============================================================
+       Confirmation / Error / Cancel / Reschedule
+       ============================================================ */
+    .moment {
+      max-width: 620px; margin: 0 auto;
+      padding: 60px 20px 80px;
+      text-align: center;
+    }
+    .moment .mo-emoji {
+      font-size: 56px; line-height: 1;
+      width: 96px; height: 96px; border-radius: 28px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.14));
+      box-shadow: var(--shadow-sm);
+    }
+    .moment h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(28px, 4.5vw, 40px); letter-spacing: -0.02em;
+      margin: 18px 0 8px;
+    }
+    .moment p {
+      color: var(--fg-muted); font-size: 15.5px; line-height: 1.6;
+      max-width: 460px; margin: 0 auto;
+    }
+    .moment .mo-card {
+      max-width: 480px; margin: 22px auto 18px;
+      padding: 16px 20px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+      text-align: left;
+    }
+    .moment .mo-card .mc-row {
+      display: flex; justify-content: space-between; gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13.5px;
+    }
+    .moment .mo-card .mc-row:last-child { border-bottom: 0; }
+    .moment .mo-card .mc-row b { color: var(--fg); }
+    .moment .mo-card .mc-row span:first-child { color: var(--fg-muted); }
+    .moment .mo-actions {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .moment .mo-extra {
+      margin-top: 26px; font-size: 13px; color: var(--fg-muted);
+    }
+    .moment .mo-extra a { color: var(--brand-primary); font-weight: 600; }
+
+    /* Footer (mirrors creator-public.html social block — minimal) */
+    .creator-footer {
+      max-width: 980px; margin: 0 auto;
+      padding: 40px 20px 60px;
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      text-align: center;
+    }
+    .creator-footer .cf-handle { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+    .creator-footer .cf-socials {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    }
+    .creator-footer .cf-soc {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-muted); font-size: 15px;
+      transition: background .12s ease, color .12s ease;
+    }
+    .creator-footer .cf-soc:hover { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .creator-footer .cf-poweredby {
+      font-size: 11px; color: var(--fg-subtle);
+    }
+    .creator-footer .cf-poweredby a { color: var(--brand-primary); font-weight: 600; }
+
+    /* Demo toolbar — switch sub-view */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* View visibility — managed by hash routing */
+    .view { display: none; }
+    .view.is-active { display: block; }
+
+    /* Dark mode parity */
+    body.dark-mode {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.06), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.08), transparent 60%),
+        #0B0F1E;
+      color: #F3F4F6;
+    }
+    body.dark-mode .panel,
+    body.dark-mode .type-card,
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .moment .mo-card,
+    body.dark-mode .creator-footer .cf-soc {
+      background: #141A2D; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .cal-day { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .cal-day.has-slots { background: rgba(99,102,241,0.18); color: #A5B4FC; border-color: rgba(99,102,241,0.4); }
+    body.dark-mode .cal-day.is-selected { background: var(--brand-primary); color: #fff; }
+    body.dark-mode .cal-day.is-blocked, body.dark-mode .cal-day:disabled { background: #1F2937; color: var(--fg-subtle); }
+    body.dark-mode .cal-head button { background: #1F2937; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .slot-btn { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }
+    body.dark-mode .slot-btn:hover { border-color: var(--brand-primary); color: #A5B4FC; }
+    body.dark-mode .slot-btn.is-selected { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    body.dark-mode .recap { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.32); }
+    body.dark-mode .policy-block { background: #0B0F1E; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .stripe-elements .se-row { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .step-pill { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .step-pill.is-active { background: rgba(99,102,241,0.16); color: #A5B4FC; border-color: var(--brand-primary); }
+    body.dark-mode .step-pill.is-done { background: rgba(16,185,129,0.18); color: #6EE7B7; border-color: rgba(16,185,129,0.4); }
+    body.dark-mode .creator-footer { border-top-color: #1F2937; }
+    body.dark-mode .month-strip .ms-day { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+  </style>
+</head>
+<body data-theme="indigo-serif">
+
+<!-- Top strip — orientation only -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Back to alexandra.tadaify.com</a>
+  <span class="url-mono">tadaify.com/alexandra/<b>book</b></span>
+</div>
+
+<!-- Identity -->
+<div class="creator-row">
+  <div class="av" aria-hidden="true">A</div>
+  <div class="who">
+    <div class="who-name">Alexandra Silva</div>
+    <div class="who-handle">@alexandra · Strength coach · Lisbon</div>
+  </div>
+  <a href="./creator-public.html" class="back-to-main">All from Alexandra →</a>
+</div>
+
+<!-- ============================================================
+     STEP 1 — Pick a booking type
+     ============================================================ -->
+<section class="view is-active" data-view="step1">
+
+  <div class="page-hero">
+    <h1>Book a session</h1>
+    <p class="lede">Pick a session type below, then a time that suits you. Free 30-min intros are perfect if you've never worked with me before.</p>
+  </div>
+
+  <div class="step-bar">
+    <div class="step-pill is-active"><span class="sp-num">1</span> Pick a session</div>
+    <span class="sp-arrow">→</span>
+    <div class="step-pill"><span class="sp-num">2</span> Pick a time</div>
+    <span class="sp-arrow">→</span>
+    <div class="step-pill"><span class="sp-num">3</span> Fill details</div>
+  </div>
+
+  <div class="section">
+    <div class="types-grid">
+
+      <a href="#/type/intro" class="type-card" onclick="navHash(event, '#/type/intro')">
+        <div class="tc-cover t-emerald" aria-hidden="true">☕</div>
+        <div class="tc-body">
+          <div class="tc-row1">
+            <span class="tc-pill">30 min</span>
+            <span class="tc-pill is-free">Free</span>
+            <span style="margin-left:auto; color:var(--fg-subtle); font-size:11.5px;">⭐ Most-booked</span>
+          </div>
+          <h3 class="tc-title">30-min intro call</h3>
+          <p class="tc-desc">A relaxed first chat to see if we click. Tell me about your training, goals, and what you'd want from coaching. No prep needed — bring questions if you have any.</p>
+          <span class="tc-cta">Pick a time →</span>
+        </div>
+      </a>
+
+      <a href="#/type/coaching" class="type-card" onclick="navHash(event, '#/type/coaching')">
+        <div class="tc-cover t-warm" aria-hidden="true">💪</div>
+        <div class="tc-body">
+          <div class="tc-row1">
+            <span class="tc-pill">60 min</span>
+            <span class="tc-pill is-paid">$80</span>
+            <span style="margin-left:auto; color:var(--fg-subtle); font-size:11.5px;">Free cancel up to 24h</span>
+          </div>
+          <h3 class="tc-title">60-min coaching session</h3>
+          <p class="tc-desc">A focused 60-minute session. Bring your current programme; we'll review form, fix sticking points, and plan the next 4 weeks. Held over Google Meet.</p>
+          <span class="tc-cta">Pick a time →</span>
+        </div>
+      </a>
+
+      <a href="#/type/checkin" class="type-card" onclick="navHash(event, '#/type/checkin')">
+        <div class="tc-cover t-indigo" aria-hidden="true">📋</div>
+        <div class="tc-body">
+          <div class="tc-row1">
+            <span class="tc-pill">45 min</span>
+            <span class="tc-pill is-paid">$45</span>
+            <span style="margin-left:auto; color:var(--fg-subtle); font-size:11.5px;">For existing clients</span>
+          </div>
+          <h3 class="tc-title">Programme check-in</h3>
+          <p class="tc-desc">A mid-cycle review for clients on a 12-week programme. We look at your logs, talk recovery, adjust the next block. Bring a recent video if you've got one.</p>
+          <span class="tc-cta">Pick a time →</span>
+        </div>
+      </a>
+
+      <a href="#/type/workshop" class="type-card" onclick="navHash(event, '#/type/workshop')">
+        <div class="tc-cover t-rose" aria-hidden="true">👯</div>
+        <div class="tc-body">
+          <div class="tc-row1">
+            <span class="tc-pill">90 min · 8 spots</span>
+            <span class="tc-pill is-paid">$25/seat</span>
+            <span style="margin-left:auto; color:var(--fg-subtle); font-size:11.5px;">Group session</span>
+          </div>
+          <h3 class="tc-title">Group strength workshop</h3>
+          <p class="tc-desc">A small-group workshop for 8 lifters at a time. We cover squat / bench / deadlift technique, then everyone runs through their working sets with feedback. Held monthly.</p>
+          <span class="tc-cta">Pick a time →</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     STEP 2 — Pick a time
+     ============================================================ -->
+<section class="view" data-view="step2">
+
+  <div class="page-hero" style="padding-bottom:0">
+    <h1 id="s2-title">60-min coaching session</h1>
+    <p class="lede" id="s2-lede">Pick a day, then a time that works for you. All times shown in your timezone — change it on the right if needed.</p>
+  </div>
+
+  <div class="step-bar">
+    <div class="step-pill is-done"><span class="sp-num">✓</span> Pick a session</div>
+    <span class="sp-arrow">→</span>
+    <div class="step-pill is-active"><span class="sp-num">2</span> Pick a time</div>
+    <span class="sp-arrow">→</span>
+    <div class="step-pill"><span class="sp-num">3</span> Fill details</div>
+  </div>
+
+  <div class="section">
+    <div class="recap">
+      <div class="rc-mark" aria-hidden="true">💪</div>
+      <div class="rc-meta">
+        <div class="rc-title" id="s2-recap-title">60-min coaching session</div>
+        <div class="rc-line" id="s2-recap-line">60 minutes · $80 · Held over Google Meet · Free cancel up to 24h</div>
+      </div>
+      <a href="#/" class="rc-change" onclick="navHash(event, '#/')">Change</a>
+    </div>
+
+    <div class="step2-grid">
+
+      <!-- Calendar panel -->
+      <div class="panel">
+        <div class="cal-head">
+          <button onclick="alert('Mockup — previous month')" aria-label="Previous month">‹</button>
+          <span class="cal-month">May 2026</span>
+          <button onclick="alert('Mockup — next month')" aria-label="Next month">›</button>
+          <span class="cal-tz">
+            Times in
+            <select onchange="alert('Mockup — switches TZ display')" aria-label="Timezone">
+              <option selected>Europe/Warsaw (auto)</option>
+              <option>Europe/London</option>
+              <option>America/New_York</option>
+              <option>America/Los_Angeles</option>
+            </select>
+          </span>
+        </div>
+
+        <!-- Desktop month grid -->
+        <div class="cal-grid" id="cal-grid">
+          <div class="cg-dow">Mo</div>
+          <div class="cg-dow">Tu</div>
+          <div class="cg-dow">We</div>
+          <div class="cg-dow">Th</div>
+          <div class="cg-dow">Fr</div>
+          <div class="cg-dow">Sa</div>
+          <div class="cg-dow">Su</div>
+
+          <button class="cal-day is-other" disabled>27</button>
+          <button class="cal-day is-other" disabled>28</button>
+          <button class="cal-day is-other" disabled>29</button>
+          <button class="cal-day is-other" disabled>30</button>
+          <button class="cal-day is-blocked" disabled data-tip="Holiday">1</button>
+          <button class="cal-day" disabled>2</button>
+          <button class="cal-day" disabled>3</button>
+
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-04')">4</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-05')">5</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-06')">6</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-07')">7</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-08')">8</button>
+          <button class="cal-day" disabled>9</button>
+          <button class="cal-day" disabled>10</button>
+
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">11</button>
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">12</button>
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">13</button>
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">14</button>
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">15</button>
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">16</button>
+          <button class="cal-day is-blocked" disabled data-tip="Vacation">17</button>
+
+          <button class="cal-day is-blocked" disabled>18</button>
+          <button class="cal-day has-slots is-today is-selected" onclick="pickDay(this, '2026-05-19')">19</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-20')">20</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-21')">21</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-22')">22</button>
+          <button class="cal-day" disabled>23</button>
+          <button class="cal-day" disabled>24</button>
+
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-25')">25</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-26')">26</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-27')">27</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-28')">28</button>
+          <button class="cal-day has-slots" onclick="pickDay(this, '2026-05-29')">29</button>
+          <button class="cal-day" disabled>30</button>
+          <button class="cal-day" disabled>31</button>
+        </div>
+
+        <!-- Mobile horizontal strip alternative -->
+        <div class="month-strip" id="month-strip">
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-04')"><span class="ms-dow">Mon</span><span class="ms-num">4</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-05')"><span class="ms-dow">Tue</span><span class="ms-num">5</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-06')"><span class="ms-dow">Wed</span><span class="ms-num">6</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-07')"><span class="ms-dow">Thu</span><span class="ms-num">7</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-08')"><span class="ms-dow">Fri</span><span class="ms-num">8</span></button>
+          <button class="ms-day is-blocked"><span class="ms-dow">Mon</span><span class="ms-num">11</span></button>
+          <button class="ms-day is-blocked"><span class="ms-dow">Tue</span><span class="ms-num">12</span></button>
+          <button class="ms-day has-slots is-selected" onclick="pickDay(this, '2026-05-19')"><span class="ms-dow">Tue</span><span class="ms-num">19</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-20')"><span class="ms-dow">Wed</span><span class="ms-num">20</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-21')"><span class="ms-dow">Thu</span><span class="ms-num">21</span></button>
+          <button class="ms-day has-slots" onclick="pickDay(this, '2026-05-22')"><span class="ms-dow">Fri</span><span class="ms-num">22</span></button>
+        </div>
+
+        <button class="cal-find-next" onclick="alert('Mockup — auto-picks the soonest free slot (Tue, May 19 at 10:00)')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Find next available
+        </button>
+      </div>
+
+      <!-- Time slots panel -->
+      <div class="panel">
+        <h2 id="slot-day-title">Tuesday, May 19</h2>
+        <div class="slot-list" id="slot-list">
+          <button class="slot-btn" onclick="pickSlot(this, 'intro', '2026-05-19T09:00')">09:00</button>
+          <button class="slot-btn is-selected" onclick="pickSlot(this, 'intro', '2026-05-19T10:00')">10:00</button>
+          <button class="slot-btn" onclick="pickSlot(this, 'intro', '2026-05-19T11:00')">11:00</button>
+          <button class="slot-btn" disabled>12:00</button>
+          <button class="slot-btn" disabled>13:00</button>
+          <button class="slot-btn" onclick="pickSlot(this, 'intro', '2026-05-19T14:00')">14:00</button>
+          <button class="slot-btn" onclick="pickSlot(this, 'intro', '2026-05-19T15:00')">15:00</button>
+          <button class="slot-btn" onclick="pickSlot(this, 'intro', '2026-05-19T16:00')">16:00</button>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12.5px; color: var(--fg-muted);">
+          <span>5 slots open this day</span>
+          <span style="color:var(--fg-subtle)">·</span>
+          <span>15-min buffer between bookings</span>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" style="margin-top:18px" onclick="navHash(null, '#/type/coaching/time/2026-05-19T10:00')">
+          Continue with 10:00 →
+        </button>
+
+        <a href="#/" onclick="navHash(event, '#/')" style="display:block; text-align:center; margin-top:10px; font-size:13px; color:var(--fg-muted);">← Back to session types</a>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     STEP 3 — Fill details + (paid) checkout
+     ============================================================ -->
+<section class="view" data-view="step3">
+
+  <div class="page-hero" style="padding-bottom:0">
+    <h1>Almost done — your details</h1>
+    <p class="lede">A few quick questions, then we'll send the calendar invite.</p>
+  </div>
+
+  <div class="step-bar">
+    <div class="step-pill is-done"><span class="sp-num">✓</span> Pick a session</div>
+    <span class="sp-arrow">→</span>
+    <div class="step-pill is-done"><span class="sp-num">✓</span> Pick a time</div>
+    <span class="sp-arrow">→</span>
+    <div class="step-pill is-active"><span class="sp-num">3</span> Fill details</div>
+  </div>
+
+  <div class="section">
+    <div class="recap">
+      <div class="rc-mark" aria-hidden="true">💪</div>
+      <div class="rc-meta">
+        <div class="rc-title">60-min coaching session — Tuesday, May 19 at 10:00</div>
+        <div class="rc-line">60 minutes · Held over Google Meet · 1.5h before now in your timezone (Europe/Warsaw)</div>
+      </div>
+      <a href="#/type/coaching" class="rc-change" onclick="navHash(event, '#/type/coaching')">Change</a>
+    </div>
+
+    <div class="step3-grid">
+
+      <!-- Form panel -->
+      <div class="panel">
+        <h2>Your info</h2>
+
+        <form onsubmit="event.preventDefault();navHash(null, '#/booked');">
+          <div class="field">
+            <label class="field-label" for="bk-name">Name <span class="req">*</span></label>
+            <input class="field-input" id="bk-name" type="text" required placeholder="Jamie Park" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="bk-email">Email <span class="req">*</span></label>
+            <input class="field-input" id="bk-email" type="email" required placeholder="jamie@example.com" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="bk-topic">What would you like to focus on? <span class="req">*</span></label>
+            <textarea class="field-area" id="bk-topic" required placeholder="Anything you want me to come prepared with — e.g. 'review my squat form', 'help me build a 12-week programme', 'I'm stuck at 80kg deadlift'…"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="bk-phone">Phone <span style="color:var(--fg-subtle); font-weight:400;">(optional)</span></label>
+            <input class="field-input" id="bk-phone" type="tel" placeholder="+48 600 000 000" />
+          </div>
+
+          <h2 style="margin-top:22px">Payment</h2>
+
+          <div class="stripe-elements">
+            <div class="se-label">Card number</div>
+            <div class="se-row">4242 4242 4242 4242 <span style="margin-left:auto; color:var(--fg-subtle);">VISA</span></div>
+            <div class="se-row split">
+              <div>
+                <div class="se-label">Expiry</div>
+                <div>12 / 28</div>
+              </div>
+              <div>
+                <div class="se-label">CVC</div>
+                <div>•••</div>
+              </div>
+            </div>
+            <div class="se-trust">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Secured by Stripe · No charge if you cancel more than 24h before
+            </div>
+          </div>
+
+          <div class="policy-block" style="margin-top:14px">
+            <b>Cancellation policy:</b> Free cancel up to <b>24 hours</b> before. After that you can still reschedule once for free; cancellations within 24h are non-refundable.
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:18px; align-items:center; flex-wrap:wrap">
+            <a href="#/type/coaching" onclick="navHash(event, '#/type/coaching')" style="font-size:13.5px; color:var(--fg-muted);">← Back</a>
+            <span style="margin-left:auto; font-size:13px; color:var(--fg-muted);">Total: <span class="price-tag" style="vertical-align:-3px"><span class="pt-cur">$</span><span class="pt-amt">80</span></span></span>
+            <button type="submit" class="btn btn-primary btn-lg">
+              Pay $80 &amp; book →
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Side recap -->
+      <div class="panel">
+        <h2>You're booking</h2>
+        <div style="display:flex; flex-direction:column; gap:10px; font-size:14px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color: var(--fg-muted);">Session</span>
+            <b>60-min coaching</b>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color: var(--fg-muted);">When</span>
+            <b>Tue, May 19 · 10:00</b>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color: var(--fg-muted);">Where</span>
+            <b>Google Meet</b>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color: var(--fg-muted);">Timezone</span>
+            <b>Europe/Warsaw</b>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color: var(--fg-muted);">Length</span>
+            <b>60 minutes</b>
+          </div>
+          <hr style="border:0; border-top:1px solid var(--border); margin: 4px 0;"/>
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="color: var(--fg-muted);">Total</span>
+            <span class="price-tag"><span class="pt-cur">$</span><span class="pt-amt">80</span></span>
+          </div>
+        </div>
+
+        <div style="margin-top:18px; padding:12px 14px; border-radius:10px; background: rgba(16,185,129,0.10); border:1px solid rgba(16,185,129,0.28); font-size:12.5px; color:#047857;">
+          <b>What happens next:</b> instant calendar invite to your email. Day-before reminder. The Google Meet link is in the invite.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     CONFIRMATION
+     ============================================================ -->
+<section class="view" data-view="booked">
+  <div class="moment">
+    <div class="mo-emoji" aria-hidden="true">🎉</div>
+    <h2>You're booked!</h2>
+    <p>Check your inbox at <b>jamie@example.com</b> — the calendar invite is on its way (under 30 seconds usually).</p>
+
+    <div class="mo-card">
+      <div class="mc-row"><span>Session</span><b>60-min coaching</b></div>
+      <div class="mc-row"><span>When</span><b>Tuesday, May 19 · 10:00 (Europe/Warsaw)</b></div>
+      <div class="mc-row"><span>Where</span><b>Google Meet — link in your invite</b></div>
+      <div class="mc-row"><span>Paid</span><b>$80 — receipt #r_2026_05_b78a</b></div>
+    </div>
+
+    <div class="mo-actions">
+      <a href="#" onclick="event.preventDefault();alert('Mockup — downloads invite.ics')" class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download .ics
+      </a>
+      <a href="#" onclick="event.preventDefault();alert('Mockup — opens Google Calendar quick-add (calendar.google.com/calendar/r/eventedit?text=...)')" class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Add to Google Calendar
+      </a>
+    </div>
+
+    <div class="mo-extra">
+      Need to change plans? <a href="#/reschedule/abc123" onclick="navHash(event, '#/reschedule/abc123')">Reschedule</a> or <a href="#/cancel/abc123" onclick="navHash(event, '#/cancel/abc123')">Cancel</a>.
+      Free cancellation up to 24 hours before.
+    </div>
+
+    <div class="mo-extra" style="margin-top:34px">
+      <a href="./creator-public.html">← All from Alexandra</a>
+      &nbsp;·&nbsp;
+      <a href="#/" onclick="navHash(event, '#/')">Book another session</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ERROR — friendly retry
+     ============================================================ -->
+<section class="view" data-view="error">
+  <div class="moment">
+    <div class="mo-emoji" aria-hidden="true">😬</div>
+    <h2>Something went wrong</h2>
+    <p>We couldn't lock in your slot — usually this means someone else booked it in the last few seconds, or there was a hiccup with payment. Your card was <b>not charged</b>.</p>
+
+    <div class="mo-card">
+      <div class="mc-row"><span>What happened</span><b>Slot no longer available</b></div>
+      <div class="mc-row"><span>Was attempting</span><b>Tuesday, May 19 · 10:00</b></div>
+      <div class="mc-row"><span>Charged</span><b>$0.00 — no payment taken</b></div>
+    </div>
+
+    <div class="mo-actions">
+      <a href="#/type/coaching" onclick="navHash(event, '#/type/coaching')" class="btn btn-primary">Pick another time →</a>
+      <a href="#/" onclick="navHash(event, '#/')" class="btn btn-ghost">Start over</a>
+    </div>
+
+    <div class="mo-extra">
+      Still stuck? Email Alexandra directly at <a href="mailto:alex@strongnotskinny.coach">alex@strongnotskinny.coach</a>.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CANCEL — visitor returns from email link
+     ============================================================ -->
+<section class="view" data-view="cancel">
+  <div class="moment">
+    <div class="mo-emoji" aria-hidden="true">🛑</div>
+    <h2>Cancel this booking?</h2>
+    <p>You're about to cancel your upcoming session with Alexandra. You can reschedule instead if your timing has changed.</p>
+
+    <div class="mo-card">
+      <div class="mc-row"><span>Session</span><b>60-min coaching</b></div>
+      <div class="mc-row"><span>When</span><b>Tuesday, May 19 · 10:00</b></div>
+      <div class="mc-row"><span>Refund</span><b style="color:#047857">Full refund — $80 will return to your card in 5–10 business days</b></div>
+    </div>
+
+    <div class="mo-actions">
+      <a href="#/reschedule/abc123" onclick="navHash(event, '#/reschedule/abc123')" class="btn btn-ghost">Reschedule instead</a>
+      <button class="btn btn-danger-ghost" onclick="alert('Mockup — cancellation confirmed; both parties get email; this view normally redirects to a thank-you state')">Yes, cancel my booking</button>
+    </div>
+
+    <div class="mo-extra">
+      Changed your mind? <a href="./creator-public.html">Back to alexandra.tadaify.com</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     RESCHEDULE — visitor returns from email link
+     ============================================================ -->
+<section class="view" data-view="reschedule">
+  <div class="moment" style="text-align:left; max-width:880px">
+    <div style="text-align:center">
+      <div class="mo-emoji" aria-hidden="true">🔄</div>
+      <h2>Reschedule your booking</h2>
+      <p>Pick a new time below. Your existing booking stays until you confirm the new slot — no risk of losing your spot.</p>
+    </div>
+
+    <div class="mo-card" style="margin-top:24px">
+      <div class="mc-row"><span>Currently booked</span><b>60-min coaching · Tue, May 19 · 10:00</b></div>
+      <div class="mc-row"><span>Status</span><b style="color:#92400E">Will be replaced when you confirm a new time</b></div>
+      <div class="mc-row"><span>Free reschedule</span><b style="color:#047857">Yes — first reschedule is free</b></div>
+    </div>
+
+    <div style="margin-top:22px; display:flex; flex-direction:column; gap:14px">
+      <div style="display:flex; align-items:center; gap:10px; justify-content:space-between;">
+        <h3 style="margin:0; font-family: var(--font-display); font-weight:600; font-size:18px;">Pick a new time</h3>
+        <select style="padding:7px 10px; border:1px solid var(--border-strong); border-radius:8px; background:var(--bg-elevated); color:var(--fg); font:inherit; font-size:13px;">
+          <option selected>Europe/Warsaw (auto)</option>
+          <option>Europe/London</option>
+          <option>America/New_York</option>
+        </select>
+      </div>
+
+      <!-- Mini-day chooser (3 day cards as a quick-pick UX) -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+        <button class="panel" style="cursor:pointer; padding:14px; text-align:center;" onclick="alert('Mockup — confirm reschedule to Wed, May 20 · 14:00; both parties emailed; original cancelled')">
+          <div style="font-family: var(--font-display); font-weight:600; font-size:20px; color: var(--brand-primary);">Wed</div>
+          <div style="font-family: var(--font-display); font-weight:600; font-size:28px;">May 20</div>
+          <div style="margin-top:6px; font-size:12px; color: var(--fg-muted);">5 slots — earliest 14:00</div>
+        </button>
+        <button class="panel" style="cursor:pointer; padding:14px; text-align:center; border-color: var(--brand-primary); background: rgba(99,102,241,0.06);" onclick="alert('Mockup — confirm reschedule to Thu, May 21 · 10:00')">
+          <div style="font-family: var(--font-display); font-weight:600; font-size:20px; color: var(--brand-primary);">Thu</div>
+          <div style="font-family: var(--font-display); font-weight:600; font-size:28px;">May 21</div>
+          <div style="margin-top:6px; font-size:12px; color: var(--fg-muted);">7 slots — earliest 10:00</div>
+        </button>
+        <button class="panel" style="cursor:pointer; padding:14px; text-align:center;" onclick="alert('Mockup — confirm reschedule to Fri, May 22 · 09:00')">
+          <div style="font-family: var(--font-display); font-weight:600; font-size:20px; color: var(--brand-primary);">Fri</div>
+          <div style="font-family: var(--font-display); font-weight:600; font-size:28px;">May 22</div>
+          <div style="margin-top:6px; font-size:12px; color: var(--fg-muted);">4 slots — earliest 09:00</div>
+        </button>
+      </div>
+
+      <button class="btn btn-ghost" style="align-self:center; margin-top:6px;" onclick="navHash(null, '#/type/coaching')">Open full calendar →</button>
+    </div>
+
+    <div class="mo-extra" style="text-align:center">
+      <a href="#/cancel/abc123" onclick="navHash(event, '#/cancel/abc123')">Cancel instead</a>
+      &nbsp;·&nbsp;
+      <a href="./creator-public.html">Back to alexandra.tadaify.com</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="creator-footer">
+  <div class="cf-handle">@alexandra</div>
+  <div class="cf-socials">
+    <a class="cf-soc" href="#" aria-label="Instagram">📷</a>
+    <a class="cf-soc" href="#" aria-label="TikTok">🎵</a>
+    <a class="cf-soc" href="#" aria-label="YouTube">▶</a>
+    <a class="cf-soc" href="#" aria-label="Email">✉</a>
+  </div>
+  <div class="cf-poweredby">
+    Built with <a href="./landing.html">tadaify</a> — your handle, your everything.
+  </div>
+</footer>
+
+<!-- Demo toolbar -->
+<div class="demo-toolbar" aria-hidden="true">
+  <span style="opacity:0.65">Demo view</span>
+  <select id="demo-view-pick" onchange="navHash(null, this.value)" aria-label="Sub-view">
+    <option value="#/">1 · Pick a session</option>
+    <option value="#/type/coaching" selected>2 · Pick a time (coaching)</option>
+    <option value="#/type/coaching/time/2026-05-19T10:00">3 · Fill details</option>
+    <option value="#/booked">4 · Confirmation</option>
+    <option value="#/error">5 · Error</option>
+    <option value="#/cancel/abc123">6 · Cancel</option>
+    <option value="#/reschedule/abc123">7 · Reschedule</option>
+  </select>
+  <button onclick="document.body.classList.toggle('dark-mode')" style="background:rgba(255,255,255,0.12); color:#fff; border:0; padding:4px 8px; border-radius:999px; font-size:11px; cursor:pointer;">🌗</button>
+</div>
+
+<script>
+  // ----- Hash routing -----
+  // Map hash patterns → view name
+  function viewFromHash(h) {
+    h = h || location.hash || '#/';
+    if (h === '#/' || h === '#' || h === '') return 'step1';
+    if (/^#\/type\/[^/]+\/time\//.test(h)) return 'step3';
+    if (/^#\/type\//.test(h)) return 'step2';
+    if (h === '#/booked')                  return 'booked';
+    if (h === '#/error')                   return 'error';
+    if (/^#\/cancel\//.test(h))            return 'cancel';
+    if (/^#\/reschedule\//.test(h))        return 'reschedule';
+    return 'step1';
+  }
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(function (el) {
+      el.classList.toggle('is-active', el.dataset.view === name);
+    });
+    // Sync the demo toolbar pick
+    var picker = document.getElementById('demo-view-pick');
+    if (picker) {
+      // Match the option whose value's view name matches
+      var match = null;
+      Array.prototype.forEach.call(picker.options, function (o) {
+        if (viewFromHash(o.value) === name) match = match || o.value;
+      });
+      if (match) picker.value = match;
+    }
+    // Sync recap on step2/step3 to the selected type slug if available
+    var slug = (location.hash.match(/^#\/type\/([^/]+)/) || [])[1];
+    if (name === 'step2' && slug) syncStep2(slug);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function syncStep2(slug) {
+    var meta = {
+      intro:    { title: '30-min intro call',         line: '30 minutes · Free · A relaxed first chat · No prep needed', emoji: '☕' },
+      coaching: { title: '60-min coaching session',   line: '60 minutes · $80 · Held over Google Meet · Free cancel up to 24h', emoji: '💪' },
+      checkin:  { title: 'Programme check-in',        line: '45 minutes · $45 · For existing clients · Bring a recent video', emoji: '📋' },
+      workshop: { title: 'Group strength workshop',   line: '90 minutes · $25/seat · 8 spots · Held monthly', emoji: '👯' }
+    }[slug];
+    if (!meta) return;
+    document.getElementById('s2-title').textContent       = meta.title;
+    document.getElementById('s2-recap-title').textContent = meta.title;
+    document.getElementById('s2-recap-line').textContent  = meta.line;
+    var mark = document.querySelector('[data-view="step2"] .recap .rc-mark');
+    if (mark) mark.textContent = meta.emoji;
+  }
+  function navHash(e, h) {
+    if (e) e.preventDefault();
+    if (location.hash === h) showView(viewFromHash(h));
+    else location.hash = h;
+  }
+  window.addEventListener('hashchange', function () { showView(viewFromHash(location.hash)); });
+
+  // ----- Calendar interactions -----
+  function pickDay(btn, iso) {
+    document.querySelectorAll('.cal-day.is-selected, .month-strip .ms-day.is-selected').forEach(function (d) { d.classList.remove('is-selected'); });
+    btn.classList.add('is-selected');
+    // Update slot list title (mockup — keep slots constant for demo simplicity)
+    var dt = new Date(iso);
+    var day = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    var t = document.getElementById('slot-day-title');
+    if (t) t.textContent = day;
+    // Reset slot selection
+    document.querySelectorAll('.slot-btn.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+  }
+  function pickSlot(btn, slug, iso) {
+    document.querySelectorAll('.slot-btn.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    btn.classList.add('is-selected');
+    // Update the Continue CTA target
+    var cta = btn.closest('.panel').querySelector('.btn-primary');
+    if (cta) {
+      var time = iso.split('T')[1];
+      cta.textContent = 'Continue with ' + time + ' →';
+      cta.onclick = function () { navHash(null, '#/type/' + slug + '/time/' + iso); };
+    }
+  }
+
+  // ----- Boot -----
+  showView(viewFromHash(location.hash));
+</script>
+</body>
+</html>
