@@ -2,22 +2,29 @@
 <!--
   type: mockup
   project: tadaify
-  title: Pricing landing page (F-PRICING-LANDING-001)
+  title: Pricing landing page (F-PRICING-LANDING-001) — v2 Phase A
   created_at: 2026-04-25
+  updated_at: 2026-04-26
   author: orchestrator
   status: draft-for-review
   supersedes: pricing.html v1 (2026-04-24 pre-second-wave)
 
-  Locked DECs reflected:
+  Phase A update (2026-04-26):
+    DEC-083: Pro $19/mo (1 handle), Business $49/mo (5 handles + 10 team members)
+    DEC-083: Add-on $9.99/mo per additional handle; agency-scale → support contact
+    DEC-076: Free = full analytics dataset (cross-tab, geo+city, device+referrer) at hourly cadence + 7d window
+    DEC-080: API access — Pro 100 req/h, Business 1000 req/h (Insights tier)
+    DEC-078: D1 rollups forever; Business gets R2 Parquet monthly archive
+    DEC-082: Pro live view = HTTP polling 60s; Business replay = DO+SSE scrub sessions
+
+  Locked DECs reflected (original):
     DEC-PRICELOCK-01 (price-lock-for-life)
     DEC-PRICELOCK-02 (universal $2 domain add-on)
     DEC-MULTIPAGE-01 (Pages tier ladder Free 1 / Creator 5 / Pro 20 / Business unlimited)
-    DEC-LAYOUT-01 (grid in MVP — referenced in Pro feature list as A/B testing layout variants)
     DEC-CREATOR-API-01 (Pro pillar — dedicated section)
     DEC-AI-QUOTA-LADDER-01 (5 / 20 / 100 / unlimited)
     DEC-AI-FEATURES-ROADMAP-01 (text-only AI)
     DEC-TRIAL-01 (no trials)
-    DEC-OPT-BADGE (opt-in support badge mention)
     AP-001 (no Powered by — never)
 -->
 <html lang="en">
@@ -328,8 +335,7 @@
       <div class="pricelock-body">
         <p class="pricelock-title">Your price is locked for life.</p>
         <p class="pricelock-text">
-          Subscribe today at <strong>$X/mo</strong> → pay <strong>$X/mo</strong> in year 3, year 5, year 10 —
-          as long as your subscription stays active. We <strong>never</strong> raise your price.
+          Subscribe today at Creator ($8), Pro ($19), or Business ($49) — pay the same price in year 3, year 5, year 10, as long as your subscription stays active. We <strong>never</strong> raise your price.
           Only if you cancel and re-subscribe later do you pay the then-current price.
         </p>
       </div>
@@ -346,102 +352,100 @@
   <section class="container" style="padding-bottom: 0;">
     <div class="tier-grid">
 
-      <!-- FREE -->
+      <!-- FREE — DEC-076 Option 9: full analytics dataset ungated -->
       <div class="tier">
         <h3>Free</h3>
         <div class="price">
           <span class="currency">$</span><span class="amount" data-price-annual="0" data-price-monthly="0">0</span><span class="cadence">forever</span>
         </div>
-        <p class="tagline">Everything an indie creator needs to start selling this weekend.</p>
+        <p class="tagline">Everything an indie creator needs — including the full analytics dataset. No data hidden.</p>
         <ul>
-          <li>1 page (homepage) <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
+          <li>1 handle (tadaify.com/you)</li>
           <li>Unlimited blocks + links</li>
-          <li>5 AI uses/mo <span style="font-size:12px;color:var(--fg-muted)">(theme matcher / bio rewrite / copy suggest)</span></li>
-          <li>30d analytics</li>
-          <li>All core features</li>
-          <li>tadaify.com/you subdomain</li>
+          <li>Full analytics dataset: cross-tab, geo+city, devices, referrers</li>
+          <li>Hourly analytics refresh · 7-day history window</li>
+          <li>5 AI uses/mo (theme matcher / bio rewrite / copy suggest)</li>
           <li>Inline Stripe checkout</li>
           <li>No "Powered by" footer — ever</li>
         </ul>
-        <div class="free-domain-note" style="margin-top:12px;padding:10px 14px;background:rgba(245,158,11,0.10);border:1.5px dashed #F59E0B;border-radius:10px;font-size:13px;color:var(--fg);">
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(245,158,11,0.10);border:1.5px dashed #F59E0B;border-radius:10px;font-size:13px;color:var(--fg);">
           <strong style="color:#92400E">Optional:</strong> Add your own domain for <strong>+$2/mo</strong> — no upgrade needed.
         </div>
         <a href="./register.html" class="btn btn-secondary" style="margin-top:18px; min-height:44px;">Start free →</a>
       </div>
 
-      <!-- CREATOR -->
+      <!-- CREATOR — $8/mo locked for life -->
       <div class="tier tier-popular">
         <span class="tier-badge pill pill-pro">⭐ Most popular</span>
         <h3>Creator</h3>
         <div class="price">
-          <span class="currency">$</span><span class="amount" data-price-annual="4" data-price-monthly="5">4</span><span class="cadence">/mo · billed annually</span>
+          <span class="currency">$</span><span class="amount" data-price-annual="8" data-price-monthly="8">8</span><span class="cadence">/mo · locked for life</span>
         </div>
         <span class="lock-badge">🔒 Locked for life</span>
-        <p class="tagline" style="margin-top:10px;">Your domain, verified badge, 180d analytics, human support — the "I'm serious about this" tier.</p>
+        <p class="tagline" style="margin-top:10px;">Faster analytics, longer history, your own domain. The "I'm serious about this" tier.</p>
         <ul>
           <li>Everything in Free, plus:</li>
-          <li>5 pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
-          <li><strong>1 custom domain included</strong></li>
-          <li>180d analytics history</li>
+          <li>1 handle</li>
+          <li>Full analytics dataset (same as Free)</li>
+          <li>5-min analytics refresh · 90-day window</li>
+          <li>Monthly CSV export</li>
+          <li>1 custom domain included ($2/mo add-on for extras)</li>
           <li>20 AI uses/mo</li>
-          <li>Sell products + communities <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">Phase 1 commerce</span></li>
+          <li>Sell products + communities</li>
           <li>Priority email support 24h</li>
-          <li>Custom favicon</li>
-          <li>Scheduled publishing</li>
           <li>Verified ✓ creator badge</li>
-          <li>Directory listing (opt-in)</li>
         </ul>
         <a href="./register.html?plan=creator" class="btn btn-primary">Go Creator →</a>
       </div>
 
-      <!-- PRO -->
+      <!-- PRO — $19/mo, DEC-083, DEC-080 API access -->
       <div class="tier">
         <h3>Pro</h3>
         <div class="price">
-          <span class="currency">$</span><span class="amount" data-price-annual="12" data-price-monthly="15">12</span><span class="cadence">/mo · billed annually</span>
+          <span class="currency">$</span><span class="amount" data-price-annual="19" data-price-monthly="19">19</span><span class="cadence">/mo · locked for life</span>
         </div>
         <span class="lock-badge">🔒 Locked for life</span>
-        <p class="tagline" style="margin-top:10px;">Power features for creators treating this like a business. Includes the <strong>Creator API</strong>.</p>
+        <p class="tagline" style="margin-top:10px;">Real-time analytics, 1-year history, and the <strong>first Creator API in link-in-bio</strong>.</p>
         <ul>
           <li>Everything in Creator, plus:</li>
-          <li>20 pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
-          <li>1 custom domain included (extra +$2/mo)</li>
-          <li>Unlimited analytics history</li>
+          <li>1 handle</li>
+          <li>Real-time live view (60s refresh polling)</li>
+          <li>1-year analytics history window</li>
+          <li>Daily CSV export</li>
+          <li>Saved views (bookmark cross-tab combinations)</li>
+          <li><strong>API access (100 req/h)</strong> — build dashboards, Slack bots, iOS widgets</li>
           <li>100 AI uses/mo</li>
-          <li><strong>Creator API</strong> + MCP server + ChatGPT/Claude integration <span style="font-size:12px;color:var(--fg-muted)">"Hire your AI to manage your tadaify"</span></li>
           <li>A/B testing</li>
-          <li>Advanced integrations</li>
-          <li>Removable branding in email receipts</li>
-          <li>Abandoned-cart recovery</li>
-          <li>Advanced SEO tools</li>
-          <li>Email + chat support 12h</li>
-          <li>Pre-launch waitlist pages</li>
+          <li>$2/mo per custom domain (add-on)</li>
         </ul>
         <a href="./register.html?plan=pro" class="btn btn-secondary">Go Pro →</a>
       </div>
 
-      <!-- BUSINESS -->
+      <!-- BUSINESS — $49/mo, DEC-083: 5 handles + 10 team members -->
       <div class="tier">
         <h3>Business</h3>
         <div class="price">
-          <span class="currency">$</span><span class="amount" data-price-annual="40" data-price-monthly="49">40</span><span class="cadence">/mo · billed annually</span>
+          <span class="currency">$</span><span class="amount" data-price-annual="49" data-price-monthly="49">49</span><span class="cadence">/mo · locked for life</span>
         </div>
         <span class="lock-badge">🔒 Locked for life</span>
-        <p class="tagline" style="margin-top:10px;">Teams, multi-brand, white-glove onboarding. Agencies welcome.</p>
+        <p class="tagline" style="margin-top:10px;">5 handles + 10 team members. Replay. API at scale. For music labels, talent agencies, content studios.</p>
         <ul>
           <li>Everything in Pro, plus:</li>
-          <li>Unlimited pages <span style="font-size:11px;color:#9CA3AF;font-weight:500;background:#F3F4F6;padding:1px 6px;border-radius:99px;margin-left:4px">multi-page Q+1</span></li>
-          <li>10 custom domains (agency multi-client)</li>
-          <li>Unlimited AI uses</li>
-          <li>5 seats included (roles + audit log)</li>
-          <li>White-label exports</li>
-          <li>Priority support 2h (phone)</li>
-          <li>Onboarding session + migration help</li>
-          <li>SSO (Google Workspace / Okta)</li>
-          <li>Dedicated account manager</li>
-          <li>99.95% uptime SLA</li>
+          <li><strong>5 handles included</strong> (add more for $9.99/mo each)</li>
+          <li><strong>10 team members included</strong> (roles: Admin / Editor / Viewer)</li>
+          <li>All-time analytics history</li>
+          <li>Replay (scrub past traffic sessions)</li>
+          <li>API access (1,000 req/h)</li>
+          <li>Scheduled email digests</li>
+          <li>Parquet R2 monthly archive</li>
+          <li>Identity stitching</li>
+          <li>Daily CSV + Parquet R2 export</li>
+          <li>$2/mo per custom domain (add-on)</li>
         </ul>
-        <a href="./register.html?plan=business" class="btn btn-secondary">Start Business →</a>
+        <div style="margin-top:12px;padding:8px 14px;background:rgba(99,102,241,0.08);border-radius:8px;font-size:12px;color:var(--fg-muted);">
+          Need more than 30 handles or 10 team members? <a href="mailto:support@tadaify.com" style="color:var(--brand-primary);font-weight:600;">Contact support</a>
+        </div>
+        <a href="./register.html?plan=business" class="btn btn-secondary" style="margin-top:12px;">Start Business →</a>
       </div>
 
     </div><!-- .tier-grid -->
@@ -475,8 +479,8 @@
           <tr>
             <th style="width:36%">Feature</th>
             <th>Free</th>
-            <th>Creator<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$5/mo</span></th>
-            <th>Pro<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$15/mo</span></th>
+            <th>Creator<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$8/mo</span></th>
+            <th>Pro<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$19/mo</span></th>
             <th>Business<br/><span style="font-weight:400; font-size:12px; color:var(--fg-muted)">$49/mo</span></th>
           </tr>
         </thead>
@@ -489,12 +493,17 @@
           <tr><td>Scheduled publishing</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>Pre-launch waitlist pages</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
 
-          <!-- Analytics -->
-          <tr class="category-row"><td colspan="5">Analytics</td></tr>
-          <tr><td>Analytics history</td><td>30 days</td><td>180 days</td><td>Unlimited</td><td>Unlimited</td></tr>
-          <tr><td>Per-block clicks</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td>Geography + UTM</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
-          <tr><td>Conversion funnel</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <!-- Analytics — DEC-076 Option 9: full dataset ungated, tier = cadence + window -->
+          <tr class="category-row"><td colspan="5">Analytics (DEC-076 Option 9 — no fake margin)</td></tr>
+          <tr><td>Full dataset (cross-tab, geo+city, devices, referrers)</td><td class="check">✓ ALL</td><td class="check">✓ ALL</td><td class="check">✓ ALL</td><td class="check">✓ ALL</td></tr>
+          <tr><td>Analytics refresh cadence</td><td>Hourly</td><td>5-min stale</td><td>Real-time (60s)</td><td>Real-time (60s)</td></tr>
+          <tr><td>Analytics history window</td><td>7 days</td><td>90 days</td><td>1 year</td><td>All-time</td></tr>
+          <tr><td>CSV export</td><td class="cross">✗</td><td>Monthly</td><td>Daily</td><td>Daily + Parquet R2</td></tr>
+          <tr><td>Saved views</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Scheduled email digests</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>Replay (scrub traffic sessions)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+          <tr><td>API access (DEC-080)</td><td class="cross">✗</td><td class="cross">✗</td><td>100 req/h</td><td>1,000 req/h</td></tr>
+          <tr><td>Parquet R2 monthly archive (DEC-078)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
 
           <!-- AI -->
           <tr class="category-row"><td colspan="5">AI (text-only)</td></tr>
@@ -530,11 +539,12 @@
           <tr><td>Custom webhook on sale</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>Directory listing (opt-in)</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
 
-          <!-- Support & Team -->
-          <tr class="category-row"><td colspan="5">Support &amp; Team</td></tr>
+          <!-- Support & Team — DEC-083 -->
+          <tr class="category-row"><td colspan="5">Support &amp; Team (DEC-083)</td></tr>
+          <tr><td>Handles</td><td>1</td><td>1</td><td>1</td><td>5 included (+$9.99/mo each extra)</td></tr>
+          <tr><td>Team members</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td>10 included</td></tr>
+          <tr><td>Roles + audit log (Admin/Editor/Viewer)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
           <tr><td>Support channel</td><td>Community</td><td>Email 24h</td><td>Email + chat 12h</td><td>Phone 2h</td></tr>
-          <tr><td>Seats</td><td>1</td><td>1</td><td>2</td><td>5 (add $8/seat)</td></tr>
-          <tr><td>Roles + audit log</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
           <tr><td>SSO (Google Workspace / Okta)</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
           <tr><td>Onboarding + migration help</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
           <tr><td>Dedicated account manager</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
