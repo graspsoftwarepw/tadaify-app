@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Blog page render — creator view at tadaify.com/<handle>/blog — F-PAGE-BLOG-001 #19
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view that renders posts written via app-page-blog.html.
+  3 sub-views demoed in one file via in-page hash routing:
+    #/             → list view (paginated, optionally filtered by tag)
+    #/post/<slug>  → single post (cover + body + tags + related + comments)
+    #/tag/<slug>   → list filtered by tag
+
+  Theme inheritance: matches creator's theme (Indigo Serif) per tokens.css.
+  Mobile-responsive: cards collapse to single column; pagination becomes "Load more".
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (every link works in-page; tag filter actually filters; comments provider switch demoed)
+    - No tadaify nav bar on creator pages (creator-public.html convention) — minimal back-link bar instead.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog — Alexandra Silva — tadaify.com/alexandra/blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    /* ============================================================
+       Theme inheritance — values come from tokens.css (Indigo Serif).
+       Body background mirrors creator-public.html — soft warm + indigo
+       wash so the blog feels like a sub-page of the same site.
+       ============================================================ */
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    /* Mockup-only nav at the very top — back to creator page + URL pill.
+       In production this strip is rendered by the visitor's browser as the URL bar; here we replicate it for orientation. */
+    .top-strip {
+      max-width: 980px; margin: 0 auto;
+      padding: 14px 20px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .top-strip a {
+      color: var(--fg-muted);
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .top-strip a:hover { background: var(--bg-muted); color: var(--fg); }
+    .top-strip .url-mono {
+      font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .top-strip .url-mono b { color: var(--fg); font-weight: 600; }
+
+    /* Creator identity row (mirrors creator-public.html identity block, compacted). */
+    .creator-row {
+      max-width: 980px; margin: 0 auto;
+      padding: 32px 20px 12px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .creator-row .av {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+      display: flex; align-items: center; justify-content: center;
+      color: #7C2D12; font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      border: 3px solid #fff; box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .creator-row .who { min-width: 0; flex: 1; }
+    .creator-row .who-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+    .creator-row .who-handle { font-size: 13px; color: var(--fg-muted); }
+    .creator-row .back-to-main {
+      font-size: 13px; color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .creator-row .back-to-main:hover { color: var(--brand-primary-hover); }
+
+    /* Page hero (list view) */
+    .page-hero {
+      max-width: 980px; margin: 0 auto;
+      padding: 24px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-hero h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5vw, 52px);
+      letter-spacing: -0.02em; margin: 0;
+    }
+    .page-hero .lede {
+      max-width: 620px; color: var(--fg-muted);
+      font-size: 16.5px; line-height: 1.55; margin-top: 12px;
+    }
+    .page-hero .meta-line {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 18px; font-size: 12.5px; color: var(--fg-muted);
+    }
+    .page-hero .meta-line a {
+      color: var(--brand-primary); font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .page-hero .meta-line a:hover { color: var(--brand-primary-hover); }
+    .page-hero .meta-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+
+    .tag-bar {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .tag-chip {
+      padding: 5px 11px; border-radius: 999px;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      transition: border-color .12s ease, color .12s ease, background .12s ease;
+      cursor: pointer;
+    }
+    .tag-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .tag-chip.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+    /* Post grid (list view) */
+    .feed {
+      max-width: 980px; margin: 0 auto;
+      padding: 28px 20px 60px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    @media (max-width: 760px) { .feed { grid-template-columns: 1fr; gap: 18px; } }
+
+    .post-card {
+      display: flex; flex-direction: column;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      text-decoration: none; color: inherit;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .post-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border-strong);
+    }
+    .post-card .pc-cover {
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px; color: #fff;
+    }
+    .post-card .pc-cover.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .post-card .pc-cover.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .post-card .pc-cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .post-card .pc-cover.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .post-card .pc-cover.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+
+    .post-card .pc-body { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+    .post-card .pc-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; line-height: 1.25; letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .post-card .pc-excerpt {
+      color: var(--fg-muted); font-size: 14px; line-height: 1.55;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .post-card .pc-meta {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-subtle); margin-top: 4px;
+    }
+    .post-card .pc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .post-card .pc-meta .pc-tag {
+      padding: 1px 8px; border-radius: 999px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-weight: 600; font-size: 11px;
+    }
+    .post-card .pc-author { display: inline-flex; align-items: center; gap: 5px; }
+    .post-card .pc-author .ax {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 9px; font-weight: 700;
+    }
+
+    /* Pagination — desktop = numbered; mobile = "Load more" */
+    .pagination {
+      max-width: 980px; margin: 0 auto;
+      padding: 0 20px 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .pagination .pg-meta { font-size: 13px; color: var(--fg-muted); }
+    .pagination .pg-controls { display: flex; gap: 4px; }
+    .pagination .pg-controls button {
+      padding: 7px 12px; border: 1px solid var(--border-strong); border-radius: 7px;
+      background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13.5px; cursor: pointer;
+    }
+    .pagination .pg-controls button:hover:not(:disabled) { background: var(--bg-muted); }
+    .pagination .pg-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .pg-controls button.is-current { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .pagination .load-more { display: none; }
+    @media (max-width: 560px) {
+      .pagination .pg-meta, .pagination .pg-controls { display: none; }
+      .pagination .load-more { display: inline-flex; }
+      .pagination { justify-content: center; }
+    }
+    .load-more {
+      padding: 11px 22px; border-radius: 999px;
+      background: var(--brand-primary); color: #fff; font-weight: 600;
+      border: 0; cursor: pointer; font: inherit; font-size: 14px;
+    }
+    .load-more:hover { background: var(--brand-primary-hover); }
+
+    /* ============================================================
+       SINGLE POST VIEW
+       ============================================================ */
+    .post-cover-full {
+      width: 100%;
+      aspect-ratio: 16 / 7;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 60px;
+      margin-top: 8px;
+    }
+    .post-article {
+      max-width: 720px; margin: 0 auto;
+      padding: 36px 20px 24px;
+    }
+    .post-article h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(34px, 5.5vw, 54px);
+      letter-spacing: -0.02em; line-height: 1.1; margin: 0;
+    }
+    .post-meta-row {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-top: 22px; padding: 16px 0;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      font-size: 13.5px; color: var(--fg-muted);
+    }
+    .post-meta-row .author-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .post-meta-row .author-pill .av {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #EF4444, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 13px;
+    }
+    .post-meta-row .author-pill b { color: var(--fg); font-weight: 600; }
+    .post-meta-row .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .post-meta-row .share {
+      margin-left: auto; display: flex; gap: 6px;
+    }
+    .post-meta-row .share button {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      color: var(--fg-muted); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .post-meta-row .share button:hover { background: var(--bg-muted); color: var(--fg); }
+    .post-meta-row .share svg { width: 14px; height: 14px; }
+
+    .post-body {
+      max-width: 720px; margin: 0 auto;
+      padding: 0 20px 40px;
+      font-family: var(--font-display); font-size: 19px; line-height: 1.7; color: var(--fg);
+    }
+    .post-body p { margin: 0 0 1.1em; }
+    .post-body h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 28px; letter-spacing: -0.01em;
+      margin: 1.4em 0 0.6em;
+    }
+    .post-body blockquote {
+      margin: 1.4em 0; padding: 0 0 0 18px;
+      border-left: 3px solid var(--brand-primary);
+      color: var(--fg-muted); font-style: italic;
+    }
+    .post-body ul { padding-left: 22px; margin: 0 0 1.1em; }
+    .post-body li { margin-bottom: 0.4em; }
+
+    .post-tags {
+      max-width: 720px; margin: 0 auto;
+      padding: 8px 20px 32px;
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    .related {
+      max-width: 980px; margin: 0 auto;
+      padding: 32px 20px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .related h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 0 0 18px;
+    }
+    .related-grid {
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 760px) { .related-grid { grid-template-columns: 1fr; } }
+
+    /* Comments */
+    .comments {
+      max-width: 720px; margin: 0 auto;
+      padding: 24px 20px 60px;
+      border-top: 1px solid var(--border);
+    }
+    .comments h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 0 0 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .comments .provider-row {
+      display: inline-flex; gap: 4px; padding: 3px;
+      background: var(--bg-muted); border-radius: 8px;
+      font-size: 12px;
+    }
+    .comments .provider-row button {
+      padding: 5px 10px; border: 0; border-radius: 6px;
+      background: transparent; color: var(--fg-muted); cursor: pointer;
+      font: inherit; font-size: 12px; font-weight: 500;
+    }
+    .comments .provider-row button.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+    .comments .panel {
+      padding: 28px 22px; border: 1px dashed var(--border-strong); border-radius: 14px;
+      color: var(--fg-muted); font-size: 14px;
+      background: var(--bg);
+      text-align: center;
+    }
+    .comments .panel.disabled { opacity: 0.7; }
+    .comments .panel b { color: var(--fg); font-weight: 600; }
+
+    /* Footer (mirror creator-public.html social block) */
+    .creator-footer {
+      max-width: 980px; margin: 0 auto;
+      padding: 36px 20px 60px;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+      border-top: 1px solid var(--border);
+    }
+    .creator-footer .socials {
+      display: flex; gap: 10px;
+    }
+    .creator-footer .social {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; text-decoration: none; color: var(--fg-muted);
+      transition: transform 140ms, border 140ms, color 140ms;
+    }
+    .creator-footer .social:hover { transform: translateY(-2px); border-color: var(--brand-primary); color: var(--brand-primary); }
+    .creator-footer .ftr-row {
+      display: flex; gap: 14px; align-items: center; font-size: 12.5px; color: var(--fg-subtle);
+    }
+    .creator-footer .ftr-row a { color: var(--brand-primary); font-weight: 600; }
+
+    /* View switcher (the 3 sub-views) */
+    .view { display: none; animation: fade-in .18s ease-out both; }
+    .view.is-current { display: block; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Filtered-empty state when no posts match a tag */
+    .empty-tag {
+      max-width: 700px; margin: 0 auto;
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--fg-muted);
+    }
+    .empty-tag .emoji { font-size: 36px; }
+    .empty-tag h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 8px 0 6px; color: var(--fg); }
+
+    /* Mockup-only "back to mockup hub" banner — same as other public mockups */
+    .mockup-hub-strip {
+      background: rgba(99,102,241,0.07);
+      border-bottom: 1px dashed rgba(99,102,241,0.2);
+      padding: 8px 16px;
+      font-size: 12px;
+      text-align: center;
+      color: var(--fg-muted);
+    }
+    .mockup-hub-strip a { color: var(--brand-primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- Mockup hub return strip — public creator pages don't have tadaify chrome in production -->
+<div class="mockup-hub-strip">
+  <a href="./index.html">← back to mockup hub</a>
+  · Public visitor view ·
+  Switch view:
+  <a href="#/" onclick="showView('list')">List</a>
+  ·
+  <a href="#/post/5-day-reset-for-heavy-training" onclick="showView('post')">Single post</a>
+  ·
+  <a href="#/tag/recovery" onclick="showView('tag')">Tag filter</a>
+</div>
+
+<!-- ===== Top URL strip (orientation only) ===== -->
+<div class="top-strip">
+  <a href="./creator-public.html">← Alexandra's main page</a>
+  <span class="url-mono">tadaify.com/alexandra/<b id="url-tail">blog</b></span>
+</div>
+
+<!-- ===== Compact creator identity row ===== -->
+<div class="creator-row">
+  <div class="av">A</div>
+  <div class="who">
+    <div class="who-name">Alexandra Silva</div>
+    <div class="who-handle">@alexandrasilva_fit · Lisbon</div>
+  </div>
+  <a href="./creator-public.html" class="back-to-main">All my links →</a>
+</div>
+
+<!-- =================================================================
+     VIEW 1 — LIST  (#/  default)
+     ================================================================= -->
+<section class="view is-current" id="view-list" data-view="list">
+
+  <div class="page-hero">
+    <h1>Strong Not Skinny — Blog</h1>
+    <p class="lede">
+      Honest essays on training, recovery and building strength without burning out.
+      New posts every Tuesday — read in your inbox or right here.
+    </p>
+    <div class="meta-line">
+      <span><b id="post-count">23</b> posts · 2 years</span>
+      <span class="dot"></span>
+      <a href="#" onclick="event.preventDefault();alert('Mockup — opens RSS in newsreader')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        Subscribe via RSS
+      </a>
+      <span class="dot"></span>
+      <a href="#" onclick="event.preventDefault();alert('Mockup — opens email subscribe modal')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Get new posts by email
+      </a>
+    </div>
+
+    <div class="tag-bar" id="tag-bar">
+      <button class="tag-chip is-active" data-tag="">All</button>
+      <button class="tag-chip" data-tag="training" onclick="filterByTag('training')">training</button>
+      <button class="tag-chip" data-tag="recovery" onclick="filterByTag('recovery')">recovery</button>
+      <button class="tag-chip" data-tag="mindset"  onclick="filterByTag('mindset')">mindset</button>
+      <button class="tag-chip" data-tag="nutrition" onclick="filterByTag('nutrition')">nutrition</button>
+      <button class="tag-chip" data-tag="habits"   onclick="filterByTag('habits')">habits</button>
+    </div>
+  </div>
+
+  <div class="feed" id="feed-grid">
+
+    <a class="post-card" href="#/post/morning-habits" data-tags="habits,mindset" onclick="showSingle('morning-habits')">
+      <div class="pc-cover" aria-hidden="true">📝</div>
+      <div class="pc-body">
+        <h2 class="pc-title">10 morning habits of high-energy women</h2>
+        <p class="pc-excerpt">The morning is where your day is won or lost. Here are the 10 habits I run before 9am — none of them require an ice bath.</p>
+        <div class="pc-meta">
+          <span class="pc-author"><span class="ax">A</span> Alexandra</span>
+          <span class="dot"></span>
+          <span>Apr 22 · 6 min</span>
+          <span class="dot"></span>
+          <span class="pc-tag">habits</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="post-card" href="#/post/why-i-stopped-chasing-prs" data-tags="training" onclick="showSingle('why-i-stopped-chasing-prs')">
+      <div class="pc-cover t-rose" aria-hidden="true">💪</div>
+      <div class="pc-body">
+        <h2 class="pc-title">Why I stopped chasing PRs (and what I do instead)</h2>
+        <p class="pc-excerpt">Personal records used to be everything. Now they're a side effect — here's what replaced them and why I lift more these days.</p>
+        <div class="pc-meta">
+          <span class="pc-author"><span class="ax">A</span> Alexandra</span>
+          <span class="dot"></span>
+          <span>Apr 8 · 8 min</span>
+          <span class="dot"></span>
+          <span class="pc-tag">training</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="post-card" href="#/post/5-day-reset-for-heavy-training" data-tags="recovery" onclick="showSingle('5-day-reset-for-heavy-training')">
+      <div class="pc-cover t-indigo" aria-hidden="true">🌅</div>
+      <div class="pc-body">
+        <h2 class="pc-title">A 5-day reset for when training feels heavy</h2>
+        <p class="pc-excerpt">Some weeks the bar feels heavier than it should. The 5-day protocol I run to bring myself back without losing the base I built.</p>
+        <div class="pc-meta">
+          <span class="pc-author"><span class="ax">A</span> Alexandra</span>
+          <span class="dot"></span>
+          <span>Apr 2 · 7 min</span>
+          <span class="dot"></span>
+          <span class="pc-tag">recovery</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="post-card" href="#/post/sleep-first-supplements-second" data-tags="recovery,mindset" onclick="showSingle('sleep-first-supplements-second')">
+      <div class="pc-cover t-slate" aria-hidden="true">🌙</div>
+      <div class="pc-body">
+        <h2 class="pc-title">Sleep first, supplements second</h2>
+        <p class="pc-excerpt">Stack of pills and powders, but you sleep 5 hours? You're shovelling sand into a leaky bucket. Sleep is the multiplier — start there.</p>
+        <div class="pc-meta">
+          <span class="pc-author"><span class="ax">A</span> Alexandra</span>
+          <span class="dot"></span>
+          <span>Mar 25 · 5 min</span>
+          <span class="dot"></span>
+          <span class="pc-tag">recovery</span>
+          <span class="pc-tag">mindset</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="post-card" href="#/post/macros-without-losing-weekend" data-tags="nutrition" onclick="showSingle('macros-without-losing-weekend')">
+      <div class="pc-cover t-emerald" aria-hidden="true">🥬</div>
+      <div class="pc-body">
+        <h2 class="pc-title">Macro tracking without losing your weekend</h2>
+        <p class="pc-excerpt">A pragmatic 80/20 system for tracking that keeps you eating with friends, not weighing chicken breast at brunch.</p>
+        <div class="pc-meta">
+          <span class="pc-author"><span class="ax">A</span> Alexandra</span>
+          <span class="dot"></span>
+          <span>Mar 18 · 9 min</span>
+          <span class="dot"></span>
+          <span class="pc-tag">nutrition</span>
+        </div>
+      </div>
+    </a>
+
+    <a class="post-card" href="#/post/training-with-anxiety" data-tags="mindset,training" onclick="showSingle('training-with-anxiety')">
+      <div class="pc-cover t-sky" aria-hidden="true">🧠</div>
+      <div class="pc-body">
+        <h2 class="pc-title">Training with anxiety — what works for me</h2>
+        <p class="pc-excerpt">A long letter to anyone who has stood at the squat rack, knees weak, mind louder than the playlist. You're not alone, and there's a path out.</p>
+        <div class="pc-meta">
+          <span class="pc-author"><span class="ax">A</span> Alexandra</span>
+          <span class="dot"></span>
+          <span>Mar 11 · 11 min</span>
+          <span class="dot"></span>
+          <span class="pc-tag">mindset</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Empty-tag state (revealed when filterByTag matches 0) -->
+  <div class="empty-tag" id="empty-tag-state" style="display:none">
+    <div class="emoji">🌿</div>
+    <h3>No posts tagged "<span id="empty-tag-name"></span>" yet</h3>
+    <p>Try another tag, or <a href="#" onclick="event.preventDefault();filterByTag('')" style="color:var(--brand-primary); font-weight:600">view all posts</a>.</p>
+  </div>
+
+  <!-- Pagination — 10/page in real app, here we mock 6 visible + page chips -->
+  <div class="pagination">
+    <div class="pg-meta">Showing <b>1–6</b> of <b>23</b> posts</div>
+    <div class="pg-controls">
+      <button disabled aria-label="Previous">←</button>
+      <button class="is-current" aria-current="page">1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>4</button>
+      <button aria-label="Next">→</button>
+    </div>
+    <button class="load-more" onclick="alert('Mockup — appends next 6 posts to feed')">Load more posts</button>
+  </div>
+
+</section>
+
+<!-- =================================================================
+     VIEW 2 — SINGLE POST  (#/post/<slug>)
+     ================================================================= -->
+<section class="view" id="view-post" data-view="post">
+
+  <div class="post-cover-full" aria-hidden="true">🌅</div>
+
+  <article class="post-article">
+    <h1 id="single-title">A 5-day reset for when training feels heavy</h1>
+
+    <div class="post-meta-row">
+      <span class="author-pill">
+        <span class="av">A</span>
+        <span>Posted by <b>Alexandra Silva</b></span>
+      </span>
+      <span class="dot"></span>
+      <span>Apr 2, 2026</span>
+      <span class="dot"></span>
+      <span>7 min read</span>
+      <div class="share">
+        <button data-tip="Copy link" aria-label="Copy link" onclick="alert('Mockup — link copied')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </button>
+        <button data-tip="Share to X" aria-label="Share to X" onclick="alert('Mockup — opens share dialog')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h3l-7.5 8.6L22 22h-6.6l-5.2-6.8L4.4 22H1.4l8.1-9.3L1 2h6.7l4.7 6.2L18 2z"/></svg>
+        </button>
+        <button data-tip="Share via email" aria-label="Share via email" onclick="alert('Mockup — opens mailto draft')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </button>
+      </div>
+    </div>
+  </article>
+
+  <div class="post-body">
+    <p>Some weeks the bar feels heavier than it should. Sleep slips, work piles up, motivation thins. Trying to grind through it usually costs you more than backing off would.</p>
+
+    <p>Here's the 5-day reset I run when training stops feeling good — it brings me back without losing the base I built.</p>
+
+    <h2>Day 1 — Cut volume by 50%</h2>
+    <p>Same lifts, half the sets. Eat to maintenance. Sleep nine hours. The point isn't to train less; it's to train deliberately less. Let your nervous system breathe.</p>
+
+    <blockquote>"You can't out-program a tired body. You can only out-rest it."</blockquote>
+
+    <h2>Day 2-3 — Walk + breathe</h2>
+    <p>No barbells. Two long walks per day, twenty minutes of slow breathing in the evening. Sounds passive — feels active. By Day 3 your shoulders sit a centimetre lower than they did on Monday.</p>
+
+    <ul>
+      <li>Walk before coffee, in daylight</li>
+      <li>Box-breath 4-4-4-4 for ten rounds</li>
+      <li>Carbs around dinner, not breakfast</li>
+    </ul>
+
+    <h2>Day 4 — Light return</h2>
+    <p>One session, 60% intensity, five reps below your true tens. The goal is to remember what good movement feels like, not to test anything. Walk away wanting more.</p>
+
+    <h2>Day 5 — Honest check-in</h2>
+    <p>If you woke up wanting to train, you're back. If you didn't, repeat Days 2-3 and try again. The protocol works on the timeline your body sets, not yours.</p>
+
+    <p>Try it the next time you feel flat for more than 4 days in a row. Strong is what you build between the heavy weeks, not despite them.</p>
+  </div>
+
+  <div class="post-tags">
+    <button class="tag-chip" onclick="filterByTag('recovery'); showView('list')">recovery</button>
+    <button class="tag-chip" onclick="filterByTag('training'); showView('list')">training</button>
+  </div>
+
+  <!-- Related posts -->
+  <div class="related">
+    <h2>Related posts</h2>
+    <div class="related-grid">
+      <a class="post-card" href="#/post/sleep-first-supplements-second" onclick="showSingle('sleep-first-supplements-second')">
+        <div class="pc-cover t-slate" aria-hidden="true">🌙</div>
+        <div class="pc-body">
+          <h3 class="pc-title">Sleep first, supplements second</h3>
+          <div class="pc-meta"><span>5 min</span><span class="dot"></span><span class="pc-tag">recovery</span></div>
+        </div>
+      </a>
+      <a class="post-card" href="#/post/training-with-anxiety" onclick="showSingle('training-with-anxiety')">
+        <div class="pc-cover t-sky" aria-hidden="true">🧠</div>
+        <div class="pc-body">
+          <h3 class="pc-title">Training with anxiety — what works for me</h3>
+          <div class="pc-meta"><span>11 min</span><span class="dot"></span><span class="pc-tag">mindset</span></div>
+        </div>
+      </a>
+      <a class="post-card" href="#/post/morning-habits" onclick="showSingle('morning-habits')">
+        <div class="pc-cover" aria-hidden="true">📝</div>
+        <div class="pc-body">
+          <h3 class="pc-title">10 morning habits of high-energy women</h3>
+          <div class="pc-meta"><span>6 min</span><span class="dot"></span><span class="pc-tag">habits</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Comments -->
+  <div class="comments">
+    <h2>
+      Comments
+      <span class="provider-row" role="tablist" aria-label="Comments provider">
+        <button class="is-active" onclick="setCommentsProvider(this, 'disqus')">Disqus</button>
+        <button onclick="setCommentsProvider(this, 'hyvor')">Hyvor</button>
+        <button onclick="setCommentsProvider(this, 'off')">Off</button>
+      </span>
+    </h2>
+    <div class="panel" id="comments-panel">
+      <p><b>Disqus</b> embed renders here. Creator picks the provider in <a href="./app-page-blog.html" style="color:var(--brand-primary); font-weight:600">Page settings → Comments</a>.</p>
+      <p style="font-size:12.5px; color:var(--fg-subtle); margin-top:8px">No tracking, no third-party fonts. Visitors keep their privacy.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- =================================================================
+     VIEW 3 — TAG FILTER  (#/tag/<slug>)
+     This view is the LIST view with a tag pre-selected. We re-use the
+     filtering logic — clicking a tag chip in either header swaps in/out.
+     ================================================================= -->
+<!-- (rendered by toggling view-list + filterByTag — no separate DOM tree needed) -->
+
+<!-- ===== Footer (mirror creator-public.html social block) ===== -->
+<footer class="creator-footer">
+  <div class="socials">
+    <a href="#" class="social" title="Instagram" aria-label="Instagram" onclick="event.preventDefault();alert('Mockup — opens Instagram')">📸</a>
+    <a href="#" class="social" title="TikTok"    aria-label="TikTok"    onclick="event.preventDefault();alert('Mockup — opens TikTok')">🎵</a>
+    <a href="#" class="social" title="YouTube"   aria-label="YouTube"   onclick="event.preventDefault();alert('Mockup — opens YouTube')">📺</a>
+    <a href="#" class="social" title="Email"     aria-label="Email"     onclick="event.preventDefault();alert('Mockup — opens email composer')">✉️</a>
+  </div>
+  <div class="ftr-row">
+    Powered by
+    <span class="wordmark wordmark-sm" style="font-family:var(--font-display);">
+      <span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span>
+    </span>
+    <span style="opacity:0.6">·</span>
+    <a href="./landing.html">get yours free →</a>
+  </div>
+</footer>
+
+<script src="./shared/tokens.js"></script>
+<script>
+  // ----- View routing (#/, #/post/<slug>, #/tag/<slug>) -----
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('is-current'); });
+    var el = document.getElementById('view-' + name);
+    if (el) el.classList.add('is-current');
+    var tail = name === 'post' ? 'blog/' + (window.__currentPostSlug || 'post')
+             : name === 'tag'  ? 'blog?tag=' + (window.__currentTag || 'tag')
+             : 'blog';
+    document.getElementById('url-tail').textContent = tail;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showSingle(slug) {
+    window.__currentPostSlug = slug;
+    document.getElementById('single-title').textContent = postTitleFor(slug);
+    showView('post');
+    return false; // prevent default href jump
+  }
+
+  function postTitleFor(slug) {
+    var titles = {
+      'morning-habits': '10 morning habits of high-energy women',
+      'why-i-stopped-chasing-prs': 'Why I stopped chasing PRs (and what I do instead)',
+      '5-day-reset-for-heavy-training': 'A 5-day reset for when training feels heavy',
+      'sleep-first-supplements-second': 'Sleep first, supplements second',
+      'macros-without-losing-weekend': 'Macro tracking without losing your weekend',
+      'training-with-anxiety': 'Training with anxiety — what works for me'
+    };
+    return titles[slug] || slug;
+  }
+
+  // ----- Tag filter (real DOM filtering) -----
+  function filterByTag(tag) {
+    window.__currentTag = tag;
+    var chips = document.querySelectorAll('#tag-bar .tag-chip');
+    chips.forEach(function (c) { c.classList.toggle('is-active', c.dataset.tag === tag); });
+
+    var visible = 0;
+    document.querySelectorAll('#feed-grid .post-card').forEach(function (card) {
+      var tags = (card.dataset.tags || '').split(',').map(function (t) { return t.trim(); });
+      var match = !tag || tags.indexOf(tag) !== -1;
+      card.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+
+    var empty = document.getElementById('empty-tag-state');
+    var feed  = document.getElementById('feed-grid');
+    if (visible === 0 && tag) {
+      empty.style.display = '';
+      document.getElementById('empty-tag-name').textContent = tag;
+      feed.style.display = 'none';
+    } else {
+      empty.style.display = 'none';
+      feed.style.display  = '';
+    }
+
+    document.getElementById('post-count').textContent = visible;
+
+    // If we came from showView('list') already, just update URL pill text
+    document.getElementById('url-tail').textContent = tag ? ('blog?tag=' + tag) : 'blog';
+  }
+
+  // ----- Comments provider switcher -----
+  function setCommentsProvider(btn, kind) {
+    btn.parentElement.querySelectorAll('button').forEach(function (b) { b.classList.remove('is-active'); });
+    btn.classList.add('is-active');
+    var panel = document.getElementById('comments-panel');
+    panel.classList.toggle('disabled', kind === 'off');
+    if (kind === 'disqus') {
+      panel.innerHTML = '<p><b>Disqus</b> embed renders here. Creator picks the provider in <a href="./app-page-blog.html" style="color:var(--brand-primary); font-weight:600">Page settings → Comments</a>.</p><p style="font-size:12.5px; color:var(--fg-subtle); margin-top:8px">No tracking, no third-party fonts. Visitors keep their privacy.</p>';
+    } else if (kind === 'hyvor') {
+      panel.innerHTML = '<p><b>Hyvor Talk</b> embed renders here. Privacy-first, GDPR-friendly, no ads.</p><p style="font-size:12.5px; color:var(--fg-subtle); margin-top:8px">Free up to 1k pageviews/month — perfect for indie blogs.</p>';
+    } else {
+      panel.innerHTML = '<p>Comments are <b>off</b> for this post.</p><p style="font-size:12.5px; color:var(--fg-subtle); margin-top:8px">Reach Alexandra by email instead — link in the footer.</p>';
+    }
+  }
+
+  // ----- Boot from hash -----
+  function boot() {
+    var h = location.hash || '#/';
+    if (h.indexOf('#/post/') === 0) showSingle(h.replace('#/post/', ''));
+    else if (h.indexOf('#/tag/') === 0) {
+      var t = h.replace('#/tag/', '');
+      window.__currentTag = t;
+      filterByTag(t);
+      showView('list');
+    } else {
+      showView('list');
+    }
+  }
+  window.addEventListener('hashchange', boot);
+  boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Blog page template (creator-facing) — F-PAGE-BLOG-001 #19
+  created_at: 2026-04-26
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Surfaces the editor a creator sees when they open Pages > Blog.
+  Pairs with creator-blog-public.html (visitor view).
+
+  Source story: graspsoftwarepw/tadaify-app issues #19 (F-PAGE-BLOG-001)
+
+  Locked rules honoured:
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no Show advanced toggle; power fields inline empty by default)
+    - feedback_no_blur_premium_features (premium fields fully visible + interactive; tier badge inline; gate at Save via TierGate)
+    - feedback_no_right_side_drawers (post composer is a centered modal, NEVER a drawer)
+    - feedback_mockup_full_feature_vision (every interaction does something — empty state ↔ filled state ↔ modal all wired)
+    - feedback_sidebar_pages_grouping (Pages parent + Home first page — but here the active page is Blog; canonical sidebar via shared partial)
+
+  Demo-only state via URL:
+    ?state=empty | filled       (default: filled)
+    ?tier=free | creator | pro | business   (default: creator — Blog requires Creator+ per DEC-MULTIPAGE-01)
+
+  Brand: Indigo Serif, Crimson Pro display + Inter sans, wordmark ta/da!/ify.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.scheduled { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.2);
+      transition: transform .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content ── */
+    main.content {
+      padding: 24px 20px 120px;
+      min-width: 0;
+      max-width: 1080px;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    /* Breadcrumb */
+    .crumb {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px;
+    }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    /* Page header */
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 12.5px; color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+    .url-pill .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* Sections */
+    .section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin: 0; letter-spacing: -0.01em;
+    }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+    .section-body.has-pad-lg { padding: 22px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .field-label .field-hint {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 400;
+    }
+    .field-input, .field-area, .field-select {
+      width: 100%;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px;
+      transition: border-color .12s ease, box-shadow .12s ease;
+      outline: 0;
+    }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-input.with-prefix { padding-left: 0; }
+    .field-prefix-wrap {
+      display: flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    .field-prefix-wrap:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .field-prefix {
+      padding: 0 10px 0 12px;
+      color: var(--fg-muted); font-size: 13px;
+      font-family: var(--font-mono);
+    }
+    .field-prefix-wrap input {
+      flex: 1; border: 0; background: transparent;
+      padding: 10px 12px 10px 0; outline: 0;
+      font-size: 14px; color: var(--fg); font: inherit;
+    }
+    .field-suffix-action {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 11px; margin: 3px;
+      border: 0; border-radius: 8px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .field-suffix-action:hover { background: rgba(99,102,241,0.16); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .row-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; }
+    .row-toggle .rt-sub  { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* SEO expander */
+    details.expander {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+    }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary {
+      list-style: none; cursor: pointer;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 14px;
+    }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret {
+      width: 14px; height: 14px; color: var(--fg-subtle);
+      transition: transform .15s ease; margin-left: auto;
+    }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+    details.expander .ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+    /* Theme color picker (FIX-DIV-001 — page background) */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid transparent; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+      transition: transform .12s ease, border-color .12s ease;
+      position: relative;
+    }
+    .swatch:hover { transform: scale(1.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+    .swatch.is-selected::after {
+      content: "✓"; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 13px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* Posts surface */
+    .posts-toolbar {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 14px;
+    }
+    .tabs {
+      display: inline-flex; gap: 2px; padding: 3px;
+      background: var(--bg-muted); border-radius: 10px;
+    }
+    .tab {
+      padding: 6px 12px; border: 0; border-radius: 8px;
+      background: transparent; color: var(--fg-muted);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: all .12s ease;
+    }
+    .tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+    .tab .tab-count {
+      margin-left: 6px; font-size: 11px;
+      background: var(--bg-sunken); color: var(--fg-muted);
+      padding: 1px 6px; border-radius: 999px;
+    }
+    .tab.is-active .tab-count { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+
+    .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
+    .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--fg-subtle); }
+    .search-wrap input {
+      width: 100%; padding: 8px 12px 8px 32px;
+      border: 1px solid var(--border-strong); border-radius: 9px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13px; outline: 0;
+    }
+    .search-wrap input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+
+    .posts-list { display: flex; flex-direction: column; gap: 10px; }
+    .post-row {
+      display: grid;
+      grid-template-columns: 96px 1fr auto;
+      gap: 14px; align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      transition: border-color .12s ease, box-shadow .12s ease;
+      position: relative;
+    }
+    .post-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .post-row .pr-thumb {
+      width: 96px; height: 64px; border-radius: 8px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 18px;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .post-row .pr-thumb.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .post-row .pr-thumb.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .post-row .pr-thumb.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .post-row .pr-thumb.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .post-row .pr-thumb.t-warm    { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .post-row .pr-meta { min-width: 0; }
+    .post-row .pr-title {
+      font-weight: 600; font-size: 14.5px; color: var(--fg);
+      margin: 0 0 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .post-row .pr-line {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+    }
+    .post-row .pr-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+    .post-row .pr-tag {
+      padding: 1px 8px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-size: 11px; font-weight: 500;
+    }
+    .post-row .pr-actions { display: flex; align-items: center; gap: 4px; }
+    .post-row .pr-handle {
+      width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); cursor: grab; flex-shrink: 0;
+    }
+    .post-row .pr-handle svg { width: 14px; height: 14px; }
+    .post-row .pr-grip-col { display: flex; align-items: center; gap: 8px; }
+
+    .kebab-pop {
+      position: absolute; right: 12px; top: 48px; z-index: 5;
+      min-width: 180px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-lg); padding: 4px;
+      display: none;
+    }
+    .kebab-pop.is-open { display: block; }
+    .kebab-pop button {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 8px 10px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--fg);
+      font-size: 13px; text-align: left; cursor: pointer;
+    }
+    .kebab-pop button:hover { background: var(--bg-muted); }
+    .kebab-pop button.danger { color: var(--danger); }
+    .kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+    .kebab-pop button.danger svg { color: var(--danger); }
+    .kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-top: 14px; flex-wrap: wrap;
+    }
+    .pagination .pg-meta { font-size: 12.5px; color: var(--fg-muted); }
+    .pagination .pg-controls { display: flex; gap: 4px; }
+    .pagination .pg-controls button {
+      padding: 6px 11px; border: 1px solid var(--border-strong); border-radius: 7px;
+      background: var(--bg-elevated); color: var(--fg); font-size: 13px; cursor: pointer;
+    }
+    .pagination .pg-controls button:hover:not(:disabled) { background: var(--bg-muted); }
+    .pagination .pg-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .pg-controls button.is-current { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 56px 28px; text-align: center;
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04));
+      border: 1.5px dashed rgba(99,102,241,0.25);
+      border-radius: 16px;
+    }
+    .empty-state .es-emoji {
+      font-size: 38px; line-height: 1;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty-state h3 {
+      font-family: var(--font-display); font-weight: 600; font-size: 22px;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 420px; }
+
+    /* Centered modal — post composer (per feedback_no_right_side_drawers) */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; opacity: 0; transition: opacity .14s ease;
+    }
+    .modal-backdrop.is-open { display: flex; opacity: 1; }
+    .modal {
+      background: var(--bg-elevated); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(11,15,30,0.25);
+      width: min(880px, 96vw);
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.985);
+      transition: transform .14s ease;
+    }
+    .modal-backdrop.is-open .modal { transform: translateY(0) scale(1); }
+    .modal-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+    .modal-head .head-spacer { flex: 1; }
+    .modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+    .modal-foot {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg);
+      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      flex-shrink: 0;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    .cover-drop {
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      padding: 22px; text-align: center;
+      background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      cursor: pointer; transition: border-color .12s ease, background .12s ease;
+    }
+    .cover-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .cover-drop .cd-emoji { font-size: 30px; }
+    .cover-drop .cd-title { font-weight: 600; font-size: 14px; }
+    .cover-drop .cd-sub { color: var(--fg-muted); font-size: 12.5px; }
+    .cover-drop .cd-guide { color: var(--fg-subtle); font-size: 11.5px; margin-top: 4px; }
+
+    .cover-preview {
+      position: relative;
+      border-radius: 12px; overflow: hidden;
+      height: 200px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: flex; align-items: flex-end; justify-content: flex-end;
+      padding: 10px;
+    }
+    .cover-preview .crop-hint {
+      position: absolute; left: 12px; top: 12px;
+      background: rgba(11,15,30,0.6); color: #fff;
+      padding: 4px 9px; border-radius: 999px; font-size: 11px;
+    }
+    .cover-preview .replace-btn {
+      background: rgba(255,255,255,0.9); border: 0; border-radius: 8px;
+      padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Rich-text editor mockup */
+    .rt-toolbar {
+      display: flex; gap: 2px; flex-wrap: wrap;
+      padding: 6px; border: 1px solid var(--border-strong);
+      border-bottom: 0; border-radius: 10px 10px 0 0;
+      background: var(--bg-muted);
+    }
+    .rt-toolbar button {
+      width: 30px; height: 30px;
+      border: 0; border-radius: 6px;
+      background: transparent; color: var(--fg-muted);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600;
+    }
+    .rt-toolbar button:hover { background: var(--bg-elevated); color: var(--fg); }
+    .rt-toolbar .rt-sep { width: 1px; height: 18px; background: var(--border); margin: 6px 4px; }
+    .rt-area {
+      width: 100%;
+      min-height: 220px;
+      padding: 14px 16px;
+      border: 1px solid var(--border-strong); border-top: 0;
+      border-radius: 0 0 10px 10px;
+      background: var(--bg-elevated);
+      font-family: var(--font-display); font-size: 16px; line-height: 1.65;
+      outline: 0; resize: vertical;
+    }
+    .rt-area:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+
+    /* Tags input */
+    .tags-input {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      padding: 7px 10px;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+    }
+    .tags-input:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.14);
+    }
+    .tag-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      padding: 3px 8px 3px 10px;
+      border-radius: 999px; font-size: 12px; font-weight: 500;
+    }
+    .tag-pill .x-btn {
+      background: transparent; border: 0; color: var(--brand-primary);
+      cursor: pointer; padding: 0 0 0 2px; font-size: 14px; line-height: 1;
+    }
+    .tags-input input {
+      flex: 1; min-width: 120px;
+      border: 0; outline: 0; background: transparent;
+      font: inherit; font-size: 13px;
+    }
+
+    /* Premium author dropdown — fully visible per no-blur-premium */
+    .author-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-strong); border-radius: 10px;
+      background: var(--bg-elevated);
+    }
+    .author-row .av {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 13px;
+      flex-shrink: 0;
+    }
+    .author-row select {
+      flex: 1; border: 0; background: transparent; outline: 0;
+      font: inherit; font-size: 14px; color: var(--fg); cursor: pointer;
+    }
+
+    /* Inline tier hint (per no-blur-premium pattern) */
+    .tier-hint {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+      padding: 7px 11px;
+      background: rgba(245,158,11,0.10);
+      border-left: 3px solid var(--brand-warm);
+      border-radius: 0 8px 8px 0;
+      font-size: 12px; color: #92400E;
+    }
+    .tier-hint .th-icon { font-size: 13px; }
+
+    /* Demo-toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 14px; right: 14px; z-index: 60;
+      background: rgba(11,15,30,0.94); color: #fff;
+      padding: 8px 12px; border-radius: 999px;
+      display: flex; gap: 8px; align-items: center;
+      font-size: 11px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: 0; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 500; cursor: pointer; outline: 0;
+    }
+    .demo-toolbar option { background: #0B0F1E; color: #fff; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .url-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .url-pill b { color: #F3F4F6; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-bottom-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-area,
+    body.dark-mode .field-select,
+    body.dark-mode .field-prefix-wrap,
+    body.dark-mode .row-toggle,
+    body.dark-mode .author-row,
+    body.dark-mode .tags-input,
+    body.dark-mode details.expander {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode details.expander[open] { background: #141A2D; }
+    body.dark-mode .post-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+    body.dark-mode .modal-foot { background: #0B0F1E; }
+    body.dark-mode .rt-toolbar { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .rt-area { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
+      border-color: rgba(99,102,241,0.4);
+    }
+    body.dark-mode .tab.is-active { background: #141A2D; }
+    body.dark-mode .pagination .pg-controls button { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .kebab-pop { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .kebab-pop button { color: #F3F4F6; }
+    body.dark-mode .kebab-pop button:hover { background: #1F2937; }
+    body.dark-mode .crumb a:hover { background: #1F2937; color: #F3F4F6; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-backdrop, .modal { transition: none !important; }
+    }
+  </style>
+</head>
+<body data-state="filled" data-tier="creator">
+
+<!-- ========== TOP APP BAR ========== -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <span class="wm" aria-label="tadaify">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </span>
+  </div>
+
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+  </div>
+
+  <div class="spacer"></div>
+
+  <a href="./creator-blog-public.html" class="btn btn-ghost btn-sm" data-tip="Open the public blog in a new tab">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    View blog
+  </a>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ========== LAYOUT ========== -->
+<div class="layout">
+
+  <!-- Canonical sidebar (Pages active, Blog sub-page highlighted via JS post-inject) -->
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ========== MAIN ========== -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Blog</span>
+    </nav>
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1><span class="ph-emoji" aria-hidden="true">📝</span> Blog</h1>
+        <p class="sub">Publish essays, devlogs, tutorials or journals on your own page. Visitors can subscribe to the RSS feed.</p>
+      </div>
+      <div class="actions">
+        <span class="url-pill">
+          <span class="live-dot" aria-hidden="true"></span>
+          tadaify.com/alexandra/<b>blog</b>
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — preview opens public blog in new tab')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         SECTION 1 — Page settings (title, slug, publish, SEO, background)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Page settings</h2>
+        <span class="sub">Title, URL, visibility and SEO for the Blog page itself.</span>
+      </div>
+      <div class="section-body">
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="page-title">Page title <span class="field-hint">shown as &lt;h1&gt; on the public blog</span></label>
+            <input class="field-input" id="page-title" type="text" value="Blog" />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="page-slug">URL slug <span class="field-hint">letters, numbers, hyphens</span></label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">tadaify.com/alexandra/</span>
+              <input id="page-slug" type="text" value="blog" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Publish</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Page is live</div>
+                <div class="rt-sub">Visitors can find this blog at the URL above.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle publish" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">RSS feed</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Enable RSS</div>
+                <div class="rt-sub">Serve <span class="mono" style="font-family:var(--font-mono)">/blog/feed.xml</span> for newsreaders.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle RSS" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Page background <span class="field-hint">override theme colour for this page only</span></label>
+          <div class="swatch-row">
+            <div class="swatch is-selected" style="background: var(--bg);"               data-name="Inherit theme"  onclick="pickSwatch(this)" title="Inherit theme"></div>
+            <div class="swatch"             style="background: #FFFFFF;"                  data-name="White"          onclick="pickSwatch(this)" title="White"></div>
+            <div class="swatch"             style="background: #F8F4EE;"                  data-name="Warm cream"     onclick="pickSwatch(this)" title="Warm cream"></div>
+            <div class="swatch"             style="background: #1F2937;"                  data-name="Slate"          onclick="pickSwatch(this)" title="Slate"></div>
+            <div class="swatch"             style="background: #0B0F1E;"                  data-name="Dark canvas"    onclick="pickSwatch(this)" title="Dark canvas"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#FDE68A,#F59E0B);" data-name="Sunrise" onclick="pickSwatch(this)" title="Sunrise gradient"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#6366F1,#8B5CF6);" data-name="Indigo"  onclick="pickSwatch(this)" title="Indigo gradient"></div>
+            <div class="swatch"             style="background: linear-gradient(135deg,#0F172A,#334155);" data-name="Nightfall" onclick="pickSwatch(this)" title="Nightfall"></div>
+          </div>
+        </div>
+
+        <details class="expander" style="margin-top:14px">
+          <summary>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7"/><path d="M9 12V7a3 3 0 0 1 6 0v5"/><circle cx="12" cy="17" r="3"/></svg>
+            SEO settings <span class="ex-sub">— meta title, description, social card</span>
+            <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 15 12 9 18 15"/></svg>
+          </summary>
+          <div class="ex-body">
+            <div class="field">
+              <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
+              <div class="field-prefix-wrap">
+                <input id="seo-title" type="text" value="Strong Not Skinny — Blog by Alexandra Silva" />
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal')" type="button">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
+              <div class="field-prefix-wrap" style="align-items:flex-start">
+                <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Honest essays on training, recovery and building strength without burning out. New posts every Tuesday.</textarea>
+                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">OG image <span class="field-hint">1200×630 — shown when shared on social</span></label>
+              <div class="cover-drop" style="height:auto; padding:14px;" onclick="alert('Mockup — image picker opens')">
+                <span class="cd-emoji">🖼</span>
+                <div class="cd-title">Drop an image, or click to upload</div>
+                <div class="cd-sub">Or <a href="#" onclick="event.preventDefault();alert('Mockup — AI generates 4 OG cards')" style="color:var(--brand-primary); font-weight:600">✨ generate one with AI</a></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 2 — Layout & display config (per page-type framework)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Layout</h2>
+        <span class="sub">How the post list looks at <span class="mono" style="font-family:var(--font-mono)">/alexandra/blog</span>.</span>
+      </div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="cfg-layout">Card layout</label>
+            <select class="field-select" id="cfg-layout">
+              <option value="cards" selected>Cards — cover image + title + excerpt (recommended)</option>
+              <option value="list">List — compact, no cover thumbnail</option>
+              <option value="magazine">Magazine — first post hero, rest in 2-column grid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="cfg-pp">Posts per page</label>
+            <input class="field-input" id="cfg-pp" type="number" value="10" min="1" max="50" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="cfg-sort">Sort order</label>
+            <select class="field-select" id="cfg-sort">
+              <option value="newest" selected>Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="manual">Manual — drag to reorder</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Show author byline</label>
+            <div class="row-toggle">
+              <div>
+                <div class="rt-name">Display author</div>
+                <div class="rt-sub">Avatar + name appear on each card.</div>
+              </div>
+              <button class="toggle is-on" type="button" aria-pressed="true" aria-label="Toggle author byline" onclick="toggleSwitch(this)"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         SECTION 3 — Posts (the main work)
+         =================================================== -->
+    <section class="section">
+      <div class="section-head">
+        <h2>Posts</h2>
+        <span class="sub">Write, edit, publish and schedule articles.</span>
+        <span class="head-spacer"></span>
+        <button class="btn btn-primary btn-sm" onclick="openPostModal('new')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New post
+        </button>
+      </div>
+
+      <div class="section-body has-pad-lg">
+
+        <!-- =====================
+             FILLED STATE (default)
+             ===================== -->
+        <div id="state-filled">
+          <div class="posts-toolbar">
+            <div class="tabs" role="tablist">
+              <button class="tab is-active" role="tab" aria-selected="true">All <span class="tab-count">23</span></button>
+              <button class="tab" role="tab">Published <span class="tab-count">18</span></button>
+              <button class="tab" role="tab">Drafts <span class="tab-count">3</span></button>
+              <button class="tab" role="tab">Scheduled <span class="tab-count">2</span></button>
+            </div>
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Search posts by title…" />
+            </div>
+          </div>
+
+          <div class="posts-list">
+
+            <!-- Post 1 — Published, manual sort handle -->
+            <div class="post-row">
+              <div class="pr-grip-col">
+                <span class="pr-handle" data-tip="Drag to reorder (manual sort enabled)" aria-label="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>
+                </span>
+                <div class="pr-thumb t-warm" aria-hidden="true">📝</div>
+              </div>
+              <div class="pr-meta">
+                <p class="pr-title">10 morning habits of high-energy women</p>
+                <div class="pr-line">
+                  <span class="chip live">Published</span>
+                  <span class="dot"></span>
+                  <span>4 days ago · 6 min read</span>
+                  <span class="dot"></span>
+                  <span class="pr-tag">habits</span>
+                  <span class="pr-tag">mindset</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openPostModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" aria-label="Post options" onclick="togglePop(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+                <div class="kebab-pop">
+                  <button onclick="closePops();openPostModal('edit')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Edit</button>
+                  <button onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg> Duplicate</button>
+                  <button onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</button>
+                  <button onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> View public</button>
+                  <hr/>
+                  <button class="danger" onclick="closePops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg> Delete</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Post 2 — Published -->
+            <div class="post-row">
+              <div class="pr-grip-col">
+                <span class="pr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="pr-thumb t-rose">💪</div>
+              </div>
+              <div class="pr-meta">
+                <p class="pr-title">Why I stopped chasing PRs (and what I do instead)</p>
+                <div class="pr-line">
+                  <span class="chip live">Published</span>
+                  <span class="dot"></span>
+                  <span>2 weeks ago · 8 min read</span>
+                  <span class="dot"></span>
+                  <span class="pr-tag">training</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openPostModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Post options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Post 3 — Scheduled -->
+            <div class="post-row">
+              <div class="pr-grip-col">
+                <span class="pr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="pr-thumb t-indigo">🌅</div>
+              </div>
+              <div class="pr-meta">
+                <p class="pr-title">A 5-day reset for when training feels heavy</p>
+                <div class="pr-line">
+                  <span class="chip scheduled">Scheduled</span>
+                  <span class="dot"></span>
+                  <span>Goes live <b>Tue, May 5 · 8:00</b></span>
+                  <span class="dot"></span>
+                  <span class="pr-tag">recovery</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openPostModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Post options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Post 4 — Draft -->
+            <div class="post-row">
+              <div class="pr-grip-col">
+                <span class="pr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="pr-thumb t-emerald">🥬</div>
+              </div>
+              <div class="pr-meta">
+                <p class="pr-title">[Draft] Macro tracking without losing your weekend</p>
+                <div class="pr-line">
+                  <span class="chip draft">Draft</span>
+                  <span class="dot"></span>
+                  <span>Last edited yesterday by you</span>
+                  <span class="dot"></span>
+                  <span class="pr-tag">nutrition</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openPostModal('edit')">Continue</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Post options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Post 5 — Published -->
+            <div class="post-row">
+              <div class="pr-grip-col">
+                <span class="pr-handle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg></span>
+                <div class="pr-thumb t-slate">🌙</div>
+              </div>
+              <div class="pr-meta">
+                <p class="pr-title">Sleep first, supplements second</p>
+                <div class="pr-line">
+                  <span class="chip live">Published</span>
+                  <span class="dot"></span>
+                  <span>1 month ago · 5 min read · 1.2k reads</span>
+                  <span class="dot"></span>
+                  <span class="pr-tag">recovery</span>
+                  <span class="pr-tag">mindset</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="btn btn-ghost btn-xs" onclick="openPostModal('edit')">Edit</button>
+                <button class="iconbtn" data-tip="More" onclick="togglePop(this)" aria-label="Post options">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5"  r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="pagination">
+            <div class="pg-meta">Showing <b>1–5</b> of <b>23</b> posts</div>
+            <div class="pg-controls">
+              <button disabled aria-label="Previous">←</button>
+              <button class="is-current" aria-current="page">1</button>
+              <button>2</button>
+              <button>3</button>
+              <button>4</button>
+              <button>5</button>
+              <button aria-label="Next">→</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================
+             EMPTY STATE (toggle via demo toolbar ?state=empty)
+             ===================== -->
+        <div id="state-empty" style="display:none">
+          <div class="empty-state">
+            <div class="es-emoji" aria-hidden="true">📝</div>
+            <h3>Write your first post</h3>
+            <p>Your blog is live but quiet. Start with a quick welcome post — even 3 short paragraphs is enough to get visitors reading and the RSS feed primed.</p>
+            <button class="btn btn-primary" onclick="openPostModal('new')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create your first post
+            </button>
+            <a href="#" onclick="event.preventDefault();alert('Mockup — opens 6 starter post templates')" style="color:var(--brand-primary); font-size:13px; font-weight:600">✨ Or pick a starter template →</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     CENTERED MODAL — New / Edit post composer
+     (per feedback_no_right_side_drawers — NEVER a drawer)
+     ============================================================ -->
+<div class="modal-backdrop" id="post-modal" role="dialog" aria-modal="true" aria-labelledby="pm-title" hidden>
+  <div class="modal">
+
+    <div class="modal-head">
+      <h3 id="pm-title">New post</h3>
+      <span class="head-spacer"></span>
+      <span class="chip draft" id="pm-state-chip">Draft · auto-saving</span>
+      <button class="iconbtn" onclick="closePostModal()" aria-label="Close" data-tip="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Cover image -->
+      <div class="field">
+        <label class="field-label">Cover image <span class="field-hint">recommended 1600×900</span></label>
+        <div class="cover-preview" id="cover-preview-box">
+          <span class="crop-hint">Crop to 16:9</span>
+          <button class="replace-btn" onclick="alert('Mockup — image picker')">Replace</button>
+        </div>
+      </div>
+
+      <!-- Title + slug -->
+      <div class="field">
+        <label class="field-label" for="pm-title-input">Title</label>
+        <div class="field-prefix-wrap">
+          <input id="pm-title-input" type="text" value="A 5-day reset for when training feels heavy" />
+          <button class="field-suffix-action" onclick="alert('Mockup — AI suggests 5 alternative titles')" type="button">✨ Suggest</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="pm-slug-input">URL slug <span class="field-hint">auto-filled · editable until first publish</span></label>
+        <div class="field-prefix-wrap">
+          <span class="field-prefix">…/blog/</span>
+          <input id="pm-slug-input" type="text" value="5-day-reset-for-heavy-training" />
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="field">
+        <label class="field-label" for="pm-body">Body</label>
+        <div class="rt-toolbar" role="toolbar" aria-label="Formatting">
+          <button data-tip="Bold (Ctrl+B)" aria-label="Bold"><b>B</b></button>
+          <button data-tip="Italic (Ctrl+I)" aria-label="Italic"><i>I</i></button>
+          <span class="rt-sep"></span>
+          <button data-tip="Heading" aria-label="Heading">H</button>
+          <button data-tip="Quote" aria-label="Quote">❝</button>
+          <button data-tip="Code block" aria-label="Code">{ }</button>
+          <span class="rt-sep"></span>
+          <button data-tip="Link" aria-label="Link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button data-tip="Insert image" aria-label="Image">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </button>
+          <span class="rt-sep"></span>
+          <button data-tip="Bullet list" aria-label="Bullet list">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+          </button>
+          <button data-tip="Numbered list" aria-label="Numbered list">1.</button>
+          <span class="rt-sep" style="margin-left:auto"></span>
+          <button data-tip="Generate paragraph with AI" aria-label="AI suggest" onclick="alert('Mockup — AI generates paragraph based on title + outline')">✨</button>
+        </div>
+        <textarea id="pm-body" class="rt-area">Some weeks the bar feels heavier than it should. Sleep slips, work piles up, motivation thins. Trying to grind through it usually costs you more than backing off would.
+
+Here's the 5-day reset I run when training stops feeling good — it brings me back without losing the base I built.
+
+Day 1: cut volume by 50%. Same lifts, half the sets. Eat to maintenance. Sleep 9 hours…</textarea>
+      </div>
+
+      <!-- Tags -->
+      <div class="field">
+        <label class="field-label">Tags <span class="field-hint">type and press Enter</span></label>
+        <div class="tags-input">
+          <span class="tag-pill">recovery <button class="x-btn" aria-label="Remove tag recovery">×</button></span>
+          <span class="tag-pill">training <button class="x-btn" aria-label="Remove tag training">×</button></span>
+          <input type="text" placeholder="Add a tag…" />
+        </div>
+      </div>
+
+      <!-- Author (premium for Business / Team) — fully visible per no-blur-premium -->
+      <div class="field">
+        <label class="field-label">Author</label>
+        <div class="author-row">
+          <div class="av">A</div>
+          <select id="pm-author">
+            <option selected>Alexandra Silva (you)</option>
+            <option>Maya Chen — Co-coach</option>
+            <option>Jordan Park — Guest contributor</option>
+          </select>
+          <span class="chip" style="background: rgba(245,158,11,0.14); color: #92400E; border: 1px solid rgba(245,158,11,0.32);">🔒 Business</span>
+        </div>
+        <div class="tier-hint">
+          <span class="th-icon" aria-hidden="true">💡</span>
+          Switching author is part of <b>Team</b> on the Business plan. We'll prompt to upgrade when you save if you pick someone other than yourself.
+        </div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="field">
+        <label class="field-label">Schedule publication <span class="field-hint">leave blank to publish now</span></label>
+        <div class="field-row">
+          <input class="field-input" id="pm-sched-date" type="date" value="2026-05-05" />
+          <input class="field-input" id="pm-sched-time" type="time" value="08:00" />
+        </div>
+        <div class="tier-hint">
+          <span class="th-icon" aria-hidden="true">💡</span>
+          Scheduling beyond the next 7 days is a <b>Pro</b> perk. We'll prompt to upgrade at save time if your selected date is more than 7 days out.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="closePostModal()">Cancel</button>
+      <button class="btn btn-danger-ghost btn-sm" onclick="alert('Mockup — type-to-confirm delete')">Delete draft</button>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — saved as draft')">Save as draft</button>
+      <button class="btn btn-warm btn-sm" onclick="trySave('schedule')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedule for May 5
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="trySave('publish')">Publish now →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Demo toolbar — switch state + tier without page reload -->
+<div class="demo-toolbar" aria-hidden="true">
+  <span style="opacity:0.65">Demo</span>
+  <select onchange="setState(this.value)" aria-label="State">
+    <option value="filled" selected>State: filled (23 posts)</option>
+    <option value="empty">State: empty</option>
+  </select>
+  <select onchange="setTier(this.value)" aria-label="Tier">
+    <option value="free">Tier: Free</option>
+    <option value="creator" selected>Tier: Creator</option>
+    <option value="pro">Tier: Pro</option>
+    <option value="business">Tier: Business</option>
+  </select>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  // ----- Demo state machinery -----
+  function urlParam(k, fb) {
+    var u = new URL(location.href);
+    return u.searchParams.get(k) || fb;
+  }
+  function setState(v) {
+    document.body.dataset.state = v;
+    document.getElementById('state-filled').style.display = (v === 'filled') ? '' : 'none';
+    document.getElementById('state-empty').style.display  = (v === 'empty')  ? '' : 'none';
+  }
+  function setTier(v) {
+    document.body.dataset.tier = v;
+    var pill = document.querySelector('.tdf-side .uhandle');
+    if (pill) pill.textContent = '@alexandra · ' + (v.charAt(0).toUpperCase() + v.slice(1));
+  }
+
+  // ----- Toggles -----
+  function toggleSwitch(btn) {
+    var on = btn.classList.toggle('is-on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  // ----- Swatch picker -----
+  function pickSwatch(el) {
+    document.querySelectorAll('.swatch.is-selected').forEach(function (s) { s.classList.remove('is-selected'); });
+    el.classList.add('is-selected');
+  }
+
+  // ----- Theme -----
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  // ----- Post modal -----
+  function openPostModal(mode) {
+    closePops();
+    var bd = document.getElementById('post-modal');
+    document.getElementById('pm-title').textContent = mode === 'edit' ? 'Edit post' : 'New post';
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
+  }
+  function closePostModal() {
+    var bd = document.getElementById('post-modal');
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+
+  // Save → run TierGate.checkAndProceed (premium fields gate at save per no-blur-premium)
+  function trySave(action) {
+    var tier = document.body.dataset.tier || 'creator';
+    var features = [];
+
+    // Author other than self → Business / Team
+    var authorSel = document.getElementById('pm-author');
+    if (authorSel && authorSel.selectedIndex > 0) {
+      features.push({
+        id: 'team-author', name: 'Author selection', requires: 'business',
+        meta: 'Posting as someone other than yourself uses the Team feature.'
+      });
+    }
+    // Schedule > 7 days → Pro
+    var dateStr = document.getElementById('pm-sched-date').value;
+    if (action === 'schedule' && dateStr) {
+      var d = new Date(dateStr);
+      var diff = (d - Date.now()) / (1000 * 60 * 60 * 24);
+      if (diff > 7) {
+        features.push({
+          id: 'sched-far', name: 'Far-future scheduling', requires: 'pro',
+          meta: 'Pick a date inside the next 7 days, or upgrade.'
+        });
+      }
+    }
+
+    if (window.TierGate) {
+      TierGate.checkAndProceed({
+        currentTier: tier,
+        features: features,
+        onProceed:    function () { alert('Mockup — saved (' + action + ')'); closePostModal(); },
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onSaveWithout: features.length ? function () { alert('Mockup — saved without premium changes'); closePostModal(); } : null,
+        onCancel: function () {}
+      });
+    } else {
+      alert('Mockup — saved (' + action + ')');
+      closePostModal();
+    }
+  }
+
+  // ----- Kebab popovers -----
+  function togglePop(btn) {
+    var pop = btn.parentElement.querySelector('.kebab-pop');
+    if (!pop) return;
+    var wasOpen = pop.classList.contains('is-open');
+    closePops();
+    if (!wasOpen) pop.classList.add('is-open');
+  }
+  function closePops() { document.querySelectorAll('.kebab-pop.is-open').forEach(function (p) { p.classList.remove('is-open'); }); }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.pr-actions') && !e.target.closest('.kebab-pop')) closePops();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closePops();
+      var bd = document.getElementById('post-modal');
+      if (bd && bd.classList.contains('is-open')) closePostModal();
+    }
+  });
+
+  // ----- Boot from URL -----
+  setState(urlParam('state', 'filled'));
+  var initTier = urlParam('tier', 'creator');
+  if (initTier !== 'creator') setTier(initTier);
+
+  // After partials inject, mark Blog as the current sub-page (Blog isn't a built-in sub yet — we paint a sub-item ourselves).
+  // The shared partial renders Pages > Home as the only sub-item; for the multi-page demo we add a "Blog" sub-item dynamically
+  // so the user sees Blog highlighted under Pages.
+  setTimeout(function () {
+    var subList = document.querySelector('.tdf-side .nav-sub-list');
+    if (!subList) return;
+    var blogItem = document.createElement('a');
+    blogItem.href = './app-page-blog.html';
+    blogItem.className = 'nav-sub-item is-current';
+    blogItem.setAttribute('data-tip', 'Blog');
+    blogItem.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span>Blog</span>';
+    // Insert before the disabled "Add page" button.
+    var addPage = subList.querySelector('.is-disabled');
+    if (addPage) subList.insertBefore(blogItem, addPage);
+    else subList.appendChild(blogItem);
+    // Demote Home — it isn't current here.
+    var home = subList.querySelector('.is-current');
+    // ↑ if "home" was current before our insert, it's actually the blog one we just added. Re-resolve:
+    Array.prototype.forEach.call(subList.querySelectorAll('.nav-sub-item.is-current'), function (el) {
+      if (el !== blogItem) el.classList.remove('is-current');
+    });
+  }, 30);
+</script>
+</body>
+</html>
