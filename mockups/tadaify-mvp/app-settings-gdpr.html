@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — GDPR & data tab deep dive (F-APP-SETTINGS-GDPR-001 #36)
+  created_at: 2026-04-26
+  author: orchestrator
+  status: draft-for-review
+
+  Scope:
+    Single-tab deep dive of the GDPR & data tab on /app/settings.
+    Sister deep-dives: app-settings.html (full shell), app-settings-account.html,
+    app-settings-billing.html, app-settings-security.html (in flight on sister
+    branches). Account deletion lives in the Danger zone tab — this tab only
+    cross-links to it (per F-APP-SETTINGS-GDPR-001).
+
+  Sections (top → bottom):
+    1. Data export (GDPR Art. 20 — right to portability) + Recent exports table
+    2. Cookie preferences (creator-side control over visitor cookies)
+    3. Personal data on tadaify (read-only summary + breakdown expander)
+    4. Privacy policies you've accepted (table + version diff link)
+    5. DPA / GDPR controller-processor (Pro+ gated, FULLY visible per
+       feedback_no_blur_premium_features 2026-04-26)
+    6. Erasure cross-link → Danger zone tab
+
+  Modal: Request export modal — centered, 720px wide. NEVER right-side drawer
+  per feedback_no_right_side_drawers (2026-04-26).
+
+  Locked rules honoured:
+    - simple-UI: 1 primary CTA per section, no nested modals, no drawers
+    - no-blur-premium-features: DPA section visible on every tier; gates at click
+    - no-right-side-drawers: export-request UI is a centered modal
+    - mockup-full-feature-vision: every section ships even if not yet impl
+    - sidebar-pages-grouping: canonical sidebar via partial, "Pages" parent
+      with Home as first sub-item
+
+  Cross-links:
+    - app-settings.html (Account / Billing / Security tabs in left rail)
+    - app-page-legal.html#cookie (creator's published Cookie Policy)
+    - This same shell anchors Danger zone tab (delete account modal)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings · GDPR & data — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Wordmark */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* Atoms */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.pro {
+      background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08));
+      color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.3);
+    }
+    .chip.success { background: var(--success-bg); color: #065F46; }
+    .chip.warn { background: rgba(245,158,11,0.15); color: var(--brand-warm-dark); }
+    .chip.danger { background: var(--danger-bg); color: #991B1B; }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease;
+      line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-sm      { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs      { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* Toggle */
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: left .15s ease;
+    }
+    .toggle.on { background: var(--brand-primary); }
+    .toggle.on::after { left: 19px; }
+    .toggle.disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Top bar */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    .appbar .theme-toggle { position: relative; }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content {
+      padding: 28px 20px 80px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 60px; } }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 4px; }
+
+    /* Settings layout: left rail + content (mirror of app-settings.html) */
+    .settings-layout {
+      display: flex;
+      gap: 0;
+      align-items: flex-start;
+    }
+    .settings-nav {
+      width: 200px;
+      flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 82px;
+    }
+    .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+      text-decoration: none;
+    }
+    .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle); }
+    .settings-nav-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+    .settings-nav-item.active svg { color: var(--brand-primary); }
+    .settings-nav-divider { border-top: 1px solid var(--border); margin: 8px 0; }
+    .settings-nav-item .sn-pill {
+      margin-left: auto;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+      white-space: nowrap;
+    }
+    .settings-nav-item .sn-pill.pro-pill {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .settings-nav-item .sn-pill.biz-pill {
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+
+    @media (max-width: 719px) {
+      .settings-layout { flex-direction: column; gap: 0; }
+      .settings-nav {
+        width: 100%; flex-direction: row;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 4px; padding-bottom: 12px; margin-bottom: 4px;
+        position: static;
+      }
+      .settings-nav-item {
+        white-space: nowrap; flex-shrink: 0;
+        padding: 7px 14px; border-radius: 99px;
+        border: 1px solid var(--border); background: var(--bg-elevated);
+        font-size: 13px;
+      }
+      .settings-nav-item.active {
+        background: rgba(99,102,241,0.10);
+        border-color: rgba(99,102,241,0.25);
+      }
+      .settings-nav-item .sn-pill { display: none; }
+      .settings-nav-divider { display: none; }
+    }
+
+    .settings-content {
+      flex: 1;
+      min-width: 0;
+      padding-left: 28px;
+      border-left: 1px solid var(--border);
+      min-height: 400px;
+    }
+    @media (max-width: 719px) {
+      .settings-content { padding-left: 0; border-left: none; padding-top: 20px; }
+    }
+
+    /* Section blocks */
+    .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    .settings-section-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin-bottom: 14px;
+    }
+    .settings-section-title.with-action {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+
+    .section-lead {
+      font-size: 13.5px; color: var(--fg-muted); margin: 0 0 16px;
+      line-height: 1.6;
+    }
+    .section-lead strong { color: var(--fg); font-weight: 600; }
+
+    /* Hero card for export */
+    .export-hero {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 6px 0 16px;
+    }
+    .export-hero .icon-bubble {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(139,92,246,0.10));
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--brand-primary);
+    }
+    .export-hero .icon-bubble svg { width: 28px; height: 28px; }
+    .export-hero .ehead-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 0 0 4px; color: var(--fg);
+    }
+    .export-hero .ehead-sub { font-size: 13.5px; color: var(--fg-muted); line-height: 1.55; margin: 0; }
+    @media (max-width: 599px) {
+      .export-hero { flex-direction: column; gap: 10px; }
+    }
+
+    /* Recent exports table */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      text-align: left; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--fg-subtle); font-weight: 600;
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 11px 10px; font-size: 13px; color: var(--fg);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table tr:last-child td { border-bottom: 0; }
+    .data-table .col-date  { white-space: nowrap; color: var(--fg-muted); font-family: var(--font-mono); font-size: 12.5px; }
+    .data-table .col-size  { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-muted); }
+    .data-table .col-exp   { font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+    .data-table .col-action { text-align: right; }
+
+    .pill-status {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 9px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 600; line-height: 1.4;
+    }
+    .pill-status.ready    { background: var(--success-bg); color: #065F46; }
+    .pill-status.pending  { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .pill-status.expired  { background: var(--bg-muted); color: var(--fg-subtle); }
+    .pill-status .dot     { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.85; }
+
+    .table-footnote {
+      font-size: 12px; color: var(--fg-muted);
+      margin-top: 14px; line-height: 1.5;
+    }
+    .table-footnote .key { color: var(--fg); font-weight: 600; }
+
+    /* Cookie row (re-used pattern from app-settings.html) */
+    .cookie-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .cookie-row:last-child { border-bottom: 0; }
+    .cookie-info { flex: 1; padding-right: 8px; }
+    .cookie-name {
+      font-size: 13.5px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .cookie-desc { font-size: 12.5px; color: var(--fg-muted); margin-top: 4px; line-height: 1.5; }
+    .cookie-meta-list {
+      margin: 8px 0 0; padding-left: 18px;
+      font-size: 12px; color: var(--fg-subtle); line-height: 1.55;
+    }
+    .cookie-meta-list li { margin: 2px 0; }
+    .cookie-meta-list code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      padding: 1px 5px; border-radius: 4px;
+    }
+
+    /* Banner preview */
+    .banner-preview-wrap {
+      margin-top: 16px;
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 14px;
+      background: var(--bg);
+    }
+    .banner-preview-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--fg-subtle); margin-bottom: 10px;
+    }
+    .banner-preview-stage {
+      position: relative;
+      background: linear-gradient(135deg, var(--bg-muted), var(--bg-sunken));
+      border-radius: 10px;
+      height: 220px;
+      overflow: hidden;
+      display: flex; align-items: flex-end;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .stage-fauxnav {
+      position: absolute; top: 8px; left: 12px;
+      display: flex; gap: 4px;
+    }
+    .stage-fauxnav span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border-strong); opacity: 0.5;
+    }
+    .stage-faux-label {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      font-size: 10.5px; color: var(--fg-subtle);
+      font-family: var(--font-mono);
+    }
+
+    .banner-bar {
+      width: 100%;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      font-size: 12px;
+      transition: all .25s ease;
+    }
+    .banner-bar .bb-text { flex: 1; min-width: 180px; color: var(--fg); line-height: 1.4; }
+    .banner-bar .bb-text small { color: var(--fg-muted); display: block; margin-top: 2px; font-size: 11px; }
+    .banner-bar .bb-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .banner-bar .btn { font-size: 12px; padding: 5px 11px; }
+
+    .banner-corner {
+      position: absolute; bottom: 12px; right: 12px;
+      max-width: 280px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.18);
+      font-size: 12px;
+    }
+    .banner-corner .bc-title { font-weight: 600; margin-bottom: 4px; color: var(--fg); }
+    .banner-corner .bc-desc  { color: var(--fg-muted); line-height: 1.45; margin-bottom: 8px; font-size: 11.5px; }
+    .banner-corner .bc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .banner-corner .btn { font-size: 11.5px; padding: 4px 10px; }
+
+    .banner-modal-wrap {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(11,15,30,0.35);
+    }
+    .banner-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      width: 80%; max-width: 320px;
+      box-shadow: 0 16px 36px rgba(17,24,39,0.25);
+      font-size: 12px;
+    }
+    .banner-modal .bm-title { font-weight: 600; margin-bottom: 4px; color: var(--fg); font-size: 13px; }
+    .banner-modal .bm-desc { color: var(--fg-muted); line-height: 1.45; margin-bottom: 10px; font-size: 11.5px; }
+    .banner-modal .bm-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .banner-modal .btn { font-size: 11.5px; padding: 4px 10px; }
+
+    .banner-style-picker {
+      display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0;
+    }
+    .banner-style-picker .bsp-btn {
+      padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      background: var(--bg); border: 1px solid var(--border); color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .banner-style-picker .bsp-btn:hover { background: var(--bg-muted); color: var(--fg); }
+    .banner-style-picker .bsp-btn.active {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: rgba(99,102,241,0.08);
+      font-weight: 600;
+    }
+    .banner-style-picker .bsp-btn .pro-tag {
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 99px;
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    /* Personal data summary */
+    .data-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .data-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .data-stat .ds-num {
+      font-family: var(--font-display); font-size: 26px; font-weight: 600;
+      color: var(--fg); line-height: 1.1;
+    }
+    .data-stat .ds-label {
+      font-size: 12px; color: var(--fg-muted); margin-top: 4px;
+    }
+
+    .breakdown-toggle {
+      background: transparent; border: 0; color: var(--brand-primary);
+      font-size: 13px; font-weight: 600; padding: 8px 0;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .breakdown-toggle svg {
+      width: 14px; height: 14px;
+      transition: transform .18s ease;
+    }
+    .breakdown-toggle.open svg { transform: rotate(90deg); }
+
+    .breakdown-panel { display: none; padding-top: 12px; border-top: 1px solid var(--border); margin-top: 8px; }
+    .breakdown-panel.open { display: block; }
+    .breakdown-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .breakdown-table th, .breakdown-table td {
+      padding: 8px 6px; text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 400;
+    }
+    .breakdown-table th { color: var(--fg-subtle); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .breakdown-table td.num { text-align: right; font-family: var(--font-mono); color: var(--fg-muted); font-size: 12.5px; }
+    .breakdown-table tr:last-child td { border-bottom: 0; }
+
+    /* Policies table */
+    .policy-row td:first-child { font-weight: 600; color: var(--fg); }
+    .policy-row .ver-tag {
+      display: inline-block; padding: 1px 7px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .policy-row .ver-tag.new {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .policy-row a { color: var(--brand-primary); font-size: 12.5px; }
+    .policy-row a:hover { text-decoration: underline; }
+    .policy-row .changed-link {
+      display: inline-block; margin-left: 8px;
+      color: var(--brand-warm-dark); font-size: 12px; font-weight: 600;
+    }
+
+    /* DPA rows */
+    .dpa-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .dpa-row:last-child { border-bottom: 0; }
+    .dpa-info { flex: 1; }
+    .dpa-info .dpa-title {
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+    }
+    .dpa-info .dpa-desc { font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; }
+    .dpa-info code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      padding: 1px 5px; border-radius: 4px;
+    }
+
+    /* Tier banner — copied pattern from app-settings.html */
+    .tier-banner {
+      background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04));
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    body.dark-mode .tier-banner {
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04));
+      border-color: rgba(245,158,11,0.30);
+    }
+    .tier-banner .tb-ico {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: rgba(245,158,11,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .tier-banner .tb-text { flex: 1; min-width: 0; }
+    .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; font-size: 13.5px; }
+    .tier-banner .tb-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .tier-banner .btn { flex-shrink: 0; }
+
+    /* Erasure cross-link card */
+    .erasure-card {
+      border: 1px solid rgba(239,68,68,0.25);
+      background: rgba(239,68,68,0.03);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .erasure-card .ec-ico {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(239,68,68,0.10); color: var(--danger);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .erasure-card .ec-ico svg { width: 18px; height: 18px; }
+    .erasure-card .ec-body { flex: 1; min-width: 0; }
+    .erasure-card .ec-title {
+      font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 4px;
+    }
+    .erasure-card .ec-desc { font-size: 12.5px; color: var(--fg-muted); line-height: 1.55; }
+    .erasure-card .ec-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--danger); font-size: 13px; font-weight: 600;
+      margin-top: 8px;
+    }
+    .erasure-card .ec-link svg { width: 14px; height: 14px; }
+
+    /* Notification bar (export ready) */
+    .export-ready-bar {
+      display: none;
+      background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.04));
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      align-items: center; gap: 12px;
+    }
+    .export-ready-bar.show { display: flex; }
+    .export-ready-bar .erb-ico {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: rgba(34,197,94,0.15); color: #16a34a;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .export-ready-bar .erb-ico svg { width: 18px; height: 18px; }
+    .export-ready-bar .erb-text { flex: 1; min-width: 0; }
+    .export-ready-bar .erb-title { font-weight: 600; color: var(--fg); font-size: 13.5px; margin-bottom: 2px; }
+    .export-ready-bar .erb-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .export-ready-bar .btn { flex-shrink: 0; }
+
+    /* Modals — centered, not drawers */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 26px;
+      width: 100%; max-width: 720px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.18);
+      animation: modalIn .18s ease;
+      position: relative;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 { font-family: var(--font-display); font-size: 22px; margin: 0 0 6px; }
+    .modal .modal-sub { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 18px; line-height: 1.5; }
+    .modal .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; flex-wrap: wrap; }
+    .modal .modal-close-x {
+      position: absolute; top: 16px; right: 16px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 20px; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal .modal-close-x:hover { background: var(--bg-muted); color: var(--fg); }
+
+    /* Export modal-specific */
+    .export-include-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 14px 0 6px;
+    }
+    @media (min-width: 600px) {
+      .export-include-list { grid-template-columns: 1fr 1fr; }
+    }
+    .export-include-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .export-include-row:hover { border-color: var(--border-strong); background: var(--bg-muted); }
+    .export-include-row.checked {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .export-include-row input { margin-top: 2px; flex-shrink: 0; accent-color: var(--brand-primary); }
+    .export-include-row .ei-name { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+    .export-include-row .ei-meta { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.4; }
+
+    .export-format-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      margin-top: 8px;
+    }
+    .export-format-pill code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg); padding: 1px 5px; border-radius: 4px;
+      border: 1px solid var(--border); color: var(--fg);
+    }
+
+    .export-progress {
+      display: none;
+      margin-top: 18px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; color: var(--fg);
+    }
+    .export-progress.show { display: block; }
+    .export-progress .ep-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .export-progress .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--bg-sunken);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .export-progress .ep-bar {
+      width: 100%; height: 6px;
+      background: var(--bg-sunken); border-radius: 999px;
+      overflow: hidden;
+    }
+    .export-progress .ep-bar > div {
+      width: 38%; height: 100%;
+      background: var(--brand-primary); border-radius: 999px;
+      animation: progressPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes progressPulse {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(280%); }
+    }
+
+    /* Dark mode */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #4B5563;
+      --border:      #1F2937;
+      --border-strong: #374151;
+      --wm-ify: #F3F4F6;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .settings-nav-item { color: #9CA3AF; }
+    body.dark-mode .settings-nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .settings-nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .settings-nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .settings-section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .data-stat { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .data-table th { color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .data-table td { border-bottom-color: #1F2937; }
+    body.dark-mode .breakdown-table th, body.dark-mode .breakdown-table td { border-bottom-color: #1F2937; }
+    body.dark-mode .settings-content { border-left-color: #1F2937; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .erasure-card { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.30); }
+    body.dark-mode .export-ready-bar { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); border-color: rgba(34,197,94,0.30); }
+    body.dark-mode .banner-preview-stage { background: linear-gradient(135deg, #141A2D, #0B0F1E); }
+    body.dark-mode .banner-bar, body.dark-mode .banner-corner, body.dark-mode .banner-modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .banner-style-picker .bsp-btn { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .banner-style-picker .bsp-btn.active { border-color: var(--brand-primary); background: rgba(99,102,241,0.12); }
+    body.dark-mode .export-include-row { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .export-include-row.checked { background: rgba(99,102,241,0.10); border-color: var(--brand-primary); }
+    body.dark-mode .export-progress { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .cookie-row { border-bottom-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP APP BAR
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout" id="layout">
+
+  <!-- Canonical sidebar (Pages parent + Home first sub-item per
+       feedback_sidebar_pages_grouping). Settings is the active root. -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+
+    <div class="page-head">
+      <div>
+        <h1>Settings</h1>
+        <div class="sub">Manage your account, billing, security, and data.</div>
+      </div>
+    </div>
+
+    <div class="settings-layout">
+
+      <!-- Settings sub-navigation (mirror of app-settings.html) -->
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a class="settings-nav-item" href="./app-settings.html#account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </a>
+        <a class="settings-nav-item" href="./app-settings.html#billing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a class="settings-nav-item" href="./app-settings.html#security">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security
+        </a>
+        <a class="settings-nav-item active" href="./app-settings-gdpr.html" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          GDPR &amp; data
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a class="settings-nav-item" href="./app-settings.html#api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          API keys
+          <span class="sn-pill pro-pill">Pro</span>
+        </a>
+        <a class="settings-nav-item" href="./app-settings.html#team">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team
+          <span class="sn-pill biz-pill">Business</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a class="settings-nav-item" href="./app-settings.html#danger" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger)"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger zone
+        </a>
+      </nav>
+
+      <!-- Settings content area -->
+      <div class="settings-content">
+
+        <!-- Export ready notification (toggled via demo state) -->
+        <div class="export-ready-bar" id="export-ready-bar" role="status">
+          <div class="erb-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="erb-text">
+            <div class="erb-title">Your data export is ready</div>
+            <div class="erb-sub">Generated 4 minutes ago · 18.4 MB ZIP · Expires in 6 days, 23 hours</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="alert('Mockup — would download presigned S3 URL')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.9 18.6A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 5 17.3"/></svg>
+            Download ZIP
+          </button>
+        </div>
+
+        <!-- ==================================================
+             1 — DATA EXPORT (GDPR Art. 20)
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>Export your data &middot; GDPR Art. 20</span>
+            <span class="chip success">All tiers</span>
+          </div>
+
+          <div class="export-hero">
+            <div class="icon-bubble" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div>
+              <p class="ehead-title">You own your data.</p>
+              <p class="ehead-sub">
+                Export everything you've created on tadaify in a machine-readable format
+                (<code style="font-family:var(--font-mono);font-size:12px">JSON</code> + <code style="font-family:var(--font-mono);font-size:12px">CSV</code>),
+                packaged as a single ZIP. Includes a <strong>README</strong> explaining the file structure
+                so you (or another platform) can read every record without docs.
+              </p>
+              <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <button class="btn btn-primary btn-sm" id="request-export-btn"
+                  onclick="document.getElementById('export-modal').classList.add('open')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Request export
+                </button>
+                <span style="font-size:12px;color:var(--fg-muted)">
+                  Limit: <strong>1 export per hour</strong> · Email arrives in ~2 min for a typical creator
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent exports -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>Recent exports</span>
+            <span class="chip">Last 90 days</span>
+          </div>
+          <table class="data-table" aria-label="Recent data exports">
+            <thead>
+              <tr>
+                <th style="width:25%">Requested</th>
+                <th style="width:18%">Status</th>
+                <th style="width:14%">Size</th>
+                <th style="width:23%">Expires</th>
+                <th class="col-action" style="width:20%">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="col-date">2026-04-26 · 09:14 UTC</td>
+                <td><span class="pill-status ready"><span class="dot"></span>Ready</span></td>
+                <td class="col-size">18.4 MB</td>
+                <td class="col-exp">in 6d 23h · 4/5 downloads left</td>
+                <td class="col-action">
+                  <button class="btn btn-ghost btn-xs" onclick="alert('Mockup — would download presigned S3 URL')">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.9 18.6A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 5 17.3"/></svg>
+                    Download
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="col-date">2026-04-12 · 14:02 UTC</td>
+                <td><span class="pill-status expired"><span class="dot"></span>Expired</span></td>
+                <td class="col-size">17.9 MB</td>
+                <td class="col-exp">expired 7d ago</td>
+                <td class="col-action">
+                  <button class="btn btn-ghost btn-xs" disabled title="Link expired — request a new export">Unavailable</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="col-date">2026-03-18 · 10:47 UTC</td>
+                <td><span class="pill-status expired"><span class="dot"></span>Expired</span></td>
+                <td class="col-size">15.2 MB</td>
+                <td class="col-exp">expired 1mo ago</td>
+                <td class="col-action">
+                  <button class="btn btn-ghost btn-xs" disabled>Unavailable</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="table-footnote">
+            <span class="key">Retention:</span> exports are kept for <strong>7 days</strong>, downloadable up to <strong>5 times</strong>.
+            After that the file is deleted from S3 and the link returns 403.
+            Need a permanent copy? Save the ZIP to your own storage.
+          </p>
+        </div>
+
+        <!-- ==================================================
+             2 — COOKIE PREFERENCES (creator controls visitor cookies)
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>Cookies on your tadaify pages</span>
+            <a href="./app-page-legal.html#cookie" style="color:var(--brand-primary);font-size:12px;font-weight:600;text-decoration:none">
+              View Cookie Policy →
+            </a>
+          </div>
+          <p class="section-lead">
+            These toggles control which cookies are set on <strong>visitors to your public page</strong>
+            (creator-side control). Visitors can still opt out individually via the consent banner —
+            disabling a category here removes it from the banner entirely.
+          </p>
+
+          <div class="cookie-row">
+            <div class="cookie-info">
+              <div class="cookie-name">
+                Essential
+                <span class="chip">Always on</span>
+              </div>
+              <div class="cookie-desc">
+                Required to render the page, log visitors in, run the cart, and prevent CSRF.
+                Cannot be disabled — without these the page does not work.
+              </div>
+              <ul class="cookie-meta-list">
+                <li><code>tadaify_session</code> · session, HttpOnly · 30 days</li>
+                <li><code>tadaify_csrf</code> · session · cleared on tab close</li>
+              </ul>
+            </div>
+            <button class="toggle on disabled" aria-label="Essential cookies — always on" aria-checked="true" disabled></button>
+          </div>
+
+          <div class="cookie-row">
+            <div class="cookie-info">
+              <div class="cookie-name">
+                Analytics
+                <span class="chip success">Default ON</span>
+              </div>
+              <div class="cookie-desc">
+                First-party page-view + click tracking that powers your <a href="./app-insights.html" style="color:var(--brand-primary)">Insights</a> dashboard.
+                No third-party trackers, no IDFA. Visitors can always opt out via the cookie banner.
+              </div>
+              <ul class="cookie-meta-list">
+                <li><code>td_pv</code> · 1st-party · 365 days · page views, no fingerprinting</li>
+                <li><code>td_clk</code> · 1st-party · 365 days · click counts per block</li>
+              </ul>
+            </div>
+            <button class="toggle on" id="toggle-analytics" aria-label="Analytics cookies"
+              aria-checked="true" onclick="toggleCookie(this, 'analytics'); markPrefsDirty()"></button>
+          </div>
+
+          <div class="cookie-row">
+            <div class="cookie-info">
+              <div class="cookie-name">
+                Marketing
+                <span class="chip">Default OFF</span>
+              </div>
+              <div class="cookie-desc">
+                Third-party trackers if you embed Meta Pixel, Google Ads, TikTok Pixel, etc.
+                Off by default per privacy-by-design (GDPR Art. 25).
+                Turning this on requires you to update your Cookie Policy.
+              </div>
+              <ul class="cookie-meta-list">
+                <li><code>_fbp</code> (Meta Pixel) · 90 days · only if you embed it</li>
+                <li><code>_gcl_au</code> (Google Ads) · 90 days · only if you embed it</li>
+              </ul>
+            </div>
+            <button class="toggle" id="toggle-marketing" aria-label="Marketing cookies"
+              aria-checked="false" onclick="toggleCookie(this, 'marketing'); markPrefsDirty()"></button>
+          </div>
+
+          <div class="cookie-row">
+            <div class="cookie-info">
+              <div class="cookie-name">
+                Personalization
+                <span class="chip">Default OFF</span>
+              </div>
+              <div class="cookie-desc">
+                Stores visitor preferences across visits — last-viewed theme, A/B test bucket assignment,
+                language preference. No identifying data.
+              </div>
+              <ul class="cookie-meta-list">
+                <li><code>td_pref</code> · 1st-party · 365 days · theme + language</li>
+                <li><code>td_ab</code> · 1st-party · 30 days · A/B test bucket id</li>
+              </ul>
+            </div>
+            <button class="toggle" id="toggle-personalization" aria-label="Personalization cookies"
+              aria-checked="false" onclick="toggleCookie(this, 'personalization'); markPrefsDirty()"></button>
+          </div>
+
+          <!-- Banner preview -->
+          <div class="banner-preview-wrap">
+            <div class="banner-preview-label">Cookie banner preview · how it appears on your public page</div>
+
+            <div class="banner-preview-stage" id="banner-stage">
+              <div class="stage-fauxnav" aria-hidden="true"><span></span><span></span><span></span></div>
+              <div class="stage-faux-label" aria-hidden="true">tadaify.com/alexandra</div>
+
+              <!-- Bottom bar (default) -->
+              <div class="banner-bar" id="banner-style-bar">
+                <div class="bb-text">
+                  We use cookies for analytics and to make your visit better.
+                  <small>You can change your preferences any time.</small>
+                </div>
+                <div class="bb-actions">
+                  <button class="btn btn-ghost">Reject all</button>
+                  <button class="btn btn-ghost">Customize</button>
+                  <button class="btn btn-primary">Accept all</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="banner-style-picker" role="tablist" aria-label="Cookie banner style">
+              <button class="bsp-btn active" data-style="bar" onclick="setBannerStyle('bar', this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="17" width="18" height="4" rx="1"/></svg>
+                Bottom bar
+              </button>
+              <button class="bsp-btn" data-style="corner" onclick="setBannerStyle('corner', this)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="13" y="14" width="8" height="7" rx="1"/></svg>
+                Corner card
+              </button>
+              <button class="bsp-btn" data-style="modal" onclick="gateAction('cookie-banner', 'pro', function(){ setBannerStyle('modal', document.querySelector('[data-style=modal]')); })">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="8" width="12" height="9" rx="1"/></svg>
+                Centered modal
+                <span class="pro-tag">Pro</span>
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" id="save-cookie-prefs-btn" disabled
+              onclick="saveCookiePrefs()">
+              Save preferences
+            </button>
+            <span id="cookie-prefs-status" style="font-size:12px;color:var(--fg-muted)">
+              All up to date · last saved 2 hours ago
+            </span>
+          </div>
+        </div>
+
+        <!-- ==================================================
+             3 — PERSONAL DATA ON TADAIFY
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title">Personal data on tadaify</div>
+          <p class="section-lead">
+            What we currently store on your account. This is the same dataset you'll receive
+            when you request an export above.
+          </p>
+
+          <div class="data-summary">
+            <div class="data-stat">
+              <div class="ds-num">8</div>
+              <div class="ds-label">Pages</div>
+            </div>
+            <div class="data-stat">
+              <div class="ds-num">142</div>
+              <div class="ds-label">Blocks across all pages</div>
+            </div>
+            <div class="data-stat">
+              <div class="ds-num">1,847</div>
+              <div class="ds-label">Newsletter subscribers</div>
+            </div>
+            <div class="data-stat">
+              <div class="ds-num">63</div>
+              <div class="ds-label">Bookings (Schedule)</div>
+            </div>
+            <div class="data-stat">
+              <div class="ds-num">42.7 MB</div>
+              <div class="ds-label">Uploaded files</div>
+            </div>
+          </div>
+
+          <button class="breakdown-toggle" id="breakdown-toggle" onclick="toggleBreakdown()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            View detailed breakdown
+          </button>
+
+          <div class="breakdown-panel" id="breakdown-panel">
+            <table class="breakdown-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th style="text-align:right">Count / Size</th>
+                  <th>Stored in</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Profile (name, bio, avatar URL, email)</td>           <td class="num">1 record</td><td>users</td></tr>
+                <tr><td>Pages (Home, About, Blog, Schedule, …)</td>           <td class="num">8</td>      <td>pages</td></tr>
+                <tr><td>Blocks (links, posts, FAQ items, etc.)</td>           <td class="num">142</td>    <td>blocks</td></tr>
+                <tr><td>Newsletter subscribers + double opt-in audit</td>     <td class="num">1,847</td>  <td>subscribers, doi_log</td></tr>
+                <tr><td>Newsletter sends &amp; open/click events</td>         <td class="num">12,304</td> <td>email_events</td></tr>
+                <tr><td>Schedule bookings (incl. notes + answers)</td>        <td class="num">63</td>    <td>bookings</td></tr>
+                <tr><td>Page-view events (last 12 months)</td>                <td class="num">38,902</td> <td>pageviews</td></tr>
+                <tr><td>Click events on blocks (last 12 months)</td>          <td class="num">9,418</td>  <td>click_events</td></tr>
+                <tr><td>Uploaded files (avatar, page covers, post images)</td><td class="num">217 files · 42.7 MB</td><td>S3 (storage.tadaify.com)</td></tr>
+                <tr><td>Billing history (invoices, charges)</td>              <td class="num">14 invoices</td><td>Stripe (mirror in invoices)</td></tr>
+                <tr><td>Login &amp; settings audit log</td>                   <td class="num">412 events</td><td>audit_log</td></tr>
+                <tr><td>Cookie consent decisions you made</td>                <td class="num">9 changes</td><td>user_consent</td></tr>
+              </tbody>
+            </table>
+            <p class="table-footnote">
+              <span class="key">Storage costs</span> are included in your plan. We never sell, rent, or share this data with third parties.
+              See the <a href="./app-page-legal.html#privacy" style="color:var(--brand-primary)">Privacy Policy</a> for the full list of subprocessors.
+            </p>
+          </div>
+        </div>
+
+        <!-- ==================================================
+             4 — PRIVACY POLICIES YOU'VE ACCEPTED
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>Policies you've accepted</span>
+            <a href="./app-page-legal.html" style="color:var(--brand-primary);font-size:12px;font-weight:600;text-decoration:none">Open Legal page →</a>
+          </div>
+          <p class="section-lead">
+            Every version of every policy you accepted, with the exact text you saw at the time.
+            On <strong>material</strong> changes you'll be re-prompted on next login (per consent version policy).
+          </p>
+
+          <table class="data-table" aria-label="Accepted policies">
+            <thead>
+              <tr>
+                <th style="width:35%">Policy</th>
+                <th style="width:15%">Version</th>
+                <th style="width:23%">Accepted on</th>
+                <th class="col-action" style="width:27%">View</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="policy-row">
+                <td>Terms of Service</td>
+                <td><span class="ver-tag">v3</span></td>
+                <td class="col-date">2026-03-04 · 18:22 UTC</td>
+                <td class="col-action">
+                  <a href="./app-page-legal.html#tos">View v3</a>
+                  <a class="changed-link" href="#" onclick="alert('Mockup — would diff v3 vs v4 in modal'); return false">View what changed →</a>
+                </td>
+              </tr>
+              <tr class="policy-row">
+                <td>Privacy Policy</td>
+                <td><span class="ver-tag">v2</span></td>
+                <td class="col-date">2026-02-12 · 09:01 UTC</td>
+                <td class="col-action">
+                  <a href="./app-page-legal.html#privacy">View v2</a>
+                </td>
+              </tr>
+              <tr class="policy-row">
+                <td>Cookie Policy</td>
+                <td><span class="ver-tag">v2</span></td>
+                <td class="col-date">2026-02-12 · 09:01 UTC</td>
+                <td class="col-action">
+                  <a href="./app-page-legal.html#cookie">View v2</a>
+                </td>
+              </tr>
+              <tr class="policy-row">
+                <td>Subprocessor list</td>
+                <td><span class="ver-tag new">v4 available</span></td>
+                <td class="col-date">2026-01-30 · 14:55 UTC</td>
+                <td class="col-action">
+                  <a href="./app-page-legal.html#subprocessors">View v3 (your accepted)</a>
+                  <a class="changed-link" href="#" onclick="alert('Mockup — would diff subprocessor list v3 vs v4'); return false">View what changed →</a>
+                </td>
+              </tr>
+              <tr class="policy-row">
+                <td>Acceptable Use Policy</td>
+                <td><span class="ver-tag">v1</span></td>
+                <td class="col-date">2025-11-08 · 11:30 UTC</td>
+                <td class="col-action">
+                  <a href="./app-page-legal.html#aup">View v1</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="table-footnote">
+            We never silently update policies. Material changes (new subprocessor, broader data use, scope expansion)
+            require explicit re-acceptance on your next login. Cosmetic changes (typos, layout) do not.
+          </p>
+        </div>
+
+        <!-- ==================================================
+             5 — DPA / GDPR controller-processor (Pro+)
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>Data processing agreement (DPA) &amp; subprocessors</span>
+            <span class="chip pro">Pro+</span>
+          </div>
+
+          <!-- Tier banner per feedback_no_blur_premium_features: feature stays VISIBLE,
+               banner only renders for tiers below Pro. Gating happens at click. -->
+          <div id="dpa-tier-banner" class="tier-banner" role="note" style="display:none">
+            <span class="tb-ico" aria-hidden="true">📜</span>
+            <div class="tb-text">
+              <div class="tb-title">DPA + subprocessor notifications unlock on Pro</div>
+              <div class="tb-sub">Browse the section below — when you click <strong>Download DPA</strong> or enable a notification we'll prompt to upgrade.</div>
+            </div>
+            <a href="./pricing.html" class="btn btn-primary btn-sm">Upgrade to Pro →</a>
+          </div>
+
+          <p class="section-lead">
+            <strong>You are the controller</strong> for your visitor data (newsletter signups, booking submissions, page-view logs).
+            <strong>tadaify is the processor</strong> — we store and serve that data on your behalf, and only on your instructions.
+            The DPA below is the legal agreement between us.
+          </p>
+
+          <div class="dpa-row">
+            <div class="dpa-info">
+              <div class="dpa-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-muted)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Data Processing Agreement (DPA) — v3 · 12 pages
+              </div>
+              <div class="dpa-desc">
+                Standard Contractual Clauses (SCCs) module 3, GDPR Art. 28-compliant.
+                Pre-signed by tadaify; counter-signature optional.
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="gateAction('dpa-download', 'pro', function(){ alert('Mockup — would download DPA-v3.pdf (172 KB)') })">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.9 18.6A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 5 17.3"/></svg>
+              Download DPA
+            </button>
+          </div>
+
+          <div class="dpa-row">
+            <div class="dpa-info">
+              <div class="dpa-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-muted)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                Subprocessor change notifications
+              </div>
+              <div class="dpa-desc">
+                Email us when tadaify adds, removes, or changes a subprocessor (Stripe, Cloudflare, Resend, AWS, …).
+                30 days advance notice on new subprocessors per the DPA.
+              </div>
+            </div>
+            <button class="toggle on" id="toggle-subproc-notify"
+              aria-label="Subprocessor change notifications"
+              onclick="gateAction('subproc-notify', 'pro', function(){ toggleCookie(this, 'subproc'); }.bind(null, this))"></button>
+          </div>
+
+          <div class="dpa-row">
+            <div class="dpa-info">
+              <div class="dpa-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-muted)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Current subprocessors (4 active)
+              </div>
+              <div class="dpa-desc">
+                <code>Stripe</code> · payments &amp; billing &nbsp;·&nbsp;
+                <code>Resend</code> · transactional + marketing email &nbsp;·&nbsp;
+                <code>Cloudflare</code> · CDN + DDoS &nbsp;·&nbsp;
+                <code>AWS</code> · storage + compute (eu-west-1)
+              </div>
+            </div>
+            <a href="./app-page-legal.html#subprocessors" class="btn btn-ghost btn-sm">View list →</a>
+          </div>
+        </div>
+
+        <!-- ==================================================
+             6 — ERASURE (right to be forgotten — Art. 17)
+             cross-link only — deletion lives in Danger zone tab
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title">Right to be forgotten · GDPR Art. 17</div>
+
+          <div class="erasure-card">
+            <div class="ec-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </div>
+            <div class="ec-body">
+              <div class="ec-title">Delete your account &amp; erase all your data</div>
+              <div class="ec-desc">
+                To exercise your right to erasure, head to the <strong>Danger zone</strong> tab.
+                That flow cancels any active subscription, releases custom domains, removes all your pages and blocks,
+                and deletes every record listed in the <em>Personal data</em> section above. Action cannot be undone.
+              </div>
+              <a href="./app-settings.html#danger" class="ec-link">
+                Go to Danger zone tab
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.settings-content -->
+    </div><!-- /.settings-layout -->
+  </main>
+</div>
+
+<!-- ============================================================
+     EXPORT REQUEST MODAL (centered — never a drawer)
+     ============================================================ -->
+<div class="modal-backdrop" id="export-modal" onclick="closeModal(this, event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <button class="modal-close-x" onclick="this.closest('.modal-backdrop').classList.remove('open')" aria-label="Close">×</button>
+    <h3 id="export-modal-title">Request data export</h3>
+    <p class="modal-sub">
+      Choose what to include. We'll assemble the ZIP, email you the download link, and keep it
+      available for 7 days. Limit: 1 export per hour.
+    </p>
+
+    <div class="export-include-list" role="group" aria-label="Data categories to include">
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Profile &amp; identity</div>
+          <div class="ei-meta">Name, bio, avatar, email, pronouns</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Pages &amp; blocks</div>
+          <div class="ei-meta">All 8 pages, 142 blocks, theme + style</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Subscribers</div>
+          <div class="ei-meta">Newsletter signups, contact form submissions, double opt-in audit</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Bookings</div>
+          <div class="ei-meta">Schedule page bookings, attendee answers, status</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Analytics</div>
+          <div class="ei-meta">Page views + click counts · last 12 months · aggregated daily</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Billing history</div>
+          <div class="ei-meta">14 invoices, past charges, refunds (mirrored from Stripe)</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Audit log</div>
+          <div class="ei-meta">Login history, settings changes, consent decisions</div>
+        </div>
+      </label>
+      <label class="export-include-row checked">
+        <input type="checkbox" checked onchange="this.closest('.export-include-row').classList.toggle('checked', this.checked)">
+        <div>
+          <div class="ei-name">Uploaded files</div>
+          <div class="ei-meta">217 files · 42.7 MB · avatar, covers, post images</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="export-format-pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+      Format: <code>ZIP</code> containing one <code>.json</code> + one <code>.csv</code> per category, plus <code>README.md</code>
+    </div>
+
+    <div class="export-progress" id="export-progress" role="status">
+      <div class="ep-row">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Preparing your data… (~2 min for a typical creator)</span>
+      </div>
+      <div class="ep-bar"><div></div></div>
+      <p style="font-size:12px;color:var(--fg-muted);margin:10px 0 0">
+        You can close this dialog — we'll email you when it's ready.
+      </p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-backdrop').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="generate-export-btn" onclick="startExport()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.9 18.6A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 5 17.3"/></svg>
+        Generate export
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEMO HELPER TOOLBAR (mockup reviewer only — hidden from UX)
+     ============================================================ -->
+<div aria-hidden="true" style="position:fixed;bottom:16px;right:16px;z-index:999">
+  <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:11px;font-weight:600;color:var(--fg-subtle);display:flex;flex-direction:column;gap:6px;box-shadow:0 8px 24px rgba(17,24,39,0.12);min-width:240px">
+    <div style="color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.06em;font-size:10px">Mockup: tier switcher</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button onclick="setTier('free')"     style="padding:3px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Free</button>
+      <button onclick="setTier('creator')"  style="padding:3px 9px;border-radius:7px;border:1px solid var(--border-strong);background:var(--brand-primary);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Creator ✓</button>
+      <button onclick="setTier('pro')"      style="padding:3px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Pro</button>
+      <button onclick="setTier('business')" style="padding:3px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Business</button>
+    </div>
+    <div style="color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.06em;font-size:10px;margin-top:4px;border-top:1px solid var(--border);padding-top:6px">Demo: export state</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button onclick="setExportState('default')"  style="padding:3px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Default</button>
+      <button onclick="setExportState('pending')"  style="padding:3px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Pending</button>
+      <button onclick="setExportState('ready')"    style="padding:3px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Ready</button>
+    </div>
+  </div>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  /* ── Theme ── */
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  /* ── Cookie toggles ── */
+  function toggleCookie(btn, name) {
+    btn.classList.toggle('on');
+    var isOn = btn.classList.contains('on');
+    btn.setAttribute('aria-checked', String(isOn));
+  }
+
+  /* ── Cookie prefs dirty state ── */
+  function markPrefsDirty() {
+    var btn = document.getElementById('save-cookie-prefs-btn');
+    var status = document.getElementById('cookie-prefs-status');
+    if (btn) btn.disabled = false;
+    if (status) {
+      status.textContent = 'Unsaved changes';
+      status.style.color = 'var(--brand-warm-dark)';
+    }
+  }
+  function saveCookiePrefs() {
+    var btn = document.getElementById('save-cookie-prefs-btn');
+    var status = document.getElementById('cookie-prefs-status');
+    if (btn) btn.disabled = true;
+    if (status) {
+      status.textContent = 'Saved · banner updated for visitors';
+      status.style.color = 'var(--success)';
+      setTimeout(function(){
+        status.textContent = 'All up to date · last saved just now';
+        status.style.color = 'var(--fg-muted)';
+      }, 1800);
+    }
+  }
+
+  /* ── Banner style picker (preview) ── */
+  function setBannerStyle(style, btn) {
+    var picker = document.querySelectorAll('.banner-style-picker .bsp-btn');
+    picker.forEach(function(b){ b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+
+    var stage = document.getElementById('banner-stage');
+    if (!stage) return;
+    // Clear previous preview (keep the faux nav + label)
+    var existing = stage.querySelectorAll('.banner-bar, .banner-corner, .banner-modal-wrap');
+    existing.forEach(function(el){ el.remove(); });
+
+    var html = '';
+    if (style === 'bar') {
+      html =
+        '<div class="banner-bar">' +
+          '<div class="bb-text">We use cookies for analytics and to make your visit better.<small>You can change your preferences any time.</small></div>' +
+          '<div class="bb-actions">' +
+            '<button class="btn btn-ghost">Reject all</button>' +
+            '<button class="btn btn-ghost">Customize</button>' +
+            '<button class="btn btn-primary">Accept all</button>' +
+          '</div>' +
+        '</div>';
+    } else if (style === 'corner') {
+      html =
+        '<div class="banner-corner">' +
+          '<div class="bc-title">Cookies?</div>' +
+          '<div class="bc-desc">We use cookies for analytics. You can change preferences any time.</div>' +
+          '<div class="bc-actions">' +
+            '<button class="btn btn-ghost">Reject</button>' +
+            '<button class="btn btn-primary">Accept</button>' +
+          '</div>' +
+        '</div>';
+    } else if (style === 'modal') {
+      html =
+        '<div class="banner-modal-wrap">' +
+          '<div class="banner-modal">' +
+            '<div class="bm-title">Before you continue…</div>' +
+            '<div class="bm-desc">We use cookies for analytics and to make your visit better. Choose your preferences:</div>' +
+            '<div class="bm-actions">' +
+              '<button class="btn btn-ghost">Reject all</button>' +
+              '<button class="btn btn-ghost">Customize</button>' +
+              '<button class="btn btn-primary">Accept all</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+    stage.insertAdjacentHTML('beforeend', html);
+    markPrefsDirty();
+  }
+
+  /* ── Personal data breakdown expander ── */
+  function toggleBreakdown() {
+    var t = document.getElementById('breakdown-toggle');
+    var p = document.getElementById('breakdown-panel');
+    var open = p.classList.toggle('open');
+    t.classList.toggle('open', open);
+    t.querySelector('svg + *') || true;
+    // Update label
+    var label = t.lastChild;
+    if (label && label.nodeType === Node.TEXT_NODE) {
+      label.textContent = open ? ' Hide detailed breakdown' : ' View detailed breakdown';
+    } else {
+      // Fallback: rebuild text node
+      t.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg> ' +
+        (open ? 'Hide detailed breakdown' : 'View detailed breakdown');
+      if (open) t.classList.add('open');
+    }
+  }
+
+  /* ── Export modal flow ── */
+  function startExport() {
+    var btn = document.getElementById('generate-export-btn');
+    var prog = document.getElementById('export-progress');
+    btn.disabled = true;
+    btn.innerHTML = 'Export queued…';
+    if (prog) prog.classList.add('show');
+    // Mockup — would POST /api/gdpr/export-data
+    setTimeout(function() {
+      // Auto-close after 2s for demo, then surface the "ready" state
+      document.getElementById('export-modal').classList.remove('open');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.9 18.6A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 5 17.3"/></svg> Generate export';
+      if (prog) prog.classList.remove('show');
+      setExportState('ready');
+    }, 2200);
+  }
+
+  /* ── Modal close on backdrop ── */
+  function closeModal(backdrop, event) {
+    if (event.target === backdrop) backdrop.classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(function(m){ m.classList.remove('open'); });
+    }
+  });
+
+  /* ── Tier switcher (demo) ──
+     Per feedback_no_blur_premium_features: DPA section stays VISIBLE for every
+     tier; an inline tier banner appears above when current tier < pro. The
+     gate happens at action-click via gateAction() (shared TierGate.modal). */
+  var TIER_RANK  = (window.TierGate && window.TierGate.TIER_RANK)  || { free: 0, creator: 1, pro: 2, business: 3 };
+  var TIER_LABEL = (window.TierGate && window.TierGate.TIER_LABEL) || { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+  var DEMO_TIER = 'creator';
+
+  function setTier(tier) {
+    DEMO_TIER = tier;
+    document.body.setAttribute('data-current-tier', tier);
+
+    var dpaBanner = document.getElementById('dpa-tier-banner');
+    if (dpaBanner) dpaBanner.style.display = (TIER_RANK[tier] < TIER_RANK.pro) ? 'flex' : 'none';
+
+    // Sidebar handle pill (rendered by partial)
+    var userHandleEl = document.querySelector('.side-user .uhandle');
+    if (userHandleEl) userHandleEl.textContent = '@alexandra · ' + (TIER_LABEL[tier] || tier);
+  }
+
+  function gateAction(featureId, requires, ok) {
+    var current = (typeof DEMO_TIER === 'string' ? DEMO_TIER : 'creator');
+    if (TIER_RANK[current] >= TIER_RANK[requires]) { ok(); return; }
+    var FEATURE_META = {
+      'dpa-download':   { name: 'Download DPA',                       meta: 'GDPR Art. 28 controller-processor agreement' },
+      'subproc-notify': { name: 'Subprocessor change notifications',  meta: 'Email when tadaify changes subprocessors' },
+      'cookie-banner':  { name: 'Centered modal cookie banner style', meta: 'Bottom-bar and corner-card styles available on all tiers' }
+    };
+    var f = FEATURE_META[featureId] || { name: 'This action', meta: '' };
+    if (window.TierGate && window.TierGate.checkAndProceed) {
+      window.TierGate.checkAndProceed({
+        currentTier: current,
+        features: [{ id: featureId, name: f.name, requires: requires, meta: f.meta }],
+        onProceed: ok,
+        onUpgrade: function () { window.location.href = './pricing.html'; }
+      });
+    } else {
+      alert(f.name + ' requires ' + (TIER_LABEL[requires] || requires) + '. Upgrade to continue.');
+    }
+  }
+  window.gateAction = gateAction;
+
+  /* ── Export state demo (default / pending / ready) ── */
+  function setExportState(state) {
+    var bar = document.getElementById('export-ready-bar');
+    var requestBtn = document.getElementById('request-export-btn');
+    if (!bar || !requestBtn) return;
+
+    if (state === 'default') {
+      bar.classList.remove('show');
+      requestBtn.disabled = false;
+      requestBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Request export';
+    } else if (state === 'pending') {
+      bar.classList.remove('show');
+      requestBtn.disabled = true;
+      requestBtn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></span> Export in progress…';
+    } else if (state === 'ready') {
+      bar.classList.add('show');
+      requestBtn.disabled = false;
+      requestBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Request another export';
+    }
+  }
+
+  /* ── Init ── */
+  setTier('creator');
+  setExportState('default');
+</script>
+</body>
+</html>
