@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<!--
+  TierGate modal — the SHARED upsell modal that appears when a creator
+  clicks "Save" on a feature requiring a higher subscription tier than
+  they currently have.
+
+  This is THE single upsell scene in tadaify. Per locked UX rules:
+    - Premium features are FULLY visible and interactive on every tier
+      everywhere in the editor (per feedback_no_blur_premium_features).
+    - Free / lower-tier creator can configure them, fill them out, see
+      the live preview just like any paid creator.
+    - The gate happens at SAVE — that's when this modal pops.
+    - This is the ONLY place we say "needs <tier>". No sticky banners
+      (per AP-031), no popups after N days, no email nags.
+
+  Sister files that already reference TierGate as a placeholder
+  (wiring lands in a follow-up PR after this design is accepted):
+    - app-block-editor.html: BLOCK_TYPES.newsletter A/B + Schedule
+      visibility fields call window.TierGate.checkAndProceed at save.
+    - app-page-blog.html: post composer Save button calls
+      TierGate.checkAndProceed for premium author dropdown +
+      far-future scheduling.
+
+  Source-of-truth memories driving every decision in this file:
+    - feedback_no_blur_premium_features (gate at save, never display)
+    - feedback_no_right_side_drawers (centered modal, never drawer)
+    - feedback_tadaify_simple_ui_no_advanced_toggle (Notion/Linear voice)
+    - feedback_no_fake_margin_tier_gating (gate only on real cost)
+    - feedback_mockup_full_feature_vision (every state interactive)
+    - feedback_dec_format_v3_business_cost (3 pricing variants per
+      paid feature — mirrored in the per-tier feature lists below)
+
+  Cost frame (why this modal matters, not why it costs anything to ship):
+    - 0 conversion → 0 revenue. This modal IS the paid-funnel ending.
+    - Friendly framing > pushy framing. "Just one step" wins over
+      "Upgrade required" in every SaaS A/B test we've benchmarked.
+    - "Your work is saved as draft" is load-bearing — without it,
+      creator who walks away loses configuration and never comes back.
+
+  Tier reference (canonical, per pricing.html):
+    Free       $0/mo
+    Creator    $8/mo  (annual: ~$6.67/mo, "Save 2 months")
+    Pro        $19/mo (annual: ~$15.83/mo)
+    Business   $49/mo (annual: ~$40.83/mo)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TierGate modal — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+
+    /* =========================================================================
+       Demo launcher (top of standalone file).
+       Eight trigger buttons, one per scenario. Click any to open the live
+       modal with the matching content + matching state.
+       ========================================================================= */
+    .demo-launcher {
+      max-width: 880px;
+      margin: clamp(24px, 4vw, 48px) auto;
+      padding: clamp(20px, 3vw, 32px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .demo-launcher h1 {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.8vw, 32px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .demo-launcher .subline {
+      margin-top: 8px;
+      font-size: 14.5px;
+      color: var(--fg-muted);
+      max-width: 660px;
+      line-height: 1.55;
+    }
+    .demo-launcher h2 {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 24px 0 10px;
+      color: var(--fg);
+    }
+    .demo-launcher h2 .num {
+      display: inline-block;
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      background: var(--bg-muted);
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 11.5px; font-weight: 700;
+      text-align: center; line-height: 22px;
+      margin-right: 8px;
+      vertical-align: 2px;
+    }
+    .trigger-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 640px) { .trigger-grid { grid-template-columns: 1fr; } }
+    .trigger-btn {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      text-align: left;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: border .14s, transform .12s, box-shadow .14s;
+    }
+    .trigger-btn:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .trigger-btn .lbl {
+      font-size: 14px; font-weight: 600;
+      color: var(--fg);
+      line-height: 1.35;
+    }
+    .trigger-btn .meta {
+      font-size: 12px;
+      color: var(--fg-muted);
+      font-weight: 500;
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap;
+    }
+    .trigger-btn .arrow {
+      display: inline-block;
+      width: 4px; height: 4px;
+      background: var(--fg-subtle);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend {
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: var(--bg-muted);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--fg-muted);
+      line-height: 1.6;
+    }
+    .legend b { color: var(--fg); font-weight: 600; }
+    .legend code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      padding: 1px 6px;
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      border-radius: 4px;
+    }
+
+    /* =========================================================================
+       Modal — centered, ~640px wide, full-screen <600px.
+       Per feedback_no_right_side_drawers: NEVER a slide-in drawer.
+       ========================================================================= */
+    .tg-backdrop {
+      position: fixed; inset: 0; z-index: 80;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity .22s ease;
+    }
+    .tg-backdrop.is-open { display: flex; opacity: 1; }
+    .tg-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      width: min(640px, 100%);
+      max-height: calc(100vh - 32px);
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.98);
+      transition: transform .22s cubic-bezier(.22,.61,.36,1);
+      overflow: hidden;
+      position: relative;
+    }
+    .tg-backdrop.is-open .tg-modal { transform: translateY(0) scale(1); }
+    @media (max-width: 600px) {
+      .tg-backdrop { padding: 0; align-items: stretch; }
+      .tg-modal { border-radius: 0; max-height: 100vh; height: 100vh; width: 100%; }
+    }
+
+    /* Head (sticky, friendly framing) */
+    .tg-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .tg-head h3 {
+      font-family: var(--font-display);
+      font-size: 19px; font-weight: 600;
+      flex: 1; margin: 0;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+    .tg-head h3 .sparkle { color: var(--brand-warm); margin-right: 6px; }
+    .tg-head h3 .feature-name { color: var(--brand-primary); }
+    .tg-head h3 .tier-name { color: var(--brand-warm-dark); font-weight: 700; }
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      flex-shrink: 0;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* Body */
+    .tg-body {
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 18px;
+      flex: 1;
+    }
+
+    /* Section 1 — "You set up:" trigger context */
+    .tg-context {
+      padding: 14px 16px;
+      background: var(--bg-muted);
+      border-radius: 12px;
+    }
+    .tg-context .ctx-h {
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .tg-context ul {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .tg-context li {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--fg);
+      padding-left: 18px;
+      position: relative;
+    }
+    .tg-context li::before {
+      content: "•";
+      position: absolute;
+      left: 6px;
+      color: var(--brand-primary);
+      font-weight: 700;
+    }
+    .tg-context li code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      padding: 1px 5px;
+      background: var(--bg-elevated);
+      color: var(--brand-primary);
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .tg-context li b { font-weight: 600; color: var(--fg); }
+
+    /* Section 2 — Tier panel ("X plan ($Y/mo) gives you:") */
+    .tg-tier-panel {
+      padding: 16px 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04));
+      border: 1.5px solid rgba(99,102,241,0.18);
+      border-radius: 14px;
+    }
+    .tg-tier-panel.is-business {
+      background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(253,230,138,0.10));
+      border-color: rgba(245,158,11,0.30);
+    }
+    .tg-tier-head {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .tg-tier-head .tier-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px;
+      background: var(--brand-primary);
+      color: #FFF;
+      border-radius: 99px;
+      font-family: var(--font-sans);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .tg-tier-panel.is-business .tier-pill {
+      background: var(--brand-warm-dark);
+    }
+    .tg-tier-head .tier-title {
+      font-family: var(--font-display);
+      font-size: 17px; font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+    }
+    .tg-tier-head .tier-price {
+      margin-left: auto;
+      font-family: var(--font-sans);
+      font-size: 13.5px; font-weight: 600;
+      color: var(--fg);
+    }
+    .tg-tier-head .tier-price .price-amt { font-size: 17px; }
+    .tg-tier-head .tier-price .price-cadence {
+      color: var(--fg-muted);
+      font-weight: 500;
+      font-size: 12px;
+    }
+    .tg-tier-features {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .tg-tier-features li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--fg);
+    }
+    .tg-tier-features li .check {
+      flex-shrink: 0;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--success);
+      color: #FFF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800;
+      margin-top: 2px;
+    }
+    .tg-tier-panel.is-business .tg-tier-features li .check {
+      background: var(--brand-warm-dark);
+    }
+    .tg-tier-features li b {
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    /* Section 3 — "Your work is saved as draft" reassurance */
+    .tg-draft {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: var(--success-bg);
+      border: 1px solid rgba(16,185,129,0.22);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--fg);
+      line-height: 1.5;
+    }
+    .tg-draft .draft-icon {
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+    .tg-draft b { color: var(--fg); font-weight: 600; }
+
+    /* Section 4 — "Or save without this feature" partial-save inline link */
+    .tg-partial {
+      padding: 11px 14px;
+      background: var(--bg);
+      border: 1px dashed var(--border-strong);
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .tg-partial a {
+      color: var(--brand-primary);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: rgba(99,102,241,0.35);
+      text-underline-offset: 2px;
+    }
+    .tg-partial a:hover {
+      text-decoration-color: var(--brand-primary);
+    }
+
+    /* Yearly/monthly billing toggle inside the modal */
+    .tg-bill-toggle {
+      display: inline-flex;
+      gap: 0;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 99px;
+      padding: 3px;
+      font-family: var(--font-sans);
+    }
+    .tg-bill-toggle button {
+      padding: 5px 12px;
+      font-size: 11.5px; font-weight: 600;
+      border-radius: 99px;
+      border: 0;
+      background: transparent;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .14s, color .14s;
+    }
+    .tg-bill-toggle button.is-active {
+      background: var(--fg);
+      color: #FFF;
+    }
+    .tg-bill-toggle .save-chip {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 1px 5px;
+      background: var(--success);
+      color: #FFF;
+      border-radius: 99px;
+      margin-left: 4px;
+      vertical-align: 1px;
+    }
+    .tg-bill-toggle button.is-active .save-chip { background: var(--success); }
+
+    /* Foot (sticky) */
+    .tg-foot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex; gap: 10px; align-items: center;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .tg-foot .left  { display: flex; gap: 8px; align-items: center; }
+    .tg-foot .right { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+    @media (max-width: 600px) {
+      .tg-foot { flex-direction: column; align-items: stretch; }
+      .tg-foot .left, .tg-foot .right { width: 100%; }
+      .tg-foot .right { margin-left: 0; flex-direction: column; }
+      .tg-foot .right .btn { width: 100%; }
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      font-family: var(--font-sans);
+      font-size: 13.5px; font-weight: 600;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .14s, border-color .14s, color .14s, transform .12s, box-shadow .14s;
+    }
+    .btn-primary {
+      background: var(--brand-primary);
+      color: #FFF;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.30);
+    }
+    .btn-primary:not(:disabled):hover {
+      background: var(--brand-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(99,102,241,0.40);
+    }
+    .btn-primary:disabled {
+      background: var(--bg-sunken);
+      color: var(--fg-subtle);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      border-color: var(--border-strong);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-muted);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg-muted);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-muted);
+      color: var(--fg);
+    }
+    .btn-warm {
+      background: var(--brand-warm-dark);
+      color: #FFF;
+      box-shadow: 0 4px 14px rgba(245,158,11,0.30);
+    }
+    .btn-warm:not(:disabled):hover {
+      background: #B45309;
+      transform: translateY(-1px);
+    }
+    .btn-spinner {
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #FFF;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      display: none;
+    }
+    .is-loading .btn-spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-spinner { animation: none; }
+    }
+
+    .price-sub {
+      font-size: 11px;
+      color: var(--fg-subtle);
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    /* =========================================================================
+       Success state — celebration after Stripe checkout returns OK.
+       Replaces entire modal contents.
+       ========================================================================= */
+    .tg-success {
+      padding: 36px 28px 28px;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .tg-success .burst {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+      color: #FFF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      box-shadow: 0 10px 36px rgba(99,102,241,0.40);
+      position: relative;
+      z-index: 2;
+    }
+    .tg-success h3 {
+      font-family: var(--font-display);
+      font-size: 24px; font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+      max-width: 480px;
+      line-height: 1.25;
+      position: relative; z-index: 2;
+    }
+    .tg-success p {
+      font-size: 14px;
+      color: var(--fg-muted);
+      max-width: 440px;
+      line-height: 1.55;
+      margin: 0;
+      position: relative; z-index: 2;
+    }
+    .tg-success .actions {
+      margin-top: 8px;
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      position: relative; z-index: 2;
+    }
+
+    /* Confetti — pure CSS keyframes, ~12 squares.
+       Respects prefers-reduced-motion: reduce — see media query below. */
+    .confetti-piece {
+      position: absolute;
+      top: -8px;
+      width: 8px; height: 12px;
+      border-radius: 1px;
+      animation: confetti-fall 2s ease-out forwards;
+      z-index: 1;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateY(380px) rotate(540deg); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .confetti-piece { display: none; }
+    }
+
+    /* =========================================================================
+       Cancel state — friendly retry/exit after Stripe checkout cancel.
+       ========================================================================= */
+    .tg-cancel {
+      padding: 32px 28px 24px;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px;
+    }
+    .tg-cancel .icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--bg-muted);
+      color: var(--fg-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    .tg-cancel h3 {
+      font-family: var(--font-display);
+      font-size: 21px; font-weight: 600;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .tg-cancel p {
+      font-size: 13.5px;
+      color: var(--fg-muted);
+      max-width: 420px;
+      line-height: 1.55;
+      margin: 0;
+    }
+    .tg-cancel .actions {
+      margin-top: 6px;
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    }
+
+    /* =========================================================================
+       Toast (already-on-right-tier scenario — modal does NOT open).
+       ========================================================================= */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      z-index: 90;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      background: var(--fg);
+      color: var(--fg-inverse);
+      border-radius: 12px;
+      box-shadow: var(--shadow-xl);
+      font-family: var(--font-sans);
+      font-size: 13.5px; font-weight: 500;
+      max-width: 320px;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform .22s, opacity .22s;
+    }
+    .toast.is-visible {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .toast .toast-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--success);
+      color: #FFF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .toast.toast-draft .toast-check {
+      background: var(--brand-warm);
+    }
+
+    /* State chip strip (top of modal — lets reviewer flip states for
+       active trigger). */
+    .state-strip {
+      padding: 10px 22px;
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      font-size: 11.5px;
+    }
+    .state-strip .lbl {
+      font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-right: 4px;
+    }
+    .state-chip {
+      padding: 4px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: background .12s, color .12s, border-color .12s;
+    }
+    .state-chip:hover {
+      border-color: var(--border-strong);
+      color: var(--fg);
+    }
+    .state-chip.is-active {
+      background: var(--brand-primary);
+      color: #FFF;
+      border-color: var(--brand-primary);
+    }
+
+    /* =========================================================================
+       Static state-variants (rendered below the demo launcher — review aid).
+       Each variant frame shows one frozen state for cold review.
+       ========================================================================= */
+    .variants {
+      max-width: 880px;
+      margin: 0 auto 64px;
+      padding: 0 24px;
+    }
+    .variants > h2 {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 36px 0 6px;
+    }
+    .variants > h2:first-child { margin-top: 0; }
+    .variants > p {
+      font-size: 13.5px;
+      color: var(--fg-muted);
+      margin-bottom: 16px;
+      max-width: 660px;
+      line-height: 1.55;
+    }
+    .frame {
+      border: 1px dashed var(--border-strong);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(11,15,30,0.04);
+      display: flex; justify-content: center;
+    }
+    .frame .tg-modal {
+      transform: none !important;
+      width: min(620px, 100%);
+      box-shadow: var(--shadow);
+      max-height: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       Demo launcher — eight trigger buttons mimic the Save action across
+       different feature/tier combinations. In production these buttons
+       live across app-block-editor.html, app-page-blog.html, settings flows,
+       etc. — every Save action that touches a premium-tier feature.
+       ========================================================================= -->
+  <div class="demo-launcher">
+    <h1>✨ TierGate modal — shared upsell flow at save</h1>
+    <p class="subline">
+      The single shared upsell modal that appears when a creator clicks
+      Save on a feature that needs a higher tier. Pick a trigger below
+      to open the modal with the matching content + state. Premium
+      features stay fully visible + interactive in the editor — the
+      gate fires only here, at save.
+    </p>
+
+    <h2><span class="num">1</span>Trigger by feature</h2>
+    <div class="trigger-grid">
+      <button class="trigger-btn" type="button" onclick="openTrigger('ab')">
+        <span class="lbl">A/B testing on Newsletter signup</span>
+        <span class="meta">From <b>Free</b> <span class="arrow"></span> needs <b>Business</b> $49/mo</span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('domain')">
+        <span class="lbl">Custom domain <code>links.alexandra.com</code></span>
+        <span class="meta">From <b>Free</b> <span class="arrow"></span> needs <b>Creator</b> $8/mo + $2 add-on</span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('team')">
+        <span class="lbl">Team member invite</span>
+        <span class="meta">From <b>Pro</b> <span class="arrow"></span> needs <b>Business</b> $49/mo</span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('schedule')">
+        <span class="lbl">Schedule visibility beyond 7 days</span>
+        <span class="meta">From <b>Free</b> <span class="arrow"></span> needs <b>Creator</b> $8/mo</span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('klaviyo')">
+        <span class="lbl">Klaviyo custom fields + segments</span>
+        <span class="meta">From <b>Pro</b> <span class="arrow"></span> needs <b>Business</b> $49/mo</span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('multi')">
+        <span class="lbl">Multi-feature trigger (A/B + custom domain)</span>
+        <span class="meta">From <b>Free</b> <span class="arrow"></span> highest required <span class="arrow"></span> <b>Business</b></span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('already')">
+        <span class="lbl">Already on right tier (no modal — just toast)</span>
+        <span class="meta">From <b>Business</b> <span class="arrow"></span> needs <b>Business</b> <span class="arrow"></span> silent save</span>
+      </button>
+      <button class="trigger-btn" type="button" onclick="openTrigger('admin-required')">
+        <span class="lbl">Team member invite as Editor (not Admin)</span>
+        <span class="meta">On <b>Business</b> <span class="arrow"></span> ask account owner</span>
+      </button>
+    </div>
+
+    <h2><span class="num">2</span>Force a state inside the open modal</h2>
+    <p style="margin: 0 0 8px; font-size: 13px; color: var(--fg-muted);">
+      Open a trigger first, then use the state strip at the top of the
+      modal to flip between states for that trigger.
+    </p>
+
+    <div class="legend">
+      <b>How it works in production.</b> A creator on Free configures
+      A/B testing on a Newsletter block — fully visible, fully
+      interactive (per <code>feedback_no_blur_premium_features</code>).
+      They click <b>Save</b>. The block-editor calls
+      <code>TierGate.checkAndProceed({features, currentTier, …})</code>.
+      If <b>currentTier &gt;= max(features.requires)</b> → save proceeds
+      silently (toast). Otherwise this modal opens with the trigger
+      context + the lowest-tier-that-covers-everything panel + the
+      reassurance + (optional) save-without partial branch.
+      <br><br>
+      <b>Yearly toggle.</b> Annual saves 2 months (10/12 of monthly).
+      Defaults to whatever <code>pricing.html</code> is showing — annual
+      in the canonical mockup.
+      <br><br>
+      <b>This is the ONLY upsell scene in tadaify.</b> No sticky banner
+      (per AP-031), no "you're missing out" emails, no popups after N days.
+      Premium features are visible everywhere. The gate is one friendly
+      modal at one moment.
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Live modal — opens via demo triggers above.
+       Sections render based on TG_STATE.activeTrigger.
+       ========================================================================= -->
+  <div
+    class="tg-backdrop"
+    id="tg-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tg-h"
+    onclick="if(event.target===this) requestClose()"
+  >
+    <div class="tg-modal" role="document">
+
+      <!-- State chip strip (review aid — flips between states for active trigger) -->
+      <div class="state-strip" id="tg-state-strip">
+        <span class="lbl">State:</span>
+        <button class="state-chip is-active" type="button" data-state="default" onclick="setModalState('default')">Default</button>
+        <button class="state-chip" type="button" data-state="loading" onclick="setModalState('loading')">Loading checkout</button>
+        <button class="state-chip" type="button" data-state="success" onclick="setModalState('success')">Checkout success</button>
+        <button class="state-chip" type="button" data-state="cancel" onclick="setModalState('cancel')">Checkout cancel</button>
+      </div>
+
+      <!-- Default + state-overlayed regions -->
+      <div id="tg-content">
+
+        <!-- HEAD (rewritten by JS per trigger) -->
+        <div class="tg-head" id="tg-head-region">
+          <h3 id="tg-h">
+            <span class="sparkle">✨</span>
+            Just one step — <span class="feature-name" id="tg-feature-name">A/B testing</span>
+            needs <span class="tier-name" id="tg-tier-name">Business</span>
+          </h3>
+          <button class="iconbtn" type="button" onclick="requestClose()" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- BODY (rewritten by JS per trigger) -->
+        <div class="tg-body" id="tg-body-region">
+          <!-- 4 sections render here -->
+        </div>
+
+        <!-- FOOT (rewritten by JS per trigger) -->
+        <div class="tg-foot" id="tg-foot-region">
+          <!-- buttons render here -->
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast (already-on-right-tier + draft + retry) -->
+  <div class="toast" id="tg-toast">
+    <span class="toast-check">✓</span>
+    <span class="toast-msg">All set</span>
+  </div>
+
+  <!-- =========================================================================
+       Static state-variants (always rendered — review aid).
+       Each frame shows one frozen state of the modal for cold review,
+       independent of the live demo above.
+       ========================================================================= -->
+  <div class="variants">
+
+    <h2>State 1 — Default (A/B testing on Newsletter, Free → Business)</h2>
+    <p>
+      The canonical state. Friendly head ("Just one step"), trigger context
+      (what creator did), tier panel (what Business unlocks), reassurance
+      (work saved as draft), partial-save branch (save just Variant A),
+      and footer (Save as draft / Upgrade $49/mo with monthly/yearly toggle).
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-head">
+          <h3>
+            <span class="sparkle">✨</span>
+            Just one step — <span class="feature-name">A/B testing</span> needs <span class="tier-name">Business</span>
+          </h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="tg-body">
+          <div class="tg-context">
+            <div class="ctx-h">You set up:</div>
+            <ul>
+              <li>A/B test on <b>Newsletter signup</b> block — <b>2 variants</b> ready</li>
+              <li>Variant B differs in: <code>heading</code>, <code>CTA copy</code></li>
+            </ul>
+          </div>
+          <div class="tg-tier-panel is-business">
+            <div class="tg-tier-head">
+              <span class="tier-pill">🔓 BUSINESS</span>
+              <span class="tier-title">Business plan</span>
+              <span class="tier-price"><span class="price-amt">$40.83</span><span class="price-cadence">/mo billed yearly</span></span>
+            </div>
+            <ul class="tg-tier-features">
+              <li><span class="check">✓</span><span>Everything in Pro, plus:</span></li>
+              <li><span class="check">✓</span><span><b>A/B testing on every block</b> — 50/50 split, winner promoted automatically</span></li>
+              <li><span class="check">✓</span><span><b>Team members + roles</b> (Admin / Editor / Viewer) — up to 10 included</span></li>
+              <li><span class="check">✓</span><span><b>Identity stitching</b> across visits + devices</span></li>
+              <li><span class="check">✓</span><span><b>Klaviyo custom fields + segments</b></span></li>
+              <li><span class="check">✓</span><span><b>Parquet R2 monthly archive</b> + scheduled email digests</span></li>
+              <li><span class="check">✓</span><span><b>Replay</b> (scrub past traffic sessions)</span></li>
+            </ul>
+          </div>
+          <div class="tg-draft">
+            <span class="draft-icon">💾</span>
+            <span><b>Your work is saved as draft.</b> After upgrade it goes live in one click — no re-doing.</span>
+          </div>
+          <div class="tg-partial">
+            Or <a>save without A/B testing</a> — keeps your block live with just Variant A. You can add Variant B back any time.
+          </div>
+        </div>
+        <div class="tg-foot">
+          <div class="left">
+            <button class="btn btn-secondary">Save as draft</button>
+          </div>
+          <div class="right">
+            <div class="tg-bill-toggle">
+              <button>Monthly</button>
+              <button class="is-active">Yearly <span class="save-chip">SAVE 2 MO</span></button>
+            </div>
+            <button class="btn btn-warm">Upgrade — $40.83/mo<span class="price-sub">billed yearly</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 2 — Loading checkout</h2>
+    <p>
+      Primary button shows spinner + "Opening checkout…", every other
+      control is disabled. Brief — typically &lt;1.5s before Stripe
+      hosted checkout opens.
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-head">
+          <h3>
+            <span class="sparkle">✨</span>
+            Just one step — <span class="feature-name">Custom domain</span> needs <span class="tier-name">Creator</span>
+          </h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="tg-body">
+          <div class="tg-context">
+            <div class="ctx-h">You set up:</div>
+            <ul>
+              <li>Custom domain <code>links.alexandra.com</code> for your tadaify page</li>
+            </ul>
+          </div>
+          <div class="tg-tier-panel">
+            <div class="tg-tier-head">
+              <span class="tier-pill">🔓 CREATOR</span>
+              <span class="tier-title">Creator plan</span>
+              <span class="tier-price"><span class="price-amt">$6.67</span><span class="price-cadence">/mo billed yearly</span></span>
+            </div>
+            <ul class="tg-tier-features">
+              <li><span class="check">✓</span><span>Everything in Free, plus:</span></li>
+              <li><span class="check">✓</span><span><b>1 custom domain included</b> (extras at $2/mo each)</span></li>
+              <li><span class="check">✓</span><span><b>Schedule blocks</b> for any future date</span></li>
+              <li><span class="check">✓</span><span><b>Hide tadaify branding</b> on your public page</span></li>
+              <li><span class="check">✓</span><span><b>5-min analytics refresh</b> · 90-day history window</span></li>
+              <li><span class="check">✓</span><span><b>Priority email support</b> (under 24h)</span></li>
+              <li><span class="check">✓</span><span><b>Verified ✓ badge</b> on your public page</span></li>
+            </ul>
+          </div>
+          <div class="tg-draft">
+            <span class="draft-icon">💾</span>
+            <span><b>Your work is saved as draft.</b> After upgrade your custom domain is one DNS step away.</span>
+          </div>
+        </div>
+        <div class="tg-foot">
+          <div class="left">
+            <button class="btn btn-secondary" disabled>Save as draft</button>
+          </div>
+          <div class="right">
+            <div class="tg-bill-toggle" style="opacity: 0.5; pointer-events: none;">
+              <button>Monthly</button>
+              <button class="is-active">Yearly <span class="save-chip">SAVE 2 MO</span></button>
+            </div>
+            <button class="btn btn-primary is-loading" disabled>
+              <span class="btn-spinner" style="display: inline-block;"></span>
+              Opening checkout…
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 3 — Stripe checkout success</h2>
+    <p>
+      Returning from Stripe with success — entire modal contents swap
+      to celebration. Confetti burst (CSS only, ~12 squares, respects
+      <code>prefers-reduced-motion</code>). Continue button takes them
+      back to publish their staged work.
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-success">
+          <!-- Static confetti for the variant frame; the live modal
+               instantiates 12 of these dynamically when entering this state -->
+          <span class="confetti-piece" style="left:8%;  background: #6366F1; animation-delay: 0s;"></span>
+          <span class="confetti-piece" style="left:18%; background: #F59E0B; animation-delay: 0.1s;"></span>
+          <span class="confetti-piece" style="left:28%; background: #10B981; animation-delay: 0.2s;"></span>
+          <span class="confetti-piece" style="left:38%; background: #8B5CF6; animation-delay: 0.05s;"></span>
+          <span class="confetti-piece" style="left:48%; background: #EF4444; animation-delay: 0.18s;"></span>
+          <span class="confetti-piece" style="left:58%; background: #FDE68A; animation-delay: 0.07s;"></span>
+          <span class="confetti-piece" style="left:68%; background: #6366F1; animation-delay: 0.22s;"></span>
+          <span class="confetti-piece" style="left:78%; background: #F59E0B; animation-delay: 0.12s;"></span>
+          <span class="confetti-piece" style="left:88%; background: #10B981; animation-delay: 0.04s;"></span>
+
+          <div class="burst">✨</div>
+          <h3>You're on Business now! Let's publish your A/B test.</h3>
+          <p>Your block was saved as draft. We'll take you straight back to publish — your variants are exactly how you left them.</p>
+          <div class="actions">
+            <button class="btn btn-primary">Continue → Publish A/B test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 4 — Stripe checkout cancel</h2>
+    <p>
+      Returning from Stripe without checking out. Friendly message,
+      no shame, two paths: try again or save as draft and exit.
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-cancel">
+          <div class="icon">💾</div>
+          <h3>No worries — your work is still saved as draft.</h3>
+          <p>Want to try the upgrade again, or come back to it later? Either way, nothing's lost.</p>
+          <div class="actions">
+            <button class="btn btn-warm">Try upgrade again</button>
+            <button class="btn btn-secondary">Save as draft and exit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 5 — Already on right tier (toast, no modal)</h2>
+    <p>
+      <code>TierGate.checkAndProceed</code> is called by every Save handler
+      regardless of whether premium features are involved. When the
+      creator's current tier already covers everything, no modal opens —
+      a small toast confirms the save silently. Renders bottom-right.
+    </p>
+    <div class="frame" style="min-height: 140px; align-items: center; padding: 32px;">
+      <div class="toast is-visible" style="position: relative; bottom: auto; right: auto;">
+        <span class="toast-check">✓</span>
+        <span class="toast-msg">All set — A/B test is live</span>
+      </div>
+    </div>
+
+    <h2>State 6 — Yearly-plan creator (different upgrade label)</h2>
+    <p>
+      When the creator has a yearly billing cycle on file (or has switched
+      the in-modal toggle to yearly), the primary button reads
+      "Upgrade — $40.83/mo billed yearly (save $98)" with a small "billed
+      annually" subtext. Same modal, different copy on the upgrade button.
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-head">
+          <h3>
+            <span class="sparkle">✨</span>
+            Just one step — <span class="feature-name">Klaviyo custom fields</span> need <span class="tier-name">Business</span>
+          </h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="tg-body">
+          <div class="tg-context">
+            <div class="ctx-h">You set up:</div>
+            <ul>
+              <li>Newsletter block syncing to <b>Klaviyo</b></li>
+              <li>Custom field mapping: <code>signup_source → tadaify_block_id</code></li>
+              <li>Auto-add to segment: <code>spring-launch-2026</code></li>
+            </ul>
+          </div>
+          <div class="tg-tier-panel is-business">
+            <div class="tg-tier-head">
+              <span class="tier-pill">🔓 BUSINESS</span>
+              <span class="tier-title">Business plan</span>
+              <span class="tier-price"><span class="price-amt">$40.83</span><span class="price-cadence">/mo billed yearly</span></span>
+            </div>
+            <ul class="tg-tier-features">
+              <li><span class="check">✓</span><span>Everything in Pro, plus:</span></li>
+              <li><span class="check">✓</span><span><b>Klaviyo custom fields + segments</b></span></li>
+              <li><span class="check">✓</span><span><b>A/B testing on every block</b></span></li>
+              <li><span class="check">✓</span><span><b>Team members + roles</b> (10 included)</span></li>
+              <li><span class="check">✓</span><span><b>Identity stitching</b> across visits + devices</span></li>
+              <li><span class="check">✓</span><span><b>Replay</b> + Parquet R2 + scheduled digests</span></li>
+            </ul>
+          </div>
+          <div class="tg-draft">
+            <span class="draft-icon">💾</span>
+            <span><b>Your work is saved as draft.</b> After upgrade your Klaviyo mapping syncs on the next signup.</span>
+          </div>
+        </div>
+        <div class="tg-foot">
+          <div class="left">
+            <button class="btn btn-secondary">Save as draft</button>
+          </div>
+          <div class="right">
+            <div class="tg-bill-toggle">
+              <button>Monthly</button>
+              <button class="is-active">Yearly <span class="save-chip">SAVE 2 MO</span></button>
+            </div>
+            <button class="btn btn-warm">Upgrade — $40.83/mo<span class="price-sub">billed yearly · save $98</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 7 — Team-admin gating (Business creator, not Admin role)</h2>
+    <p>
+      Edge case: creator is on Business already, but the action they
+      tried needs Admin role on the workspace. The modal's framing
+      pivots from "upgrade" to "ask your account owner" — different
+      problem, different solve.
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-head">
+          <h3>
+            <span class="sparkle">✨</span>
+            Just one step — <span class="feature-name">Adding team members</span> needs <span class="tier-name">Admin role</span>
+          </h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="tg-body">
+          <div class="tg-context">
+            <div class="ctx-h">You tried to:</div>
+            <ul>
+              <li>Invite <b>maya@example.com</b> as <b>Editor</b></li>
+              <li>Workspace: <b>alexandra-creative</b> · 6 of 10 seats used</li>
+            </ul>
+          </div>
+          <div class="tg-tier-panel">
+            <div class="tg-tier-head">
+              <span class="tier-pill" style="background: var(--fg);">👤 ADMIN ROLE</span>
+              <span class="tier-title">Your workspace already has Business — you just need Admin</span>
+            </div>
+            <ul class="tg-tier-features">
+              <li><span class="check">✓</span><span><b>You're on Business</b> — Team is part of your plan</span></li>
+              <li><span class="check">✓</span><span>Adding/removing team members is an <b>Admin-only action</b></span></li>
+              <li><span class="check">✓</span><span>Your account owner is <b>alexandra@example.com</b></span></li>
+            </ul>
+          </div>
+          <div class="tg-draft" style="background: var(--info-bg); border-color: rgba(59,130,246,0.22);">
+            <span class="draft-icon">📋</span>
+            <span><b>We saved the invite as a request.</b> Your owner will see it next time they open Settings → Team.</span>
+          </div>
+          <div class="tg-partial">
+            Or <a>copy a request link</a> to send your owner directly — they can approve in one click.
+          </div>
+        </div>
+        <div class="tg-foot">
+          <div class="left">
+            <button class="btn btn-secondary">Cancel invite</button>
+          </div>
+          <div class="right">
+            <button class="btn btn-primary">Notify alexandra@example.com</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 8 — Multi-feature trigger (A/B + Custom domain, Free → Business)</h2>
+    <p>
+      Edge case: creator's Save action requires more than one tier
+      feature. The modal lists every triggered feature in section 1
+      and proposes the highest tier covering all of them (Business in
+      this example). One Save = one upsell.
+    </p>
+    <div class="frame">
+      <div class="tg-modal">
+        <div class="tg-head">
+          <h3>
+            <span class="sparkle">✨</span>
+            Just one step — <span class="feature-name">A/B testing + custom domain</span> need <span class="tier-name">Business</span>
+          </h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="tg-body">
+          <div class="tg-context">
+            <div class="ctx-h">You set up:</div>
+            <ul>
+              <li>A/B test on <b>Newsletter signup</b> — 2 variants ready (needs <b>Business</b>)</li>
+              <li>Custom domain <code>links.alexandra.com</code> for your tadaify page (needs <b>Creator</b>)</li>
+              <li>Schedule visibility from <b>Jan 15 → Feb 28</b> (needs <b>Creator</b>)</li>
+            </ul>
+          </div>
+          <div class="tg-tier-panel is-business">
+            <div class="tg-tier-head">
+              <span class="tier-pill">🔓 BUSINESS</span>
+              <span class="tier-title">Business plan covers all three</span>
+              <span class="tier-price"><span class="price-amt">$40.83</span><span class="price-cadence">/mo billed yearly</span></span>
+            </div>
+            <ul class="tg-tier-features">
+              <li><span class="check">✓</span><span>Everything in Pro, plus:</span></li>
+              <li><span class="check">✓</span><span><b>A/B testing on every block</b></span></li>
+              <li><span class="check">✓</span><span><b>Custom domain</b> + schedule visibility (from Creator)</span></li>
+              <li><span class="check">✓</span><span><b>Real-time live view</b> + 1-year history (from Pro)</span></li>
+              <li><span class="check">✓</span><span><b>Team members + roles</b> (10 included)</span></li>
+              <li><span class="check">✓</span><span><b>Klaviyo custom fields + segments</b></span></li>
+              <li><span class="check">✓</span><span><b>Replay</b> + Parquet R2 + scheduled digests</span></li>
+            </ul>
+          </div>
+          <div class="tg-draft">
+            <span class="draft-icon">💾</span>
+            <span><b>Your work is saved as draft.</b> All three setups go live in one click after upgrade.</span>
+          </div>
+          <div class="tg-partial">
+            Or <a>save without A/B testing</a> (Variant A goes live; you keep the custom domain + schedule for after upgrade).
+          </div>
+        </div>
+        <div class="tg-foot">
+          <div class="left">
+            <button class="btn btn-secondary">Save as draft</button>
+          </div>
+          <div class="right">
+            <div class="tg-bill-toggle">
+              <button>Monthly</button>
+              <button class="is-active">Yearly <span class="save-chip">SAVE 2 MO</span></button>
+            </div>
+            <button class="btn btn-warm">Upgrade — $40.83/mo<span class="price-sub">billed yearly</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       Demo state machine (plain JS, no framework).
+       Implementation PR will lift this to a real React/Vue component;
+       treat this as the BEHAVIOURAL CONTRACT.
+       ========================================================================= -->
+  <script>
+    // ---------------------------------------------------------------
+    // Tier constants — mirror app-block-editor.html for forward compat
+    // ---------------------------------------------------------------
+    var TIER_RANK  = { free: 0, creator: 1, pro: 2, business: 3 };
+    var TIER_LABEL = { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+    var TIER_PRICE_MONTHLY = { free: 0, creator: 8, pro: 19, business: 49 };
+    // Annual = 10/12 of monthly per pricing.html "Save 2 months" toggle.
+    function annualPerMonth(tier) {
+      return Math.round(TIER_PRICE_MONTHLY[tier] * (10/12) * 100) / 100;
+    }
+    function annualSavings(tier) {
+      // 12 months of monthly minus 12 months of annual.
+      return Math.round((TIER_PRICE_MONTHLY[tier] - annualPerMonth(tier)) * 12);
+    }
+
+    // ---------------------------------------------------------------
+    // Trigger registry — every Save action that can pop the modal
+    // declares itself here. Keys mirror the demo launcher buttons.
+    // In production this object is BUILT from the Save handler's
+    // collectPremiumChanges() output, NOT hard-coded per scene.
+    // ---------------------------------------------------------------
+    var TRIGGERS = {
+      'ab': {
+        currentTier: 'free',
+        // List of premium features the creator just enabled. Modal
+        // picks the HIGHEST required tier (Business covers Pro covers
+        // Creator) and renders that tier's panel.
+        features: [
+          { id: 'ab', name: 'A/B testing', requires: 'business',
+            contextLines: [
+              'A/B test on <b>Newsletter signup</b> block — <b>2 variants</b> ready',
+              'Variant B differs in: <code>heading</code>, <code>CTA copy</code>'
+            ],
+            partialSave: { label: 'A/B testing', desc: 'keeps your block live with just Variant A. You can add Variant B back any time.' }
+          }
+        ]
+      },
+      'domain': {
+        currentTier: 'free',
+        features: [
+          { id: 'domain', name: 'Custom domain', requires: 'creator',
+            contextLines: [
+              'Custom domain <code>links.alexandra.com</code> for your tadaify page',
+              'Plus the optional <b>$2/mo extra-domain add-on</b> for your second domain'
+            ],
+            // Custom domain has no meaningful partial — without the
+            // domain, there's nothing to save partially. Skip section 4.
+            partialSave: null
+          }
+        ]
+      },
+      'team': {
+        currentTier: 'pro',
+        features: [
+          { id: 'team', name: 'Team member invite', requires: 'business',
+            contextLines: [
+              'Invite <b>maya@example.com</b> as <b>Editor</b>',
+              'Role: read + edit any block, no billing access'
+            ],
+            partialSave: null
+          }
+        ]
+      },
+      'schedule': {
+        currentTier: 'free',
+        features: [
+          { id: 'schedule', name: 'Scheduling beyond 7 days', requires: 'creator',
+            contextLines: [
+              'Schedule <b>Spring Drops</b> block to publish on <code>Jan 15, 2027</code>',
+              'That\'s <b>4 months ahead</b> — Free schedules up to 7 days out'
+            ],
+            partialSave: { label: 'Scheduling', desc: 'publishes the block right now instead. You can re-schedule any time after upgrade.' }
+          }
+        ]
+      },
+      'klaviyo': {
+        currentTier: 'pro',
+        features: [
+          { id: 'klaviyo', name: 'Klaviyo custom fields', requires: 'business',
+            contextLines: [
+              'Newsletter block syncing to <b>Klaviyo</b>',
+              'Custom field mapping: <code>signup_source → tadaify_block_id</code>',
+              'Auto-add to segment: <code>spring-launch-2026</code>'
+            ],
+            partialSave: { label: 'custom fields', desc: 'syncs only the email + name to Klaviyo (default fields). Custom mapping waits until upgrade.' }
+          }
+        ]
+      },
+      'multi': {
+        currentTier: 'free',
+        features: [
+          { id: 'ab', name: 'A/B testing', requires: 'business',
+            contextLines: ['A/B test on <b>Newsletter signup</b> — 2 variants ready (needs <b>Business</b>)']
+          },
+          { id: 'domain', name: 'Custom domain', requires: 'creator',
+            contextLines: ['Custom domain <code>links.alexandra.com</code> for your tadaify page (needs <b>Creator</b>)']
+          },
+          { id: 'schedule', name: 'Scheduling beyond 7 days', requires: 'creator',
+            contextLines: ['Schedule visibility from <b>Jan 15 → Feb 28</b> (needs <b>Creator</b>)']
+          }
+        ],
+        // Partial-save for multi: drop the highest-tier feature, keep
+        // the cheaper ones (creator already covers domain + schedule
+        // if user upgrades to Creator instead).
+        partialSaveOverride: { label: 'A/B testing', desc: 'Variant A goes live; you keep the custom domain + schedule for after upgrade.' }
+      },
+      'already': {
+        // Creator already covers max(features) — no modal, just a toast.
+        currentTier: 'business',
+        features: [
+          { id: 'ab', name: 'A/B testing', requires: 'business',
+            contextLines: ['A/B test live'] }
+        ],
+        skipModal: true,
+        toast: 'All set — A/B test is live'
+      },
+      'admin-required': {
+        // Edge case: tier OK, but role insufficient. Different framing.
+        currentTier: 'business',
+        roleProblem: true,
+        features: [
+          { id: 'team-add', name: 'Adding team members', requires: 'business' /* role: admin */,
+            contextLines: [
+              'Invite <b>maya@example.com</b> as <b>Editor</b>',
+              'Workspace: <b>alexandra-creative</b> · 6 of 10 seats used'
+            ]
+          }
+        ]
+      }
+    };
+
+    // ---------------------------------------------------------------
+    // Tier-feature catalogues — what each tier panel highlights.
+    // 5-7 items per panel, mirroring pricing.html.
+    // ---------------------------------------------------------------
+    var TIER_FEATURE_LISTS = {
+      creator: [
+        { html: 'Everything in Free, plus:' },
+        { html: '<b>1 custom domain included</b> (extras at $2/mo each)' },
+        { html: '<b>Schedule blocks</b> for any future date' },
+        { html: '<b>Hide tadaify branding</b> on your public page' },
+        { html: '<b>5-min analytics refresh</b> · 90-day history window' },
+        { html: '<b>Priority email support</b> (under 24h)' },
+        { html: '<b>Verified ✓ badge</b> on your public page' }
+      ],
+      pro: [
+        { html: 'Everything in Creator, plus:' },
+        { html: '<b>Real-time live view</b> + 1-year analytics history' },
+        { html: '<b>Saved Insights views</b> + daily CSV export' },
+        { html: '<b>Creator API + MCP server</b> (100 req/h)' },
+        { html: '<b>Schedule blog posts</b> for any future date' },
+        { html: '<b>AI Suggest priority queue</b> (100 uses/mo)' }
+      ],
+      business: [
+        { html: 'Everything in Pro, plus:' },
+        { html: '<b>A/B testing on every block</b> — 50/50 split, winner promoted automatically' },
+        { html: '<b>Team members + roles</b> (Admin / Editor / Viewer) — up to 10 included' },
+        { html: '<b>Identity stitching</b> across visits + devices' },
+        { html: '<b>Klaviyo custom fields + segments</b>' },
+        { html: '<b>Parquet R2 monthly archive</b> + scheduled email digests' },
+        { html: '<b>Replay</b> (scrub past traffic sessions)' }
+      ]
+    };
+
+    // ---------------------------------------------------------------
+    // Modal state — what's currently showing.
+    // ---------------------------------------------------------------
+    var TG_STATE = {
+      activeTrigger: null,    // key in TRIGGERS
+      modalState: 'default',  // default | loading | success | cancel
+      billingCycle: 'yearly'  // monthly | yearly
+    };
+
+    // ---------------------------------------------------------------
+    // Public API — mirrors window.TierGate contract referenced in
+    // app-block-editor.html and app-page-blog.html.
+    // checkAndProceed validates tier; opens modal only when needed.
+    // ---------------------------------------------------------------
+    window.TierGate = {
+      TIER_RANK: TIER_RANK,
+      TIER_LABEL: TIER_LABEL,
+      checkAndProceed: function (opts) {
+        // opts: { currentTier, features[], onProceed, onSaveWithout, onUpgrade }
+        var maxRequired = opts.features.reduce(function (m, f) {
+          return Math.max(m, TIER_RANK[f.requires]);
+        }, 0);
+        if (TIER_RANK[opts.currentTier] >= maxRequired) {
+          // Tier already covers — silent success.
+          if (opts.onProceed) opts.onProceed();
+          showToast('All set — saved');
+          return;
+        }
+        // Open modal — store callbacks for the action handlers.
+        TG_STATE._callbacks = opts;
+        // Synthesise a one-off trigger key for ad-hoc calls.
+        // (Demo launcher uses pre-baked triggers instead.)
+        // ...
+      }
+    };
+
+    // ---------------------------------------------------------------
+    // Demo launcher entry point — opens a pre-baked scenario.
+    // ---------------------------------------------------------------
+    function openTrigger(key) {
+      var t = TRIGGERS[key];
+      if (!t) return;
+
+      // Already-on-right-tier — no modal, just toast.
+      if (t.skipModal) {
+        showToast(t.toast || 'All set');
+        return;
+      }
+
+      TG_STATE.activeTrigger = key;
+      TG_STATE.modalState = 'default';
+      // Reset state-strip chips
+      document.querySelectorAll('.state-strip .state-chip').forEach(function (c) {
+        c.classList.toggle('is-active', c.getAttribute('data-state') === 'default');
+      });
+      renderModal();
+      document.getElementById('tg-backdrop').classList.add('is-open');
+      // Trap focus minimal — focus the close button so Esc handler hooks.
+      setTimeout(function () {
+        var c = document.querySelector('#tg-backdrop .iconbtn');
+        if (c) c.focus();
+      }, 50);
+    }
+
+    // ---------------------------------------------------------------
+    // setModalState — flip between Default / Loading / Success / Cancel.
+    // Triggered by state-strip chips OR by user actions (clicking
+    // Upgrade → Loading; resolving Stripe checkout → Success or Cancel).
+    // ---------------------------------------------------------------
+    function setModalState(state) {
+      TG_STATE.modalState = state;
+      document.querySelectorAll('.state-strip .state-chip').forEach(function (c) {
+        c.classList.toggle('is-active', c.getAttribute('data-state') === state);
+      });
+      renderModal();
+    }
+
+    // ---------------------------------------------------------------
+    // setBilling — flip yearly/monthly toggle inside the modal.
+    // Only affects the upgrade button label + tier panel price chip.
+    // ---------------------------------------------------------------
+    function setBilling(cycle) {
+      TG_STATE.billingCycle = cycle;
+      renderModal();
+    }
+
+    // ---------------------------------------------------------------
+    // requestClose — Esc / backdrop / X. Confirms only if user has
+    // unsaved (here: any non-default state means user took an action).
+    // ---------------------------------------------------------------
+    function requestClose() {
+      if (TG_STATE.modalState === 'loading') {
+        // Cancel the loading flow → cancel state.
+        setModalState('cancel');
+        return;
+      }
+      closeModal();
+    }
+    function closeModal() {
+      document.getElementById('tg-backdrop').classList.remove('is-open');
+      TG_STATE.activeTrigger = null;
+      TG_STATE.modalState = 'default';
+    }
+
+    // ---------------------------------------------------------------
+    // Action handlers — wired to footer buttons.
+    // saveAsDraft: closes modal, fires draft toast, no upgrade.
+    // upgradeNow: switches to loading state, then RANDOMLY resolves
+    //   to success or cancel (demo realism). Real impl: resolves on
+    //   Stripe webhook return.
+    // tryAgain: re-enters loading from cancel state.
+    // continuePublish: closes modal after success, fires "live" toast.
+    // ---------------------------------------------------------------
+    function saveAsDraft() {
+      closeModal();
+      showToast('Saved as draft', 'draft');
+    }
+    function upgradeNow() {
+      setModalState('loading');
+      // Demo: resolve in 1.5s → 80% success, 20% cancel for realism.
+      setTimeout(function () {
+        if (Math.random() < 0.80) setModalState('success');
+        else setModalState('cancel');
+      }, 1500);
+    }
+    function tryAgain() { upgradeNow(); }
+    function exitDraft() { saveAsDraft(); }
+    function continuePublish() {
+      closeModal();
+      showToast('All set — published live');
+    }
+    function notifyOwner() {
+      closeModal();
+      showToast('Request sent to your account owner', 'draft');
+    }
+
+    // ---------------------------------------------------------------
+    // showToast — bottom-right notification, ~3s auto-dismiss.
+    // ---------------------------------------------------------------
+    var toastTimer = null;
+    function showToast(msg, kind) {
+      var t = document.getElementById('tg-toast');
+      t.querySelector('.toast-msg').textContent = msg;
+      t.classList.toggle('toast-draft', kind === 'draft');
+      t.classList.add('is-visible');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        t.classList.remove('is-visible');
+      }, 2800);
+    }
+
+    // ---------------------------------------------------------------
+    // renderModal — builds the modal DOM for the active trigger and
+    // current modal state. Called whenever trigger / state / billing
+    // changes.
+    // ---------------------------------------------------------------
+    function renderModal() {
+      var t = TRIGGERS[TG_STATE.activeTrigger];
+      if (!t) return;
+
+      var contentEl = document.getElementById('tg-content');
+      var st = TG_STATE.modalState;
+
+      // SUCCESS state — full content swap, confetti.
+      if (st === 'success') {
+        contentEl.innerHTML = renderSuccess(t);
+        spawnConfetti();
+        return;
+      }
+      // CANCEL state — full content swap, friendly retry.
+      if (st === 'cancel') {
+        contentEl.innerHTML = renderCancel(t);
+        return;
+      }
+
+      // DEFAULT or LOADING — full body, footer state varies.
+      contentEl.innerHTML =
+        renderHead(t) +
+        renderBody(t) +
+        renderFoot(t, st);
+    }
+
+    // ---------------------------------------------------------------
+    // renderHead — friendly head copy: "Just one step — <feature> needs <tier>"
+    // For multi-feature triggers, joins the names with " + ".
+    // For role-problem triggers, swaps tier name for "Admin role".
+    // ---------------------------------------------------------------
+    function renderHead(t) {
+      var topTier = highestRequired(t.features);
+      var featureNames = t.features.map(function (f) { return f.name; });
+      var featureLabel;
+      if (t.roleProblem) {
+        featureLabel = t.features[0].name;
+      } else if (featureNames.length === 1) {
+        featureLabel = featureNames[0];
+      } else if (featureNames.length === 2) {
+        featureLabel = featureNames.join(' + ');
+      } else {
+        featureLabel = featureNames.slice(0, -1).join(', ') + ' + ' + featureNames[featureNames.length - 1];
+      }
+      var tierName = t.roleProblem ? 'Admin role' : TIER_LABEL[topTier];
+      var verb = (featureNames.length > 1 || /s$/.test(featureLabel)) ? 'need' : 'needs';
+
+      return ''
+        + '<div class="tg-head">'
+        +   '<h3>'
+        +     '<span class="sparkle">✨</span> '
+        +     'Just one step — <span class="feature-name">' + featureLabel + '</span> '
+        +     verb + ' <span class="tier-name">' + tierName + '</span>'
+        +   '</h3>'
+        +   '<button class="iconbtn" type="button" onclick="requestClose()" aria-label="Close">'
+        +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+        +   '</button>'
+        + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // renderBody — assembles the four sections:
+    //   1) "You set up:" trigger context (always)
+    //   2) Tier feature panel (for the lowest-tier-that-covers-everything)
+    //   3) "Your work is saved as draft" reassurance (always)
+    //   4) "Or save without <feature>" partial branch (when applicable)
+    // For role-problem triggers, swaps section 2 for an Admin-role panel.
+    // ---------------------------------------------------------------
+    function renderBody(t) {
+      var topTier = highestRequired(t.features);
+      var allCtxLines = [];
+      t.features.forEach(function (f) {
+        (f.contextLines || []).forEach(function (l) { allCtxLines.push(l); });
+      });
+
+      var section1 = ''
+        + '<div class="tg-context">'
+        +   '<div class="ctx-h">' + (t.roleProblem ? 'You tried to:' : 'You set up:') + '</div>'
+        +   '<ul>' + allCtxLines.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>'
+        + '</div>';
+
+      var section2 = t.roleProblem
+        ? renderRolePanel(t)
+        : renderTierPanel(topTier);
+
+      var section3 = ''
+        + '<div class="tg-draft' + (t.roleProblem ? '" style="background: var(--info-bg); border-color: rgba(59,130,246,0.22);' : '') + '">'
+        +   '<span class="draft-icon">' + (t.roleProblem ? '📋' : '💾') + '</span>'
+        +   '<span>' + (t.roleProblem
+              ? '<b>We saved the invite as a request.</b> Your owner will see it next time they open Settings → Team.'
+              : '<b>Your work is saved as draft.</b> After upgrade it goes live in one click — no re-doing.'
+            ) + '</span>'
+        + '</div>';
+
+      // Section 4 — partial save. Pick from feature.partialSave or
+      // trigger.partialSaveOverride. Skip if neither defined.
+      var partial = t.partialSaveOverride;
+      if (!partial) {
+        for (var i = 0; i < t.features.length; i++) {
+          if (t.features[i].partialSave) { partial = t.features[i].partialSave; break; }
+        }
+      }
+      if (t.roleProblem) {
+        partial = { label: 'copy a request link', desc: ' to send your owner directly — they can approve in one click.' };
+      }
+      var section4 = '';
+      if (partial) {
+        section4 = ''
+          + '<div class="tg-partial">'
+          +   (t.roleProblem ? 'Or ' : 'Or ')
+          +   '<a onclick="saveAsDraft()">' + (t.roleProblem ? partial.label : 'save without ' + partial.label) + '</a>'
+          +   ' ' + (t.roleProblem ? '' : '— ') + partial.desc
+          + '</div>';
+      }
+
+      return '<div class="tg-body">' + section1 + section2 + section3 + section4 + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // renderTierPanel — the upsell tier card (Creator / Pro / Business).
+    // Pulls feature list from TIER_FEATURE_LISTS[tier].
+    // Price reflects current billing cycle (monthly | yearly).
+    // ---------------------------------------------------------------
+    function renderTierPanel(tier) {
+      var isBiz = tier === 'business';
+      var featList = TIER_FEATURE_LISTS[tier] || [];
+      var monthly  = TIER_PRICE_MONTHLY[tier];
+      var yearly   = annualPerMonth(tier);
+      var priceAmt = TG_STATE.billingCycle === 'yearly' ? yearly.toFixed(2) : monthly.toString();
+      var cadence  = TG_STATE.billingCycle === 'yearly' ? '/mo billed yearly' : '/mo billed monthly';
+
+      return ''
+        + '<div class="tg-tier-panel' + (isBiz ? ' is-business' : '') + '">'
+        +   '<div class="tg-tier-head">'
+        +     '<span class="tier-pill">🔓 ' + TIER_LABEL[tier].toUpperCase() + '</span>'
+        +     '<span class="tier-title">' + TIER_LABEL[tier] + ' plan</span>'
+        +     '<span class="tier-price">'
+        +       '<span class="price-amt">$' + priceAmt + '</span>'
+        +       '<span class="price-cadence">' + cadence + '</span>'
+        +     '</span>'
+        +   '</div>'
+        +   '<ul class="tg-tier-features">'
+        +     featList.map(function (f) {
+              return '<li><span class="check">✓</span><span>' + f.html + '</span></li>';
+            }).join('')
+        +   '</ul>'
+        + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // renderRolePanel — Admin-role variant for State 7.
+    // ---------------------------------------------------------------
+    function renderRolePanel(t) {
+      return ''
+        + '<div class="tg-tier-panel">'
+        +   '<div class="tg-tier-head">'
+        +     '<span class="tier-pill" style="background: var(--fg);">👤 ADMIN ROLE</span>'
+        +     '<span class="tier-title">Your workspace already has Business — you just need Admin</span>'
+        +   '</div>'
+        +   '<ul class="tg-tier-features">'
+        +     '<li><span class="check">✓</span><span><b>You\'re on Business</b> — Team is part of your plan</span></li>'
+        +     '<li><span class="check">✓</span><span>Adding/removing team members is an <b>Admin-only action</b></span></li>'
+        +     '<li><span class="check">✓</span><span>Your account owner is <b>alexandra@example.com</b></span></li>'
+        +   '</ul>'
+        + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // renderFoot — buttons. Loading state disables everything except
+    // the spinner. Role-problem triggers swap to Notify owner button.
+    // ---------------------------------------------------------------
+    function renderFoot(t, st) {
+      if (t.roleProblem) {
+        return ''
+          + '<div class="tg-foot">'
+          +   '<div class="left"><button class="btn btn-secondary" onclick="closeModal()">Cancel invite</button></div>'
+          +   '<div class="right"><button class="btn btn-primary" onclick="notifyOwner()">Notify alexandra@example.com</button></div>'
+          + '</div>';
+      }
+
+      var topTier = highestRequired(t.features);
+      var monthly = TIER_PRICE_MONTHLY[topTier];
+      var yearly  = annualPerMonth(topTier);
+      var savings = annualSavings(topTier);
+      var price = TG_STATE.billingCycle === 'yearly' ? yearly.toFixed(2) : monthly.toString();
+      var sub   = TG_STATE.billingCycle === 'yearly'
+        ? 'billed yearly · save $' + savings
+        : 'billed monthly';
+
+      var loading = (st === 'loading');
+      var disabledAttr = loading ? ' disabled' : '';
+
+      return ''
+        + '<div class="tg-foot">'
+        +   '<div class="left">'
+        +     '<button class="btn btn-secondary" onclick="saveAsDraft()"' + disabledAttr + '>Save as draft</button>'
+        +   '</div>'
+        +   '<div class="right">'
+        +     '<div class="tg-bill-toggle"' + (loading ? ' style="opacity:0.5; pointer-events:none;"' : '') + '>'
+        +       '<button class="' + (TG_STATE.billingCycle === 'monthly' ? 'is-active' : '') + '" onclick="setBilling(\'monthly\')">Monthly</button>'
+        +       '<button class="' + (TG_STATE.billingCycle === 'yearly' ? 'is-active' : '') + '" onclick="setBilling(\'yearly\')">Yearly <span class="save-chip">SAVE 2 MO</span></button>'
+        +     '</div>'
+        +     (loading
+              ? '<button class="btn btn-primary is-loading" disabled><span class="btn-spinner" style="display:inline-block;"></span>Opening checkout…</button>'
+              : '<button class="btn btn-warm" onclick="upgradeNow()">Upgrade — $' + price + '/mo<span class="price-sub">' + sub + '</span></button>'
+            )
+        +   '</div>'
+        + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // renderSuccess — celebration after Stripe checkout returns OK.
+    // Replaces entire modal content, spawns confetti.
+    // ---------------------------------------------------------------
+    function renderSuccess(t) {
+      var topTier = highestRequired(t.features);
+      var featureName = t.features[0].name;
+      // Multi-feature heading: "Let's publish your A/B test" still works
+      // because the FIRST feature is the headline-driver.
+      return ''
+        + '<div class="tg-success" id="tg-success-region">'
+        +   '<div class="burst">✨</div>'
+        +   '<h3>You\'re on ' + TIER_LABEL[topTier] + ' now! Let\'s publish your ' + featureName + '.</h3>'
+        +   '<p>Your block was saved as draft. We\'ll take you straight back to publish — your setup is exactly how you left it.</p>'
+        +   '<div class="actions"><button class="btn btn-primary" onclick="continuePublish()">Continue → Publish ' + featureName + '</button></div>'
+        + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // renderCancel — returned from Stripe without checking out.
+    // Friendly retry/exit, no shame.
+    // ---------------------------------------------------------------
+    function renderCancel(t) {
+      return ''
+        + '<div class="tg-cancel">'
+        +   '<div class="icon">💾</div>'
+        +   '<h3>No worries — your work is still saved as draft.</h3>'
+        +   '<p>Want to try the upgrade again, or come back to it later? Either way, nothing\'s lost.</p>'
+        +   '<div class="actions">'
+        +     '<button class="btn btn-warm" onclick="tryAgain()">Try upgrade again</button>'
+        +     '<button class="btn btn-secondary" onclick="exitDraft()">Save as draft and exit</button>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    // ---------------------------------------------------------------
+    // spawnConfetti — 12 colored squares falling from top of modal.
+    // Pure CSS animation; respects prefers-reduced-motion via the
+    // @media block in CSS (display:none on .confetti-piece).
+    // ---------------------------------------------------------------
+    function spawnConfetti() {
+      var host = document.getElementById('tg-success-region');
+      if (!host) return;
+      var colors = ['#6366F1', '#F59E0B', '#10B981', '#8B5CF6', '#EF4444', '#FDE68A'];
+      for (var i = 0; i < 12; i++) {
+        var p = document.createElement('span');
+        p.className = 'confetti-piece';
+        p.style.left = (Math.random() * 90 + 4) + '%';
+        p.style.background = colors[i % colors.length];
+        p.style.animationDelay = (Math.random() * 0.3) + 's';
+        host.appendChild(p);
+      }
+      // Cleanup after animation so re-entering the success state
+      // doesn't accumulate hundreds of stale spans.
+      setTimeout(function () {
+        host.querySelectorAll('.confetti-piece').forEach(function (p) { p.remove(); });
+      }, 2500);
+    }
+
+    // ---------------------------------------------------------------
+    // highestRequired — max-tier across all triggered features.
+    // ---------------------------------------------------------------
+    function highestRequired(features) {
+      var top = 'free';
+      var topRank = 0;
+      features.forEach(function (f) {
+        if (TIER_RANK[f.requires] > topRank) {
+          topRank = TIER_RANK[f.requires];
+          top = f.requires;
+        }
+      });
+      return top;
+    }
+
+    // ---------------------------------------------------------------
+    // Esc key + initial render
+    // ---------------------------------------------------------------
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.getElementById('tg-backdrop').classList.contains('is-open')) {
+        requestClose();
+      }
+    });
+
+    // Render the default trigger so the live modal isn't empty if the
+    // reviewer manually opens it via state-strip without picking a trigger.
+    TG_STATE.activeTrigger = 'ab';
+    renderModal();
+  </script>
+
+</body>
+</html>
