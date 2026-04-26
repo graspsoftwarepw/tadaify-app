@@ -1,10 +1,20 @@
 <!--
   type: mockup
   project: tadaify
-  title: tadaify.com landing — MVP clickable mockup v1
+  title: tadaify.com landing — MVP clickable mockup v2 (Phase A three-flagships)
   created_at: 2026-04-24
+  updated_at: 2026-04-26
   author: orchestrator
   status: draft-for-review
+
+  Phase A additions (2026-04-26):
+    - Flagship #1: Privacy-first section (id="privacy") — DEC-075
+    - Flagship #2: Creator API section (id="api-access") — DEC-080
+    - Flagship #3: Most generous Free section (id="generous-free") — DEC-076 Option 9
+    - pricing.html updated with new tier values (DEC-083: Pro $19, Business $49)
+  Phase B (pending multi-handle SPIKE):
+    - Flagship #4: Agency-friendly section (DEC-083) — NOT YET
+    - onboarding-tier.html update for multi-handle
 
   Scope: FIRST in sequential mockup-review series. Landing page only.
   Sibling mockups (pricing, templates, trust, /alexandrasilva, /login, /register, /try) = Phase 2+.
@@ -1301,6 +1311,286 @@
           </div>
           <h3>Analytics that mean something</h3>
           <p>Real-time. Geo down to city level. Bot-filtered. All free &mdash; 90 days on Free, 365 days on Pro.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FLAGSHIP PILLARS — THREE KEY DIFFERENTIATORS
+       Phase A: Privacy-first (DEC-075) / Creator API (DEC-080) / Generous Free (DEC-076 Option 9)
+       Phase B: Agency-friendly flagship (DEC-083) — pending multi-handle SPIKE
+       ============================================================ -->
+
+  <!-- PILLAR 1 — Privacy-first -->
+  <section class="block alt" id="privacy" aria-labelledby="privacy-heading">
+    <div class="container">
+      <div class="section-head">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#6366F1;background:rgba(99,102,241,0.08);padding:6px 14px;border-radius:999px;margin-bottom:16px;">
+          <span>Flagship #1 · Privacy-first</span>
+        </span>
+        <h2 id="privacy-heading">&#128274; No cookies. No tracking. <em>Ever.</em></h2>
+        <p>Your visitors don't see a cookie banner. ever. That means fewer distractions, better first impressions, and more conversions for you.</p>
+      </div>
+
+      <!-- Badge row -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:40px;">
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#128274; no cookies</span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#128065;&#8205;&#128488; no fingerprinting</span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#127466;&#127482; GDPR-clean by design</span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#129309; your visitors stay happy</span>
+      </div>
+
+      <!-- Two-column layout: proof + comparison -->
+      <div style="display:grid;grid-template-columns:1fr;gap:24px;max-width:900px;margin:0 auto;">
+        <div style="@media(min-width:768px){grid-template-columns:1fr 1fr;}background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;box-shadow:var(--shadow);">
+          <p style="font-size:17px;line-height:1.6;margin:0 0 18px;"><strong>Most platforms cookie-track your visitors</strong> — which means your audience has to dismiss a banner before seeing your page. We chose a different path.</p>
+          <p style="font-size:15px;color:var(--fg-muted);margin:0 0 18px;line-height:1.6;">We count unique visitors using a privacy-first daily method — no persistent ID, no browser storage. Visitors never see a consent banner on your tadaify page.</p>
+          <p style="font-size:15px;color:var(--fg-muted);margin:0;line-height:1.6;"><strong style="color:var(--fg);">The trade-off:</strong> if the same visitor returns tomorrow, we count them again. Slightly fuzzy number — but your audience's first impression stays clean.</p>
+
+          <!-- "How it works" expandable -->
+          <details style="margin-top:20px;">
+            <summary style="cursor:pointer;font-weight:600;font-size:14px;color:var(--primary);list-style:none;display:flex;align-items:center;gap:6px;">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+              How it works — for the technically curious
+            </summary>
+            <div style="margin-top:14px;padding:16px;background:var(--surface-alt);border-radius:10px;font-size:14px;color:var(--fg-muted);line-height:1.7;">
+              <p style="margin:0 0 10px;">Every day we generate a fresh random salt — it exists only in memory and is never stored. When someone visits your page, we create a temporary fingerprint from their IP address and browser, mix in the daily salt, and hash it. The result is a day-scoped count: same visitor, same day = 1 count. Same visitor, next day = fresh count.</p>
+              <p style="margin:0;">No cookies. No localStorage. Nothing written to the browser. The daily salt means even we can't link Tuesday's visitors to Monday's. Your audience stays private, your analytics stay meaningful. <a href="./pricing.html" style="color:var(--primary);font-weight:600;">See plans &rarr;</a></p>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- Competitor comparison for cookie banners -->
+      <div style="margin-top:32px;max-width:900px;margin-left:auto;margin-right:auto;">
+        <div class="compare-wrap">
+          <table class="compare-table" style="font-size:14px;">
+            <thead>
+              <tr>
+                <th scope="col">Platform</th>
+                <th scope="col">Cookie banner required?</th>
+                <th scope="col">Tracking method</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="feat">Linktree</td><td style="color:var(--danger);">&#10007; Required</td><td style="color:var(--fg-muted);">Persistent cookies + 3rd-party scripts</td></tr>
+              <tr><td class="feat">Beacons</td><td style="color:var(--danger);">&#10007; Required</td><td style="color:var(--fg-muted);">Cookie-based session tracking</td></tr>
+              <tr><td class="feat">Stan</td><td style="color:var(--danger);">&#10007; Required</td><td style="color:var(--fg-muted);">Tracking pixels + cookies</td></tr>
+              <tr><td class="feat">Bento</td><td style="color:var(--danger);">&#10007; Required</td><td style="color:var(--fg-muted);">Cookie-based analytics</td></tr>
+              <tr>
+                <td class="feat" style="color:var(--primary);font-weight:700;">&#128251; tadaify</td>
+                <td class="td-us"><span class="check">&#10003;</span> <span style="color:var(--success);font-weight:700;">Never</span></td>
+                <td style="color:var(--primary);font-weight:600;">Cookieless daily salt &mdash; nothing stored in browser</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="compare-foot">
+            <!-- Competitor data verified 2026-04-26 — review quarterly -->
+            Privacy is <strong>architectural</strong>, not a setting you can toggle. We built it this way from day one so we can't accidentally break it.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILLAR 2 — First creator analytics API -->
+  <section class="block" id="api-access" aria-labelledby="api-heading">
+    <div class="container">
+      <div class="section-head">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#6366F1;background:rgba(99,102,241,0.08);padding:6px 14px;border-radius:999px;margin-bottom:16px;">
+          <span>Flagship #2 · Creator API</span>
+        </span>
+        <h2 id="api-heading">&#128299; First creator analytics API in <em>link-in-bio.</em></h2>
+        <p>Every other platform locks your data inside their dashboard. Tadaify gives you the keys.</p>
+      </div>
+
+      <!-- Badge row -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:40px;">
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#128299; first creator API</span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#128202; your data, your tools</span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#129470; build dashboards / Slack bots / iOS widgets</span>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-sm);">&#127775; 100 req/h Pro &middot; 1000 req/h Business</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:24px;max-width:900px;margin:0 auto;">
+        <!-- Code snippet tile -->
+        <div style="background:#0B0F1E;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span style="width:10px;height:10px;border-radius:50%;background:#EF4444;"></span>
+            <span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;"></span>
+            <span style="width:10px;height:10px;border-radius:50%;background:#10B981;"></span>
+            <span style="font-size:12px;color:rgba(255,255,255,0.4);margin-left:8px;font-family:ui-monospace,monospace;">terminal</span>
+          </div>
+          <div style="padding:24px;overflow-x:auto;">
+            <pre style="margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:#E5E7EB;white-space:pre;"><code><span style="color:#9CA3AF;"># Get clicks for all blocks — last 7 days</span>
+curl -H <span style="color:#FDE68A;">"Authorization: Bearer sk_tdf_..."</span> \
+  <span style="color:#6EE7B7;">"https://api.tadaify.com/v1/insights/clicks?from=7d"</span>
+
+<span style="color:#9CA3AF;"># Response</span>
+{
+  <span style="color:#93C5FD;">"from"</span>: <span style="color:#FDE68A;">"2026-04-19"</span>,
+  <span style="color:#93C5FD;">"to"</span>:   <span style="color:#FDE68A;">"2026-04-26"</span>,
+  <span style="color:#93C5FD;">"blocks"</span>: [
+    { <span style="color:#93C5FD;">"id"</span>: <span style="color:#FDE68A;">"stripe"</span>, <span style="color:#93C5FD;">"clicks"</span>: <span style="color:#6EE7B7;">1247</span>, <span style="color:#93C5FD;">"top_source"</span>: <span style="color:#FDE68A;">"tiktok"</span> },
+    { <span style="color:#93C5FD;">"id"</span>: <span style="color:#FDE68A;">"newsletter"</span>, <span style="color:#93C5FD;">"clicks"</span>: <span style="color:#6EE7B7;">839</span>, <span style="color:#93C5FD;">"top_source"</span>: <span style="color:#FDE68A;">"instagram"</span> }
+  ]
+}</code></pre>
+          </div>
+        </div>
+
+        <!-- Use cases -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;">
+          <h3 style="font-family:var(--display);font-size:22px;margin:0 0 18px;">Build anything on top of your data</h3>
+          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:14px;">
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="font-size:18px;flex-shrink:0;">&#128202;</span><div><strong>Custom dashboards</strong> — pipe your click and visitor data into Notion, Retool, or a plain spreadsheet. Own your reporting stack.</div></li>
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="font-size:18px;flex-shrink:0;">&#128172;</span><div><strong>Slack / Discord bots</strong> — "alert me when any block hits 500 clicks today." Build the notification logic you actually want, not a fixed in-app alert.</div></li>
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="font-size:18px;flex-shrink:0;">&#128241;</span><div><strong>iOS widgets &amp; shortcuts</strong> — tap your phone's Lock Screen to see today's page visitors. Weekend project, not a feature request ticket.</div></li>
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="font-size:18px;flex-shrink:0;">&#129395;</span><div><strong>Daily DM yourself</strong> — send yourself a morning summary via your own bot. "Your Stripe link got 183 clicks yesterday. Top source: TikTok."</div></li>
+          </ul>
+          <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+            <a href="./pricing.html" class="btn btn-primary">Upgrade to Pro to get API access &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Competitor comparison — API access -->
+      <div style="margin-top:32px;max-width:900px;margin-left:auto;margin-right:auto;">
+        <div class="compare-wrap">
+          <table class="compare-table" style="font-size:14px;">
+            <thead>
+              <tr>
+                <th scope="col">Platform</th>
+                <th scope="col">Public API access</th>
+                <th scope="col">On which tier?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="feat">Linktree</td><td style="color:var(--danger);">&#10007; None</td><td style="color:var(--fg-muted);">&mdash;</td></tr>
+              <tr><td class="feat">Beacons</td><td style="color:var(--danger);">&#10007; None</td><td style="color:var(--fg-muted);">&mdash;</td></tr>
+              <tr><td class="feat">Stan</td><td style="color:var(--danger);">&#10007; None</td><td style="color:var(--fg-muted);">&mdash;</td></tr>
+              <tr><td class="feat">Bento</td><td style="color:var(--danger);">&#10007; None</td><td style="color:var(--fg-muted);">&mdash;</td></tr>
+              <tr>
+                <td class="feat" style="color:var(--primary);font-weight:700;">&#128251; tadaify</td>
+                <td class="td-us"><span class="check">&#10003;</span> <span style="color:var(--success);font-weight:700;">Yes</span></td>
+                <td style="color:var(--primary);font-weight:600;">Pro (100 req/h) &middot; Business (1,000 req/h)</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="compare-foot">
+            <!-- API endpoint placeholder: api.tadaify.com — real domain routes after Phase 2 backend -->
+            API docs at <strong>api.tadaify.com/docs</strong> &mdash; preview available before you upgrade.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILLAR 3 — Most generous Free tier -->
+  <section class="block alt" id="generous-free" aria-labelledby="free-heading">
+    <div class="container">
+      <div class="section-head">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#F59E0B;background:rgba(245,158,11,0.1);padding:6px 14px;border-radius:999px;margin-bottom:16px;">
+          <span>Flagship #3 · Most generous Free</span>
+        </span>
+        <h2 id="free-heading">&#127873; The most generous Free tier in link-in-bio analytics. <em class="warm">Period.</em></h2>
+        <p>Competitors gate cross-tab analysis behind $24/mo Premium. We give it to Free.</p>
+      </div>
+
+      <!-- Trust badge -->
+      <div style="text-align:center;margin-bottom:36px;">
+        <span style="display:inline-flex;align-items:center;gap:10px;padding:14px 24px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:14px;font-size:15px;font-weight:600;color:#92400E;">
+          &#127873; No data hidden behind paywall. Free creators get the full dataset.
+        </span>
+      </div>
+
+      <!-- Free tier comparison table -->
+      <!-- Competitor Free-tier data verified 2026-04-26 — review quarterly -->
+      <div style="max-width:900px;margin:0 auto 32px;">
+        <div class="compare-wrap">
+          <table class="compare-table" style="font-size:14px;">
+            <thead>
+              <tr>
+                <th scope="col">Platform Free tier</th>
+                <th scope="col">Analytics included</th>
+                <th scope="col">Cross-tab?</th>
+                <th scope="col">Geo + City?</th>
+                <th scope="col">Devices + Referrers?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="feat">Linktree Free</td>
+                <td style="color:var(--fg-muted);">Basic clicks only</td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--danger);">&#10007;</td>
+              </tr>
+              <tr>
+                <td class="feat">Beacons Free</td>
+                <td style="color:var(--fg-muted);">Today's real-time + flat list</td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--fg-muted);">Country only</td>
+                <td style="color:var(--danger);">&#10007;</td>
+              </tr>
+              <tr>
+                <td class="feat">Bento Free</td>
+                <td style="color:var(--fg-muted);">Limited features</td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--danger);">&#10007;</td>
+              </tr>
+              <tr>
+                <td class="feat">Stan Free</td>
+                <td style="color:var(--danger);">&#10007; Paid only<sup>*</sup></td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--danger);">&#10007;</td>
+                <td style="color:var(--danger);">&#10007;</td>
+              </tr>
+              <tr style="background:rgba(245,158,11,0.05);">
+                <td class="feat" style="color:var(--primary);font-weight:700;">&#128251; tadaify Free</td>
+                <td class="td-us"><span class="check">&#10003;</span> <strong>Full dataset</strong></td>
+                <td class="td-us" style="color:var(--success);font-weight:700;">&#10003; All</td>
+                <td class="td-us" style="color:var(--success);font-weight:700;">&#10003; City-level</td>
+                <td class="td-us" style="color:var(--success);font-weight:700;">&#10003; Full detail</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="compare-foot">
+            Tadaify Free: hourly refresh &middot; 7-day window. Upgrade to Creator for 5-min refresh + 90d window, or Pro for real-time + 1-year history.
+            <br/><small style="color:var(--fg-muted);margin-top:6px;display:block;"><sup>*</sup>Stan.store requires a paid plan ($29+/mo) for analytics access. Verified 2026-04-26.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- What upgrades get you -->
+      <div style="max-width:900px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;">
+        <h3 style="font-family:var(--display);font-size:22px;margin:0 0 6px;">What upgrades unlock</h3>
+        <p style="color:var(--fg-muted);font-size:14px;margin:0 0 20px;">Your data is complete on Free. Upgrades are about freshness and history &mdash; not access.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+          <div style="padding:16px;background:var(--surface-alt);border-radius:10px;text-align:center;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);margin-bottom:8px;">Free</div>
+            <div style="font-size:15px;font-weight:600;">Hourly refresh</div>
+            <div style="font-size:13px;color:var(--fg-muted);">7-day window</div>
+          </div>
+          <div style="padding:16px;background:rgba(99,102,241,0.06);border-radius:10px;text-align:center;border:1px solid rgba(99,102,241,0.15);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:8px;">Creator $8/mo</div>
+            <div style="font-size:15px;font-weight:600;">5-min refresh</div>
+            <div style="font-size:13px;color:var(--fg-muted);">90-day window</div>
+          </div>
+          <div style="padding:16px;background:rgba(99,102,241,0.1);border-radius:10px;text-align:center;border:1px solid rgba(99,102,241,0.25);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:8px;">Pro $19/mo</div>
+            <div style="font-size:15px;font-weight:600;">Real-time (60s)</div>
+            <div style="font-size:13px;color:var(--fg-muted);">1-year window + API</div>
+          </div>
+          <div style="padding:16px;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));border-radius:10px;text-align:center;border:1px solid rgba(99,102,241,0.3);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--primary);margin-bottom:8px;">Business $49/mo</div>
+            <div style="font-size:15px;font-weight:600;">+ Replay sessions</div>
+            <div style="font-size:13px;color:var(--fg-muted);">All-time history + Parquet archive</div>
+          </div>
+        </div>
+        <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);text-align:center;">
+          <a href="./pricing.html" class="btn btn-primary">See full pricing &rarr;</a>
         </div>
       </div>
     </div>
