@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — Theme picker / palette tab deep dive (F-APP-SETTINGS-THEME-001 NEW)
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  8th tab in /app/settings — creator branding deep dive.
+
+  Sister mockups: app-settings-account.html, app-settings-billing.html,
+  app-settings-security.html, app-settings-gdpr.html (Wave 1, merged).
+  This file extends the same pattern: appbar + canonical sidebar + Settings
+  layout (settings-nav + settings-content) + sticky save bar + demo toolbar.
+
+  Source story: NEW — issue F-APP-SETTINGS-THEME-001 filed alongside this PR.
+
+  Scope:
+    - Theme presets gallery (8 starter themes; visual cards w/ thumbnail + Apply)
+    - Custom palette (Pro+) — 4 swatches w/ centered color picker (HEX/HSL/recent
+      colors/Match my logo/contrast checker), Random palette (Creator+), Save preset (Pro+)
+    - Typography — Display + Body font dropdowns (8 Google Fonts), weight, letter
+      spacing, line height, Custom font upload (Business+, woff2/woff/ttf, 4 max)
+    - Background — Solid / Gradient / Radial wash / Custom image (Pro+, opacity+blur+fit)
+      / Pattern overlay (Pro+, 6 SVG patterns)
+    - Spacing + density — Compact / Comfortable / Roomy radio
+    - Custom CSS (Business+) — mock code editor with scoped wrap reassurance
+    - Live preview pane (right column, sticky on desktop) — mini creator-public.html
+      render that updates live; Desktop / Tablet / Mobile + Light / Dark toggles
+    - Theme history (Pro+) — past 10 themes with date + revert
+    - Sticky save bar — Preview only mode default, Apply theme + Discard
+    - Demo toolbar — tier (Free/Creator/Pro/Business) + state (default / custom-palette /
+      custom-font / custom-css-active / dark-mode)
+
+  Locked rules honoured:
+    - feedback_no_blur_premium_features (custom palette / custom fonts / custom bg
+      / pattern overlay / custom CSS / theme history / Match-my-logo / Random palette
+      ALL fully visible + interactive on every tier; gate fires at Apply via TierGate)
+    - feedback_no_right_side_drawers (color picker, custom-font upload, theme-history
+      revert confirm = CENTERED modals, never side drawers)
+    - feedback_mockup_full_feature_vision (every preset card applies live, every swatch
+      opens picker, every dropdown updates live preview, every state in toolbar wires)
+    - feedback_sidebar_pages_grouping (canonical sidebar via shared partial, data-active="settings")
+    - feedback_tadaify_simple_ui_no_advanced_toggle (one UI; power-user fields visible empty by default)
+
+  Demo state via toolbar:
+    Tier:  Free | Creator | Pro | Business      (default: creator)
+    State: default | custom-palette | custom-font | custom-css | dark-mode  (default: default)
+
+  Brand: Indigo Serif palette baseline, Crimson Pro display + Inter sans, ta/da!/ify wordmark.
+  Theme picker uses the SAME --brand-primary / --bg / --fg / --font-display token names
+  documented in shared/tokens.css and EXTENDS them via the Live preview iframe (scoped).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — Theme · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Quicksand:wght@400;500;600;700&family=Lora:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Cormorant:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* Wordmark */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms (mirrored from sister settings tabs) ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.success { background: var(--success-bg); color: #065F46; }
+    .chip.warn { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.25); }
+    .chip.danger { background: var(--danger-bg); color: #991B1B; }
+    .chip.brand { background: rgba(99,102,241,0.10); color: var(--brand-primary); border: 1px solid rgba(99,102,241,0.22); }
+    .chip-tier {
+      font-size: 10.5px; font-weight: 700; padding: 2px 7px;
+      letter-spacing: 0.03em;
+    }
+    .chip-tier.creator { background: rgba(16,185,129,0.14); color: #047857; }
+    .chip-tier.pro { background: rgba(245,158,11,0.16); color: var(--brand-warm-dark); }
+    .chip-tier.business { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: left .15s ease;
+    }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { left: 19px; }
+
+    [data-tip] { position: relative; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; left: 50%; bottom: calc(100% + 6px);
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-dark); color: #fff;
+      font-size: 11px; font-weight: 500;
+      padding: 5px 9px; border-radius: 6px;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity .12s ease, transform .12s ease;
+      z-index: 200;
+    }
+    [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ── Layout grid ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px) { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content shell ── */
+    main.content { padding: 22px 20px 120px; min-width: 0; }
+    @media (min-width: 720px) { main.content { padding: 26px 32px 120px; } }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--fg-muted); }
+    .breadcrumb a:hover { color: var(--brand-primary); }
+    .breadcrumb .sep { color: var(--fg-subtle); }
+    .breadcrumb .current { color: var(--fg); font-weight: 600; }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 4px; }
+    .page-head .head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .preview-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      background: rgba(245,158,11,0.12); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.30);
+      font-size: 12px; font-weight: 600;
+    }
+    .preview-badge .pb-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--brand-warm);
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.20);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 3px rgba(245,158,11,0.20); }
+      50%    { box-shadow: 0 0 0 6px rgba(245,158,11,0.10); }
+    }
+
+    /* ── Settings tab nav ── */
+    .settings-layout { display: flex; gap: 0; align-items: flex-start; }
+    .settings-nav {
+      width: 200px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 82px;
+    }
+    .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; cursor: pointer; text-decoration: none;
+      transition: background .12s ease, color .12s ease;
+    }
+    .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle); }
+    .settings-nav-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary); font-weight: 600;
+    }
+    .settings-nav-item.active svg { color: var(--brand-primary); }
+    .settings-nav-divider { border-top: 1px solid var(--border); margin: 8px 0; }
+    .settings-nav-item .sn-pill {
+      margin-left: auto;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+      white-space: nowrap;
+    }
+    .settings-nav-item .sn-pill.pro-pill {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .settings-nav-item .sn-pill.biz-pill {
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+    .settings-nav-item .sn-pill.new-pill {
+      background: rgba(16,185,129,0.14); color: #047857;
+      border: 1px solid rgba(16,185,129,0.30);
+    }
+
+    @media (max-width: 719px) {
+      .settings-layout { flex-direction: column; gap: 0; }
+      .settings-nav {
+        width: 100%; flex-direction: row;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 4px; padding-bottom: 12px; margin-bottom: 4px;
+        position: static;
+      }
+      .settings-nav-item {
+        white-space: nowrap; flex-shrink: 0;
+        padding: 7px 14px; border-radius: 99px;
+        border: 1px solid var(--border); background: var(--bg-elevated);
+        font-size: 13px;
+      }
+      .settings-nav-item.active {
+        background: rgba(99,102,241,0.10);
+        border-color: rgba(99,102,241,0.25);
+      }
+      .settings-nav-item .sn-pill { display: none; }
+      .settings-nav-divider { display: none; }
+    }
+
+    .settings-content {
+      flex: 1; min-width: 0;
+      padding-left: 28px;
+      border-left: 1px solid var(--border);
+      min-height: 400px;
+    }
+    @media (max-width: 719px) {
+      .settings-content { padding-left: 0; border-left: none; padding-top: 12px; }
+    }
+
+    /* ── Two-column inside content (controls + sticky preview) ── */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+    @media (min-width: 1200px) {
+      .theme-grid { grid-template-columns: minmax(0, 1fr) 380px; }
+    }
+    .theme-controls { min-width: 0; }
+    .theme-preview-col {
+      position: sticky; top: 82px;
+      align-self: start;
+      max-height: calc(100vh - 110px);
+    }
+
+    /* ── Section blocks (mirrored) ── */
+    .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .settings-section-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .settings-section-lede {
+      font-size: 13px; color: var(--fg-muted);
+      margin: 0 0 16px; line-height: 1.55;
+    }
+    .section-head-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .section-head-row .sh-text { flex: 1; min-width: 0; }
+    .section-head-row .sh-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+
+    /* ── Field rows ── */
+    .field-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .field-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .field-row:first-of-type { padding-top: 0; }
+    .field-label {
+      width: 170px; flex-shrink: 0;
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      padding-top: 6px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .field-label .field-hint {
+      display: block; font-size: 12px; font-weight: 400; color: var(--fg-muted); margin-top: 2px;
+      width: 100%;
+    }
+    .field-body { flex: 1; min-width: 0; }
+    @media (max-width: 599px) {
+      .field-row { flex-direction: column; gap: 6px; }
+      .field-label { width: auto; padding-top: 0; }
+    }
+
+    .field-input, .field-select {
+      font-family: var(--font-sans); font-size: 14px;
+      padding: 10px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      outline: none; transition: border-color .12s ease, box-shadow .12s ease;
+      width: 100%;
+    }
+    .field-input:focus, .field-select:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .field-select {
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 540px) { .row-2 { grid-template-columns: 1fr; } }
+
+    /* ── Theme presets gallery ── */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 1100px) { .preset-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .preset-grid { grid-template-columns: 1fr; } }
+    .preset-card {
+      position: relative;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+      text-align: left;
+      padding: 0;
+      display: flex; flex-direction: column;
+    }
+    .preset-card:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(17,24,39,0.08);
+    }
+    .preset-card.is-active {
+      border-color: var(--brand-primary);
+      box-shadow: 0 8px 24px rgba(99,102,241,0.20);
+    }
+    .preset-card.is-active::after {
+      content: "✓";
+      position: absolute; top: 8px; right: 8px;
+      width: 24px; height: 24px;
+      background: var(--brand-primary); color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px;
+      box-shadow: 0 2px 6px rgba(99,102,241,0.40);
+    }
+    .preset-thumb {
+      height: 110px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .preset-thumb .pt-mini-btn {
+      padding: 6px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+      pointer-events: none;
+    }
+    .preset-meta {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px;
+      background: var(--bg-elevated);
+    }
+    .preset-meta .pm-name {
+      font-family: var(--font-display);
+      font-weight: 600; font-size: 14px;
+      color: var(--fg);
+    }
+    .preset-meta .pm-font {
+      font-size: 10.5px; color: var(--fg-subtle);
+      letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;
+    }
+
+    /* Preset thumbnail flavours — each uses CSS gradients/sample text */
+    .pt-indigo { background: radial-gradient(120% 80% at 50% 0%, #EEF2FF 0%, #F9FAFB 60%); }
+    .pt-indigo .pt-mini-btn { background: #6366F1; color: #fff; font-family: 'Crimson Pro', serif; }
+    .pt-indigo::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Crimson Pro', serif; font-weight: 600; font-size: 28px;
+      color: #6366F1; line-height: 1;
+    }
+
+    .pt-mono { background: linear-gradient(180deg, #FAFAFA 0%, #FFF 100%); }
+    .pt-mono .pt-mini-btn { background: #111; color: #fff; font-family: 'Inter', sans-serif; }
+    .pt-mono::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Inter', sans-serif; font-weight: 700; font-size: 28px;
+      color: #111; line-height: 1;
+    }
+
+    .pt-pastel { background: linear-gradient(135deg, #E9D5FF 0%, #FED7AA 50%, #BBF7D0 100%); }
+    .pt-pastel .pt-mini-btn { background: #C084FC; color: #fff; font-family: 'Quicksand', sans-serif; }
+    .pt-pastel::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 28px;
+      color: #7C3AED; line-height: 1;
+    }
+
+    .pt-glass {
+      background:
+        radial-gradient(40% 40% at 30% 20%, rgba(99,102,241,0.45), transparent 70%),
+        radial-gradient(50% 50% at 80% 70%, rgba(168,85,247,0.30), transparent 70%),
+        #0B0F1E;
+    }
+    .pt-glass .pt-mini-btn {
+      background: rgba(255,255,255,0.16); color: #fff;
+      backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.20);
+      font-family: 'Inter', sans-serif;
+    }
+    .pt-glass::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Inter', sans-serif; font-weight: 600; font-size: 28px;
+      color: #fff; line-height: 1; opacity: 0.85;
+    }
+
+    .pt-earth { background: linear-gradient(135deg, #FED7AA 0%, #FECACA 40%, #D9F99D 100%); }
+    .pt-earth .pt-mini-btn { background: #C2410C; color: #FEF3C7; font-family: 'Lora', serif; }
+    .pt-earth::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Lora', serif; font-weight: 600; font-size: 28px;
+      color: #92400E; line-height: 1;
+    }
+
+    .pt-neon {
+      background:
+        radial-gradient(60% 60% at 70% 30%, rgba(168,85,247,0.55), transparent 70%),
+        radial-gradient(40% 40% at 20% 80%, rgba(34,211,238,0.45), transparent 70%),
+        #1A0B2E;
+    }
+    .pt-neon .pt-mini-btn { background: #A855F7; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+    .pt-neon::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px;
+      color: #22D3EE; line-height: 1;
+    }
+
+    .pt-sunrise { background: linear-gradient(135deg, #FED7AA 0%, #FBCFE8 50%, #FEF3C7 100%); }
+    .pt-sunrise .pt-mini-btn { background: #F97316; color: #fff; font-family: 'Raleway', sans-serif; }
+    .pt-sunrise::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Raleway', sans-serif; font-weight: 700; font-size: 28px;
+      color: #B45309; line-height: 1;
+    }
+
+    .pt-editorial { background: #FAFAF9; border-bottom: 4px solid #DC2626; }
+    .pt-editorial .pt-mini-btn { background: #DC2626; color: #fff; font-family: 'Playfair Display', serif; }
+    .pt-editorial::before {
+      content: "Aa"; position: absolute; top: 12px; left: 14px;
+      font-family: 'Playfair Display', serif; font-weight: 700; font-size: 28px;
+      color: #111; line-height: 1;
+    }
+
+    /* ── Color swatches (custom palette) ── */
+    .swatch-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 700px) { .swatch-row { grid-template-columns: repeat(2, 1fr); } }
+    .swatch {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 12px; border-radius: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color .15s ease, transform .15s ease;
+      text-align: left;
+    }
+    .swatch:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+    .swatch .sw-block {
+      width: 100%; aspect-ratio: 1.4 / 1;
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
+    }
+    .swatch .sw-name {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--fg-subtle);
+    }
+    .swatch .sw-hex {
+      font-family: var(--font-mono);
+      font-size: 13px; color: var(--fg);
+    }
+
+    /* ── Random + AI buttons row ── */
+    .palette-actions {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .ai-btn {
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      color: var(--brand-primary);
+      font-weight: 600; font-size: 12.5px;
+      padding: 7px 12px; border-radius: 8px;
+      display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .ai-btn:hover { background: var(--bg-muted); border-color: rgba(99,102,241,0.32); }
+    .ai-btn.is-warm { color: var(--brand-warm-dark); }
+    .ai-btn.is-warm:hover { border-color: rgba(245,158,11,0.32); }
+
+    /* ── Background + density radio cards ── */
+    .radio-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 700px) { .radio-row { grid-template-columns: repeat(2, 1fr); } }
+    .radio-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+      background: var(--bg);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease;
+      text-align: center;
+      font-size: 12.5px; font-weight: 600;
+      color: var(--fg);
+      display: flex; flex-direction: column; gap: 6px; align-items: center;
+    }
+    .radio-card .rc-swatch {
+      width: 100%; height: 36px; border-radius: 6px;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.05);
+    }
+    .radio-card .rc-sub {
+      font-size: 10.5px; color: var(--fg-subtle); font-weight: 500;
+    }
+    .radio-card:hover { border-color: var(--brand-primary); }
+    .radio-card.is-active {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.06);
+    }
+
+    /* density radios = rectangle previews */
+    .density-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 540px) { .density-row { grid-template-columns: 1fr; } }
+    .density-card .rc-swatch { background: var(--bg-elevated); border: 1px solid var(--border); }
+    .density-card .rc-swatch .rc-bar { background: var(--brand-primary); border-radius: 3px; margin: 4px; }
+    .density-card[data-density="compact"]   .rc-swatch .rc-bar { height: 4px; margin: 3px; }
+    .density-card[data-density="comfortable"] .rc-swatch .rc-bar { height: 6px; margin: 5px; }
+    .density-card[data-density="roomy"]      .rc-swatch .rc-bar { height: 8px; margin: 7px; }
+
+    /* ── Pattern overlays (6 SVG previews) ── */
+    .pattern-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px; margin-top: 10px;
+    }
+    @media (max-width: 900px) { .pattern-row { grid-template-columns: repeat(3, 1fr); } }
+    .pattern-card {
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .15s ease;
+    }
+    .pattern-card:hover { border-color: var(--brand-primary); }
+    .pattern-card.is-active { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+    .pattern-card .pn-name {
+      position: absolute; bottom: 4px; left: 0; right: 0;
+      text-align: center; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--fg-muted);
+    }
+    .pn-dots { background-image: radial-gradient(rgba(99,102,241,0.40) 1.5px, transparent 1.5px); background-size: 12px 12px; }
+    .pn-grid { background-image: linear-gradient(rgba(99,102,241,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.25) 1px, transparent 1px); background-size: 14px 14px; }
+    .pn-waves { background-image: repeating-linear-gradient(45deg, rgba(99,102,241,0.18) 0 6px, transparent 6px 12px); }
+    .pn-hex {
+      background:
+        radial-gradient(circle at 50% 0%, rgba(99,102,241,0.30) 2px, transparent 2.5px) 0 0/14px 14px,
+        radial-gradient(circle at 50% 14px, rgba(99,102,241,0.30) 2px, transparent 2.5px) 7px 0/14px 14px;
+    }
+    .pn-tri { background-image: repeating-linear-gradient(60deg, rgba(99,102,241,0.20) 0 7px, transparent 7px 14px), repeating-linear-gradient(-60deg, rgba(99,102,241,0.20) 0 7px, transparent 7px 14px); }
+    .pn-noise {
+      background-image:
+        radial-gradient(rgba(17,24,39,0.04) 1px, transparent 1px),
+        radial-gradient(rgba(17,24,39,0.04) 1px, transparent 1px);
+      background-size: 4px 4px, 7px 7px;
+      background-position: 0 0, 2px 2px;
+    }
+
+    /* ── Custom CSS editor (mocked) ── */
+    .css-editor-wrap {
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0F172A;
+    }
+    body.dark-mode .css-editor-wrap { background: #050817; }
+    .css-editor-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: #1E293B;
+      border-bottom: 1px solid #334155;
+      font-size: 11px; color: #94A3B8;
+      font-family: var(--font-mono);
+    }
+    .css-editor-head .ce-tabs {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .css-editor-head .ce-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .css-editor-head .ce-dot.r { background: #EF4444; }
+    .css-editor-head .ce-dot.y { background: #F59E0B; }
+    .css-editor-head .ce-dot.g { background: #10B981; }
+    .css-editor-head .ce-file { font-weight: 600; color: #F1F5F9; margin-left: 8px; }
+    .css-editor-body {
+      font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65;
+      color: #E2E8F0;
+      padding: 14px 16px;
+      max-height: 280px; overflow-y: auto;
+      white-space: pre;
+      tab-size: 2;
+    }
+    .css-editor-body .css-comment { color: #64748B; font-style: italic; }
+    .css-editor-body .css-selector { color: #93C5FD; }
+    .css-editor-body .css-prop { color: #C4B5FD; }
+    .css-editor-body .css-value { color: #FDE68A; }
+    .css-editor-body .css-num { color: #FCA5A5; }
+    .css-editor-body .css-str { color: #86EFAC; }
+    .css-editor-foot {
+      padding: 10px 12px;
+      border-top: 1px solid #334155;
+      background: #1E293B;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap;
+      font-size: 11.5px; color: #CBD5E1;
+    }
+    .css-disclaim {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.22);
+      border-radius: 9px;
+      font-size: 12px; color: var(--brand-warm-dark);
+      line-height: 1.5;
+    }
+
+    /* ── Theme history list ── */
+    .history-list { display: flex; flex-direction: column; gap: 0; }
+    .history-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .history-row:last-child { border-bottom: 0; }
+    .history-row .hr-thumb {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.08);
+    }
+    .history-row .hr-name { font-weight: 600; color: var(--fg); }
+    .history-row .hr-when { color: var(--fg-subtle); font-size: 11.5px; }
+    .history-row .hr-meta { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .history-row .hr-revert { margin-left: auto; }
+
+    /* ── Live preview panel ── */
+    .preview-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 4px 12px rgba(17,24,39,0.05);
+    }
+    .preview-panel-head {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+    }
+    .preview-panel-head .pp-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle);
+    }
+    .preview-segment {
+      display: inline-flex; gap: 0;
+      background: var(--bg-muted); border-radius: 7px;
+      padding: 2px;
+    }
+    .preview-segment button {
+      padding: 4px 10px; border: 0; background: transparent;
+      font-size: 11px; font-weight: 600; color: var(--fg-muted);
+      border-radius: 5px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .preview-segment button.is-active {
+      background: var(--bg-elevated); color: var(--fg);
+      box-shadow: 0 1px 2px rgba(17,24,39,0.06);
+    }
+    .preview-segment svg { width: 12px; height: 12px; }
+
+    .preview-stage {
+      padding: 18px 14px 22px;
+      background:
+        radial-gradient(120% 80% at 50% 0%, rgba(99,102,241,0.06), transparent 60%),
+        var(--bg-muted);
+      display: flex; align-items: flex-start; justify-content: center;
+      min-height: 480px;
+      transition: background .25s ease;
+    }
+    .preview-stage[data-device="desktop"] .preview-frame { width: 100%; max-width: 340px; aspect-ratio: 16 / 11; }
+    .preview-stage[data-device="tablet"]  .preview-frame { width: 240px; aspect-ratio: 4 / 5; }
+    .preview-stage[data-device="mobile"]  .preview-frame { width: 180px; aspect-ratio: 9 / 19; }
+
+    .preview-frame {
+      background: var(--theme-bg, #F9FAFB);
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(17,24,39,0.16);
+      padding: 18px 14px;
+      overflow: hidden;
+      transition: background .25s ease, color .25s ease;
+      color: var(--theme-fg, #111827);
+      font-family: var(--theme-font-body, 'Inter', sans-serif);
+      position: relative;
+    }
+    .preview-frame.has-pattern {
+      background-image: radial-gradient(rgba(99,102,241,0.40) 1.5px, transparent 1.5px);
+      background-size: 12px 12px;
+      background-color: var(--theme-bg, #F9FAFB);
+    }
+    .preview-frame .pf-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--theme-primary, #6366F1);
+      margin: 0 auto 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700;
+      font-family: var(--theme-font-display, 'Crimson Pro', serif);
+    }
+    .preview-frame .pf-name {
+      text-align: center;
+      font-family: var(--theme-font-display, 'Crimson Pro', serif);
+      font-weight: 600; font-size: 16px;
+      margin-bottom: 2px;
+    }
+    .preview-frame .pf-handle {
+      text-align: center; font-size: 11px;
+      color: var(--theme-fg-muted, #6B7280);
+      margin-bottom: 12px;
+    }
+    .preview-frame .pf-bio {
+      text-align: center; font-size: 11px;
+      color: var(--theme-fg-muted, #6B7280);
+      margin-bottom: 14px; line-height: 1.5;
+    }
+    .preview-frame .pf-block {
+      display: block;
+      padding: 8px 10px;
+      background: var(--theme-bg-elevated, #fff);
+      border: 1px solid var(--theme-border, rgba(17,24,39,0.08));
+      border-radius: 10px;
+      font-size: 12px; font-weight: 600;
+      color: var(--theme-fg, #111827);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .preview-frame .pf-block.is-primary {
+      background: var(--theme-primary, #6366F1);
+      color: #fff;
+      border-color: transparent;
+    }
+    .preview-frame .pf-socials {
+      display: flex; justify-content: center; gap: 6px;
+      margin-top: 12px;
+    }
+    .preview-frame .pf-socials .pf-soc {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--theme-fg-muted, #6B7280);
+      opacity: 0.5;
+    }
+
+    .preview-panel-foot {
+      padding: 10px 14px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      font-size: 11.5px; color: var(--fg-muted);
+    }
+    .preview-panel-foot .pf-update {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .preview-panel-foot .pf-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.20);
+    }
+
+    /* ── Sticky save bar ── */
+    .save-bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 22px;
+      display: flex;
+      align-items: center; justify-content: space-between;
+      gap: 12px;
+      z-index: 80;
+      box-shadow: 0 -8px 24px rgba(17,24,39,0.06);
+    }
+    .save-bar.is-saved { background: rgba(16,185,129,0.06); border-top-color: rgba(16,185,129,0.30); }
+    .save-bar .save-hint {
+      font-size: 12.5px; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .save-bar .save-hint .save-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--brand-warm);
+      box-shadow: 0 0 0 4px rgba(245,158,11,0.18);
+    }
+    .save-bar.is-saved .save-hint .save-dot { background: var(--success); box-shadow: 0 0 0 4px rgba(16,185,129,0.18); }
+    .save-bar .save-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    @media (min-width: 1100px) { .save-bar { left: 240px; } }
+    @media (min-width: 720px) and (max-width: 1099px) { .save-bar { left: 72px; } }
+
+    /* ── Modals (mirrored) ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.is-open { display: flex; }
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 26px;
+      width: 100%; max-width: 520px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.18);
+      animation: modalIn .18s ease;
+      position: relative;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal.modal-wide { max-width: 720px; }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 { font-family: var(--font-display); font-size: 22px; margin: 0 0 6px; letter-spacing: -0.005em; }
+    .modal .modal-sub { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 18px; line-height: 1.55; }
+    .modal .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+    .modal .modal-close-x {
+      position: absolute; top: 16px; right: 16px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 20px; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal .modal-close-x:hover { background: var(--bg-muted); color: var(--fg); }
+
+    /* color-picker modal body */
+    .cp-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 580px) { .cp-grid { grid-template-columns: 1fr; } }
+    .cp-preview {
+      width: 100%; aspect-ratio: 1 / 1;
+      border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.08);
+      background: #6366F1;
+      display: flex; align-items: flex-end; justify-content: flex-start;
+      padding: 10px 14px;
+      color: #fff; font-family: var(--font-mono);
+      font-size: 13px; font-weight: 600;
+    }
+    .cp-controls { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .cp-controls label { font-size: 11px; font-weight: 700; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.05em; }
+    .cp-row { display: flex; align-items: center; gap: 8px; }
+    .cp-row input[type="text"] {
+      font-family: var(--font-mono); font-size: 13px;
+      padding: 8px 10px; border-radius: 8px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      width: 110px; outline: none;
+    }
+    .cp-row input[type="text"]:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+    .cp-row input[type="range"] { flex: 1; min-width: 0; }
+    .cp-recent {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .cp-recent .cp-chip {
+      width: 22px; height: 22px; border-radius: 5px;
+      box-shadow: inset 0 0 0 1px rgba(17,24,39,0.08);
+      cursor: pointer;
+    }
+    .cp-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cp-contrast {
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border-radius: 9px;
+      font-size: 12px; color: var(--fg-muted);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .cp-badge {
+      font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+    }
+    .cp-badge.aa { background: var(--success-bg); color: #065F46; }
+    .cp-badge.aaa { background: rgba(16,185,129,0.20); color: #065F46; }
+    .cp-badge.fail { background: var(--danger-bg); color: #991B1B; }
+
+    /* font upload modal */
+    .upload-zone {
+      border: 1.5px dashed rgba(99,102,241,0.40);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      background: rgba(99,102,241,0.03);
+      color: var(--fg-muted);
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+    .upload-zone strong { color: var(--brand-primary); }
+    .uploaded-fonts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .uploaded-font {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 9px;
+      font-size: 13px;
+    }
+    .uploaded-font .uf-name { font-weight: 600; flex: 1; }
+    .uploaded-font .uf-size { font-size: 11px; color: var(--fg-subtle); }
+
+    /* ── Tier banner ── */
+    .tier-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.22);
+      font-size: 13px; line-height: 1.5;
+      color: var(--fg);
+    }
+    body.dark-mode .tier-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.10));
+      border-color: rgba(99,102,241,0.40);
+    }
+    .tier-banner .tb-ico {
+      flex-shrink: 0; font-size: 20px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(245,158,11,0.18);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .tier-banner .tb-text { flex: 1; min-width: 0; }
+    .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
+    .tier-banner .tb-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .tier-banner .btn { flex-shrink: 0; }
+
+    /* ── Demo toolbar (mirrored) ── */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px; z-index: 999;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 600; color: var(--fg-subtle);
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      max-width: 320px;
+    }
+    .demo-toolbar .dt-label {
+      color: var(--fg-subtle); text-transform: uppercase;
+      letter-spacing: .06em; font-size: 10px;
+    }
+    .demo-toolbar .dt-row { display: flex; gap: 4px; flex-wrap: wrap; }
+    .demo-toolbar button {
+      padding: 4px 9px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans); color: var(--fg);
+      transition: background .12s ease, border-color .12s ease, color .12s ease;
+    }
+    .demo-toolbar button.is-active {
+      background: rgba(99,102,241,0.10);
+      border-color: rgba(99,102,241,0.30);
+      color: var(--brand-primary);
+    }
+    .demo-toolbar button:hover { background: var(--bg-muted); }
+
+    /* ── Dark mode overrides ── */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #4B5563;
+      --border:      #1F2937;
+      --border-strong: #374151;
+      --wm-ify: #F3F4F6;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .settings-nav-item { color: #9CA3AF; }
+    body.dark-mode .settings-nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .settings-nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .settings-nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .settings-section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .field-input,
+    body.dark-mode .field-select { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .preset-card { background: #0B0F1E; }
+    body.dark-mode .preset-meta { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .swatch { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .radio-card { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .save-bar { background: #141A2D; border-top-color: #1F2937; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .demo-toolbar { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .demo-toolbar button { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .demo-toolbar button.is-active { background: rgba(99,102,241,0.20); border-color: rgba(99,102,241,0.50); color: #A5B4FC; }
+    body.dark-mode .preview-panel { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .preview-panel-head, body.dark-mode .preview-panel-foot { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .preview-stage { background: #0B0F1E; }
+    body.dark-mode .preview-segment { background: #1A2236; }
+    body.dark-mode .preview-segment button.is-active { background: #141A2D; color: #F3F4F6; }
+    body.dark-mode .pattern-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .upload-zone { background: rgba(99,102,241,0.10); }
+    body.dark-mode .uploaded-font { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .css-disclaim { background: rgba(245,158,11,0.10); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP APP BAR
+     ============================================================ -->
+<header class="appbar">
+  <div class="brand">
+    <a href="./app-dashboard.html" class="brand">
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b id="appbar-handle">alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleAppDarkMode()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout" id="layout">
+
+  <!-- Canonical sidebar via shared partial -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-settings.html">Settings</a>
+      <span class="sep">/</span>
+      <span class="current">Theme</span>
+    </nav>
+
+    <div class="page-head">
+      <div>
+        <h1>Theme</h1>
+        <div class="sub">Pick a starter, tweak the palette, and watch it apply live.</div>
+      </div>
+      <div class="head-actions">
+        <span class="preview-badge" id="preview-badge"><span class="pb-dot"></span> Preview only · changes haven't published yet</span>
+      </div>
+    </div>
+
+    <!-- Settings layout: tab nav + content -->
+    <div class="settings-layout">
+
+      <!-- Tab nav (extended with Theme as the 8th entry) -->
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a href="./app-settings-account.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </a>
+        <a href="./app-settings-billing.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a href="./app-settings-security.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security
+        </a>
+        <a href="./app-settings-gdpr.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          GDPR &amp; data
+        </a>
+        <a href="./app-settings-theme.html" class="settings-nav-item active" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>
+          Theme
+          <span class="sn-pill new-pill">New</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a href="./app-settings.html#api" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          API keys
+          <span class="sn-pill pro-pill">Pro</span>
+        </a>
+        <a href="./app-settings.html#team" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team
+          <span class="sn-pill biz-pill">Business</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a href="./app-settings.html#danger" class="settings-nav-item" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger)"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger zone
+        </a>
+      </nav>
+
+      <!-- Content -->
+      <div class="settings-content" id="theme-pane">
+
+        <!-- Tier upsell banner (shown only on Free) -->
+        <div class="tier-banner" id="tier-banner" style="display:none">
+          <div class="tb-ico">🎨</div>
+          <div class="tb-text">
+            <div class="tb-title">You're on Free — pick any of the 8 starter themes</div>
+            <div class="tb-sub">Custom palette, custom fonts, background images, and patterns unlock on Pro. Custom CSS unlocks on Business.</div>
+          </div>
+          <a href="./pricing.html" class="btn btn-primary btn-sm">See plans</a>
+        </div>
+
+        <!-- Two-column: controls left, sticky preview right -->
+        <div class="theme-grid">
+
+          <!-- ============================================================
+               LEFT COLUMN — controls
+               ============================================================ -->
+          <div class="theme-controls">
+
+            <!-- ====================
+                 1. THEME PRESETS
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-presets">
+              <div class="section-head-row">
+                <div class="sh-text">
+                  <div class="settings-section-title" id="sec-presets">Theme presets</div>
+                  <p class="settings-section-lede">Eight curated starting points. Click one to apply it instantly to the live preview — nothing publishes until you hit Apply theme.</p>
+                </div>
+                <div class="sh-actions">
+                  <button class="btn btn-ghost btn-sm" data-tip="Preview a randomly picked preset" onclick="randomPreset()">🎲 Surprise me</button>
+                </div>
+              </div>
+
+              <div class="preset-grid" id="preset-grid">
+                <button class="preset-card is-active" data-preset="indigo" onclick="applyPreset(this, 'indigo')">
+                  <div class="preset-thumb pt-indigo"><span class="pt-mini-btn">Subscribe</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Indigo Serif</div>
+                      <div class="pm-font">Crimson Pro · default</div>
+                    </div>
+                    <span class="chip success" style="font-size:10px">Active</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="mono" onclick="applyPreset(this, 'mono')">
+                  <div class="preset-thumb pt-mono"><span class="pt-mini-btn">Subscribe</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Mono Minimal</div>
+                      <div class="pm-font">Inter</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="pastel" onclick="applyPreset(this, 'pastel')">
+                  <div class="preset-thumb pt-pastel"><span class="pt-mini-btn">Tap me</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Pastel Pop</div>
+                      <div class="pm-font">Quicksand</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="glass" onclick="applyPreset(this, 'glass')">
+                  <div class="preset-thumb pt-glass"><span class="pt-mini-btn">Subscribe</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Dark Glass</div>
+                      <div class="pm-font">Inter · dark default</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="earth" onclick="applyPreset(this, 'earth')">
+                  <div class="preset-thumb pt-earth"><span class="pt-mini-btn">Read more</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Earth Tones</div>
+                      <div class="pm-font">Lora</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="neon" onclick="applyPreset(this, 'neon')">
+                  <div class="preset-thumb pt-neon"><span class="pt-mini-btn">Listen now</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Neon Night</div>
+                      <div class="pm-font">Space Grotesk</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="sunrise" onclick="applyPreset(this, 'sunrise')">
+                  <div class="preset-thumb pt-sunrise"><span class="pt-mini-btn">Say hi</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Soft Sunrise</div>
+                      <div class="pm-font">Raleway</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+
+                <button class="preset-card" data-preset="editorial" onclick="applyPreset(this, 'editorial')">
+                  <div class="preset-thumb pt-editorial"><span class="pt-mini-btn">Read piece</span></div>
+                  <div class="preset-meta">
+                    <div>
+                      <div class="pm-name">Editorial</div>
+                      <div class="pm-font">Playfair Display</div>
+                    </div>
+                    <span class="chip" style="font-size:10px">Free</span>
+                  </div>
+                </button>
+              </div>
+            </section>
+
+            <!-- ====================
+                 2. CUSTOM PALETTE (Pro+)
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-palette">
+              <div class="section-head-row">
+                <div class="sh-text">
+                  <div class="settings-section-title" id="sec-palette">
+                    Custom palette
+                    <span class="chip-tier pro">PRO</span>
+                  </div>
+                  <p class="settings-section-lede">Override any preset color. Each swatch opens a picker with HEX, HSL sliders, and a contrast checker so your text stays readable.</p>
+                </div>
+                <div class="sh-actions">
+                  <button class="ai-btn" onclick="openColorPicker('logo-match')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    Match my logo
+                  </button>
+                  <button class="ai-btn is-warm" onclick="randomPalette()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8l-8 8M8 8l8 8"/></svg>
+                    Random palette <span class="chip-tier creator" style="margin-left:4px">CREATOR</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="swatch-row">
+                <button class="swatch" onclick="openColorPicker('primary')" data-tip="Primary — buttons + accents">
+                  <div class="sw-block" style="background:#6366F1"></div>
+                  <div class="sw-name">Primary</div>
+                  <div class="sw-hex">#6366F1</div>
+                </button>
+                <button class="swatch" onclick="openColorPicker('accent')" data-tip="Accent — secondary highlights">
+                  <div class="sw-block" style="background:#F59E0B"></div>
+                  <div class="sw-name">Accent</div>
+                  <div class="sw-hex">#F59E0B</div>
+                </button>
+                <button class="swatch" onclick="openColorPicker('background')" data-tip="Page background">
+                  <div class="sw-block" style="background:#F9FAFB; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.10)"></div>
+                  <div class="sw-name">Background</div>
+                  <div class="sw-hex">#F9FAFB</div>
+                </button>
+                <button class="swatch" onclick="openColorPicker('text')" data-tip="Body text">
+                  <div class="sw-block" style="background:#111827"></div>
+                  <div class="sw-name">Text</div>
+                  <div class="sw-hex">#111827</div>
+                </button>
+              </div>
+
+              <div class="palette-actions">
+                <button class="btn btn-ghost btn-sm" onclick="openSavePresetModal()" data-tip="Save your custom palette to your preset library">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save as preset <span class="chip-tier pro" style="margin-left:4px">PRO</span>
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="resetPalette()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                  Reset to preset
+                </button>
+              </div>
+            </section>
+
+            <!-- ====================
+                 3. TYPOGRAPHY
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-typography">
+              <div class="settings-section-title" id="sec-typography">Typography</div>
+              <p class="settings-section-lede">Pick a display font for headings and a body font for everything else. Mix and match — or upload your own (Business).</p>
+
+              <div class="field-row">
+                <div class="field-label">
+                  Display font
+                  <span class="field-hint">Used for the page title, block headlines, and creator name</span>
+                </div>
+                <div class="field-body">
+                  <div class="row-2">
+                    <select class="field-select" id="display-font" onchange="updateTypography()">
+                      <option value="Crimson Pro" selected>Crimson Pro (default)</option>
+                      <option value="Inter">Inter</option>
+                      <option value="Quicksand">Quicksand</option>
+                      <option value="Lora">Lora</option>
+                      <option value="Space Grotesk">Space Grotesk</option>
+                      <option value="Raleway">Raleway</option>
+                      <option value="Playfair Display">Playfair Display</option>
+                      <option value="Cormorant">Cormorant</option>
+                    </select>
+                    <select class="field-select" id="display-weight" onchange="updateTypography()">
+                      <option value="400">Regular 400</option>
+                      <option value="500">Medium 500</option>
+                      <option value="600" selected>Semibold 600</option>
+                      <option value="700">Bold 700</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-label">
+                  Body font
+                  <span class="field-hint">Used for block labels, bio, captions</span>
+                </div>
+                <div class="field-body">
+                  <div class="row-2">
+                    <select class="field-select" id="body-font" onchange="updateTypography()">
+                      <option value="Inter" selected>Inter (default)</option>
+                      <option value="Crimson Pro">Crimson Pro</option>
+                      <option value="Quicksand">Quicksand</option>
+                      <option value="Lora">Lora</option>
+                      <option value="Space Grotesk">Space Grotesk</option>
+                      <option value="Raleway">Raleway</option>
+                      <option value="Playfair Display">Playfair Display</option>
+                      <option value="Cormorant">Cormorant</option>
+                    </select>
+                    <select class="field-select" id="body-weight" onchange="updateTypography()">
+                      <option value="300">Light 300</option>
+                      <option value="400" selected>Regular 400</option>
+                      <option value="500">Medium 500</option>
+                      <option value="600">Semibold 600</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-label">
+                  Letter spacing
+                  <span class="field-hint">Tighten or loosen everything in lockstep</span>
+                </div>
+                <div class="field-body">
+                  <div class="cp-row">
+                    <input type="range" min="-3" max="6" step="1" value="0" id="letter-spacing" oninput="updateTypography()" />
+                    <span class="mono" id="letter-spacing-val" style="font-size:12px; color:var(--fg-muted); width:48px; text-align:right">0.00em</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-label">
+                  Line height
+                  <span class="field-hint">More for airy, less for compact</span>
+                </div>
+                <div class="field-body">
+                  <div class="cp-row">
+                    <input type="range" min="120" max="180" step="5" value="155" id="line-height" oninput="updateTypography()" />
+                    <span class="mono" id="line-height-val" style="font-size:12px; color:var(--fg-muted); width:48px; text-align:right">1.55</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-label">
+                  Custom fonts
+                  <span class="field-hint">.woff2 / .woff / .ttf · 2MB each · 4 max</span>
+                </div>
+                <div class="field-body">
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+                    <button class="btn btn-ghost btn-sm" onclick="openCustomFontModal()">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      Upload font
+                    </button>
+                    <span class="chip-tier business">BUSINESS</span>
+                    <span style="font-size:12px; color:var(--fg-subtle)">2 of 4 used</span>
+                  </div>
+                  <div class="uploaded-fonts">
+                    <div class="uploaded-font">
+                      <span style="font-family: 'Cormorant', serif; font-weight:600; font-size:18px; width:32px">Aa</span>
+                      <span class="uf-name">Atelier-Display.woff2</span>
+                      <span class="uf-size">142 KB</span>
+                      <button class="iconbtn" data-tip="Remove" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                    <div class="uploaded-font">
+                      <span style="font-family: 'Inter', sans-serif; font-weight:700; font-size:16px; width:32px">Aa</span>
+                      <span class="uf-name">Manrope-Variable.woff2</span>
+                      <span class="uf-size">86 KB</span>
+                      <button class="iconbtn" data-tip="Remove" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ====================
+                 4. BACKGROUND STYLE
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-bg">
+              <div class="settings-section-title" id="sec-bg">Background style</div>
+              <p class="settings-section-lede">How the page sits behind your blocks. Solid is fastest, gradients add personality, images are unique to you.</p>
+
+              <div class="field-row">
+                <div class="field-label">Type</div>
+                <div class="field-body">
+                  <div class="radio-row">
+                    <button class="radio-card" data-bg="solid" onclick="selectBg(this, 'solid')">
+                      <div class="rc-swatch" style="background:#F9FAFB"></div>
+                      <div>Solid</div>
+                      <div class="rc-sub">Background swatch</div>
+                    </button>
+                    <button class="radio-card" data-bg="gradient" onclick="selectBg(this, 'gradient')">
+                      <div class="rc-swatch" style="background:linear-gradient(135deg,#EEF2FF,#FED7AA)"></div>
+                      <div>Gradient</div>
+                      <div class="rc-sub">From palette</div>
+                    </button>
+                    <button class="radio-card is-active" data-bg="radial" onclick="selectBg(this, 'radial')">
+                      <div class="rc-swatch" style="background:radial-gradient(circle at 30% 20%, #C7D2FE, #F9FAFB)"></div>
+                      <div>Radial wash</div>
+                      <div class="rc-sub">Indigo Serif default</div>
+                    </button>
+                    <button class="radio-card" data-bg="image" onclick="selectBg(this, 'image')">
+                      <div class="rc-swatch" style="background:linear-gradient(135deg,#94A3B8,#475569); background-image:radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px); background-size:6px 6px"></div>
+                      <div>Custom image</div>
+                      <div class="rc-sub"><span class="chip-tier pro" style="font-size:9px">PRO</span></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row" id="bg-image-controls">
+                <div class="field-label">
+                  Image controls
+                  <span class="field-hint">Active when type = Custom image</span>
+                </div>
+                <div class="field-body">
+                  <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap">
+                    <button class="btn btn-ghost btn-sm" onclick="alert('Mock: opens file picker')">Replace image</button>
+                    <span style="font-size:12px; color:var(--fg-subtle)">studio-wall.jpg · 1.4 MB</span>
+                  </div>
+                  <div class="row-2" style="margin-bottom:8px">
+                    <div>
+                      <label style="font-size:11px; font-weight:700; color:var(--fg-subtle); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:block">Opacity</label>
+                      <div class="cp-row">
+                        <input type="range" min="0" max="100" value="60" id="bg-opacity" />
+                        <span class="mono" style="font-size:12px; color:var(--fg-muted); width:38px; text-align:right">60%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style="font-size:11px; font-weight:700; color:var(--fg-subtle); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:block">Blur</label>
+                      <div class="cp-row">
+                        <input type="range" min="0" max="40" value="8" id="bg-blur" />
+                        <span class="mono" style="font-size:12px; color:var(--fg-muted); width:38px; text-align:right">8px</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size:11px; font-weight:700; color:var(--fg-subtle); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:block">Fit</label>
+                    <div style="display:flex; gap:6px">
+                      <button class="btn btn-ghost btn-xs">Cover</button>
+                      <button class="btn btn-ghost btn-xs" style="background:rgba(99,102,241,0.10); border-color:rgba(99,102,241,0.30); color:var(--brand-primary)">Tile</button>
+                      <button class="btn btn-ghost btn-xs">Contain</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field-label">
+                  Pattern overlay
+                  <span class="field-hint"><span class="chip-tier pro" style="font-size:9px">PRO</span> · 6 SVG patterns blend on top of background</span>
+                </div>
+                <div class="field-body">
+                  <div class="pattern-row">
+                    <button class="pattern-card pn-dots is-active" data-pattern="dots" onclick="selectPattern(this, 'dots')"><div class="pn-name">Dots</div></button>
+                    <button class="pattern-card pn-grid" data-pattern="grid" onclick="selectPattern(this, 'grid')"><div class="pn-name">Grid</div></button>
+                    <button class="pattern-card pn-waves" data-pattern="waves" onclick="selectPattern(this, 'waves')"><div class="pn-name">Waves</div></button>
+                    <button class="pattern-card pn-hex" data-pattern="hex" onclick="selectPattern(this, 'hex')"><div class="pn-name">Hexagons</div></button>
+                    <button class="pattern-card pn-tri" data-pattern="tri" onclick="selectPattern(this, 'tri')"><div class="pn-name">Triangles</div></button>
+                    <button class="pattern-card pn-noise" data-pattern="noise" onclick="selectPattern(this, 'noise')"><div class="pn-name">Noise</div></button>
+                  </div>
+                  <div style="margin-top:10px; display:flex; align-items:center; gap:10px">
+                    <span style="font-size:12px; color:var(--fg-muted)">Opacity</span>
+                    <input type="range" min="0" max="100" value="35" style="flex:1; max-width:200px" />
+                    <span class="mono" style="font-size:12px; color:var(--fg-muted)">35%</span>
+                    <button class="btn btn-ghost btn-xs" onclick="clearPattern()">Clear</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ====================
+                 5. SPACING + DENSITY
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-density">
+              <div class="settings-section-title" id="sec-density">Spacing &amp; density</div>
+              <p class="settings-section-lede">How tightly or loosely your blocks sit on the page. We map this to <code class="mono" style="font-size:11.5px">--space-*</code> tokens.</p>
+
+              <div class="density-row">
+                <button class="radio-card density-card" data-density="compact" onclick="selectDensity(this, 'compact')">
+                  <div class="rc-swatch" style="height:60px"><div class="rc-bar"></div><div class="rc-bar"></div><div class="rc-bar"></div><div class="rc-bar"></div></div>
+                  <div>Compact</div>
+                  <div class="rc-sub">More on screen</div>
+                </button>
+                <button class="radio-card density-card is-active" data-density="comfortable" onclick="selectDensity(this, 'comfortable')">
+                  <div class="rc-swatch" style="height:60px"><div class="rc-bar"></div><div class="rc-bar"></div><div class="rc-bar"></div></div>
+                  <div>Comfortable</div>
+                  <div class="rc-sub">Default — balanced</div>
+                </button>
+                <button class="radio-card density-card" data-density="roomy" onclick="selectDensity(this, 'roomy')">
+                  <div class="rc-swatch" style="height:60px"><div class="rc-bar"></div><div class="rc-bar"></div></div>
+                  <div>Roomy</div>
+                  <div class="rc-sub">Premium feel</div>
+                </button>
+              </div>
+            </section>
+
+            <!-- ====================
+                 6. CUSTOM CSS (Business+)
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-css">
+              <div class="section-head-row">
+                <div class="sh-text">
+                  <div class="settings-section-title" id="sec-css">
+                    Custom CSS
+                    <span class="chip-tier business">BUSINESS</span>
+                  </div>
+                  <p class="settings-section-lede">For when the controls above don't go far enough. Wrapped in a scoped layer so you can't break the editor or sign-in flows.</p>
+                </div>
+                <div class="sh-actions">
+                  <button class="btn btn-ghost btn-sm" onclick="resetCustomCss()">Reset</button>
+                  <button class="btn btn-primary btn-sm" onclick="markDirty()">Apply</button>
+                </div>
+              </div>
+
+              <div class="css-editor-wrap">
+                <div class="css-editor-head">
+                  <div class="ce-tabs">
+                    <span class="ce-dot r"></span><span class="ce-dot y"></span><span class="ce-dot g"></span>
+                    <span class="ce-file">theme.custom.css</span>
+                  </div>
+                  <span>scoped @layer custom</span>
+                </div>
+                <pre class="css-editor-body" id="css-editor"><span class="css-comment">/* Your CSS lands inside @layer theme-custom { ... } */</span>
+<span class="css-comment">/* The 4 palette swatches are exposed as CSS custom properties: */</span>
+<span class="css-selector">:root</span> {
+  <span class="css-comment">/* readable in your overrides */</span>
+}
+
+<span class="css-selector">.creator-page .block</span> {
+  <span class="css-prop">border-radius</span>: <span class="css-num">22px</span>;
+  <span class="css-prop">box-shadow</span>: <span class="css-num">0</span> <span class="css-num">8px</span> <span class="css-num">24px</span> <span class="css-value">rgba</span>(<span class="css-num">17</span>,<span class="css-num">24</span>,<span class="css-num">39</span>,<span class="css-num">0.06</span>);
+  <span class="css-prop">transition</span>: <span class="css-prop">transform</span> <span class="css-num">160ms</span> <span class="css-value">ease</span>;
+}
+<span class="css-selector">.creator-page .block</span><span class="css-prop">:hover</span> {
+  <span class="css-prop">transform</span>: <span class="css-value">translateY</span>(<span class="css-num">-2px</span>);
+}
+
+<span class="css-selector">.creator-page .pf-name</span> {
+  <span class="css-prop">background</span>: <span class="css-value">linear-gradient</span>(<span class="css-num">90deg</span>, <span class="css-value">var</span>(<span class="css-prop">--theme-primary</span>), <span class="css-value">var</span>(<span class="css-prop">--theme-accent</span>));
+  <span class="css-prop">-webkit-background-clip</span>: <span class="css-value">text</span>;
+  <span class="css-prop">color</span>: <span class="css-value">transparent</span>;
+}</pre>
+                <div class="css-editor-foot">
+                  <span>1,247 chars · 22 lines · CSS valid ✓</span>
+                  <span>Last saved 4 min ago</span>
+                </div>
+              </div>
+
+              <div class="css-disclaim">
+                ⚠️ Custom CSS is power-user territory. We don't support arbitrary CSS in customer support — if your page breaks, the first thing we'll ask is to clear this field.
+              </div>
+            </section>
+
+            <!-- ====================
+                 7. THEME HISTORY (Pro+)
+                 ==================== -->
+            <section class="settings-section" aria-labelledby="sec-history">
+              <div class="section-head-row">
+                <div class="sh-text">
+                  <div class="settings-section-title" id="sec-history">
+                    Theme history
+                    <span class="chip-tier pro">PRO</span>
+                  </div>
+                  <p class="settings-section-lede">Your last 10 published themes. Click revert to roll back instantly — no re-design needed.</p>
+                </div>
+              </div>
+
+              <div class="history-list">
+                <div class="history-row">
+                  <div class="hr-thumb" style="background:radial-gradient(circle at 30% 20%, #C7D2FE, #F9FAFB)"></div>
+                  <div class="hr-meta">
+                    <div class="hr-name">Indigo Serif <span class="chip success" style="font-size:10px">Current</span></div>
+                    <div class="hr-when">Applied today, 2:14 PM</div>
+                  </div>
+                </div>
+                <div class="history-row">
+                  <div class="hr-thumb" style="background:linear-gradient(135deg, #FED7AA, #FBCFE8, #FEF3C7)"></div>
+                  <div class="hr-meta">
+                    <div class="hr-name">Soft Sunrise (custom palette)</div>
+                    <div class="hr-when">Applied 3 days ago · 14h published</div>
+                  </div>
+                  <button class="btn btn-ghost btn-xs hr-revert" onclick="openRevertModal('Soft Sunrise')">Revert</button>
+                </div>
+                <div class="history-row">
+                  <div class="hr-thumb" style="background:linear-gradient(135deg, #6366F1, #8B5CF6)"></div>
+                  <div class="hr-meta">
+                    <div class="hr-name">Indigo Serif</div>
+                    <div class="hr-when">Applied April 22 · 2 days published</div>
+                  </div>
+                  <button class="btn btn-ghost btn-xs hr-revert" onclick="openRevertModal('Indigo Serif')">Revert</button>
+                </div>
+                <div class="history-row">
+                  <div class="hr-thumb" style="background:radial-gradient(circle at 70% 30%, #A855F7, #1A0B2E)"></div>
+                  <div class="hr-meta">
+                    <div class="hr-name">Neon Night (custom CSS)</div>
+                    <div class="hr-when">Applied April 18 · 4 days published</div>
+                  </div>
+                  <button class="btn btn-ghost btn-xs hr-revert" onclick="openRevertModal('Neon Night')">Revert</button>
+                </div>
+                <div class="history-row">
+                  <div class="hr-thumb" style="background:linear-gradient(180deg, #FAFAFA, #FFF); border-bottom:3px solid #DC2626"></div>
+                  <div class="hr-meta">
+                    <div class="hr-name">Editorial</div>
+                    <div class="hr-when">Applied April 14 · 4 days published</div>
+                  </div>
+                  <button class="btn btn-ghost btn-xs hr-revert" onclick="openRevertModal('Editorial')">Revert</button>
+                </div>
+                <div class="history-row">
+                  <div class="hr-thumb" style="background:linear-gradient(135deg, #FED7AA, #FECACA, #D9F99D)"></div>
+                  <div class="hr-meta">
+                    <div class="hr-name">Earth Tones</div>
+                    <div class="hr-when">Applied April 10 · 4 days published</div>
+                  </div>
+                  <button class="btn btn-ghost btn-xs hr-revert" onclick="openRevertModal('Earth Tones')">Revert</button>
+                </div>
+              </div>
+            </section>
+
+          </div><!-- /theme-controls -->
+
+          <!-- ============================================================
+               RIGHT COLUMN — sticky live preview
+               ============================================================ -->
+          <aside class="theme-preview-col" aria-label="Live preview">
+            <div class="preview-panel">
+              <div class="preview-panel-head">
+                <div class="pp-title">Live preview · tadaify.com/alexandra</div>
+                <div class="preview-segment" id="device-segment">
+                  <button class="is-active" data-device="desktop" onclick="setPreviewDevice('desktop')" data-tip="Desktop">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  </button>
+                  <button data-device="tablet" onclick="setPreviewDevice('tablet')" data-tip="Tablet">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </button>
+                  <button data-device="mobile" onclick="setPreviewDevice('mobile')" data-tip="Mobile">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="preview-stage" id="preview-stage" data-device="desktop">
+                <div class="preview-frame has-pattern" id="preview-frame">
+                  <div class="pf-avatar">A</div>
+                  <div class="pf-name">Alexandra Silva</div>
+                  <div class="pf-handle">@alexandra</div>
+                  <div class="pf-bio">Designer & writer. Currently building tadaify.</div>
+                  <a class="pf-block is-primary">Subscribe to my newsletter →</a>
+                  <a class="pf-block">Latest essay on craft</a>
+                  <a class="pf-block">Book a 30-min call</a>
+                  <a class="pf-block">Spotify · Late nights playlist</a>
+                  <div class="pf-socials">
+                    <span class="pf-soc"></span><span class="pf-soc"></span><span class="pf-soc"></span><span class="pf-soc"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="preview-panel-foot">
+                <span class="pf-update"><span class="pf-dot"></span> Live · updates as you change controls</span>
+                <button class="btn btn-ghost btn-xs" onclick="togglePreviewDark()" id="preview-dark-btn">🌙 Dark</button>
+              </div>
+            </div>
+          </aside>
+
+        </div><!-- /theme-grid -->
+
+      </div><!-- /settings-content -->
+
+    </div><!-- /settings-layout -->
+
+  </main>
+
+</div>
+
+<!-- ============================================================
+     STICKY SAVE BAR
+     ============================================================ -->
+<div class="save-bar" id="save-bar">
+  <div class="save-hint">
+    <span class="save-dot"></span>
+    <span id="save-text">Preview only — your live page hasn't changed yet.</span>
+  </div>
+  <div class="save-actions">
+    <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+    <button class="btn btn-primary btn-sm" onclick="applyTheme()">Apply theme</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     COLOR PICKER MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="color-picker-modal" onclick="if(event.target===this) closeColorPicker()">
+  <div class="modal modal-wide" role="dialog" aria-labelledby="cp-title">
+    <button class="modal-close-x" onclick="closeColorPicker()" aria-label="Close">×</button>
+    <h3 id="cp-title">Pick a color · Primary</h3>
+    <p class="modal-sub">HEX, RGB, or HSL — whichever feels natural. We'll show you whether your text stays readable on it.</p>
+
+    <div class="cp-grid">
+      <div>
+        <div class="cp-preview" id="cp-preview" style="background:#6366F1">#6366F1</div>
+        <div style="margin-top:10px">
+          <label style="display:block; margin-bottom:6px">Recently used</label>
+          <div class="cp-recent">
+            <span class="cp-chip" style="background:#6366F1" onclick="setPickerColor('#6366F1')"></span>
+            <span class="cp-chip" style="background:#8B5CF6" onclick="setPickerColor('#8B5CF6')"></span>
+            <span class="cp-chip" style="background:#F59E0B" onclick="setPickerColor('#F59E0B')"></span>
+            <span class="cp-chip" style="background:#10B981" onclick="setPickerColor('#10B981')"></span>
+            <span class="cp-chip" style="background:#EF4444" onclick="setPickerColor('#EF4444')"></span>
+            <span class="cp-chip" style="background:#0EA5E9" onclick="setPickerColor('#0EA5E9')"></span>
+            <span class="cp-chip" style="background:#EC4899" onclick="setPickerColor('#EC4899')"></span>
+            <span class="cp-chip" style="background:#111827" onclick="setPickerColor('#111827')"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cp-controls">
+        <div>
+          <label>HEX</label>
+          <div class="cp-row">
+            <input type="text" id="cp-hex" value="#6366F1" oninput="setPickerColor(this.value)" />
+            <button class="btn btn-ghost btn-xs" data-tip="Copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('cp-hex').value)">📋</button>
+          </div>
+        </div>
+
+        <div>
+          <label>Hue · <span id="cp-h-val" class="mono">238°</span></label>
+          <div class="cp-row">
+            <input type="range" min="0" max="360" value="238" id="cp-h" oninput="updatePickerFromHsl()" />
+          </div>
+        </div>
+        <div>
+          <label>Saturation · <span id="cp-s-val" class="mono">84%</span></label>
+          <div class="cp-row">
+            <input type="range" min="0" max="100" value="84" id="cp-s" oninput="updatePickerFromHsl()" />
+          </div>
+        </div>
+        <div>
+          <label>Lightness · <span id="cp-l-val" class="mono">66%</span></label>
+          <div class="cp-row">
+            <input type="range" min="0" max="100" value="66" id="cp-l" oninput="updatePickerFromHsl()" />
+          </div>
+        </div>
+
+        <div class="cp-actions" style="margin-top:6px">
+          <button class="ai-btn" onclick="matchLogoColors()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
+            Match my logo
+          </button>
+        </div>
+
+        <div class="cp-contrast">
+          <span>Contrast vs Background <span class="mono" style="font-size:11.5px; opacity:0.7">(#F9FAFB)</span></span>
+          <span class="cp-badge aa">5.41 · AA pass</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeColorPicker()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="applyPickerColor()">Apply color</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CUSTOM FONT UPLOAD MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="font-modal" onclick="if(event.target===this) closeCustomFontModal()">
+  <div class="modal" role="dialog" aria-labelledby="fm-title">
+    <button class="modal-close-x" onclick="closeCustomFontModal()" aria-label="Close">×</button>
+    <h3 id="fm-title">Upload a custom font</h3>
+    <p class="modal-sub">For brand fonts not on Google Fonts. We accept .woff2 (best), .woff, and .ttf — up to 2MB each, 4 fonts per workspace.</p>
+
+    <div class="upload-zone" onclick="alert('Mock: opens file picker')">
+      <div style="font-size:28px; margin-bottom:6px">⬆️</div>
+      Drag your <strong>.woff2</strong> file here, or <strong>browse</strong>
+      <div style="margin-top:6px; font-size:12px; color:var(--fg-subtle)">2MB max · woff2 / woff / ttf</div>
+    </div>
+
+    <div style="margin-top:14px">
+      <label style="font-size:11px; font-weight:700; color:var(--fg-subtle); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:block">Family name</label>
+      <input class="field-input" placeholder="e.g. Atelier Display" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeCustomFontModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeCustomFontModal(); markDirty();">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SAVE PRESET MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="save-preset-modal" onclick="if(event.target===this) closeSavePresetModal()">
+  <div class="modal" role="dialog" aria-labelledby="sp-title">
+    <button class="modal-close-x" onclick="closeSavePresetModal()" aria-label="Close">×</button>
+    <h3 id="sp-title">Save palette as preset</h3>
+    <p class="modal-sub">Add your current 4-color palette to your personal preset library. Reuse it across pages or share with collaborators (Business).</p>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px; font-weight:700; color:var(--fg-subtle); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:block">Preset name</label>
+      <input class="field-input" placeholder="e.g. Studio Spring 2026" value="Studio Spring 2026" />
+    </div>
+
+    <div class="cp-contrast" style="background:var(--bg); border:1px solid var(--border)">
+      <span>Saving 4 colors · Primary, Accent, Background, Text</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeSavePresetModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeSavePresetModal()">Save preset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     REVERT CONFIRM MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="revert-modal" onclick="if(event.target===this) closeRevertModal()">
+  <div class="modal" role="dialog" aria-labelledby="rv-title">
+    <button class="modal-close-x" onclick="closeRevertModal()" aria-label="Close">×</button>
+    <h3 id="rv-title">Revert to <span id="revert-name">Soft Sunrise</span>?</h3>
+    <p class="modal-sub">This will replace your current theme on the live page. The current theme will be saved in history so you can come back to it.</p>
+
+    <div class="cp-contrast" style="background:var(--bg); border:1px solid var(--border)">
+      <span>Visitors see the change within 30 seconds.</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeRevertModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="closeRevertModal(); markSaved();">Revert &amp; publish</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEMO TOOLBAR
+     ============================================================ -->
+<div class="demo-toolbar" id="demo-toolbar">
+  <div>
+    <div class="dt-label">Tier</div>
+    <div class="dt-row" id="dt-tier-row">
+      <button data-tier="free" onclick="setTier('free')">Free</button>
+      <button data-tier="creator" class="is-active" onclick="setTier('creator')">Creator</button>
+      <button data-tier="pro" onclick="setTier('pro')">Pro</button>
+      <button data-tier="business" onclick="setTier('business')">Business</button>
+    </div>
+  </div>
+  <div>
+    <div class="dt-label">State</div>
+    <div class="dt-row" id="dt-state-row">
+      <button data-state="default" class="is-active" onclick="setState('default')">Default</button>
+      <button data-state="custom-palette" onclick="setState('custom-palette')">Custom palette</button>
+      <button data-state="custom-font" onclick="setState('custom-font')">Custom font</button>
+      <button data-state="custom-css" onclick="setState('custom-css')">Custom CSS</button>
+      <button data-state="dark-mode" onclick="setState('dark-mode')">Dark mode</button>
+    </div>
+  </div>
+</div>
+
+<script src="./shared/partials.js"></script>
+<script>
+  /* ---------------------------------------------------------------
+     Theme picker mockup — interactive demo logic.
+     All visual changes go through CSS custom properties on
+     #preview-frame so swaps are instant + reversible.
+     --------------------------------------------------------------- */
+
+  /* Preset definitions — same token NAMES as shared/tokens.css, extended.
+     Each preset overrides the 4 user-controlled palette values + fonts. */
+  var PRESETS = {
+    indigo: {
+      bg: '#F9FAFB', fg: '#111827', primary: '#6366F1', accent: '#F59E0B',
+      bgElevated: '#FFFFFF', fgMuted: '#6B7280', border: 'rgba(17,24,39,0.08)',
+      fontDisplay: "'Crimson Pro', serif", fontBody: "'Inter', sans-serif",
+      pattern: 'none', dark: false
+    },
+    mono: {
+      bg: '#FFFFFF', fg: '#111111', primary: '#111111', accent: '#666666',
+      bgElevated: '#FAFAFA', fgMuted: '#666666', border: 'rgba(0,0,0,0.10)',
+      fontDisplay: "'Inter', sans-serif", fontBody: "'Inter', sans-serif",
+      pattern: 'none', dark: false
+    },
+    pastel: {
+      bg: '#FAF5FF', fg: '#4C1D95', primary: '#C084FC', accent: '#FB923C',
+      bgElevated: '#FFFFFF', fgMuted: '#7C3AED', border: 'rgba(124,58,237,0.12)',
+      fontDisplay: "'Quicksand', sans-serif", fontBody: "'Quicksand', sans-serif",
+      pattern: 'dots', dark: false
+    },
+    glass: {
+      bg: '#0B0F1E', fg: '#F3F4F6', primary: '#A5B4FC', accent: '#F59E0B',
+      bgElevated: 'rgba(255,255,255,0.08)', fgMuted: '#9CA3AF', border: 'rgba(255,255,255,0.16)',
+      fontDisplay: "'Inter', sans-serif", fontBody: "'Inter', sans-serif",
+      pattern: 'noise', dark: true
+    },
+    earth: {
+      bg: '#FEF3C7', fg: '#451A03', primary: '#C2410C', accent: '#65A30D',
+      bgElevated: '#FFFBEB', fgMuted: '#92400E', border: 'rgba(146,64,14,0.18)',
+      fontDisplay: "'Lora', serif", fontBody: "'Lora', serif",
+      pattern: 'none', dark: false
+    },
+    neon: {
+      bg: '#1A0B2E', fg: '#F3F4F6', primary: '#A855F7', accent: '#22D3EE',
+      bgElevated: 'rgba(255,255,255,0.06)', fgMuted: '#C4B5FD', border: 'rgba(168,85,247,0.30)',
+      fontDisplay: "'Space Grotesk', sans-serif", fontBody: "'Space Grotesk', sans-serif",
+      pattern: 'none', dark: true
+    },
+    sunrise: {
+      bg: '#FED7AA', fg: '#7C2D12', primary: '#F97316', accent: '#EC4899',
+      bgElevated: 'rgba(255,255,255,0.65)', fgMuted: '#9A3412', border: 'rgba(154,52,18,0.18)',
+      fontDisplay: "'Raleway', sans-serif", fontBody: "'Raleway', sans-serif",
+      pattern: 'none', dark: false
+    },
+    editorial: {
+      bg: '#FAFAF9', fg: '#0C0A09', primary: '#DC2626', accent: '#0C0A09',
+      bgElevated: '#FFFFFF', fgMuted: '#57534E', border: 'rgba(12,10,9,0.12)',
+      fontDisplay: "'Playfair Display', serif", fontBody: "'Inter', sans-serif",
+      pattern: 'none', dark: false
+    }
+  };
+
+  var currentPreset = 'indigo';
+  var currentDevice = 'desktop';
+  var currentTier = 'creator';
+  var previewDark = false;
+  var dirty = false;
+
+  function applyPresetToFrame(name) {
+    var p = PRESETS[name] || PRESETS.indigo;
+    var frame = document.getElementById('preview-frame');
+    if (!frame) return;
+    frame.style.setProperty('--theme-bg', p.bg);
+    frame.style.setProperty('--theme-fg', p.fg);
+    frame.style.setProperty('--theme-primary', p.primary);
+    frame.style.setProperty('--theme-accent', p.accent);
+    frame.style.setProperty('--theme-bg-elevated', p.bgElevated);
+    frame.style.setProperty('--theme-fg-muted', p.fgMuted);
+    frame.style.setProperty('--theme-border', p.border);
+    frame.style.setProperty('--theme-font-display', p.fontDisplay);
+    frame.style.setProperty('--theme-font-body', p.fontBody);
+    if (p.pattern === 'none') {
+      frame.style.backgroundImage = 'none';
+    } else {
+      frame.classList.add('has-pattern');
+    }
+    previewDark = !!p.dark;
+  }
+
+  function applyPreset(el, name) {
+    document.querySelectorAll('.preset-card').forEach(function(c){ c.classList.remove('is-active'); });
+    if (el) el.classList.add('is-active');
+    currentPreset = name;
+    applyPresetToFrame(name);
+    markDirty();
+  }
+
+  function randomPreset() {
+    var names = Object.keys(PRESETS);
+    var pick = names[Math.floor(Math.random() * names.length)];
+    var card = document.querySelector('.preset-card[data-preset="' + pick + '"]');
+    applyPreset(card, pick);
+  }
+
+  /* ---- Custom palette ---- */
+  var pickerTarget = 'primary';
+  function openColorPicker(target) {
+    pickerTarget = target;
+    var titles = { primary: 'Primary', accent: 'Accent', background: 'Background', text: 'Text', 'logo-match': 'Match my logo' };
+    document.getElementById('cp-title').textContent = 'Pick a color · ' + (titles[target] || 'Color');
+    document.getElementById('color-picker-modal').classList.add('is-open');
+  }
+  function closeColorPicker() { document.getElementById('color-picker-modal').classList.remove('is-open'); }
+  function setPickerColor(hex) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+    document.getElementById('cp-hex').value = hex;
+    document.getElementById('cp-preview').style.background = hex;
+    document.getElementById('cp-preview').textContent = hex.toUpperCase();
+  }
+  function updatePickerFromHsl() {
+    var h = +document.getElementById('cp-h').value;
+    var s = +document.getElementById('cp-s').value;
+    var l = +document.getElementById('cp-l').value;
+    document.getElementById('cp-h-val').textContent = h + '°';
+    document.getElementById('cp-s-val').textContent = s + '%';
+    document.getElementById('cp-l-val').textContent = l + '%';
+    var hex = hslToHex(h, s, l);
+    setPickerColor(hex);
+  }
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    var k = function(n) { return (n + h / 30) % 12; };
+    var a = s * Math.min(l, 1 - l);
+    var f = function(n) {
+      var col = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return Math.round(255 * col).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
+  }
+  function applyPickerColor() {
+    var hex = document.getElementById('cp-hex').value;
+    var frame = document.getElementById('preview-frame');
+    if (frame) {
+      if (pickerTarget === 'primary') frame.style.setProperty('--theme-primary', hex);
+      if (pickerTarget === 'accent') frame.style.setProperty('--theme-accent', hex);
+      if (pickerTarget === 'background') frame.style.setProperty('--theme-bg', hex);
+      if (pickerTarget === 'text') frame.style.setProperty('--theme-fg', hex);
+    }
+    /* Update the swatch UI */
+    document.querySelectorAll('.swatch').forEach(function(sw){
+      var hexEl = sw.querySelector('.sw-hex');
+      var blockEl = sw.querySelector('.sw-block');
+      var nameEl = sw.querySelector('.sw-name');
+      if (nameEl && nameEl.textContent.toLowerCase() === pickerTarget) {
+        if (hexEl) hexEl.textContent = hex.toUpperCase();
+        if (blockEl) blockEl.style.background = hex;
+      }
+    });
+    closeColorPicker();
+    markDirty();
+  }
+  function matchLogoColors() {
+    /* Mock: extract palette from avatar/logo. Sets purple-pink scheme. */
+    setPickerColor('#7C3AED');
+    document.getElementById('cp-h').value = 263;
+    document.getElementById('cp-s').value = 70;
+    document.getElementById('cp-l').value = 56;
+    document.getElementById('cp-h-val').textContent = '263°';
+    document.getElementById('cp-s-val').textContent = '70%';
+    document.getElementById('cp-l-val').textContent = '56%';
+  }
+  function randomPalette() {
+    /* Mock: HSL-theory harmonious palette. */
+    var swatches = document.querySelectorAll('.swatch');
+    var colors = ['#0EA5E9', '#F97316', '#FAFAFA', '#0F172A'];
+    swatches.forEach(function(sw, i) {
+      var hexEl = sw.querySelector('.sw-hex');
+      var blockEl = sw.querySelector('.sw-block');
+      if (hexEl) hexEl.textContent = colors[i];
+      if (blockEl) blockEl.style.background = colors[i];
+    });
+    var frame = document.getElementById('preview-frame');
+    if (frame) {
+      frame.style.setProperty('--theme-primary', colors[0]);
+      frame.style.setProperty('--theme-accent', colors[1]);
+      frame.style.setProperty('--theme-bg', colors[2]);
+      frame.style.setProperty('--theme-fg', colors[3]);
+    }
+    markDirty();
+  }
+  function resetPalette() { applyPreset(document.querySelector('[data-preset="' + currentPreset + '"]'), currentPreset); }
+  function openSavePresetModal() { document.getElementById('save-preset-modal').classList.add('is-open'); }
+  function closeSavePresetModal() { document.getElementById('save-preset-modal').classList.remove('is-open'); }
+
+  /* ---- Typography ---- */
+  function updateTypography() {
+    var d = document.getElementById('display-font').value;
+    var b = document.getElementById('body-font').value;
+    var ls = +document.getElementById('letter-spacing').value;
+    var lh = +document.getElementById('line-height').value;
+    document.getElementById('letter-spacing-val').textContent = (ls / 100).toFixed(2) + 'em';
+    document.getElementById('line-height-val').textContent = (lh / 100).toFixed(2);
+    var frame = document.getElementById('preview-frame');
+    if (frame) {
+      frame.style.setProperty('--theme-font-display', "'" + d + "', serif");
+      frame.style.setProperty('--theme-font-body', "'" + b + "', sans-serif");
+      frame.style.letterSpacing = (ls / 100) + 'em';
+      frame.style.lineHeight = (lh / 100);
+    }
+    markDirty();
+  }
+  function openCustomFontModal() { document.getElementById('font-modal').classList.add('is-open'); }
+  function closeCustomFontModal() { document.getElementById('font-modal').classList.remove('is-open'); }
+
+  /* ---- Background + patterns ---- */
+  function selectBg(el, kind) {
+    document.querySelectorAll('[data-bg]').forEach(function(c){ c.classList.remove('is-active'); });
+    if (el) el.classList.add('is-active');
+    var frame = document.getElementById('preview-frame');
+    if (!frame) return;
+    if (kind === 'solid') frame.style.background = getComputedStyle(frame).getPropertyValue('--theme-bg') || '#F9FAFB';
+    if (kind === 'gradient') frame.style.background = 'linear-gradient(135deg, var(--theme-bg, #F9FAFB), var(--theme-accent, #F59E0B))';
+    if (kind === 'radial') frame.style.background = 'radial-gradient(circle at 30% 20%, var(--theme-primary, #6366F1), var(--theme-bg, #F9FAFB))';
+    if (kind === 'image') frame.style.background = 'url("data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23475569%22/></svg>") center/cover';
+    markDirty();
+  }
+  function selectPattern(el, name) {
+    document.querySelectorAll('.pattern-card').forEach(function(c){ c.classList.remove('is-active'); });
+    if (el) el.classList.add('is-active');
+    var frame = document.getElementById('preview-frame');
+    if (!frame) return;
+    var patterns = {
+      dots: 'radial-gradient(rgba(99,102,241,0.40) 1.5px, transparent 1.5px)',
+      grid: 'linear-gradient(rgba(99,102,241,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.25) 1px, transparent 1px)',
+      waves: 'repeating-linear-gradient(45deg, rgba(99,102,241,0.18) 0 6px, transparent 6px 12px)',
+      hex: 'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.30) 2px, transparent 2.5px)',
+      tri: 'repeating-linear-gradient(60deg, rgba(99,102,241,0.20) 0 7px, transparent 7px 14px)',
+      noise: 'radial-gradient(rgba(17,24,39,0.04) 1px, transparent 1px)'
+    };
+    frame.style.backgroundImage = patterns[name] || 'none';
+    frame.style.backgroundSize = '12px 12px';
+    markDirty();
+  }
+  function clearPattern() {
+    document.querySelectorAll('.pattern-card').forEach(function(c){ c.classList.remove('is-active'); });
+    var frame = document.getElementById('preview-frame');
+    if (frame) frame.style.backgroundImage = 'none';
+    markDirty();
+  }
+
+  /* ---- Density ---- */
+  function selectDensity(el, kind) {
+    document.querySelectorAll('.density-card').forEach(function(c){ c.classList.remove('is-active'); });
+    if (el) el.classList.add('is-active');
+    var frame = document.getElementById('preview-frame');
+    if (!frame) return;
+    var pad = { compact: '14px 10px', comfortable: '18px 14px', roomy: '24px 18px' };
+    var gap = { compact: '4px', comfortable: '6px', roomy: '10px' };
+    frame.style.padding = pad[kind] || pad.comfortable;
+    frame.querySelectorAll('.pf-block').forEach(function(b){ b.style.marginBottom = gap[kind] || gap.comfortable; });
+    markDirty();
+  }
+
+  /* ---- Custom CSS ---- */
+  function resetCustomCss() {
+    if (confirm('Reset custom CSS to empty?')) {
+      document.getElementById('css-editor').textContent = '/* No custom CSS yet — your overrides land here. */';
+      markDirty();
+    }
+  }
+
+  /* ---- Theme history ---- */
+  function openRevertModal(name) {
+    document.getElementById('revert-name').textContent = name;
+    document.getElementById('revert-modal').classList.add('is-open');
+  }
+  function closeRevertModal() { document.getElementById('revert-modal').classList.remove('is-open'); }
+
+  /* ---- Preview pane controls ---- */
+  function setPreviewDevice(d) {
+    currentDevice = d;
+    document.querySelectorAll('#device-segment button').forEach(function(b){ b.classList.toggle('is-active', b.dataset.device === d); });
+    document.getElementById('preview-stage').setAttribute('data-device', d);
+  }
+  function togglePreviewDark() {
+    previewDark = !previewDark;
+    var stage = document.getElementById('preview-stage');
+    if (previewDark) {
+      stage.style.background = '#0B0F1E';
+      document.getElementById('preview-dark-btn').textContent = '☀️ Light';
+    } else {
+      stage.style.background = '';
+      document.getElementById('preview-dark-btn').textContent = '🌙 Dark';
+    }
+  }
+
+  /* ---- Save bar ---- */
+  function markDirty() {
+    dirty = true;
+    var bar = document.getElementById('save-bar');
+    bar.classList.remove('is-saved');
+    document.getElementById('save-text').textContent = 'Preview only — your live page hasn’t changed yet.';
+    document.getElementById('preview-badge').style.display = 'inline-flex';
+  }
+  function markSaved() {
+    dirty = false;
+    var bar = document.getElementById('save-bar');
+    bar.classList.add('is-saved');
+    document.getElementById('save-text').textContent = '✓ Theme published. Visitors see it within 30 seconds.';
+    setTimeout(function(){ bar.classList.remove('is-saved'); document.getElementById('save-text').textContent = 'Preview only — your live page hasn’t changed yet.'; }, 4000);
+  }
+  function applyTheme() {
+    /* Mock TierGate.checkAndProceed — would gate premium features here. */
+    if (currentTier === 'free' && (currentPreset !== 'indigo' && currentPreset !== 'mono' && currentPreset !== 'pastel' && currentPreset !== 'glass' && currentPreset !== 'earth' && currentPreset !== 'neon' && currentPreset !== 'sunrise' && currentPreset !== 'editorial')) {
+      alert('Mock: TierGate.checkAndProceed({ features: [\'custom-palette\'], onProceed: applyTheme, onUpgrade: ... })');
+      return;
+    }
+    markSaved();
+  }
+  function discardChanges() {
+    if (!dirty) return;
+    if (confirm('Discard all unpublished theme changes?')) {
+      applyPreset(document.querySelector('[data-preset="indigo"]'), 'indigo');
+      markSaved();
+    }
+  }
+
+  /* ---- Demo toolbar ---- */
+  function setTier(t) {
+    currentTier = t;
+    document.querySelectorAll('#dt-tier-row button').forEach(function(b){ b.classList.toggle('is-active', b.dataset.tier === t); });
+    var hostSidebar = document.querySelector('[data-partial="app-sidebar"]');
+    if (hostSidebar) hostSidebar.setAttribute('data-tier', t);
+    document.getElementById('tier-banner').style.display = (t === 'free') ? 'flex' : 'none';
+  }
+  function setState(s) {
+    document.querySelectorAll('#dt-state-row button').forEach(function(b){ b.classList.toggle('is-active', b.dataset.state === s); });
+    /* Reset to indigo first */
+    applyPreset(document.querySelector('[data-preset="indigo"]'), 'indigo');
+    if (s === 'custom-palette') {
+      randomPalette();
+    }
+    if (s === 'custom-font') {
+      document.getElementById('display-font').value = 'Cormorant';
+      document.getElementById('body-font').value = 'Space Grotesk';
+      updateTypography();
+    }
+    if (s === 'custom-css') {
+      var f = document.getElementById('preview-frame');
+      if (f) {
+        f.style.borderRadius = '22px';
+        f.querySelectorAll('.pf-block').forEach(function(b){ b.style.borderRadius = '18px'; b.style.boxShadow = '0 4px 12px rgba(99,102,241,0.18)'; });
+      }
+      markDirty();
+    }
+    if (s === 'dark-mode') {
+      applyPreset(document.querySelector('[data-preset="glass"]'), 'glass');
+      togglePreviewDark();
+    }
+  }
+
+  /* ---- App-level dark mode toggle ---- */
+  function toggleAppDarkMode() {
+    document.body.classList.toggle('dark-mode');
+  }
+
+  /* ---- Init ---- */
+  document.addEventListener('DOMContentLoaded', function() {
+    applyPresetToFrame('indigo');
+    setTier('creator');
+  });
+</script>
+</body>
+</html>
