@@ -1334,34 +1334,28 @@
             </button>
           </div>
 
-          <!-- Cookie preferences -->
+          <!-- Cookies tadaify uses (privacy-first, read-only)
+               Per Fix #1 (2026-04-27) / feedback_tadaify_privacy_first_no_tracking_creators:
+               tadaify NEVER sets analytics or marketing cookies in the creator's browser.
+               No toggles to render — nothing to opt out of. -->
           <div class="settings-section">
-            <div class="settings-section-title">Cookie preferences</div>
+            <div class="settings-section-title">Cookies tadaify uses</div>
+            <p style="font-size:13.5px;color:var(--fg-muted);margin-bottom:14px;line-height:1.6">
+              We use only essential cookies — login session, security, CSRF protection.
+              <strong style="color:var(--fg)">No analytics tracking. No marketing cookies. No third-party scripts.</strong>
+              This isn't a setting because there's nothing to opt out of.
+              <a href="./app-settings-gdpr.html" style="color:var(--brand-primary)">View full cookie list →</a>
+            </p>
             <div class="cookie-row">
               <div class="cookie-info">
-                <div class="cookie-name">Strictly necessary</div>
-                <div class="cookie-desc">Login session, security, CSRF protection. Cannot be disabled.</div>
+                <div class="cookie-name">Essential</div>
+                <div class="cookie-desc">
+                  <code>tadaify_session</code> (HttpOnly, 30 days) ·
+                  <code>tadaify_csrf</code> (cleared on tab close).
+                  Cannot be disabled — without these the dashboard cannot identify you.
+                </div>
               </div>
-              <button class="toggle on disabled" aria-label="Strictly necessary — always on" aria-checked="true" disabled></button>
-            </div>
-            <div class="cookie-row">
-              <div class="cookie-info">
-                <div class="cookie-name">Analytics</div>
-                <div class="cookie-desc">Aggregate usage data to improve tadaify (no personal data sold).</div>
-              </div>
-              <button class="toggle on" id="toggle-analytics" aria-label="Analytics cookies" aria-checked="true"
-                onclick="toggleCookie(this, 'analytics')"></button>
-            </div>
-            <div class="cookie-row">
-              <div class="cookie-info">
-                <div class="cookie-name">Marketing</div>
-                <div class="cookie-desc">Personalised ads and re-marketing. Default off per privacy-by-design.</div>
-              </div>
-              <button class="toggle" id="toggle-marketing" aria-label="Marketing cookies" aria-checked="false"
-                onclick="toggleCookie(this, 'marketing')"></button>
-            </div>
-            <div style="margin-top:14px">
-              <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would save cookie preferences')">Save preferences</button>
+              <button class="toggle on disabled" aria-label="Essential cookies — always on" aria-checked="true" disabled></button>
             </div>
           </div>
 

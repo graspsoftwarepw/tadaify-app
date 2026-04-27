@@ -1073,19 +1073,18 @@
         </div>
 
         <!-- ==================================================
-             2 — COOKIE PREFERENCES (creator controls visitor cookies)
+             2 — COOKIES TADAIFY USES (privacy-first, read-only)
+             Per feedback_tadaify_privacy_first_no_tracking_creators
+             (2026-04-27): tadaify NEVER sets analytics or marketing
+             cookies in the creator's browser. No toggles to render —
+             nothing to opt out of.
              ================================================== -->
         <div class="settings-section">
-          <div class="settings-section-title with-action">
-            <span>Cookies on your tadaify pages</span>
-            <a href="./app-page-legal.html#cookie" style="color:var(--brand-primary);font-size:12px;font-weight:600;text-decoration:none">
-              View Cookie Policy →
-            </a>
-          </div>
+          <div class="settings-section-title">Cookies tadaify uses</div>
           <p class="section-lead">
-            These toggles control which cookies are set on <strong>visitors to your public page</strong>
-            (creator-side control). Visitors can still opt out individually via the consent banner —
-            disabling a category here removes it from the banner entirely.
+            We use only essential cookies — login session, security, CSRF protection.
+            <strong>No analytics tracking. No marketing cookies. No third-party scripts.</strong>
+            This isn't a setting because there's nothing to opt out of.
           </p>
 
           <div class="cookie-row">
@@ -1095,8 +1094,9 @@
                 <span class="chip">Always on</span>
               </div>
               <div class="cookie-desc">
-                Required to render the page, log visitors in, run the cart, and prevent CSRF.
-                Cannot be disabled — without these the page does not work.
+                The only cookies we set on your dashboard session. Required to keep you logged in
+                and prevent cross-site request forgery. Cannot be disabled — without these the
+                dashboard cannot identify you.
               </div>
               <ul class="cookie-meta-list">
                 <li><code>tadaify_session</code> · session, HttpOnly · 30 days</li>
@@ -1106,63 +1106,34 @@
             <button class="toggle on disabled" aria-label="Essential cookies — always on" aria-checked="true" disabled></button>
           </div>
 
-          <div class="cookie-row">
-            <div class="cookie-info">
-              <div class="cookie-name">
-                Analytics
-                <span class="chip success">Default ON</span>
-              </div>
-              <div class="cookie-desc">
-                First-party page-view + click tracking that powers your <a href="./app-insights.html" style="color:var(--brand-primary)">Insights</a> dashboard.
-                No third-party trackers, no IDFA. Visitors can always opt out via the cookie banner.
-              </div>
-              <ul class="cookie-meta-list">
-                <li><code>td_pv</code> · 1st-party · 365 days · page views, no fingerprinting</li>
-                <li><code>td_clk</code> · 1st-party · 365 days · click counts per block</li>
-              </ul>
-            </div>
-            <button class="toggle on" id="toggle-analytics" aria-label="Analytics cookies"
-              aria-checked="true" onclick="toggleCookie(this, 'analytics'); markPrefsDirty()"></button>
-          </div>
+          <p class="section-lead" style="margin-top:18px;font-size:13px">
+            Want to verify? Open DevTools → Application → Cookies on any tadaify page.
+            You'll see the two cookies above and nothing else from <code>tadaify.com</code>.
+            <a href="./app-page-legal.html#cookie" style="color:var(--brand-primary);font-weight:600;text-decoration:none">View full Cookie Policy →</a>
+          </p>
+        </div>
 
-          <div class="cookie-row">
-            <div class="cookie-info">
-              <div class="cookie-name">
-                Marketing
-                <span class="chip">Default OFF</span>
-              </div>
-              <div class="cookie-desc">
-                Third-party trackers if you embed Meta Pixel, Google Ads, TikTok Pixel, etc.
-                Off by default per privacy-by-design (GDPR Art. 25).
-                Turning this on requires you to update your Cookie Policy.
-              </div>
-              <ul class="cookie-meta-list">
-                <li><code>_fbp</code> (Meta Pixel) · 90 days · only if you embed it</li>
-                <li><code>_gcl_au</code> (Google Ads) · 90 days · only if you embed it</li>
-              </ul>
-            </div>
-            <button class="toggle" id="toggle-marketing" aria-label="Marketing cookies"
-              aria-checked="false" onclick="toggleCookie(this, 'marketing'); markPrefsDirty()"></button>
+        <!-- ==================================================
+             2b — VISITOR COOKIE BANNER (creator → visitor cookies)
+             KEPT per Fix #1 brief Step 3 — different concern: this
+             configures the consent banner shown to VISITORS on the
+             creator's own published pages. Creator's prerogative for
+             their own audience. tadaify-side analytics still off.
+             ================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>Visitor cookie banner</span>
+            <a href="./app-page-legal.html#cookie" style="color:var(--brand-primary);font-size:12px;font-weight:600;text-decoration:none">
+              View Cookie Policy →
+            </a>
           </div>
-
-          <div class="cookie-row">
-            <div class="cookie-info">
-              <div class="cookie-name">
-                Personalization
-                <span class="chip">Default OFF</span>
-              </div>
-              <div class="cookie-desc">
-                Stores visitor preferences across visits — last-viewed theme, A/B test bucket assignment,
-                language preference. No identifying data.
-              </div>
-              <ul class="cookie-meta-list">
-                <li><code>td_pref</code> · 1st-party · 365 days · theme + language</li>
-                <li><code>td_ab</code> · 1st-party · 30 days · A/B test bucket id</li>
-              </ul>
-            </div>
-            <button class="toggle" id="toggle-personalization" aria-label="Personalization cookies"
-              aria-checked="false" onclick="toggleCookie(this, 'personalization'); markPrefsDirty()"></button>
-          </div>
+          <p class="section-lead">
+            Choose how the consent banner appears to <strong>visitors on your public page</strong>.
+            Only essential cookies are set by default; first-party visitor analytics for your
+            <a href="./app-insights.html" style="color:var(--brand-primary)">Insights</a> dashboard
+            (page views, click counts) are opt-in via the banner. We never load Meta Pixel,
+            Google Ads, or any third-party tracker on your behalf.
+          </p>
 
           <!-- Banner preview -->
           <div class="banner-preview-wrap">
@@ -1203,15 +1174,10 @@
             </div>
           </div>
 
-          <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" id="save-cookie-prefs-btn" disabled
-              onclick="saveCookiePrefs()">
-              Save preferences
-            </button>
-            <span id="cookie-prefs-status" style="font-size:12px;color:var(--fg-muted)">
-              All up to date · last saved 2 hours ago
-            </span>
-          </div>
+          <p class="section-lead" style="margin-top:14px;font-size:12.5px">
+            Banner style is the only setting here — visitor consent itself is handled by the
+            banner above. Changes save automatically when you switch styles.
+          </p>
         </div>
 
         <!-- ==================================================
@@ -1587,36 +1553,19 @@
   /* ── Theme ── */
   function toggleTheme() { document.body.classList.toggle('dark-mode'); }
 
-  /* ── Cookie toggles ── */
+  /* ── Cookie toggles ──
+     Note: per privacy-first refactor 2026-04-27 (Fix #1 / feedback_tadaify_privacy_first_no_tracking_creators)
+     the Analytics / Marketing / Personalization toggles for the creator's own
+     dashboard session were REMOVED — tadaify only sets essential cookies.
+     toggleCookie() is retained defensively in case any visitor-side preview
+     control is added later. markPrefsDirty/saveCookiePrefs are no-ops now. */
   function toggleCookie(btn, name) {
     btn.classList.toggle('on');
     var isOn = btn.classList.contains('on');
     btn.setAttribute('aria-checked', String(isOn));
   }
-
-  /* ── Cookie prefs dirty state ── */
-  function markPrefsDirty() {
-    var btn = document.getElementById('save-cookie-prefs-btn');
-    var status = document.getElementById('cookie-prefs-status');
-    if (btn) btn.disabled = false;
-    if (status) {
-      status.textContent = 'Unsaved changes';
-      status.style.color = 'var(--brand-warm-dark)';
-    }
-  }
-  function saveCookiePrefs() {
-    var btn = document.getElementById('save-cookie-prefs-btn');
-    var status = document.getElementById('cookie-prefs-status');
-    if (btn) btn.disabled = true;
-    if (status) {
-      status.textContent = 'Saved · banner updated for visitors';
-      status.style.color = 'var(--success)';
-      setTimeout(function(){
-        status.textContent = 'All up to date · last saved just now';
-        status.style.color = 'var(--fg-muted)';
-      }, 1800);
-    }
-  }
+  function markPrefsDirty() { /* no-op — toggles removed */ }
+  function saveCookiePrefs() { /* no-op — toggles removed */ }
 
   /* ── Banner style picker (preview) ── */
   function setBannerStyle(style, btn) {
