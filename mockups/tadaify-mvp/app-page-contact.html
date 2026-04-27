@@ -197,31 +197,6 @@
       background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
     }
 
-    /* ── Inbox preview banner ── */
-    .inbox-banner {
-      display: flex; align-items: center; gap: 14px;
-      padding: 12px 16px; margin-bottom: 18px;
-      border: 1px solid rgba(99,102,241,0.30);
-      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));
-      border-radius: 12px;
-    }
-    .inbox-banner .ib-icon {
-      width: 38px; height: 38px; border-radius: 10px;
-      background: rgba(99,102,241,0.15);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
-    }
-    .inbox-banner .ib-body { flex: 1; min-width: 0; }
-    .inbox-banner .ib-title { font-weight: 600; font-size: 14px; }
-    .inbox-banner .ib-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
-    .inbox-banner .ib-cta {
-      padding: 7px 13px; border-radius: 8px;
-      background: var(--brand-primary); color: #fff;
-      border: 0; font: inherit; font-size: 13px; font-weight: 600;
-      cursor: pointer; flex-shrink: 0;
-    }
-    .inbox-banner .ib-cta:hover { background: var(--brand-primary-hover); }
-
     /* ── Sections ── */
     .section {
       background: var(--bg-elevated); border: 1px solid var(--border);
@@ -752,32 +727,6 @@
     .cover-drop .cd-title { font-weight: 600; font-size: 14px; }
     .cover-drop .cd-sub { color: var(--fg-muted); font-size: 12.5px; }
 
-    /* ── Inbox preview list (in-section) ── */
-    .inbox-list { display: flex; flex-direction: column; gap: 6px; }
-    .inbox-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--bg);
-    }
-    .inbox-item .ii-av {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: linear-gradient(135deg, #FDE68A, #F59E0B);
-      display: inline-flex; align-items: center; justify-content: center;
-      color: #7C2D12; font-weight: 700; font-size: 12px; flex-shrink: 0;
-    }
-    .inbox-item .ii-av.t-rose { background: linear-gradient(135deg, #FB7185, #BE185D); color: #fff; }
-    .inbox-item .ii-av.t-emerald { background: linear-gradient(135deg, #34D399, #047857); color: #fff; }
-    .inbox-item .ii-av.t-indigo { background: linear-gradient(135deg, #6366F1, #4F46E5); color: #fff; }
-    .inbox-item .ii-av.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); color: #fff; }
-    .inbox-item .ii-body { flex: 1; min-width: 0; }
-    .inbox-item .ii-from { font-size: 13px; font-weight: 600; }
-    .inbox-item .ii-from .ii-unread { color: var(--brand-primary); margin-right: 4px; }
-    .inbox-item .ii-subject {
-      font-size: 12.5px; color: var(--fg-muted);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .inbox-item .ii-time { font-size: 11px; color: var(--fg-subtle); flex-shrink: 0; }
-
     /* ── Map embed preview ── */
     .map-preview {
       border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
@@ -822,7 +771,6 @@
     body.dark-mode .om-card input,
     body.dark-mode .faq-item,
     body.dark-mode .endpoint-row,
-    body.dark-mode .inbox-item,
     body.dark-mode .modal { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
     body.dark-mode .modal { background: #141A2D; }
     body.dark-mode .ff-row .ff-grip { background: #141A2D; }
@@ -844,10 +792,6 @@
     body.dark-mode .sp-card { background: #0B0F1E; border-color: #1F2937; }
     body.dark-mode .ftp-card { background: #0B0F1E; border-color: #1F2937; }
     body.dark-mode .add-section-btn { background: #141A2D; border-color: #1F2937; }
-    body.dark-mode .inbox-banner {
-      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.06));
-      border-color: rgba(99,102,241,0.45);
-    }
     body.dark-mode .map-preview {
       background: linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%);
     }
@@ -908,16 +852,6 @@
           Preview
         </button>
       </div>
-    </div>
-
-    <!-- ========== INBOX BANNER (links to dedicated app-inbox.html, TBD) ========== -->
-    <div class="inbox-banner" id="inbox-banner">
-      <div class="ib-icon" aria-hidden="true">📬</div>
-      <div class="ib-body">
-        <div class="ib-title">Inbox: <b style="color:var(--brand-primary)">23 new</b> messages</div>
-        <div class="ib-sub">Last reply from <b>Marcus Chen</b> · 2h ago. Open inbox to read &amp; respond.</div>
-      </div>
-      <button class="ib-cta" onclick="alert('Mockup — opens dedicated app-inbox.html (TBD as separate mockup)')">Open inbox →</button>
     </div>
 
     <!-- ========== EMPTY STATE (state=empty) ========== -->
@@ -1349,7 +1283,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>
           </span>
           <h2>📡 Where messages go</h2>
-          <span class="sub">Email, your tadaify inbox, or a third-party service.</span>
+          <span class="sub">Email forwarding by default, plus optional third-party services. tadaify is a passthrough — we don't store messages.</span>
           <span class="head-spacer"></span>
           <div class="sh-actions">
             <button class="iconbtn sh-collapse" data-tip="Collapse" onclick="toggleCollapse(this)">
@@ -1382,18 +1316,6 @@
                   <button class="toggle" type="button" aria-pressed="false" onclick="toggleSwitch(this)"></button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- Save to tadaify inbox -->
-          <div class="field">
-            <label class="field-label">Save to your tadaify inbox</label>
-            <div class="row-toggle">
-              <div>
-                <div class="rt-name">Keep a copy in <a href="#" onclick="event.preventDefault();alert('Mockup — opens app-inbox.html (TBD as separate mockup)')" style="color:var(--brand-primary); font-weight:600">your inbox →</a></div>
-                <div class="rt-sub">Searchable archive, threaded replies, and you can reply right from tadaify without leaving the app.</div>
-              </div>
-              <button class="toggle is-on" type="button" aria-pressed="true" onclick="toggleSwitch(this)"></button>
             </div>
           </div>
 
@@ -1987,7 +1909,6 @@
   document.body.dataset.tier = tier;
   document.getElementById('empty-state').style.display = (state === 'empty') ? 'flex' : 'none';
   document.getElementById('filled-state').style.display = (state === 'empty') ? 'none' : 'block';
-  document.getElementById('inbox-banner').style.display = (state === 'empty') ? 'none' : 'flex';
   // Sync demo-toolbar selects
   document.querySelectorAll('.demo-toolbar select').forEach(function (sel, i) {
     sel.value = (i === 0) ? state : tier;
