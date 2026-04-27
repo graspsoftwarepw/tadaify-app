@@ -2053,27 +2053,78 @@
   // ── Recommended starter (empty -> filled) ──
   function useStarter() { setQuery('state', 'filled'); }
 
-  // ── Save (TierGate placeholder) ──
+  // ── Save → run TierGate.checkAndProceed (premium fields gate at save per no-blur-premium) ──
   function onSave() {
-    /*
-     * IMPLEMENTATION NOTE:
-     *   On real save, call shared TierGate.checkAndProceed({
-     *     creatorTier: tier,
-     *     usedFeatures: [
-     *       'custom_domain',          // requires Pro
-     *       'office_hours',           // requires Creator+
-     *       'faq_quickref',           // requires Creator+
-     *       'multi_recipient',        // requires Business
-     *       'webhook_provider:slack', // requires Pro per-channel
-     *       'field:file_upload',      // requires Pro
-     *       'field:hidden',           // requires Business
-     *       'field:conditional',      // requires Pro
-     *     ]
-     *   })
-     *   which opens app-tier-gate-modal.html if any feature exceeds tier.
-     */
-    alert('Mockup — Save would call TierGate.checkAndProceed before persist.\n\n(See onSave() comment for the feature list this page would emit.)');
-    markClean();
+    var tier = document.body.dataset.tier || 'creator';
+    var features = [];
+
+    // Custom domain (Pro+)
+    var dom = document.getElementById('custom-domain');
+    if (dom && dom.value && dom.value.trim()) {
+      features.push({
+        id: 'custom-domain', name: 'Custom contact-page domain', requires: 'pro',
+        meta: dom.value.trim()
+      });
+    }
+
+    // Office hours block (Creator+) — present iff opted in
+    var officeHours = document.querySelector('[data-section="office-hours"]:not([hidden])');
+    if (officeHours) {
+      features.push({
+        id: 'office-hours', name: 'Office hours block', requires: 'creator',
+        meta: 'Public schedule of when you typically reply.'
+      });
+    }
+
+    // FAQ quick-ref (Creator+)
+    var faqRef = document.querySelector('[data-section="faq-quickref"]:not([hidden])');
+    if (faqRef) {
+      features.push({
+        id: 'faq-quickref', name: 'FAQ quick-reference', requires: 'creator',
+        meta: 'Surfaces common questions inline before the form.'
+      });
+    }
+
+    // Multi-recipient routing (Business+)
+    var routing = document.querySelectorAll('[data-route-recipient]');
+    if (routing && routing.length > 1) {
+      features.push({
+        id: 'multi-recipient', name: 'Multi-recipient routing', requires: 'business',
+        meta: routing.length + ' destinations — different team members per topic.'
+      });
+    }
+
+    // Webhook providers per channel (Pro+)
+    var webhooks = document.querySelectorAll('.ff-webhook-on');
+    if (webhooks && webhooks.length) {
+      features.push({
+        id: 'webhook-providers', name: 'Webhook providers (Slack / Zapier / etc.)',
+        requires: 'pro',
+        meta: webhooks.length + ' channel' + (webhooks.length === 1 ? '' : 's') + ' wired up.'
+      });
+    }
+
+    // Field-level premium types
+    var fileFields   = document.querySelectorAll('[data-ff-type="file"]');
+    var hiddenFields = document.querySelectorAll('[data-ff-type="hidden"]');
+    var condFields   = document.querySelectorAll('[data-ff-conditional]');
+    if (fileFields.length)   features.push({ id: 'field-file',     name: 'File-upload field type', requires: 'pro',      meta: fileFields.length   + ' file field'   + (fileFields.length   === 1 ? '' : 's') });
+    if (hiddenFields.length) features.push({ id: 'field-hidden',   name: 'Hidden / UTM field',     requires: 'business', meta: hiddenFields.length + ' hidden field' + (hiddenFields.length === 1 ? '' : 's') });
+    if (condFields.length)   features.push({ id: 'field-conditional', name: 'Conditional field logic', requires: 'pro',  meta: condFields.length   + ' conditional rule' + (condFields.length === 1 ? '' : 's') });
+
+    if (window.TierGate) {
+      window.TierGate.checkAndProceed({
+        currentTier: tier,
+        features:    features,
+        onProceed:    function () { markClean(); },
+        onSaveWithout: features.length ? function () { markClean(); } : null,
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onCancel:     function () {},
+        toastMsg: 'Contact page saved'
+      });
+    } else {
+      markClean();
+    }
   }
 
   // ── Dirty / clean status ──

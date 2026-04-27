@@ -2342,12 +2342,32 @@
     setTimeout(function(){ bar.classList.remove('is-saved'); document.getElementById('save-text').textContent = 'Preview only — your live page hasn’t changed yet.'; }, 4000);
   }
   function applyTheme() {
-    /* Mock TierGate.checkAndProceed — would gate premium features here. */
-    if (currentTier === 'free' && (currentPreset !== 'indigo' && currentPreset !== 'mono' && currentPreset !== 'pastel' && currentPreset !== 'glass' && currentPreset !== 'earth' && currentPreset !== 'neon' && currentPreset !== 'sunrise' && currentPreset !== 'editorial')) {
-      alert('Mock: TierGate.checkAndProceed({ features: [\'custom-palette\'], onProceed: applyTheme, onUpgrade: ... })');
-      return;
+    var FREE_PRESETS = ['indigo', 'mono', 'pastel', 'glass', 'earth', 'neon', 'sunrise', 'editorial'];
+    var features = [];
+    if (FREE_PRESETS.indexOf(currentPreset) === -1) {
+      features.push({
+        id: 'custom-palette', name: 'Custom palette', requires: 'creator',
+        meta: 'Premium preset (Free tier limited to the 8 starter palettes).'
+      });
     }
-    markSaved();
+    if (window.TierGate) {
+      window.TierGate.checkAndProceed({
+        currentTier: currentTier,
+        features:    features,
+        onProceed:    markSaved,
+        onSaveWithout: features.length ? function () {
+          /* Save-without: revert to the closest Free preset (indigo) and save. */
+          var indigo = document.querySelector('[data-preset="indigo"]');
+          if (indigo) applyPreset(indigo, 'indigo');
+          markSaved();
+        } : null,
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onCancel:     function () {},
+        toastMsg: 'Theme published'
+      });
+    } else {
+      markSaved();
+    }
   }
   function discardChanges() {
     if (!dirty) return;
