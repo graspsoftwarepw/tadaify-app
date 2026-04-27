@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Single Paid Article — visitor view at tadaify.com/<handle>/articles/<slug> — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Single article view. 2 sub-states demoed via in-page state switch:
+    - "preview"  → free visible preview + paywall + Buy CTA (default)
+    - "purchased" → full body unlocked, no paywall, "You bought this" badge
+
+  Pairs with creator-paid-articles-public.html (list view).
+
+  Locked rules honoured:
+    - feedback_no_blur_premium_features applies to ADMIN UIs, not paid-content paywalls
+      (paywall is the product mechanic, not premium-feature gating)
+    - feedback_mockup_full_feature_vision (Buy CTA toggles state in mockup)
+    - feedback_tadaify_subpages_inherit_home_chrome (full home nav at top)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How I priced my last commission — Alexandra Silva</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg); font-family: var(--font-sans); min-height: 100vh; margin: 0;
+    }
+    a { color: inherit; }
+    button { font-family: inherit; cursor: pointer; }
+
+    .top-strip { max-width: 760px; margin: 0 auto; padding: 14px 20px 0; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fg-muted); }
+    .top-strip .pill { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elevated); font-family: var(--font-mono); }
+    .top-strip .pill b { color: var(--fg); }
+    .top-strip .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+    .creator-nav { max-width: 980px; margin: 0 auto; padding: 22px 20px 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .creator-nav .av { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366F1, #8B5CF6); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+    .creator-nav .who { font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+    .creator-nav .who .handle { font-size: 13px; color: var(--fg-muted); font-family: var(--font-sans); font-weight: 400; }
+    .creator-nav .nav-spacer { flex: 1; }
+    .creator-nav .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .creator-nav .nav-link { padding: 7px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--fg-muted); text-decoration: none; }
+    .creator-nav .nav-link:hover { background: rgba(99,102,241,0.08); color: var(--brand-primary); }
+    .creator-nav .nav-link.is-current { color: var(--brand-primary); background: rgba(99,102,241,0.10); }
+
+    /* Article hero */
+    .article-wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 80px; }
+    .breadcrumb { font-size: 13px; color: var(--fg-muted); margin-bottom: 18px; }
+    .breadcrumb a { color: var(--brand-primary); text-decoration: none; }
+    .article-hero h1 { font-family: var(--font-display); font-weight: 600; font-size: 42px; line-height: 1.15; margin: 0 0 16px; letter-spacing: -0.01em; }
+    .article-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13.5px; color: var(--fg-muted); margin-bottom: 24px; }
+    .article-meta .author { display: inline-flex; align-items: center; gap: 8px; }
+    .article-meta .author .av { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366F1, #8B5CF6); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+    .article-meta .price-chip { padding: 4px 12px; border-radius: 999px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-weight: 600; font-size: 13px; }
+    .article-meta .purchased-chip { padding: 4px 12px; border-radius: 999px; background: var(--success-bg); color: #065F46; font-weight: 600; font-size: 12px; display: none; }
+
+    .cover-img { width: 100%; aspect-ratio: 16/9; border-radius: 16px; background: linear-gradient(135deg, #6366F1, #8B5CF6); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 64px; margin-bottom: 28px; }
+
+    /* Sticky Buy CTA */
+    .sticky-buy { position: sticky; top: 0; z-index: 30; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(17,24,39,0.04); }
+    .sticky-buy .sb-price { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--brand-primary); }
+    .sticky-buy .sb-meta { font-size: 12.5px; color: var(--fg-muted); }
+    .sticky-buy .sb-spacer { flex: 1; }
+    .sticky-buy .btn-buy-lg { padding: 10px 22px; border-radius: 999px; background: var(--brand-primary); color: #fff; font-weight: 600; font-size: 14.5px; border: 0; cursor: pointer; }
+    .sticky-buy .btn-buy-lg:hover { background: var(--brand-primary-hover); }
+
+    /* Article body */
+    .article-body { font-size: 17px; line-height: 1.7; color: var(--fg); font-family: var(--font-display); font-weight: 400; }
+    .article-body h2 { font-family: var(--font-display); font-weight: 600; font-size: 28px; margin: 36px 0 14px; line-height: 1.2; }
+    .article-body h3 { font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 28px 0 10px; }
+    .article-body p { margin: 0 0 18px; }
+    .article-body blockquote { border-left: 3px solid var(--brand-primary); padding: 4px 18px; margin: 24px 0; color: var(--fg-muted); font-style: italic; }
+    .article-body a { color: var(--brand-primary); }
+    .article-body code { font-family: var(--font-mono); font-size: 15px; background: var(--bg-muted); padding: 2px 6px; border-radius: 4px; }
+    .article-body ul, .article-body ol { margin: 0 0 18px; padding-left: 22px; }
+    .article-body li { margin-bottom: 8px; }
+
+    /* Paywall */
+    .paywall-wrap { position: relative; margin: 24px 0; }
+    .paywall-blur { filter: blur(7px); opacity: 0.55; pointer-events: none; user-select: none; max-height: 360px; overflow: hidden; }
+    .paywall-card {
+      margin-top: -260px; position: relative; z-index: 5;
+      padding: 32px 24px; border-radius: 18px;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      box-shadow: 0 12px 40px rgba(17,24,39,0.10);
+      text-align: center;
+    }
+    .paywall-card .pw-icon { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #6366F1, #8B5CF6); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; margin-bottom: 14px; }
+    .paywall-card h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 8px; }
+    .paywall-card p { color: var(--fg-muted); font-size: 14px; max-width: 420px; margin: 0 auto 18px; line-height: 1.55; }
+    .paywall-card .pw-price { font-family: var(--font-display); font-size: 38px; font-weight: 600; color: var(--brand-primary); margin: 0 0 14px; }
+    .paywall-card .pw-buy { padding: 12px 28px; border-radius: 999px; background: var(--brand-primary); color: #fff; font-weight: 600; font-size: 15px; border: 0; cursor: pointer; }
+    .paywall-card .pw-buy:hover { background: var(--brand-primary-hover); }
+    .paywall-card .pw-reassure { font-size: 12.5px; color: var(--fg-muted); margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .paywall-card .pw-reassure svg { width: 12px; height: 12px; }
+    .paywall-card .pw-stripe { margin-top: 18px; padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); font-size: 12px; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+
+    /* Comments (Disqus-like) */
+    .comments-section { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .comments-section h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+    .comments-section .cs-sub { font-size: 13px; color: var(--fg-muted); margin-bottom: 16px; }
+    .comments-list { display: flex; flex-direction: column; gap: 14px; }
+    .comment-row { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); }
+    .comment-row .av { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-muted); display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--fg-muted); font-size: 13px; }
+    .comment-row .c-author { font-weight: 600; font-size: 13px; }
+    .comment-row .c-meta { font-size: 12px; color: var(--fg-muted); margin-bottom: 4px; }
+    .comment-row .c-text { font-size: 13.5px; line-height: 1.55; }
+
+    /* Related */
+    .related { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .related h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 16px; }
+    .related-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .related-card { border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); overflow: hidden; }
+    .related-card .rc-cover { aspect-ratio: 16/10; background: linear-gradient(135deg, #FB7185, #BE185D); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; }
+    .related-card .rc-cover.t-w { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .related-card .rc-cover.t-e { background: linear-gradient(135deg, #34D399, #047857); }
+    .related-card .rc-meta { padding: 10px 12px; }
+    .related-card .rc-title { font-weight: 600; font-size: 13.5px; margin: 0 0 4px; }
+    .related-card .rc-price { font-size: 12px; color: var(--brand-primary); font-weight: 600; }
+
+    footer.creator-footer { max-width: 980px; margin: 0 auto; padding: 40px 20px 60px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--fg-muted); }
+    footer.creator-footer a { color: var(--fg-muted); text-decoration: none; }
+    footer.creator-footer .powered { margin-left: auto; }
+
+    /* Demo state toggle */
+    .demo-toolbar { position: fixed; bottom: 16px; right: 16px; z-index: 40; background: var(--bg-dark); color: #fff; padding: 10px 14px; border-radius: 12px; display: flex; gap: 10px; align-items: center; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+    .demo-toolbar select { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; font-size: 12px; padding: 3px 8px; cursor: pointer; }
+
+    /* Purchased state */
+    body[data-state="purchased"] .paywall-blur { filter: none; opacity: 1; pointer-events: auto; user-select: auto; max-height: none; overflow: visible; }
+    body[data-state="purchased"] .paywall-card { display: none; }
+    body[data-state="purchased"] .article-meta .purchased-chip { display: inline-flex; }
+    body[data-state="purchased"] .article-meta .price-chip { display: none; }
+    body[data-state="purchased"] .sticky-buy { display: none; }
+
+    @media (max-width: 640px) {
+      .article-hero h1 { font-size: 30px; }
+      .cover-img { font-size: 40px; }
+    }
+  </style>
+</head>
+<body data-state="preview">
+
+<div class="top-strip">
+  <span class="pill"><span class="dot"></span><b>tadaify.com/alexandra/articles/how-i-priced-my-last-commission</b></span>
+</div>
+
+<nav class="creator-nav">
+  <div class="av">A</div>
+  <div class="who">Alexandra Silva<div class="handle">@alexandra</div></div>
+  <div class="nav-spacer"></div>
+  <div class="nav-links">
+    <a href="./creator-public.html" class="nav-link">Home</a>
+    <a href="./creator-about-public.html" class="nav-link">About</a>
+    <a href="./creator-blog-public.html" class="nav-link">Blog</a>
+    <a href="./creator-portfolio-public.html" class="nav-link">Portfolio</a>
+    <a href="./creator-paid-articles-public.html" class="nav-link is-current">Articles</a>
+    <a href="./creator-schedule-public.html" class="nav-link">Book me</a>
+  </div>
+</nav>
+
+<article class="article-wrap">
+  <div class="breadcrumb"><a href="./creator-paid-articles-public.html">← All articles</a></div>
+
+  <header class="article-hero">
+    <h1>How I priced my last commission</h1>
+    <div class="article-meta">
+      <div class="author"><span class="av">A</span><span>Alexandra Silva</span></div>
+      <span>· Apr 24, 2026</span>
+      <span>· 12 min read</span>
+      <span class="price-chip">$5 — pay once, read forever</span>
+      <span class="purchased-chip">✓ You bought this on Apr 25</span>
+    </div>
+  </header>
+
+  <div class="cover-img">📖</div>
+
+  <div class="sticky-buy">
+    <span class="sb-price">$5</span>
+    <span class="sb-meta">12 min read · pay once, read forever</span>
+    <span class="sb-spacer"></span>
+    <button class="btn-buy-lg" onclick="document.body.dataset.state='purchased'; document.querySelector('.demo-toolbar select').value='purchased';">Buy now</button>
+  </div>
+
+  <div class="article-body">
+    <p>Last month a returning client emailed me asking for a custom illustration commission. The brief was small on its face — a single editorial illustration for an essay they were publishing — but the brief itself <em>opened up</em> when I started reading more carefully. There were edge cases, a tight deadline, and an implicit ask for unlimited revisions baked into "we want to be sure it's right."</p>
+    <p>Three years ago I would have quoted $400 and been thrilled. This time I quoted $1,800 and the client said yes without negotiating. Here's exactly what changed in my thinking — and the email script I sent.</p>
+
+    <h2>The starting point: what the client thought they were asking for</h2>
+    <p>The brief, as written, looked like a normal one-illustration job. Single deliverable, single revision round, two-week deadline. If you took that at face value, $400 felt about right for an editor pace.</p>
+    <p>But the brief was wrong about itself. Three things gave it away:</p>
+    <ul>
+      <li>The deadline was <em>actually</em> seven days, not two weeks — they buried the publication date in paragraph 4.</li>
+      <li>"Final approval from the executive editor" added a second decision-maker who wasn't on the kickoff thread.</li>
+      <li>The piece was for a launch issue, which means social cuts, hero crop, thumbnail variants — three more deliverables disguised as one.</li>
+    </ul>
+    <p>So the real job wasn't "one editorial illustration." The real job was "one illustration plus three derivatives, on half the timeline, with two approvers." That's a <em>completely different</em> piece of work.</p>
+
+    <h2>How I built the new quote</h2>
+    <!-- This portion is "above the fold" — visible to non-buyers -->
+  </div>
+
+  <!-- Paywall — blurs the rest of the article -->
+  <div class="paywall-wrap">
+    <div class="paywall-blur">
+      <div class="article-body">
+        <p>Once I'd reframed the brief, the math changed. I started with my normal editorial day rate — $600/day, full-day equivalent — and counted the actual days the work would take.</p>
+        <p>Day 1 was concept and thumbnails. Two thumbnails per concept, three concepts, plus a one-page rationale doc explaining each. That's a normal first day on any editorial gig.</p>
+        <p>Day 2 was tight pencil — the chosen concept rendered at full size, ready for review. With two approvers in the loop I knew this would attract feedback from both, so I padded the schedule by half a day for revisions.</p>
+        <p>Day 3 was final art and color. The piece was going to print AND web, so I needed two color profiles (CMYK for print, sRGB for web) and the file would need to be delivered at 600dpi at the largest crop.</p>
+        <p>Day 4 was the derivatives — social cuts at 1:1, 4:5, and 16:9, plus a hero banner and a thumbnail. Each derivative is its own composition decision; you can't just rescale.</p>
+        <p>That's four full days. At $600/day my floor was $2,400. I quoted $1,800 because the client was a return customer with whom I have a great working relationship and I wanted to leave room for upside.</p>
+        <h2>The email script</h2>
+        <p>Here's the exact email I sent. The structure matters: <strong>reframe → break-down → number → reassurance</strong>.</p>
+        <blockquote>"Hi M — thanks for thinking of me again, I'd love to do this piece. Reading the brief carefully I see this is actually a launch-issue cover with three social derivatives on a one-week turnaround, so I want to make sure I scope it right. Here's what I'd deliver: [...] My quote for the full package is $1,800, broken down as [...]. Happy to discuss any of this — and if budget's tight, the first variation we can drop is the hero banner crop ($300) since you can re-purpose the print piece. Let me know!"</blockquote>
+      </div>
+    </div>
+    <div class="paywall-card">
+      <div class="pw-icon">🔓</div>
+      <h3>Continue reading — unlock for $5</h3>
+      <p>Pay once, read forever. Includes the rest of the breakdown, the full email script, the spreadsheet I use, and 4 more pricing scenarios.</p>
+      <div class="pw-price">$5</div>
+      <button class="pw-buy" onclick="document.body.dataset.state='purchased'; document.querySelector('.demo-toolbar select').value='purchased'; window.scrollTo({top: 0, behavior:'smooth'});">Buy with Stripe</button>
+      <div class="pw-reassure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Pay once, read forever · No subscription · 7-day refund
+      </div>
+      <div class="pw-stripe">
+        🔒 Secure checkout powered by <b style="color: var(--brand-primary)">Stripe</b>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments (visible to all) -->
+  <section class="comments-section">
+    <h3>Comments</h3>
+    <div class="cs-sub">8 comments · Disqus</div>
+    <div class="comments-list">
+      <div class="comment-row">
+        <div class="av">M</div>
+        <div>
+          <div class="c-author">Maya R.</div>
+          <div class="c-meta">3 hours ago</div>
+          <div class="c-text">This is exactly the kind of breakdown I wish I'd had when I was starting out. Bought + saved.</div>
+        </div>
+      </div>
+      <div class="comment-row">
+        <div class="av">J</div>
+        <div>
+          <div class="c-author">Jonas K.</div>
+          <div class="c-meta">1 day ago</div>
+          <div class="c-text">Quick question — do you ever quote ranges instead of a single number? Curious how you handle that.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related articles -->
+  <section class="related">
+    <h3>You might also like</h3>
+    <div class="related-grid">
+      <a href="./creator-paid-article-public.html" class="related-card">
+        <div class="rc-cover t-w">☕</div>
+        <div class="rc-meta"><div class="rc-title">A morning in the studio</div><div class="rc-price">$3 · 8 min read</div></div>
+      </a>
+      <a href="./creator-paid-article-public.html" class="related-card">
+        <div class="rc-cover">🎨</div>
+        <div class="rc-meta"><div class="rc-title">My color theory cheatsheet</div><div class="rc-price">$8 · 18 min read</div></div>
+      </a>
+      <a href="./creator-paid-article-public.html" class="related-card">
+        <div class="rc-cover t-e">🌱</div>
+        <div class="rc-meta"><div class="rc-title">First year as a freelancer</div><div class="rc-price">$12 · 30 min</div></div>
+      </a>
+    </div>
+  </section>
+</article>
+
+<footer class="creator-footer">
+  <span>© Alexandra Silva 2026</span>
+  <a href="./creator-contact-public.html">Contact</a>
+  <a href="./creator-legal-public.html">Privacy</a>
+  <span class="powered">Made with <a href="./landing.html"><b>tadaify</b></a></span>
+</footer>
+
+<div class="demo-toolbar">
+  <span style="opacity:0.7">State:</span>
+  <select onchange="document.body.dataset.state=this.value">
+    <option value="preview">Preview (paywalled)</option>
+    <option value="purchased">Purchased (unlocked)</option>
+  </select>
+</div>
+
+</body>
+</html>
