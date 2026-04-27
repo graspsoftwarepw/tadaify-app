@@ -1,5 +1,27 @@
 <!DOCTYPE html>
 <!--
+  ============================================================================
+  NOTE — GLOBAL AVAILABILITY (added by chore/wire-tier-gate-and-ai-suggest-globals)
+
+  This standalone file is the canonical DESIGN reference + demo for the
+  AI Suggest sub-modal (all 6 states, context strip, refinement, skeletons,
+  rate-limit, etc.) but the runtime implementation now ships globally via:
+
+      shared/partials.js → window.AISuggest.open({ ... })
+
+  Every editor mockup with <script src="./shared/partials.js"> can call:
+
+      window.AISuggest.open({
+        fieldName:      'Block title',
+        contextSummary: 'Link button → open.spotify.com/album/spring-drops',
+        onApply: function (text) { document.getElementById('foo').value = text; }
+      });
+
+  Default flow: 800ms loading skeleton → 5 mocked suggestions tone-tagged
+  per fieldName flavour (title / caption / button-label). User picks one,
+  clicks "Use this", and the chosen text is passed back to onApply.
+  ============================================================================
+
   AI Suggest sub-modal — the floating UI that appears when a creator clicks
   the ✨ Suggest button on any title / label / caption / short-text field
   across the tadaify block editor.

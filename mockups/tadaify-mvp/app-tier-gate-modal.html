@@ -1,5 +1,31 @@
 <!DOCTYPE html>
 <!--
+  ============================================================================
+  NOTE — GLOBAL AVAILABILITY (added by chore/wire-tier-gate-and-ai-suggest-globals)
+
+  This standalone file remains the canonical DESIGN reference + demo for the
+  TierGate flow (every state, every tier-target panel, copy variations, etc.)
+  but the runtime implementation now ships globally via:
+
+      shared/partials.js → window.TierGate.checkAndProceed({ ... })
+
+  Every editor mockup that includes <script src="./shared/partials.js"> can
+  call TierGate from JS without copying any markup or CSS. The contract:
+
+      window.TierGate.checkAndProceed({
+        currentTier: 'free' | 'creator' | 'pro' | 'business',
+        features: [{ id, name, requires, meta }],
+        onProceed:    function () {},   // tier OK — save now
+        onSaveWithout: function () {},  // strip premium, save the rest
+        onUpgrade:    function (top, cycle) {}  // open Stripe checkout
+      });
+
+  When currentTier already covers every feature → onProceed fires immediately
+  + a small "All set ✓" toast confirms (no modal). Otherwise the modal opens.
+
+  Pricing is read from window.TierGate.TIER_PRICING (mirrors pricing.html).
+  ============================================================================
+
   TierGate modal — the SHARED upsell modal that appears when a creator
   clicks "Save" on a feature requiring a higher subscription tier than
   they currently have.
