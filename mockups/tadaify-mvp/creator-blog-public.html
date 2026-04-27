@@ -478,33 +478,53 @@
 </head>
 <body>
 
-<!-- Mockup hub return strip — public creator pages don't have tadaify chrome in production -->
-<div class="mockup-hub-strip">
-  <a href="./index.html">← back to mockup hub</a>
-  · Public visitor view ·
-  Switch view:
-  <a href="#/" onclick="showView('list')">List</a>
-  ·
-  <a href="#/post/5-day-reset-for-heavy-training" onclick="showView('post')">Single post</a>
-  ·
-  <a href="#/tag/recovery" onclick="showView('tag')">Tag filter</a>
-</div>
+<!-- ============================================================
+     Canonical creator home nav (top) — inherited across all sub-pages
+     per feedback_tadaify_subpages_inherit_home_chrome. Source of truth:
+     creator-custom-public.html `.creator-nav` block.
+     ============================================================ -->
+<style>
+  .creator-nav {
+    max-width: 1080px; margin: 0 auto;
+    padding: 22px 24px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .creator-nav .cn-handle {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-display); font-weight: 600; font-size: 18px;
+    color: var(--fg); text-decoration: none;
+  }
+  .creator-nav .cn-handle .av {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+    display: flex; align-items: center; justify-content: center;
+    color: #7C2D12; font-size: 13px; font-weight: 700;
+  }
+  .creator-nav .cn-links { display: flex; gap: 4px; flex-wrap: wrap; }
+  .creator-nav .cn-links a {
+    padding: 6px 12px; border-radius: 99px; font-size: 13.5px; font-weight: 500;
+    color: var(--fg-muted); text-decoration: none;
+  }
+  .creator-nav .cn-links a.is-current,
+  .creator-nav .cn-links a:hover { color: var(--brand-primary); background: rgba(99,102,241,0.08); }
+  @media (max-width: 600px) { .creator-nav { padding-top: 16px; } }
+</style>
 
-<!-- ===== Top URL strip (orientation only) ===== -->
-<div class="top-strip">
-  <a href="./creator-public.html">← Alexandra's main page</a>
-  <span class="url-mono">tadaify.com/alexandra/<b id="url-tail">blog</b></span>
-</div>
-
-<!-- ===== Compact creator identity row ===== -->
-<div class="creator-row">
-  <div class="av">A</div>
-  <div class="who">
-    <div class="who-name">Alexandra Silva</div>
-    <div class="who-handle">@alexandrasilva_fit · Lisbon</div>
+<nav class="creator-nav">
+  <a href="./creator-public.html" class="cn-handle">
+    <span class="av" aria-hidden="true">A</span>
+    Alexandra Silva
+  </a>
+  <div class="cn-links">
+    <a href="./creator-public.html">Home</a>
+    <a href="./creator-about-public.html">About</a>
+    <a href="./creator-blog-public.html" class="is-current">Blog</a>
+    <a href="./creator-portfolio-public.html">Portfolio</a>
+    <a href="./creator-schedule-public.html">Book</a>
+    <a href="./creator-contact-public.html">Contact</a>
   </div>
-  <a href="./creator-public.html" class="back-to-main">All my links →</a>
-</div>
+</nav>
 
 <!-- =================================================================
      VIEW 1 — LIST  (#/  default)
