@@ -1636,8 +1636,13 @@
 
   /* Auto-enhance every existing ✨ Suggest entry point on the page once
      the DOM is ready. Picks up every button wired via the canonical
-     onclick="window.AISuggest.fromButton(this, ...)" pattern. */
+     onclick="window.AISuggest.fromButton(this, ...)" pattern.
+
+     We eagerly inject the AI Suggest CSS up-front so the per-button
+     [data-quota-badge]::after pill renders on initial page load, even
+     before the modal opens for the first time. */
   function autoEnhanceSuggestButtons() {
+    ensureAiCss();
     refreshAllButtonLabels();
   }
   if (document.readyState === 'loading') {
