@@ -522,25 +522,53 @@
 </head>
 <body data-route="default" data-tagging="enabled">
 
-<!-- Mockup-only top strip -->
-<div class="top-strip">
-  <a href="./creator-public.html">← Back to creator page</a>
-  <span class="url-mono">tadaify.com/alexandra/<b>faq</b></span>
-  <button class="theme-toggle" onclick="document.body.classList.toggle('dark-mode')" aria-label="Toggle theme">
-    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </button>
-</div>
+<!-- ============================================================
+     Canonical creator home nav (top) — inherited across all sub-pages
+     per feedback_tadaify_subpages_inherit_home_chrome. Source of truth:
+     creator-custom-public.html `.creator-nav` block.
+     ============================================================ -->
+<style>
+  .creator-nav {
+    max-width: 1080px; margin: 0 auto;
+    padding: 22px 24px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .creator-nav .cn-handle {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-display); font-weight: 600; font-size: 18px;
+    color: var(--fg); text-decoration: none;
+  }
+  .creator-nav .cn-handle .av {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+    display: flex; align-items: center; justify-content: center;
+    color: #7C2D12; font-size: 13px; font-weight: 700;
+  }
+  .creator-nav .cn-links { display: flex; gap: 4px; flex-wrap: wrap; }
+  .creator-nav .cn-links a {
+    padding: 6px 12px; border-radius: 99px; font-size: 13.5px; font-weight: 500;
+    color: var(--fg-muted); text-decoration: none;
+  }
+  .creator-nav .cn-links a.is-current,
+  .creator-nav .cn-links a:hover { color: var(--brand-primary); background: rgba(99,102,241,0.08); }
+  @media (max-width: 600px) { .creator-nav { padding-top: 16px; } }
+</style>
 
-<!-- Creator identity row -->
-<div class="creator-row">
-  <div class="av" aria-hidden="true">A</div>
-  <div class="who">
-    <div class="who-name">Alexandra Silva</div>
-    <div class="who-handle">@alexandra · Strong Not Skinny</div>
+<nav class="creator-nav">
+  <a href="./creator-public.html" class="cn-handle">
+    <span class="av" aria-hidden="true">A</span>
+    Alexandra Silva
+  </a>
+  <div class="cn-links">
+    <a href="./creator-public.html">Home</a>
+    <a href="./creator-about-public.html">About</a>
+    <a href="./creator-blog-public.html">Blog</a>
+    <a href="./creator-portfolio-public.html">Portfolio</a>
+    <a href="./creator-faq-public.html" class="is-current">FAQ</a>
+    <a href="./creator-contact-public.html">Contact</a>
   </div>
-  <a href="./creator-public.html" class="back-to-main">← Main page</a>
-</div>
+</nav>
 
 <!-- Page hero -->
 <header class="page-hero">
