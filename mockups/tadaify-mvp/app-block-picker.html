@@ -198,35 +198,13 @@
       padding: 18px 22px;
     }
 
-    /* AI Suggest hero CTA */
-    .ai-hero {
-      background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(99,102,241,0.10) 100%);
-      border: 1px solid rgba(245,158,11,0.25);
-      border-radius: 14px;
-      padding: 14px 16px;
-      display: flex; gap: 14px; align-items: center;
-      margin-bottom: 16px;
-      cursor: pointer;
-      transition: transform .15s, box-shadow .15s;
-    }
-    .ai-hero:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
-    .ai-hero .spark {
-      font-size: 28px; flex-shrink: 0;
-    }
-    .ai-hero .meta { flex: 1; min-width: 0; }
-    .ai-hero .meta .t {
-      font-family: var(--font-display);
-      font-size: 17px; font-weight: 600; color: var(--fg);
-    }
-    .ai-hero .meta .s { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
-    .ai-hero .arrow {
-      color: var(--brand-warm-dark); font-weight: 700; font-size: 18px;
-      flex-shrink: 0;
-    }
-    body.dark-mode .ai-hero { background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(99,102,241,0.18)); border-color: rgba(245,158,11,0.4); }
-    body.dark-mode .ai-hero .meta .t { color: #F3F4F6; }
-
-    /* Card grid */
+    /* Card grid
+       NB: AI Suggest hero CTA (.ai-hero) was REMOVED per Fix #2 (2026-04-27).
+       Per user: creator should verify their own choice when adding a block,
+       not get an AI nudge in the picker. The "AI ✨" category tab is kept
+       (legitimate filter for AI-related blocks). The dedicated AI Suggest
+       sub-modal (#ai-backdrop) below is a per-field copy suggester — different
+       feature, kept untouched. */
     .card-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -492,17 +470,8 @@
       </nav>
 
       <div class="modal-body">
-
-        <!-- AI Suggest hero CTA -->
-        <button class="ai-hero" onclick="openAi()" aria-label="Open AI suggestions">
-          <span class="spark" aria-hidden="true">✨</span>
-          <div class="meta">
-            <div class="t">Let AI suggest blocks for your bio</div>
-            <div class="s">Picks 3-5 blocks based on your goals — fitness, music, agency, ecom. Tap to preview.</div>
-          </div>
-          <span class="arrow" aria-hidden="true">→</span>
-        </button>
-
+        <!-- AI Suggest hero CTA REMOVED per Fix #2 (2026-04-27) — block grid
+             moves up to fill the space directly under the category tabs. -->
         <div class="card-grid" id="card-grid" role="list">
           <!-- populated by JS -->
         </div>
@@ -689,9 +658,10 @@
         return (t.label + ' ' + t.desc).toLowerCase().indexOf(q) !== -1;
       });
 
-      // AI ✨ tab — show a CTA card linking to the sub-modal
+      // AI ✨ tab — show a CTA card opening the per-field AI Suggest sub-modal
+      // (per Fix #2 2026-04-27: hero CTA removed; tab opens the same sub-modal directly)
       if (activeCat === 'AI ✨') {
-        grid.innerHTML = '<div class="grid-empty" style="grid-column:1/-1"><div class="ic">✨</div><b>Let AI pick a starter set</b><br/><span style="font-size:12px">Tap "Let AI suggest blocks" above to preview 5 ready-to-use combinations.</span></div>';
+        grid.innerHTML = '<div class="grid-empty" style="grid-column:1/-1"><div class="ic">✨</div><b>AI Suggest is per field</b><br/><span style="font-size:12px">Pick any block from the other tabs, then tap the ✨ Suggest button next to a text field while editing to get copy suggestions.</span><br/><br/><button class="btn btn-ghost btn-sm" onclick="openAi()" style="margin-top:6px">Preview the AI Suggest modal</button></div>';
         return;
       }
 
