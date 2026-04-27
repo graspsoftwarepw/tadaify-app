@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — Danger zone tab deep dive (F-APP-SETTINGS-DANGER-001)
+  created_at: 2026-04-27
+  author: orchestrator
+  status: draft-for-review
+
+  Sister deep-dives:
+    app-settings-account.html  (#33  F-APP-SETTINGS-ACCOUNT-001)
+    app-settings-billing.html  (#34  F-APP-SETTINGS-BILLING-001)
+    app-settings-security.html (#35  F-APP-SETTINGS-SECURITY-001)
+    app-settings-gdpr.html     (#36  F-APP-SETTINGS-GDPR-001)
+    app-settings-danger.html   (#39  F-APP-SETTINGS-DANGER-001)  ← THIS FILE
+
+  DEC trail:
+    AP-010      one-click cancel — no survey cascade, no rebuttals (single confirm)
+    AP-029      pages stay live during dunning + cancellation grace
+    DEC-PRICELOCK-01 reactivate before period_end keeps the locked price for life
+    F-COMPLIANCE-001 GDPR Art. 17 erasure (type-email-to-confirm)
+    DEC-DELETE-GRACE-01  30-day account-recovery window after delete (login restores)
+
+  Critical UX promise (per AP-029) — THE differentiator vs Linktree:
+    Cancelling a subscription does NOT kill the public page.
+    On Free tier the page stays live forever (within Free limits).
+    This file makes that promise prominent in every cancellation surface.
+
+  Anti-patterns enforced:
+    AP-001 (no fake-margin gates): cancel + delete are FREE for every tier (GDPR right to leave).
+                                    Pause is Pro+ because it has real infra cost (continued storage with no rev).
+    AP-013 (no right-side drawers): every editor is a centered modal.
+    AP-017 (no blur of premium UI): pause section fully visible for Free/Creator with tier badge;
+                                    gate fires at click via TierGate.checkAndProceed.
+    AP-031 (no fear-mongering copy): danger language is FRIENDLY-but-SERIOUS, never punitive.
+
+  Tone: friendly but serious. We're sorry to see you go, we make leaving easy,
+  but we make absolutely sure you understand what's permanent.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danger zone · Settings — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* -----------------------------------------------------------------------
+       Wordmark
+       --------------------------------------------------------------------- */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* -----------------------------------------------------------------------
+       Shared atoms
+       --------------------------------------------------------------------- */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.danger  { background: var(--danger-bg);  color: #991B1B; }
+    .chip.warn    { background: rgba(245,158,11,0.15); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.30); }
+    .chip.success { background: var(--success-bg); color: #065F46; }
+    .chip.info    { background: var(--info-bg);    color: #1E40AF; }
+    .chip.neutral { background: var(--bg-muted);   color: var(--fg-muted); }
+    .chip.locked-life {
+      background: rgba(245,158,11,0.12); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .chip-tier-creator { background: rgba(16,185,129,0.12); color: #047857; border: 1px solid rgba(16,185,129,0.28); }
+    .chip-tier-pro     { background: rgba(99,102,241,0.13); color: #4338CA; border: 1px solid rgba(99,102,241,0.30); }
+    .chip-tier-business{ background: rgba(245,158,11,0.14); color: #92400E; border: 1px solid rgba(245,158,11,0.32); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease;
+      line-height: 1.2;
+    }
+    .btn-primary       { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost         { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover   { background: var(--bg-muted); }
+    .btn-danger        { background: var(--danger); color: #fff; }
+    .btn-danger:hover  { background: #DC2626; }
+    .btn-danger-ghost  { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-warm          { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover    { background: var(--brand-warm-dark); color: #fff; }
+    .btn-sm            { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs            { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn-lg            { padding: 11px 20px; font-size: 15px; border-radius: 11px; }
+    .btn:disabled      { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* -----------------------------------------------------------------------
+       Top app bar
+       --------------------------------------------------------------------- */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle { position: relative; }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* -----------------------------------------------------------------------
+       Layout: sidebar / main
+       --------------------------------------------------------------------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr;  } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content {
+      padding: 24px 18px 100px;
+      min-width: 0;
+    }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 100px; } }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      font-size: 12.5px; color: var(--fg-subtle); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--fg-muted); }
+    .breadcrumb a:hover { color: var(--brand-primary); text-decoration: underline; }
+    .breadcrumb .sep { color: var(--fg-subtle); }
+    .breadcrumb .current { color: var(--fg); font-weight: 600; }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head h1 .ph-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--danger-bg); color: var(--danger);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .page-head h1 .ph-icon svg { width: 20px; height: 20px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; }
+
+    /* -----------------------------------------------------------------------
+       Settings layout: tab nav + content
+       --------------------------------------------------------------------- */
+    .settings-layout { display: flex; gap: 0; align-items: flex-start; }
+
+    .settings-nav {
+      width: 200px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 82px;
+    }
+    .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; cursor: pointer;
+      transition: background .12s ease, color .12s ease;
+      text-decoration: none;
+    }
+    .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle); }
+    .settings-nav-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-nav-item.active {
+      background: var(--danger-bg); color: var(--danger); font-weight: 600;
+    }
+    .settings-nav-item.active svg { color: var(--danger); }
+    .settings-nav-divider { border-top: 1px solid var(--border); margin: 8px 0; }
+    .settings-nav-item .sn-pill {
+      margin-left: auto;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+      white-space: nowrap;
+    }
+    .settings-nav-item .sn-pill.pro-pill {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .settings-nav-item .sn-pill.biz-pill {
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+
+    @media (max-width: 719px) {
+      .settings-layout { flex-direction: column; gap: 0; }
+      .settings-nav {
+        width: 100%; flex-direction: row;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 4px; padding-bottom: 12px; margin-bottom: 4px;
+        position: static;
+      }
+      .settings-nav-item {
+        white-space: nowrap; flex-shrink: 0;
+        padding: 7px 14px; border-radius: 99px;
+        border: 1px solid var(--border); background: var(--bg-elevated);
+        font-size: 13px;
+      }
+      .settings-nav-item.active {
+        background: var(--danger-bg); border-color: rgba(239,68,68,0.30);
+      }
+      .settings-nav-item .sn-pill { display: none; }
+      .settings-nav-divider { display: none; }
+    }
+
+    .settings-content {
+      flex: 1; min-width: 0;
+      padding-left: 28px;
+      border-left: 1px solid var(--border);
+      min-height: 400px;
+    }
+    @media (max-width: 719px) {
+      .settings-content { padding-left: 0; border-left: none; padding-top: 20px; }
+    }
+
+    /* -----------------------------------------------------------------------
+       Cards / sections
+       --------------------------------------------------------------------- */
+    .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    .settings-section-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .settings-section-title .sst-emoji { font-size: 14px; line-height: 1; }
+    .settings-section-title.with-action {
+      justify-content: space-between;
+    }
+
+    /* DANGER ZONE — red accent border + soft pink wash + top gradient line */
+    .settings-section.danger-zone {
+      border-color: rgba(239,68,68,0.35);
+      background: rgba(239,68,68,0.025);
+      position: relative;
+    }
+    .settings-section.danger-zone::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 20px; right: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(239,68,68,0.45), transparent);
+      border-radius: 1px;
+    }
+    .settings-section.danger-zone .settings-section-title { color: var(--danger); }
+
+    /* WARNING ZONE — amber for pause / reactivate cards */
+    .settings-section.warn-zone {
+      border-color: rgba(245,158,11,0.35);
+      background: rgba(245,158,11,0.04);
+      position: relative;
+    }
+    .settings-section.warn-zone::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 20px; right: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(245,158,11,0.45), transparent);
+      border-radius: 1px;
+    }
+    .settings-section.warn-zone .settings-section-title { color: var(--brand-warm-dark); }
+
+    /* SUCCESS ZONE — green for post-cancel confirmation */
+    .settings-section.ok-zone {
+      border-color: rgba(16,185,129,0.35);
+      background: rgba(16,185,129,0.04);
+    }
+    .settings-section.ok-zone .settings-section-title { color: #047857; }
+
+    .section-lede {
+      font-size: 13.5px; color: var(--fg); line-height: 1.6;
+      margin: 0 0 14px;
+    }
+    .section-lede strong { color: var(--fg); }
+
+    /* -----------------------------------------------------------------------
+       Plan summary card (above cancel section)
+       --------------------------------------------------------------------- */
+    .plan-summary {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    .plan-summary .ps-emoji {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: rgba(99,102,241,0.10);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .plan-summary .ps-body { flex: 1; min-width: 0; }
+    .plan-summary .ps-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--fg); }
+    .plan-summary .ps-meta  { font-size: 12.5px; color: var(--fg-muted); margin-top: 3px; }
+    .plan-summary .ps-meta b { color: var(--fg); font-weight: 600; }
+    .plan-summary .ps-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+    /* -----------------------------------------------------------------------
+       Consequence list (used by cancel + delete)
+       --------------------------------------------------------------------- */
+    .consequence-list {
+      list-style: none; padding: 0; margin: 12px 0 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .consequence-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; line-height: 1.5;
+    }
+    .consequence-list li .cl-ico {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 12px; font-weight: 700;
+      background: var(--bg-muted); color: var(--fg-muted);
+    }
+    .consequence-list li.is-good .cl-ico { background: var(--success-bg); color: #047857; }
+    .consequence-list li.is-warn .cl-ico { background: rgba(245,158,11,0.18); color: #92400E; }
+    .consequence-list li.is-bad  .cl-ico { background: var(--danger-bg);  color: #991B1B; }
+    .consequence-list li .cl-body { flex: 1; min-width: 0; }
+    .consequence-list li .cl-body strong { color: var(--fg); font-weight: 600; }
+    .consequence-list li .cl-body .cl-meta { color: var(--fg-muted); font-size: 12px; margin-top: 2px; display: block; }
+
+    /* -----------------------------------------------------------------------
+       AP-029 promise callout — THE differentiator
+       --------------------------------------------------------------------- */
+    .promise-callout {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.10), rgba(99,102,241,0.06));
+      border: 1px solid rgba(16,185,129,0.30);
+      border-radius: 12px;
+      margin: 12px 0 16px;
+    }
+    .promise-callout .pc-ico {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(16,185,129,0.18); color: #047857;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .promise-callout .pc-ico svg { width: 18px; height: 18px; }
+    .promise-callout .pc-body { flex: 1; min-width: 0; }
+    .promise-callout .pc-title { font-weight: 600; color: var(--fg); margin-bottom: 3px; font-size: 13.5px; }
+    .promise-callout .pc-sub   { font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; }
+    .promise-callout .pc-sub b { color: var(--fg); }
+
+    /* -----------------------------------------------------------------------
+       Cross-link pill (export data / newsletter / GDPR)
+       --------------------------------------------------------------------- */
+    .crosslink-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 13px;
+    }
+    .crosslink-card .xc-ico {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .crosslink-card .xc-ico svg { width: 16px; height: 16px; }
+    .crosslink-card .xc-body { flex: 1; min-width: 0; }
+    .crosslink-card .xc-title { font-weight: 600; color: var(--fg); font-size: 13px; }
+    .crosslink-card .xc-sub   { font-size: 11.5px; color: var(--fg-muted); margin-top: 1px; }
+
+    /* -----------------------------------------------------------------------
+       Audit log (read-only timeline)
+       --------------------------------------------------------------------- */
+    .audit-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .audit-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .audit-row .ar-ico {
+      width: 26px; height: 26px; border-radius: 8px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 13px;
+    }
+    .audit-row.is-cancel .ar-ico   { background: var(--danger-bg);  color: #991B1B; }
+    .audit-row.is-pause .ar-ico    { background: rgba(245,158,11,0.18); color: #92400E; }
+    .audit-row.is-reactivate .ar-ico{ background: rgba(16,185,129,0.18); color: #047857; }
+    .audit-row.is-delete-attempt .ar-ico { background: rgba(99,102,241,0.18); color: var(--brand-primary); }
+    .audit-row .ar-body  { flex: 1; min-width: 0; }
+    .audit-row .ar-event { color: var(--fg); font-weight: 500; }
+    .audit-row .ar-meta  { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; font-family: var(--font-mono); }
+    .audit-row .ar-time  { color: var(--fg-muted); font-size: 12px; white-space: nowrap; padding-top: 4px; flex-shrink: 0; }
+
+    /* -----------------------------------------------------------------------
+       Tier banner — for pause section when below Pro
+       --------------------------------------------------------------------- */
+    .tier-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.22);
+      font-size: 12.5px; line-height: 1.5;
+      color: var(--fg);
+    }
+    .tier-banner .tb-ico {
+      flex-shrink: 0; font-size: 18px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(245,158,11,0.18);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .tier-banner .tb-text { flex: 1; min-width: 0; }
+    .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 1px; font-size: 12.5px; }
+    .tier-banner .tb-sub   { font-size: 11.5px; color: var(--fg-muted); }
+    .tier-banner .btn { flex-shrink: 0; }
+
+    /* -----------------------------------------------------------------------
+       Modals — centered, NEVER drawers (AP-013 / feedback_no_right_side_drawers)
+       --------------------------------------------------------------------- */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+      padding: 16px;
+      animation: backdropIn .18s ease;
+    }
+    .modal-backdrop.open { display: flex; }
+    @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 26px;
+      width: 100%; max-width: 520px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.20);
+      animation: modalIn .18s ease;
+      position: relative;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+    }
+    .modal.modal-lg { max-width: 640px; }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 { font-family: var(--font-display); font-size: 22px; margin: 0 0 6px; }
+    .modal h3.danger-h { color: var(--danger); }
+    .modal .modal-sub  { font-size: 13.5px; color: var(--fg-muted); margin-bottom: 18px; line-height: 1.55; }
+    .modal .modal-actions {
+      display: flex; gap: 10px;
+      justify-content: flex-end;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+    .modal .modal-actions.full {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    .modal .modal-actions.full .btn { width: 100%; justify-content: center; }
+    .modal .modal-close-x {
+      position: absolute; top: 14px; right: 14px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 22px; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .modal .modal-close-x:hover { background: var(--bg-muted); color: var(--fg); }
+    .modal-warning {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.22);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12.5px; color: var(--danger);
+      margin-bottom: 14px; line-height: 1.5;
+    }
+    .modal-warning a { color: var(--danger); text-decoration: underline; }
+    .modal-info {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.22);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12.5px; color: var(--fg);
+      margin-bottom: 14px; line-height: 1.5;
+    }
+
+    /* Cancel-flow stepper */
+    .step-bar {
+      display: flex; align-items: center; gap: 8px;
+      margin: 4px 0 18px;
+    }
+    .step-bar .step {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--fg-subtle); font-weight: 600;
+    }
+    .step-bar .step .num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--bg-muted); color: var(--fg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      transition: background .15s ease, color .15s ease;
+    }
+    .step-bar .step.is-active .num { background: var(--brand-primary); color: #fff; }
+    .step-bar .step.is-done   .num { background: var(--success); color: #fff; }
+    .step-bar .step.is-active { color: var(--fg); }
+    .step-bar .step.is-done   { color: #047857; }
+    .step-bar .step-line {
+      flex: 1; height: 2px; background: var(--bg-sunken); border-radius: 1px;
+    }
+    .step-bar .step-line.is-done { background: var(--success); }
+
+    /* Reason radio list */
+    .reason-list {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 12px;
+    }
+    .reason-list label {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease;
+      font-size: 13px;
+      background: var(--bg);
+    }
+    .reason-list label:hover { background: var(--bg-muted); border-color: var(--border-strong); }
+    .reason-list label input[type=radio] {
+      margin-top: 2px; flex-shrink: 0; accent-color: var(--brand-primary);
+    }
+    .reason-list label.is-checked {
+      background: rgba(99,102,241,0.06);
+      border-color: rgba(99,102,241,0.30);
+    }
+    .reason-list .r-body { flex: 1; min-width: 0; }
+    .reason-list .r-title { font-weight: 600; color: var(--fg); }
+    .reason-list .r-sub { font-size: 11.5px; color: var(--fg-muted); margin-top: 1px; }
+
+    /* Field input (textarea, email) */
+    .field-input {
+      font-family: var(--font-sans); font-size: 14px;
+      padding: 10px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      outline: none; transition: border-color .12s ease, box-shadow .12s ease;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .field-input.is-error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+    }
+    .field-input.is-ok {
+      border-color: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    }
+    .field-input[readonly] {
+      background: var(--bg-muted); color: var(--fg-muted); cursor: default;
+    }
+    textarea.field-input { resize: vertical; min-height: 72px; }
+    .field-label {
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      margin-bottom: 5px; display: block;
+    }
+    .field-hint { font-size: 11.5px; color: var(--fg-muted); margin-top: 6px; line-height: 1.45; }
+    .field-hint.is-error { color: var(--danger); }
+    .field-hint.is-ok { color: #047857; }
+
+    /* Retention card (cancel modal step 2) */
+    .retention-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04));
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .retention-card .rc-eyebrow {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--brand-primary);
+      margin-bottom: 6px;
+    }
+    .retention-card .rc-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 600;
+      color: var(--fg); margin-bottom: 6px;
+    }
+    .retention-card .rc-body { font-size: 13px; color: var(--fg-muted); line-height: 1.55; }
+    .retention-card .rc-feature-list {
+      display: flex; flex-direction: column; gap: 6px;
+      margin: 10px 0 0; padding: 0; list-style: none;
+    }
+    .retention-card .rc-feature-list li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 12.5px; color: var(--fg);
+      padding: 8px 10px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+    }
+    .retention-card .rc-feature-list li .rcf-emoji { font-size: 16px; flex-shrink: 0; line-height: 1.3; }
+    .retention-card .rc-feature-list li b { color: var(--fg); font-weight: 600; display: block; margin-bottom: 1px; }
+    .retention-card .rc-feature-list li .rcf-meta { color: var(--fg-muted); font-size: 11.5px; }
+
+    /* Pause alternative — inline upsell inside cancel flow */
+    .pause-alt {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.30);
+      border-radius: 11px;
+      margin-top: 10px;
+    }
+    .pause-alt .pa-ico {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(245,158,11,0.18); color: #92400E;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .pause-alt .pa-ico svg { width: 18px; height: 18px; }
+    .pause-alt .pa-body { flex: 1; min-width: 0; }
+    .pause-alt .pa-title { font-weight: 600; color: var(--fg); font-size: 13.5px; }
+    .pause-alt .pa-sub { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Before-you-go checklist */
+    .before-checklist {
+      display: flex; flex-direction: column; gap: 8px;
+      margin: 10px 0 0; padding: 0; list-style: none;
+    }
+    .before-checklist li {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .before-checklist li .bc-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--brand-primary); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .before-checklist li .bc-body { flex: 1; min-width: 0; }
+    .before-checklist li .bc-title { font-weight: 600; color: var(--fg); }
+    .before-checklist li .bc-sub { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+    .before-checklist li .bc-link {
+      color: var(--brand-primary); font-size: 12px; font-weight: 600;
+      white-space: nowrap; padding-top: 2px;
+    }
+    .before-checklist li .bc-link:hover { text-decoration: underline; }
+
+    /* Recovery banner (after delete confirmation) */
+    .recovery-card {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 14px;
+      font-size: 13px; color: var(--fg);
+      line-height: 1.55;
+    }
+    .recovery-card strong { color: var(--brand-primary); }
+
+    /* Final ack checkbox row */
+    .ack-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 14px;
+      background: var(--danger-bg);
+      border: 1px solid rgba(239,68,68,0.30);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 12.5px; color: #991B1B; line-height: 1.45;
+      cursor: pointer;
+    }
+    .ack-row input[type=checkbox] {
+      margin-top: 2px; flex-shrink: 0; accent-color: var(--danger);
+    }
+    .ack-row strong { color: #7F1D1D; font-weight: 700; }
+
+    /* Deleted-state full-page mockup */
+    .deleted-shell {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 32px 16px;
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(99, 102, 241, 0.10), transparent 60%),
+        radial-gradient(600px 300px at 50% 120%, rgba(245, 158, 11, 0.10), transparent 60%),
+        var(--bg);
+    }
+    .deleted-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .deleted-card .dc-ico {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+    }
+    .deleted-card .dc-ico svg { width: 36px; height: 36px; }
+    .deleted-card h1 {
+      font-family: var(--font-display); font-size: 28px; font-weight: 600;
+      margin: 0 0 10px; color: var(--fg);
+    }
+    .deleted-card p { color: var(--fg-muted); font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+    .deleted-card .dc-meta {
+      font-size: 12.5px; color: var(--fg-subtle); margin-top: 18px;
+      padding-top: 16px; border-top: 1px solid var(--border);
+    }
+
+    /* -----------------------------------------------------------------------
+       Cancellation post-state confirmation banner (state=cancel-confirmed)
+       --------------------------------------------------------------------- */
+    .post-state-banner {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+    }
+    .post-state-banner.is-success {
+      background: linear-gradient(135deg, rgba(16,185,129,0.10), rgba(16,185,129,0.04));
+      border: 1px solid rgba(16,185,129,0.32);
+      color: #065F46;
+    }
+    .post-state-banner.is-warn {
+      background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04));
+      border: 1px solid rgba(245,158,11,0.32);
+      color: #92400E;
+    }
+    .post-state-banner .psb-ico {
+      flex-shrink: 0; font-size: 22px;
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(255,255,255,0.55);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .post-state-banner .psb-body { flex: 1; min-width: 0; }
+    .post-state-banner .psb-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+    .post-state-banner .psb-sub { font-size: 12.5px; line-height: 1.5; opacity: 0.85; }
+    .post-state-banner .psb-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    /* -----------------------------------------------------------------------
+       Demo toolbar
+       --------------------------------------------------------------------- */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px; z-index: 999;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 600; color: var(--fg-subtle);
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      max-width: 320px;
+    }
+    .demo-toolbar .dt-label {
+      color: var(--fg-subtle); text-transform: uppercase;
+      letter-spacing: .06em; font-size: 10px;
+    }
+    .demo-toolbar .dt-row { display: flex; gap: 4px; flex-wrap: wrap; }
+    .demo-toolbar button {
+      padding: 4px 9px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans); color: var(--fg);
+      transition: background .12s ease, border-color .12s ease, color .12s ease;
+    }
+    .demo-toolbar button.is-active {
+      background: rgba(99,102,241,0.10);
+      border-color: rgba(99,102,241,0.30);
+      color: var(--brand-primary);
+    }
+    .demo-toolbar button:hover { background: var(--bg-muted); }
+
+    /* -----------------------------------------------------------------------
+       Dark mode overrides
+       --------------------------------------------------------------------- */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1A2236;
+      --bg-sunken:   #222A3E;
+      --fg:          #F3F4F6;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #4B5563;
+      --border:      #1F2937;
+      --border-strong: #374151;
+      --wm-ify: #F3F4F6;
+    }
+    body.dark-mode .appbar { background: rgba(11,15,30,0.9); border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .wm .ify { color: #F3F4F6; }
+    body.dark-mode .appbar .handle-pill { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .settings-nav-item { color: #9CA3AF; }
+    body.dark-mode .settings-nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .settings-nav-item.active { background: rgba(239,68,68,0.16); color: #FCA5A5; }
+    body.dark-mode .settings-nav-item.active svg { color: #FCA5A5; }
+    body.dark-mode .settings-section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .settings-section.danger-zone { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.40); }
+    body.dark-mode .settings-section.warn-zone   { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.40); }
+    body.dark-mode .settings-section.ok-zone     { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.40); }
+    body.dark-mode .field-input { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .field-input[readonly] { background: #1A2236; color: #9CA3AF; }
+    body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .modal-warning { background: rgba(239,68,68,0.10); }
+    body.dark-mode .modal-info    { background: rgba(99,102,241,0.10); }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .settings-content { border-left-color: #1F2937; }
+    body.dark-mode .consequence-list li { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .reason-list label { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .reason-list label.is-checked { background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.45); }
+    body.dark-mode .plan-summary { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .crosslink-card { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .audit-row { border-bottom-color: #1F2937; }
+    body.dark-mode .before-checklist li { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .retention-card { background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(139,92,246,0.10)); border-color: rgba(99,102,241,0.40); }
+    body.dark-mode .retention-card .rc-feature-list li { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .pause-alt { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.40); }
+    body.dark-mode .recovery-card { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.40); }
+    body.dark-mode .ack-row { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.40); color: #FCA5A5; }
+    body.dark-mode .ack-row strong { color: #FECACA; }
+    body.dark-mode .deleted-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .demo-toolbar { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .demo-toolbar button { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .demo-toolbar button.is-active { background: rgba(99,102,241,0.20); border-color: rgba(99,102,241,0.50); color: #A5B4FC; }
+    body.dark-mode .post-state-banner.is-success { background: linear-gradient(135deg, rgba(16,185,129,0.20), rgba(16,185,129,0.10)); border-color: rgba(16,185,129,0.45); color: #6EE7B7; }
+    body.dark-mode .post-state-banner.is-warn    { background: linear-gradient(135deg, rgba(245,158,11,0.20), rgba(245,158,11,0.10)); border-color: rgba(245,158,11,0.45); color: #FCD34D; }
+    body.dark-mode .promise-callout { background: linear-gradient(135deg, rgba(16,185,129,0.16), rgba(99,102,241,0.10)); border-color: rgba(16,185,129,0.45); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal, .modal-backdrop { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP APP BAR
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b>alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout" id="layout">
+
+  <!-- ====== PRIMARY SIDEBAR (canonical, shared partial) ====== -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="content">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html?tab=page">Home</a>
+      <span class="sep">/</span>
+      <a href="./app-settings.html">Settings</a>
+      <span class="sep">/</span>
+      <span class="current">Danger zone</span>
+    </nav>
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1>
+          <span class="ph-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </span>
+          Danger zone
+        </h1>
+        <div class="sub">Cancel, pause, or permanently delete your tadaify account. Take your time — these actions are reversible until they're not.</div>
+      </div>
+    </div>
+
+    <div class="settings-layout">
+
+      <!-- ============================================================
+           Tab nav (cross-linked to sister deep dives)
+           ============================================================ -->
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a href="./app-settings-account.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </a>
+        <a href="./app-settings-billing.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a href="./app-settings-security.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security
+        </a>
+        <a href="./app-settings-gdpr.html" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          GDPR &amp; data
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a href="./app-settings.html#api" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          API keys
+          <span class="sn-pill pro-pill">Pro</span>
+        </a>
+        <a href="./app-settings.html#team" class="settings-nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team
+          <span class="sn-pill biz-pill">Business</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a href="./app-settings-danger.html" class="settings-nav-item active" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger zone
+        </a>
+      </nav>
+
+      <!-- ============================================================
+           Settings content
+           ============================================================ -->
+      <div class="settings-content">
+
+        <!-- ===========================================================
+             POST-STATE BANNERS (shown only on cancel-confirmed / paused)
+             =========================================================== -->
+        <div class="post-state-banner is-success" id="banner-cancel-confirmed" style="display:none">
+          <div class="psb-ico" aria-hidden="true">✓</div>
+          <div class="psb-body">
+            <div class="psb-title">You're on Free until Dec 1, 2026 — then your page stays live as Free tier. Thanks for being a creator!</div>
+            <div class="psb-sub">All your blocks, links, and analytics are preserved. Reactivate anytime to keep your locked $8/mo price.</div>
+          </div>
+          <div class="psb-actions">
+            <button class="btn btn-warm btn-sm" onclick="setState('default'); document.getElementById('reactivate-section').scrollIntoView({behavior:'smooth'})">Reactivate →</button>
+          </div>
+        </div>
+
+        <div class="post-state-banner is-warn" id="banner-paused" style="display:none">
+          <div class="psb-ico" aria-hidden="true">⏸</div>
+          <div class="psb-body">
+            <div class="psb-title">Subscription paused until June 27, 2026 · Resume anytime</div>
+            <div class="psb-sub">Your page stays live with full Creator features. We'll send a reminder 3 days before resume. No charges during the pause.</div>
+          </div>
+          <div class="psb-actions">
+            <button class="btn btn-warm btn-sm" onclick="alert('Mockup — would resume subscription via Stripe immediately')">Resume now</button>
+          </div>
+        </div>
+
+        <!-- ===========================================================
+             SECTION 1 — CANCEL SUBSCRIPTION
+             =========================================================== -->
+        <section class="settings-section danger-zone" id="cancel-section" aria-labelledby="sec-cancel">
+          <div class="settings-section-title" id="sec-cancel">
+            <span class="sst-emoji" aria-hidden="true">👋</span>
+            Cancel subscription
+          </div>
+
+          <p class="section-lede">
+            Sorry to see you considering this. Before you go, take a look at what cancelling means —
+            the good news is that <strong>your page doesn't disappear</strong>.
+          </p>
+
+          <!-- Current plan summary -->
+          <div class="plan-summary" id="plan-summary">
+            <div class="ps-emoji" aria-hidden="true">✨</div>
+            <div class="ps-body">
+              <div class="ps-title">Creator <span class="chip locked-life" style="margin-left:6px">🔒 Price locked for life</span></div>
+              <div class="ps-meta">
+                <b>$8/month</b> · billed monthly · renews <b>May 26, 2026</b> via Visa **** 4242
+              </div>
+              <div class="ps-chips">
+                <span class="chip success">● Active</span>
+                <span class="chip neutral">Started Apr 14, 2026</span>
+                <span class="chip neutral">12 days into period</span>
+              </div>
+            </div>
+            <div style="flex-shrink:0">
+              <a href="./app-settings-billing.html" class="btn btn-ghost btn-sm">Manage in Billing →</a>
+            </div>
+          </div>
+
+          <!-- AP-029 promise — THE differentiator -->
+          <div class="promise-callout" role="note">
+            <div class="pc-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            </div>
+            <div class="pc-body">
+              <div class="pc-title">Your page stays live forever — even on Free tier</div>
+              <div class="pc-sub">
+                When you cancel, <b>tadaify.com/alexandra</b> keeps working with your blocks, links, and analytics.
+                You drop down to <b>Free tier limits</b> after the period ends (8 blocks, no custom domain, basic analytics) —
+                but the page never goes dark. <em>This is what makes us different from Linktree.</em>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-danger-ghost" onclick="openCancelModal()" style="margin-top:6px">
+            Cancel Creator subscription
+          </button>
+          <span style="font-size:12px;color:var(--fg-muted);margin-left:10px">No survey, no guilt trip — single confirm step.</span>
+        </section>
+
+        <!-- ===========================================================
+             SECTION 2 — REACTIVATE (visible only after cancel)
+             =========================================================== -->
+        <section class="settings-section warn-zone" id="reactivate-section" style="display:none" aria-labelledby="sec-reactivate">
+          <div class="settings-section-title" id="sec-reactivate">
+            <span class="sst-emoji" aria-hidden="true">🔄</span>
+            Reactivate before period ends
+          </div>
+          <p class="section-lede">
+            Your subscription is set to cancel on <strong>Dec 1, 2026</strong>. Reactivate before then to keep your
+            <strong>locked $8/mo price</strong> (DEC-PRICELOCK-01) — it never changes for as long as you stay subscribed.
+          </p>
+          <p style="font-size:12.5px;color:var(--fg-muted);margin-bottom:14px;line-height:1.55">
+            After Dec 1 your subscription truly expires; reactivating later will quote the current price (currently still $8/mo, but no guarantee).
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-warm" onclick="reactivate()">
+              Reactivate at $8/mo →
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="alert('Mockup — would open Stripe Portal')">Update payment method first</button>
+          </div>
+        </section>
+
+        <!-- ===========================================================
+             SECTION 3 — PAUSE SUBSCRIPTION (Pro+)
+             =========================================================== -->
+        <section class="settings-section warn-zone" id="pause-section" aria-labelledby="sec-pause">
+          <div class="settings-section-title with-action" id="sec-pause">
+            <span style="display:inline-flex;align-items:center;gap:8px;color:var(--brand-warm-dark)">
+              <span class="sst-emoji" aria-hidden="true">⏸</span>
+              Pause subscription
+            </span>
+            <span class="chip-tier-pro chip" id="pause-tier-badge" style="text-transform:none;letter-spacing:0">✨ Pro</span>
+          </div>
+
+          <!-- Tier banner (Free / Creator only — Pro/Business hide this) -->
+          <div class="tier-banner" id="pause-tier-banner" style="display:none">
+            <div class="tb-ico" aria-hidden="true">✨</div>
+            <div class="tb-text">
+              <div class="tb-title">Pause is a Pro feature</div>
+              <div class="tb-sub">Going on hiatus? Pause for 1–3 months instead of cancelling — your page stays live with full Pro features and you keep your locked price.</div>
+            </div>
+            <button class="btn btn-warm btn-sm" onclick="alert('Mockup — would open /pricing.html')">Upgrade to Pro</button>
+          </div>
+
+          <p class="section-lede">
+            Going on hiatus? Pause your subscription for 1–3 months. <strong>No charges during the pause</strong>,
+            your page stays live with all Pro features, and you'll get a reminder 3 days before it resumes.
+            <span style="color:var(--fg-muted)">(Limited to 2 pauses per year per DEC-PAUSE-01.)</span>
+          </p>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-warm btn-sm" onclick="openPauseModal()">
+              Pause subscription →
+            </button>
+            <span style="font-size:12px;color:var(--fg-muted)">2 pauses remaining this year</span>
+          </div>
+        </section>
+
+        <!-- ===========================================================
+             SECTION 4 — EXPORT CROSS-LINK
+             =========================================================== -->
+        <section class="settings-section" aria-labelledby="sec-export">
+          <div class="settings-section-title" id="sec-export">
+            <span class="sst-emoji" aria-hidden="true">📦</span>
+            Before you leave — download your data
+          </div>
+          <a href="./app-settings-gdpr.html" class="crosslink-card" style="text-decoration:none">
+            <div class="xc-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div class="xc-body">
+              <div class="xc-title">Export everything as ZIP (JSON + CSV) →</div>
+              <div class="xc-sub">Your profile, pages, blocks, subscribers, bookings, analytics, billing, audit log. Available in GDPR &amp; data tab.</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--fg-subtle);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </section>
+
+        <!-- ===========================================================
+             SECTION 5 — DELETE ACCOUNT (GDPR Art. 17)
+             =========================================================== -->
+        <section class="settings-section danger-zone" id="delete-section" aria-labelledby="sec-delete">
+          <div class="settings-section-title with-action" id="sec-delete">
+            <span style="display:inline-flex;align-items:center;gap:8px">
+              <span class="sst-emoji" aria-hidden="true">🗑️</span>
+              Permanently delete your tadaify account
+            </span>
+            <span class="chip neutral" style="text-transform:none;letter-spacing:0;font-weight:600">GDPR Art. 17</span>
+          </div>
+          <p class="section-lede">
+            This is the <strong>nuclear option</strong> — different from cancelling. Deletion permanently erases your account,
+            your handle, and everything connected to it. There is a 30-day grace window during which logging in restores
+            your account; after that, it's gone forever.
+          </p>
+
+          <!-- Consequence list (more aggressive than cancel) -->
+          <ul class="consequence-list" aria-label="What deleting your account means">
+            <li class="is-bad">
+              <span class="cl-ico" aria-hidden="true">×</span>
+              <div class="cl-body">
+                <strong>Your tadaify page (<code>tadaify.com/alexandra</code>) is permanently deleted</strong>
+                <span class="cl-meta">All inbound links to your page will 404 after the 30-day grace window. Update any external links pointing here before deleting.</span>
+              </div>
+            </li>
+            <li class="is-bad">
+              <span class="cl-ico" aria-hidden="true">×</span>
+              <div class="cl-body">
+                <strong>Your handle <code>@alexandra</code> becomes available for someone else</strong>
+                <span class="cl-meta">After the grace period ends. We hold the handle for you for 30 days — sign back in within that window to recover everything.</span>
+              </div>
+            </li>
+            <li class="is-bad">
+              <span class="cl-ico" aria-hidden="true">×</span>
+              <div class="cl-body">
+                <strong>All your data is erased within 30 days</strong>
+                <span class="cl-meta">Profile, blocks, pages, subscribers, bookings, blog posts, analytics. Audit log retained for 90 days for legal compliance, then deleted. Encrypted backups expire within 60 days.</span>
+              </div>
+            </li>
+            <li class="is-bad">
+              <span class="cl-ico" aria-hidden="true">×</span>
+              <div class="cl-body">
+                <strong>Active subscriptions are cancelled (no refund)</strong>
+                <span class="cl-meta">You had access through your paid period. No proration refund unless you're within the 7-day money-back window (Apr 14–21, 2026).</span>
+              </div>
+            </li>
+            <li class="is-warn">
+              <span class="cl-ico" aria-hidden="true">!</span>
+              <div class="cl-body">
+                <strong>Your custom domain DNS records are NOT auto-removed</strong>
+                <span class="cl-meta">After deletion, point <code>alexandra.com</code> elsewhere via your DNS provider — otherwise visitors hit a dangling domain. We can't manage your DNS for you.</span>
+              </div>
+            </li>
+            <li class="is-good">
+              <span class="cl-ico" aria-hidden="true">✓</span>
+              <div class="cl-body">
+                <strong>30-day recovery window</strong>
+                <span class="cl-meta">If you change your mind, just sign in within 30 days using your existing email + password. Your account is fully restored — no support ticket needed.</span>
+              </div>
+            </li>
+          </ul>
+
+          <!-- Before you go — actionable checklist -->
+          <div style="margin: 18px 0 0">
+            <div style="font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-subtle);margin-bottom:8px">
+              Before you go — recommended steps
+            </div>
+            <ul class="before-checklist">
+              <li>
+                <span class="bc-num">1</span>
+                <div class="bc-body">
+                  <div class="bc-title">Download all your data</div>
+                  <div class="bc-sub">Get a ZIP of your blocks, subscribers, bookings, analytics. You can't ask for this after deletion.</div>
+                </div>
+                <a href="./app-settings-gdpr.html" class="bc-link">GDPR &amp; data →</a>
+              </li>
+              <li>
+                <span class="bc-num">2</span>
+                <div class="bc-body">
+                  <div class="bc-title">Notify your subscribers</div>
+                  <div class="bc-sub">Send a final newsletter with your new contact info or alternative platform.</div>
+                </div>
+                <a href="./app-page-newsletter-signup.html" class="bc-link">Newsletter →</a>
+              </li>
+              <li>
+                <span class="bc-num">3</span>
+                <div class="bc-body">
+                  <div class="bc-title">Update other sites pointing to your tadaify URL</div>
+                  <div class="bc-sub">Instagram bio, TikTok link, YouTube about, business cards. Replace <code>tadaify.com/alexandra</code> with your new destination.</div>
+                </div>
+              </li>
+              <li>
+                <span class="bc-num">4</span>
+                <div class="bc-body">
+                  <div class="bc-title">Update your custom domain DNS (if you have one)</div>
+                  <div class="bc-sub">Point <code>alexandra.com</code> away from tadaify before the grace window ends.</div>
+                </div>
+                <a href="./app-domain.html" class="bc-link">Domain →</a>
+              </li>
+            </ul>
+          </div>
+
+          <button class="btn btn-danger" onclick="openDeleteModal()" style="margin-top:18px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+            Delete my account
+          </button>
+          <span style="font-size:12px;color:var(--fg-muted);margin-left:10px">Type your email + password to confirm</span>
+        </section>
+
+        <!-- ===========================================================
+             SECTION 6 — RECOVERY
+             =========================================================== -->
+        <section class="settings-section" aria-labelledby="sec-recovery">
+          <div class="settings-section-title" id="sec-recovery">
+            <span class="sst-emoji" aria-hidden="true">🆘</span>
+            Accidentally clicked delete?
+          </div>
+          <p class="section-lede" style="margin-bottom:0">
+            <strong>Sign in within 30 days</strong> using your existing email + password — your account is fully restored, no support ticket needed.
+            After 30 days, contact <a href="mailto:support@tadaify.com" style="color:var(--brand-primary);font-weight:600">support@tadaify.com</a> within 90 days while the audit log is still retained — recovery isn't guaranteed but we'll try.
+          </p>
+        </section>
+
+        <!-- ===========================================================
+             SECTION 7 — AUDIT LOG (read-only transparency)
+             =========================================================== -->
+        <section class="settings-section" aria-labelledby="sec-audit">
+          <div class="settings-section-title with-action" id="sec-audit">
+            <span style="display:inline-flex;align-items:center;gap:8px">
+              <span class="sst-emoji" aria-hidden="true">📜</span>
+              Account action history
+            </span>
+            <a href="./app-settings-security.html" style="color:var(--brand-primary);font-size:12.5px;font-weight:600;text-transform:none;letter-spacing:0">Full security log →</a>
+          </div>
+          <p style="font-size:12.5px;color:var(--fg-muted);margin-bottom:14px;line-height:1.55">
+            Everything we record about cancel / pause / delete on your account. Retained for 90 days even after deletion for legal compliance.
+          </p>
+
+          <div class="audit-row is-reactivate">
+            <span class="ar-ico" aria-hidden="true">↻</span>
+            <div class="ar-body">
+              <div class="ar-event">Subscription reactivated — <strong>$8/mo Creator</strong></div>
+              <div class="ar-meta">From: 192.0.2.18 · MacBook Air · Stripe sub_1OZk4F</div>
+            </div>
+            <div class="ar-time">Apr 22, 14:08</div>
+          </div>
+          <div class="audit-row is-cancel">
+            <span class="ar-ico" aria-hidden="true">×</span>
+            <div class="ar-body">
+              <div class="ar-event">Subscription cancelled at period end (<strong>Dec 1, 2026</strong>) · Reason: <em>Going on hiatus</em></div>
+              <div class="ar-meta">From: 192.0.2.18 · MacBook Air · Stripe sub_1OZk4F</div>
+            </div>
+            <div class="ar-time">Apr 22, 13:55</div>
+          </div>
+          <div class="audit-row is-pause">
+            <span class="ar-ico" aria-hidden="true">⏸</span>
+            <div class="ar-body">
+              <div class="ar-event">Subscription paused for 2 months (resume Jun 27, 2026)</div>
+              <div class="ar-meta">From: 198.51.100.42 · iPhone Safari · Stripe sub_1OZk4F</div>
+            </div>
+            <div class="ar-time">Apr 18, 09:12</div>
+          </div>
+          <div class="audit-row is-delete-attempt">
+            <span class="ar-ico" aria-hidden="true">?</span>
+            <div class="ar-body">
+              <div class="ar-event">Delete account modal opened — abandoned (closed without confirming)</div>
+              <div class="ar-meta">From: 192.0.2.18 · MacBook Air · Session 8m</div>
+            </div>
+            <div class="ar-time">Apr 16, 22:34</div>
+          </div>
+        </section>
+
+      </div><!-- /.settings-content -->
+    </div><!-- /.settings-layout -->
+
+  </main>
+</div><!-- /.layout -->
+
+
+<!-- ============================================================
+     CANCEL MODAL — 3-step flow (AP-010 stays one-decision-per-step,
+     never a survey cascade — but reason field is OPTIONAL telemetry)
+     ============================================================ -->
+<div class="modal-backdrop" id="cancel-modal" onclick="closeModal(this, event)" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+  <div class="modal modal-lg">
+    <button class="modal-close-x" onclick="closeCancelModal()" aria-label="Close">×</button>
+
+    <h3 class="danger-h" id="cancel-modal-title">Cancel Creator subscription?</h3>
+    <p class="modal-sub" id="cancel-step-sub">Tell us why (optional) so we can keep improving — or skip ahead.</p>
+
+    <!-- Step indicator -->
+    <div class="step-bar" aria-hidden="true">
+      <div class="step is-active" id="cancel-step-1"><span class="num">1</span> Why?</div>
+      <div class="step-line"></div>
+      <div class="step" id="cancel-step-2"><span class="num">2</span> Did you know?</div>
+      <div class="step-line"></div>
+      <div class="step" id="cancel-step-3"><span class="num">3</span> Confirm</div>
+    </div>
+
+    <!-- ============ STEP 1 ============ -->
+    <div class="cancel-step-pane" id="cancel-pane-1">
+      <p style="font-size:12.5px;color:var(--fg-muted);margin:0 0 12px;line-height:1.5">
+        <strong>Optional.</strong> Skip if you'd rather just leave — we never block you with a survey (per AP-010).
+      </p>
+      <div class="reason-list" role="radiogroup" aria-label="Cancellation reason">
+        <label class="reason-row" data-reason="too-expensive">
+          <input type="radio" name="cancel-reason" value="too-expensive" onchange="markReason(this)">
+          <div class="r-body">
+            <div class="r-title">Too expensive for what I use</div>
+            <div class="r-sub">Heads up: dropping to Free still keeps your page live forever (AP-029).</div>
+          </div>
+        </label>
+        <label class="reason-row" data-reason="found-alternative">
+          <input type="radio" name="cancel-reason" value="found-alternative" onchange="markReason(this)">
+          <div class="r-body">
+            <div class="r-title">Found a better alternative</div>
+            <div class="r-sub">We'd love to know which — tell us in the box below if you want.</div>
+          </div>
+        </label>
+        <label class="reason-row" data-reason="dont-use-enough">
+          <input type="radio" name="cancel-reason" value="dont-use-enough" onchange="markReason(this)">
+          <div class="r-body">
+            <div class="r-title">Don't use it enough</div>
+            <div class="r-sub">Have you considered <strong>pausing</strong> instead? See step 2.</div>
+          </div>
+        </label>
+        <label class="reason-row" data-reason="hiatus">
+          <input type="radio" name="cancel-reason" value="hiatus" onchange="markReason(this)">
+          <div class="r-body">
+            <div class="r-title">Going on hiatus</div>
+            <div class="r-sub">Pause is probably what you want (Pro+, see step 2).</div>
+          </div>
+        </label>
+        <label class="reason-row" data-reason="other">
+          <input type="radio" name="cancel-reason" value="other" onchange="markReason(this)">
+          <div class="r-body">
+            <div class="r-title">Other</div>
+            <div class="r-sub">Tell us in the box below.</div>
+          </div>
+        </label>
+      </div>
+
+      <label class="field-label" for="cancel-feedback">Anything else? (optional)</label>
+      <textarea class="field-input" id="cancel-feedback" rows="3" placeholder="Goes straight to feedback@tadaify.com — read by a human. Doesn't change your cancellation."></textarea>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeCancelModal()">Never mind, keep my plan</button>
+        <button class="btn btn-primary btn-sm" onclick="cancelStep(2)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ============ STEP 2 — RETENTION (data-driven) ============ -->
+    <div class="cancel-step-pane" id="cancel-pane-2" style="display:none">
+      <div class="retention-card">
+        <div class="rc-eyebrow">Did you know?</div>
+        <div class="rc-title">You haven't tried these features yet</div>
+        <div class="rc-body">
+          Based on your activity over the last 30 days — these come with your current $8/mo Creator plan
+          and might change your mind:
+        </div>
+        <ul class="rc-feature-list">
+          <li>
+            <span class="rcf-emoji" aria-hidden="true">📧</span>
+            <div>
+              <b>Newsletter signup block (capped at 1k subscribers free)</b>
+              <span class="rcf-meta">You have 142 visitors but no email capture set up. Avg conversion: 2–4%.</span>
+            </div>
+          </li>
+          <li>
+            <span class="rcf-emoji" aria-hidden="true">📊</span>
+            <div>
+              <b>Last-30-day analytics with click attribution</b>
+              <span class="rcf-meta">Free tier loses per-block click breakdown. You currently get to see which blocks convert.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Pause alternative — only visible to Pro+ -->
+      <div class="pause-alt" id="cancel-pause-alt">
+        <div class="pa-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        </div>
+        <div class="pa-body">
+          <div class="pa-title">
+            Pause instead — keep everything paused for 1–3 months
+            <span class="chip-tier-pro chip" id="cancel-pause-tier-badge" style="text-transform:none;letter-spacing:0;margin-left:6px">✨ Pro</span>
+          </div>
+          <div class="pa-sub">No charges during the pause, page stays live, your locked price stays locked. Better fit for a hiatus.</div>
+        </div>
+        <button class="btn btn-warm btn-sm" onclick="closeCancelModal(); openPauseModal()">Pause instead →</button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="cancelStep(1)">← Back</button>
+        <button class="btn btn-primary btn-sm" onclick="closeCancelModal()">Never mind, keep my plan</button>
+        <button class="btn btn-danger-ghost btn-sm" onclick="cancelStep(3)">Continue cancelling →</button>
+      </div>
+    </div>
+
+    <!-- ============ STEP 3 — CONFIRM ============ -->
+    <div class="cancel-step-pane" id="cancel-pane-3" style="display:none">
+      <p style="font-size:13.5px;color:var(--fg);margin:0 0 12px;line-height:1.55">
+        Cancelling your <strong>Creator $8/mo</strong> subscription. Here's exactly what happens:
+      </p>
+
+      <ul class="consequence-list" style="margin-bottom:14px">
+        <li class="is-warn">
+          <span class="cl-ico" aria-hidden="true">!</span>
+          <div class="cl-body">
+            <strong>Your access to Creator features ends on Dec 1, 2026</strong>
+            <span class="cl-meta">You keep full Creator access for ~7 more months until your paid period ends.</span>
+          </div>
+        </li>
+          <li class="is-good">
+          <span class="cl-ico" aria-hidden="true">✓</span>
+          <div class="cl-body">
+            <strong>Your tadaify page stays live forever as Free tier (AP-029)</strong>
+            <span class="cl-meta">Your URL keeps working. You'll be limited to 8 blocks, no custom domain, basic analytics — but the page never goes dark. <em>This is what makes us different from Linktree.</em></span>
+          </div>
+        </li>
+        <li class="is-good">
+          <span class="cl-ico" aria-hidden="true">✓</span>
+          <div class="cl-body">
+            <strong>All your blocks, pages, subscribers, and analytics are preserved</strong>
+            <span class="cl-meta">Nothing is deleted. If you re-subscribe, everything is exactly where you left it.</span>
+          </div>
+        </li>
+        <li class="is-good">
+          <span class="cl-ico" aria-hidden="true">✓</span>
+          <div class="cl-body">
+            <strong>You can re-subscribe anytime before Dec 1 to keep your locked price</strong>
+            <span class="cl-meta">After Dec 1 the price returns to current rate (currently still $8/mo). DEC-PRICELOCK-01 protects you within the grace period.</span>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Dunning-specific note (state=cancel-dunning) -->
+      <div class="modal-warning" id="cancel-dunning-note" style="display:none">
+        <strong>Heads up:</strong> Your last payment failed (currently in the 7-day dunning window).
+        Your pages stay live during this period (AP-029). Cancellation still takes effect at period end —
+        no extra charge attempts.
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="cancelStep(2)">← Back</button>
+        <button class="btn btn-primary btn-sm" onclick="closeCancelModal()">Never mind, keep my plan</button>
+        <button class="btn btn-danger" onclick="confirmCancel()">Cancel my subscription</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAUSE MODAL (Pro+) — pick duration + reason + confirm
+     ============================================================ -->
+<div class="modal-backdrop" id="pause-modal" onclick="closeModal(this, event)" role="dialog" aria-modal="true" aria-labelledby="pause-modal-title">
+  <div class="modal">
+    <button class="modal-close-x" onclick="this.closest('.modal-backdrop').classList.remove('open')" aria-label="Close">×</button>
+    <h3 id="pause-modal-title" style="color:var(--brand-warm-dark)">Pause subscription</h3>
+    <p class="modal-sub">
+      No charges during the pause. Your page stays live with full Creator features.
+      We'll send a reminder 3 days before resume so you can extend or cancel.
+    </p>
+
+    <label class="field-label">Pause for</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      <label class="reason-row" style="flex:1;min-width:90px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600">
+        <input type="radio" name="pause-duration" value="1" style="accent-color:var(--brand-warm)"> 1 month
+      </label>
+      <label class="reason-row" style="flex:1;min-width:90px;padding:10px 12px;border:1px solid var(--brand-warm);border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:rgba(245,158,11,0.06)">
+        <input type="radio" name="pause-duration" value="2" style="accent-color:var(--brand-warm)" checked> 2 months
+      </label>
+      <label class="reason-row" style="flex:1;min-width:90px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600">
+        <input type="radio" name="pause-duration" value="3" style="accent-color:var(--brand-warm)"> 3 months
+      </label>
+    </div>
+
+    <label class="field-label" for="pause-reason">Reason (optional)</label>
+    <select class="field-input" id="pause-reason" style="appearance:auto">
+      <option value="">— Select if you want —</option>
+      <option value="travel">Travelling / off-grid</option>
+      <option value="rebrand">Rebranding</option>
+      <option value="break">Taking a creative break</option>
+      <option value="seasonal">Seasonal business</option>
+      <option value="other">Other</option>
+    </select>
+    <p class="field-hint">Auto-resumes <strong id="pause-resume-date">Jun 27, 2026</strong>. You can resume earlier or extend up to 3 months total.</p>
+
+    <div class="modal-info" style="margin-top:14px">
+      <strong>2 of 2 pauses remaining this year.</strong> Per DEC-PAUSE-01 — limited to prevent indefinite-pause loopholes.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-backdrop').classList.remove('open')">Cancel</button>
+      <button class="btn btn-warm" onclick="confirmPause()">Pause for 2 months</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DELETE ACCOUNT MODAL — type-email + password + ack
+     (per F-COMPLIANCE-001, GDPR Art. 17)
+     ============================================================ -->
+<div class="modal-backdrop" id="delete-account-modal" onclick="closeModal(this, event)" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+  <div class="modal modal-lg">
+    <button class="modal-close-x" onclick="this.closest('.modal-backdrop').classList.remove('open')" aria-label="Close">×</button>
+    <h3 class="danger-h" id="delete-modal-title">⚠️ Permanently delete your tadaify account</h3>
+    <p class="modal-sub">
+      This is the final step. Your account, page, handle, and all associated data will be erased within 30 days.
+      You have a <strong>30-day grace period</strong> — sign in within that window to fully restore your account.
+    </p>
+
+    <div class="modal-warning">
+      <strong>Heads up:</strong>
+      Your custom domain DNS records (if any) are <strong>not auto-removed</strong>. Update <code>alexandra.com</code> to point elsewhere via your DNS provider before the grace window ends — otherwise visitors hit a dangling domain.
+    </div>
+
+    <!-- Read-only email -->
+    <div style="margin-bottom:14px">
+      <label class="field-label">Your account email</label>
+      <input class="field-input" type="email" value="alexandra@example.com" readonly>
+    </div>
+
+    <!-- Type-email input (live validation) -->
+    <div style="margin-bottom:14px">
+      <label class="field-label" for="delete-confirm-email">
+        Type your email address to confirm
+      </label>
+      <input class="field-input" type="email" id="delete-confirm-email" placeholder="alexandra@example.com" autocomplete="off" oninput="validateDelete()">
+      <div class="field-hint" id="delete-email-hint">Case-insensitive. Whitespace trimmed.</div>
+    </div>
+
+    <!-- Password input -->
+    <div style="margin-bottom:14px">
+      <label class="field-label" for="delete-confirm-password">Confirm with your password</label>
+      <input class="field-input" type="password" id="delete-confirm-password" placeholder="••••••••" autocomplete="current-password" oninput="validateDelete()">
+      <div class="field-hint">We re-verify here even if you're already signed in. This is destructive.</div>
+    </div>
+
+    <!-- Final ack checkbox -->
+    <label class="ack-row">
+      <input type="checkbox" id="delete-ack" onchange="validateDelete()">
+      <div>
+        <strong>I understand this is permanent.</strong>
+        After the 30-day grace window, my account, handle (<code>@alexandra</code>),
+        and all data are erased and cannot be recovered.
+      </div>
+    </label>
+
+    <!-- Recovery card -->
+    <div class="recovery-card">
+      <strong>Changed your mind during the grace period?</strong>
+      Just sign in within 30 days using your existing email + password — your account is fully restored automatically. After 30 days, contact <a href="mailto:support@tadaify.com" style="color:var(--brand-primary);font-weight:600">support@tadaify.com</a> within 90 days while the audit log is still retained.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-backdrop').classList.remove('open')">Never mind, keep my account</button>
+      <button class="btn btn-danger" id="delete-confirm-btn" disabled onclick="confirmDelete()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        Delete my account forever
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     POST-DELETE CONFIRMATION ROUTE (state=deleted-state)
+     Replaces entire body content
+     ============================================================ -->
+<div class="deleted-shell" id="deleted-shell" style="display:none">
+  <div class="deleted-card">
+    <div class="dc-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <h1>Your account is being deleted</h1>
+    <p>
+      We've started erasing your data. Check your inbox at <strong>alexandra@example.com</strong> for a confirmation email
+      with a recovery link valid for 30 days.
+    </p>
+    <p>
+      Your tadaify page (<code>tadaify.com/alexandra</code>) is offline immediately and will be permanently
+      removed in 30 days. Your handle becomes available for someone else after that.
+    </p>
+    <p style="color:var(--brand-primary);font-weight:600">
+      Sign in within 30 days to restore everything — no support ticket needed.
+    </p>
+    <div class="dc-meta">
+      We're sorry to see you go. If you change your mind, your locked price comes back too —
+      log in and you're right where you left off.
+      <br><br>
+      <a href="./landing.html" style="color:var(--brand-primary);font-weight:600">← Back to tadaify.com</a>
+      &nbsp;·&nbsp;
+      <a href="mailto:feedback@tadaify.com" style="color:var(--brand-primary);font-weight:600">feedback@tadaify.com</a>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     DEMO HELPER TOOLBAR — mockup reviewer only
+     ============================================================ -->
+<div class="demo-toolbar" aria-hidden="true">
+  <div class="dt-label">Mockup: Tier</div>
+  <div class="dt-row">
+    <button data-tier="free"     onclick="setTier('free')">Free</button>
+    <button data-tier="creator"  class="is-active" onclick="setTier('creator')">Creator ✓</button>
+    <button data-tier="pro"      onclick="setTier('pro')">Pro</button>
+    <button data-tier="business" onclick="setTier('business')">Business</button>
+  </div>
+
+  <div class="dt-label" style="margin-top:4px">Mockup: State</div>
+  <div class="dt-row">
+    <button data-state="default"           class="is-active" onclick="setState('default')">Default</button>
+    <button data-state="cancel-flow-mid"   onclick="setState('cancel-flow-mid')">Cancel flow (step 2)</button>
+    <button data-state="cancel-confirmed"  onclick="setState('cancel-confirmed')">Cancel confirmed</button>
+    <button data-state="cancel-dunning"    onclick="setState('cancel-dunning')">Cancel during dunning</button>
+    <button data-state="paused"            onclick="setState('paused')">Paused</button>
+    <button data-state="delete-modal-open" onclick="setState('delete-modal-open')">Delete modal open</button>
+    <button data-state="deleted-state"     onclick="setState('deleted-state')">Deleted (post-route)</button>
+  </div>
+</div>
+
+
+<script src="./shared/partials.js"></script>
+<script src="./shared/tokens.js"></script>
+<script>
+  /* ── Theme ── */
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  /* ── Modal close on backdrop click ── */
+  function closeModal(backdrop, event) {
+    if (event.target === backdrop) backdrop.classList.remove('open');
+  }
+  /* Esc to close any open modal */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(function(m) { m.classList.remove('open'); });
+    }
+  });
+
+  /* ===========================================================
+     CANCEL MODAL — 3-step flow
+     =========================================================== */
+  var CANCEL_STEP = 1;
+  var CANCEL_SUBS = {
+    1: 'Tell us why (optional) so we can keep improving — or skip ahead.',
+    2: 'A couple of things you may have missed before you decide.',
+    3: 'Last step — here\'s exactly what happens when you cancel.'
+  };
+
+  function openCancelModal() {
+    cancelStep(1);
+    document.getElementById('cancel-modal').classList.add('open');
+    setTimeout(function(){
+      var first = document.querySelector('#cancel-pane-1 input[type=radio]');
+      if (first) first.focus();
+    }, 100);
+  }
+
+  function closeCancelModal() {
+    document.getElementById('cancel-modal').classList.remove('open');
+    cancelStep(1);
+  }
+
+  function cancelStep(n) {
+    CANCEL_STEP = n;
+    [1,2,3].forEach(function(i) {
+      var pane = document.getElementById('cancel-pane-' + i);
+      if (pane) pane.style.display = (i === n) ? 'block' : 'none';
+      var step = document.getElementById('cancel-step-' + i);
+      if (step) {
+        step.classList.remove('is-active', 'is-done');
+        if (i < n) step.classList.add('is-done');
+        else if (i === n) step.classList.add('is-active');
+      }
+    });
+    /* lines */
+    var lines = document.querySelectorAll('#cancel-modal .step-line');
+    lines.forEach(function(l, idx) {
+      l.classList.toggle('is-done', idx + 1 < n);
+    });
+    var subEl = document.getElementById('cancel-step-sub');
+    if (subEl) subEl.textContent = CANCEL_SUBS[n];
+  }
+
+  function markReason(input) {
+    document.querySelectorAll('.reason-list label').forEach(function(l) { l.classList.remove('is-checked'); });
+    if (input.checked) input.closest('label').classList.add('is-checked');
+  }
+
+  function confirmCancel() {
+    document.getElementById('cancel-modal').classList.remove('open');
+    /* Show post-state */
+    setState('cancel-confirmed');
+  }
+
+  /* ===========================================================
+     PAUSE MODAL
+     =========================================================== */
+  function openPauseModal() {
+    /* Tier gate at click — feedback_no_blur_premium_features */
+    var tier = (document.body.getAttribute('data-current-tier') || 'creator');
+    if (TIER_RANK[tier] < TIER_RANK.pro) {
+      window.TierGate.checkAndProceed({
+        currentTier: tier,
+        features: [{ id: 'pause-sub', name: 'Pause subscription', requires: 'pro',
+                     meta: 'Pause for 1–3 months — no charges, page stays live, locked price preserved.' }],
+        onUpgrade: function() { alert('Mockup — would open /pricing.html?upgrade=pro&from=pause'); }
+      });
+      return;
+    }
+    document.getElementById('pause-modal').classList.add('open');
+  }
+
+  function confirmPause() {
+    document.getElementById('pause-modal').classList.remove('open');
+    setState('paused');
+  }
+
+  /* ===========================================================
+     DELETE ACCOUNT MODAL — type-email + password + ack
+     =========================================================== */
+  var USER_EMAIL = 'alexandra@example.com';
+
+  function openDeleteModal() {
+    /* Reset form */
+    document.getElementById('delete-confirm-email').value = '';
+    document.getElementById('delete-confirm-password').value = '';
+    document.getElementById('delete-ack').checked = false;
+    document.getElementById('delete-confirm-btn').disabled = true;
+    document.getElementById('delete-confirm-email').classList.remove('is-error', 'is-ok');
+    document.getElementById('delete-email-hint').classList.remove('is-error', 'is-ok');
+    document.getElementById('delete-email-hint').textContent = 'Case-insensitive. Whitespace trimmed.';
+    document.getElementById('delete-account-modal').classList.add('open');
+  }
+
+  function validateDelete() {
+    var emailIn = document.getElementById('delete-confirm-email');
+    var pwdIn   = document.getElementById('delete-confirm-password');
+    var ack     = document.getElementById('delete-ack');
+    var btn     = document.getElementById('delete-confirm-btn');
+    var hint    = document.getElementById('delete-email-hint');
+
+    var emailMatches = emailIn.value.toLowerCase().trim() === USER_EMAIL.toLowerCase().trim();
+    var pwdEntered   = pwdIn.value.length > 0;
+    var ackChecked   = ack.checked;
+
+    /* Email visual state */
+    emailIn.classList.remove('is-error', 'is-ok');
+    hint.classList.remove('is-error', 'is-ok');
+    if (emailIn.value.length === 0) {
+      hint.textContent = 'Case-insensitive. Whitespace trimmed.';
+    } else if (emailMatches) {
+      emailIn.classList.add('is-ok');
+      hint.classList.add('is-ok');
+      hint.textContent = '✓ Email matches your account.';
+    } else {
+      emailIn.classList.add('is-error');
+      hint.classList.add('is-error');
+      hint.textContent = '✗ Doesn\'t match. Should be: ' + USER_EMAIL;
+    }
+
+    btn.disabled = !(emailMatches && pwdEntered && ackChecked);
+  }
+
+  function confirmDelete() {
+    document.getElementById('delete-account-modal').classList.remove('open');
+    setState('deleted-state');
+  }
+
+  /* ===========================================================
+     REACTIVATE
+     =========================================================== */
+  function reactivate() {
+    setState('default');
+    /* Show a transient toast-like banner via the post-state success path */
+    var b = document.getElementById('banner-cancel-confirmed');
+    if (b) b.style.display = 'none';
+    alert('Mockup — would call POST /api/subscriptions/reactivate. Reactivate section hides; Billing tab shows Active chip.');
+  }
+
+  /* ===========================================================
+     TIER SWITCHER (demo toolbar)
+     Pause section stays FULLY VISIBLE per feedback_no_blur_premium_features.
+     Tier banner appears only when below Pro; gate fires at click via
+     TierGate.checkAndProceed.
+     =========================================================== */
+  var TIER_RANK = (window.TierGate && window.TierGate.TIER_RANK) || { free: 0, creator: 1, pro: 2, business: 3 };
+  var TIER_LABEL = (window.TierGate && window.TierGate.TIER_LABEL) || { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+
+  function setTier(tier) {
+    document.body.setAttribute('data-current-tier', tier);
+
+    /* Cancel section + plan summary */
+    var cancelSection = document.getElementById('cancel-section');
+    var planSummary   = document.getElementById('plan-summary');
+    var planTitle     = planSummary ? planSummary.querySelector('.ps-title') : null;
+    var planMeta      = planSummary ? planSummary.querySelector('.ps-meta') : null;
+
+    if (tier === 'free') {
+      /* Free user: cancel section hidden (nothing to cancel) */
+      if (cancelSection) cancelSection.style.display = 'none';
+    } else {
+      if (cancelSection) cancelSection.style.display = '';
+      if (planTitle && planMeta) {
+        var label = TIER_LABEL[tier];
+        var price = (tier === 'creator' ? '$8' : (tier === 'pro' ? '$19' : '$49')) + '/month';
+        planTitle.innerHTML = label + ' <span class="chip locked-life" style="margin-left:6px">🔒 Price locked for life</span>';
+        planMeta.innerHTML = '<b>' + price + '</b> · billed monthly · renews <b>May 26, 2026</b> via Visa **** 4242';
+      }
+    }
+
+    /* Pause tier banner: visible when below Pro */
+    var pauseBanner = document.getElementById('pause-tier-banner');
+    var pauseBadge  = document.getElementById('pause-tier-badge');
+    var altBadge    = document.getElementById('cancel-pause-tier-badge');
+    var altCard     = document.getElementById('cancel-pause-alt');
+    if (pauseBanner) pauseBanner.style.display = (TIER_RANK[tier] < TIER_RANK.pro) ? 'flex' : 'none';
+    if (pauseBadge)  pauseBadge.classList.toggle('is-included', TIER_RANK[tier] >= TIER_RANK.pro);
+    if (altBadge)    altBadge.classList.toggle('is-included', TIER_RANK[tier] >= TIER_RANK.pro);
+    if (altCard)     altCard.style.display = 'flex';
+
+    /* Sidebar handle pill */
+    var u = document.querySelector('.tdf-side .uhandle');
+    if (u) u.textContent = '@alexandra · ' + TIER_LABEL[tier];
+
+    /* Toolbar buttons */
+    document.querySelectorAll('.demo-toolbar [data-tier]').forEach(function(b) {
+      b.classList.toggle('is-active', b.getAttribute('data-tier') === tier);
+    });
+  }
+
+  /* ===========================================================
+     STATE SWITCHER
+     =========================================================== */
+  function setState(state) {
+    /* Reset banners + sections to default */
+    document.getElementById('banner-cancel-confirmed').style.display = 'none';
+    document.getElementById('banner-paused').style.display = 'none';
+    document.getElementById('reactivate-section').style.display = 'none';
+    document.getElementById('cancel-dunning-note').style.display = 'none';
+    document.getElementById('deleted-shell').style.display = 'none';
+    document.querySelectorAll('.modal-backdrop.open').forEach(function(m) { m.classList.remove('open'); });
+
+    /* Restore main app shell visibility (deleted-state hides it) */
+    document.querySelector('.appbar').style.display = '';
+    document.getElementById('layout').style.display = '';
+    document.querySelector('.demo-toolbar').style.display = '';
+
+    if (state === 'cancel-flow-mid') {
+      openCancelModal();
+      cancelStep(2);
+    }
+    else if (state === 'cancel-confirmed') {
+      document.getElementById('banner-cancel-confirmed').style.display = 'flex';
+      document.getElementById('reactivate-section').style.display = '';
+      /* Hide cancel button — already cancelled */
+      var cancelBtn = document.querySelector('#cancel-section .btn-danger-ghost');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+    else if (state === 'cancel-dunning') {
+      openCancelModal();
+      cancelStep(3);
+      document.getElementById('cancel-dunning-note').style.display = 'block';
+    }
+    else if (state === 'paused') {
+      document.getElementById('banner-paused').style.display = 'flex';
+    }
+    else if (state === 'delete-modal-open') {
+      openDeleteModal();
+    }
+    else if (state === 'deleted-state') {
+      /* Hide app shell, show deleted card */
+      document.querySelector('.appbar').style.display = 'none';
+      document.getElementById('layout').style.display = 'none';
+      document.getElementById('deleted-shell').style.display = 'flex';
+    }
+    else /* default */ {
+      var cancelBtn = document.querySelector('#cancel-section .btn-danger-ghost');
+      if (cancelBtn) cancelBtn.style.display = '';
+    }
+
+    /* Toolbar */
+    document.querySelectorAll('.demo-toolbar [data-state]').forEach(function(b) {
+      b.classList.toggle('is-active', b.getAttribute('data-state') === state);
+    });
+  }
+
+  /* ── Init ── */
+  document.addEventListener('DOMContentLoaded', function() {
+    setTier('creator');
+    setState('default');
+  });
+</script>
+
+</body>
+</html>
