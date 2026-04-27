@@ -788,7 +788,130 @@
   /* States: loaded (5 cards, default) / loading (skeletons) / error /  */
   /* empty / rate / selected. The default open() flow shows Loading for */
   /* 800ms then Loaded with 5 mocked suggestions matched to fieldName. */
+  /*                                                                    */
+  /* Cost transparency (DEC-174..179, 2026-04-27 cascade):              */
+  /*   - Free 5/day, Creator 50/day, Pro/Business unlimited (~500-2000) */
+  /*   - Cost strip shows current quota + countdown to midnight UTC     */
+  /*   - Refresh button explicitly costs 1 from daily limit             */
+  /*   - Out-of-quota = hard block + countdown + Upgrade CTA            */
+  /*   - Pro+ tiers: cost strip hidden (no clutter for unlimited)       */
   /* ----------------------------------------------------------------- */
+
+  /* Per-tier daily quota contract (locked 2026-04-27 via DEC-176).
+     Pro and Business are technically unlimited at the UI layer; the
+     "fair-use" ceiling exists only as abuse protection on the Worker. */
+  var AI_QUOTA = {
+    free:     { limit: 5,    label: '5/day',          unlimited: false },
+    creator:  { limit: 50,   label: '50/day',         unlimited: false },
+    pro:      { limit: 500,  label: 'Unlimited',      unlimited: true  },
+    business: { limit: 2000, label: 'Unlimited',      unlimited: true  }
+  };
+
+  /* Demo-only mocked "used today" counter per tier. In production this
+     comes from the Worker response. Values are intentionally above 0
+     so the cost strip always has something visible to show. */
+  var AI_USED_DEMO = { free: 2, creator: 12, pro: 47, business: 132 };
+
+  /* getCurrentTier — single source of truth for the current creator's
+     tier in mockup land. Resolution order:
+       1. window.__tadaifyDemoTier (set by demo toolbar / tier switcher)
+       2. localStorage 'tadaify_demo_tier'
+       3. 'free' default
+     Real app reads from creator.tier on the JWT payload. */
+  function getCurrentTier() {
+    try {
+      if (window.__tadaifyDemoTier && AI_QUOTA[window.__tadaifyDemoTier]) {
+        return window.__tadaifyDemoTier;
+      }
+      var saved = localStorage.getItem('tadaify_demo_tier');
+      if (saved && AI_QUOTA[saved]) return saved;
+    } catch (e) { /* localStorage blocked, fine */ }
+    return 'free';
+  }
+
+  /* getQuotaState — returns the per-tier quota snapshot the UI needs
+     to render the cost strip + decide hard-block. resetMs counts down
+     to next midnight UTC; pure function of Date.now(). */
+  function getQuotaState(tier) {
+    var t = tier || getCurrentTier();
+    var spec = AI_QUOTA[t] || AI_QUOTA.free;
+    var used = (typeof AI_USED_DEMO[t] === 'number') ? AI_USED_DEMO[t] : 0;
+    var now = new Date();
+    var midnightUtc = Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1,
+      0, 0, 0, 0
+    );
+    return {
+      tier:      t,
+      used:      used,
+      limit:     spec.limit,
+      label:     spec.label,
+      unlimited: spec.unlimited,
+      remaining: Math.max(0, spec.limit - used),
+      resetMs:   midnightUtc - now.getTime()
+    };
+  }
+
+  /* formatCountdown — turn an ms duration into "8h 23m" / "47m" /
+     "12s" depending on magnitude. Used by cost strip + out-of-quota. */
+  function formatCountdown(ms) {
+    if (ms <= 0) return '0s';
+    var totalSec = Math.floor(ms / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    if (h > 0) return h + 'h ' + m + 'm';
+    if (m > 0) return m + 'm';
+    return s + 's';
+  }
+
+  /* nextTierUp — for upsell CTAs. Free → Creator → Pro → (Pro top). */
+  function nextTierUp(tier) {
+    if (tier === 'free') return 'creator';
+    if (tier === 'creator') return 'pro';
+    return 'pro'; // Pro / Business already unlimited
+  }
+
+  /* enhanceButtonLabel — called for every ✨ Suggest entry point. Adds
+     a hover tooltip describing the per-tier cost, plus an inline badge
+     when the creator is near their daily limit (last 2 calls). Pro+
+     tiers stay clean — just the bare "✨ Suggest". */
+  function enhanceButtonLabel(button) {
+    if (!button || button.__tdfAiEnhanced) return;
+    button.__tdfAiEnhanced = true;
+    var q = getQuotaState();
+    if (q.unlimited) {
+      button.title = 'AI suggestion · unlimited on ' + TIER_LABEL[q.tier];
+      return;
+    }
+    button.title = 'AI suggestion · uses 1 from your daily ' + q.limit +
+      ' (you have ' + q.remaining + ' left)';
+    if (q.remaining === 0) {
+      button.classList.add('tdf-ai-btn-out');
+      button.setAttribute('data-quota-badge', '0/' + q.limit + ' today');
+      return;
+    }
+    if (q.remaining <= 2) {
+      button.classList.add('tdf-ai-btn-low');
+      button.setAttribute('data-quota-badge', q.remaining + ' of ' + q.limit + ' left');
+    }
+  }
+  /* Re-enhance every wired ✨ Suggest button on the page. Called when
+     the demo toolbar swaps tier so badges re-render. */
+  function refreshAllButtonLabels() {
+    var btns = document.querySelectorAll(
+      '[onclick*="window.AISuggest.fromButton"], [onclick*="AISuggest.fromButton"]'
+    );
+    Array.prototype.forEach.call(btns, function (b) {
+      b.__tdfAiEnhanced = false;
+      b.removeAttribute('data-quota-badge');
+      b.classList.remove('tdf-ai-btn-low', 'tdf-ai-btn-out');
+      enhanceButtonLabel(b);
+    });
+  }
+
   var AI_SUGGEST_CSS = '' +
     '<style data-source="ai-suggest-partial">' +
     '.tdf-ai-backdrop {' +
@@ -941,6 +1064,116 @@
     '@media (prefers-reduced-motion: reduce) {' +
     '  .tdf-ai-backdrop, .tdf-ai, .tdf-ai-skel .sk { transition: none !important; animation: none !important; }' +
     '}' +
+    /* Cost transparency strip — inside modal head/body, between header and ctx */
+    '.tdf-ai-cost {' +
+    '  display: flex; align-items: center; gap: 10px;' +
+    '  margin: 0 20px; padding: 8px 12px;' +
+    '  background: var(--bg-muted, #F9FAFB);' +
+    '  border: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 10px;' +
+    '  font-size: 12px; color: var(--fg-muted, #6B7280); line-height: 1.4;' +
+    '  flex-shrink: 0;' +
+    '}' +
+    '.tdf-ai-cost .cost-meter {' +
+    '  flex: 1; display: flex; flex-direction: column; gap: 4px;' +
+    '}' +
+    '.tdf-ai-cost .cost-line {' +
+    '  font-weight: 500; color: var(--fg, #111);' +
+    '}' +
+    '.tdf-ai-cost .cost-line b { font-weight: 700; }' +
+    '.tdf-ai-cost .cost-sub {' +
+    '  font-size: 11px; color: var(--fg-subtle, #9CA3AF);' +
+    '}' +
+    '.tdf-ai-cost .cost-bar {' +
+    '  height: 4px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden;' +
+    '  margin-top: 2px;' +
+    '}' +
+    '.tdf-ai-cost .cost-bar-fill {' +
+    '  height: 100%; background: var(--brand-primary, #6366F1); border-radius: 99px;' +
+    '  transition: width .25s ease;' +
+    '}' +
+    '.tdf-ai-cost.is-low {' +
+    '  background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.32);' +
+    '}' +
+    '.tdf-ai-cost.is-low .cost-bar-fill { background: #F59E0B; }' +
+    '.tdf-ai-cost.is-out {' +
+    '  background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.32);' +
+    '}' +
+    '.tdf-ai-cost.is-out .cost-bar-fill { background: #EF4444; }' +
+    /* Refresh button explicit cost label */
+    '.tdf-ai-btn .refresh-cost {' +
+    '  font-size: 11px; font-weight: 500;' +
+    '  color: var(--fg-subtle, #9CA3AF); margin-left: 2px;' +
+    '}' +
+    '.tdf-ai-btn.is-secondary:hover .refresh-cost { color: var(--fg-muted, #6B7280); }' +
+    /* Out-of-quota hard-block panel */
+    '.tdf-ai-out {' +
+    '  padding: 22px 18px; text-align: center;' +
+    '  background: rgba(239,68,68,0.04);' +
+    '  border: 1px solid rgba(239,68,68,0.20);' +
+    '  border-radius: 12px;' +
+    '}' +
+    '.tdf-ai-out .out-icon {' +
+    '  width: 40px; height: 40px; border-radius: 99px;' +
+    '  background: rgba(239,68,68,0.12); color: #EF4444;' +
+    '  display: inline-flex; align-items: center; justify-content: center;' +
+    '  font-size: 20px; margin-bottom: 12px;' +
+    '}' +
+    '.tdf-ai-out .out-h {' +
+    '  font-family: var(--font-display, "Crimson Pro", serif);' +
+    '  font-size: 20px; font-weight: 600; color: var(--fg, #111);' +
+    '  margin-bottom: 6px; letter-spacing: -0.01em;' +
+    '}' +
+    '.tdf-ai-out .out-countdown {' +
+    '  font-size: 14px; color: var(--fg-muted, #6B7280); margin-bottom: 14px;' +
+    '}' +
+    '.tdf-ai-out .out-countdown b {' +
+    '  font-family: var(--font-mono, "JetBrains Mono", monospace);' +
+    '  color: var(--fg, #111); font-weight: 600;' +
+    '}' +
+    '.tdf-ai-out .out-why {' +
+    '  margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(0,0,0,0.10);' +
+    '  text-align: left;' +
+    '}' +
+    '.tdf-ai-out .out-why summary {' +
+    '  font-size: 12px; font-weight: 600; color: var(--fg-muted, #6B7280);' +
+    '  cursor: pointer; list-style: none; user-select: none;' +
+    '  display: inline-flex; align-items: center; gap: 4px;' +
+    '}' +
+    '.tdf-ai-out .out-why summary::-webkit-details-marker { display: none; }' +
+    '.tdf-ai-out .out-why summary::after {' +
+    '  content: "▾"; font-size: 9px; transition: transform .14s ease;' +
+    '}' +
+    '.tdf-ai-out .out-why[open] summary::after { transform: rotate(180deg); }' +
+    '.tdf-ai-out .out-why p {' +
+    '  margin: 8px 0 0; font-size: 12.5px; line-height: 1.55;' +
+    '  color: var(--fg-muted, #6B7280);' +
+    '}' +
+    /* Per-button quota badge (rendered via ::after on data-quota-badge) */
+    '[data-quota-badge]::after {' +
+    '  content: attr(data-quota-badge);' +
+    '  display: inline-block; margin-left: 5px;' +
+    '  padding: 1px 6px; border-radius: 99px;' +
+    '  font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;' +
+    '  text-transform: uppercase;' +
+    '  background: rgba(245,158,11,0.16); color: #92400E;' +
+    '  vertical-align: middle; line-height: 1.5;' +
+    '}' +
+    '.tdf-ai-btn-out[data-quota-badge]::after {' +
+    '  background: rgba(239,68,68,0.16); color: #B91C1C;' +
+    '}' +
+    'body.dark-mode [data-quota-badge]::after {' +
+    '  background: rgba(245,158,11,0.18); color: #FBBF24;' +
+    '}' +
+    'body.dark-mode .tdf-ai-btn-out[data-quota-badge]::after {' +
+    '  background: rgba(239,68,68,0.18); color: #FCA5A5;' +
+    '}' +
+    'body.dark-mode .tdf-ai-cost { background: #0B0F1E; border-color: #1F2937; color: #9CA3AF; }' +
+    'body.dark-mode .tdf-ai-cost .cost-line { color: #F3F4F6; }' +
+    'body.dark-mode .tdf-ai-cost .cost-bar  { background: rgba(255,255,255,0.08); }' +
+    'body.dark-mode .tdf-ai-out { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.30); }' +
+    'body.dark-mode .tdf-ai-out .out-h { color: #F3F4F6; }' +
+    'body.dark-mode .tdf-ai-out .out-countdown b { color: #F3F4F6; }' +
     '</style>';
 
   var aiCssInjected = false;
@@ -997,10 +1230,20 @@
             '<h3 id="tdf-ai-title"><span class="sparkle">✨</span>Suggest for <span class="target" id="tdf-ai-target">field</span></h3>' +
             '<button type="button" class="ai-x" id="tdf-ai-close" aria-label="Close">×</button>' +
           '</div>' +
+          /* Cost transparency strip — hidden for unlimited tiers, shown otherwise. */
+          '<div class="tdf-ai-cost" id="tdf-ai-cost" hidden>' +
+            '<div class="cost-meter">' +
+              '<div class="cost-line" id="tdf-ai-cost-line"></div>' +
+              '<div class="cost-bar"><div class="cost-bar-fill" id="tdf-ai-cost-fill" style="width:0%"></div></div>' +
+              '<div class="cost-sub" id="tdf-ai-cost-sub"></div>' +
+            '</div>' +
+          '</div>' +
           '<div class="tdf-ai-body" id="tdf-ai-body"></div>' +
-          '<div class="tdf-ai-foot">' +
+          '<div class="tdf-ai-foot" id="tdf-ai-foot">' +
             '<div class="left">' +
-              '<button type="button" class="tdf-ai-btn is-secondary" id="tdf-ai-refresh">↻ Refresh suggestions</button>' +
+              '<button type="button" class="tdf-ai-btn is-secondary" id="tdf-ai-refresh" title="Costs 1 from your daily limit. Different suggestions next time.">' +
+                '↻ Refresh<span class="refresh-cost" id="tdf-ai-refresh-cost"> (uses 1 daily)</span>' +
+              '</button>' +
             '</div>' +
             '<div class="right">' +
               '<button type="button" class="tdf-ai-btn is-ghost" id="tdf-ai-cancel">Cancel</button>' +
@@ -1017,7 +1260,27 @@
     });
     document.getElementById('tdf-ai-close').onclick = closeAi;
     document.getElementById('tdf-ai-cancel').onclick = closeAi;
-    document.getElementById('tdf-ai-refresh').onclick = function () { renderAiState('loading'); setTimeout(function () { aiState.suggestions = pickPreset(aiState.fieldName); renderAiState('loaded'); }, 800); };
+    document.getElementById('tdf-ai-refresh').onclick = function () {
+      /* Refresh = 1 quota point. Decrement demo counter, re-render cost strip,
+         then either fetch new suggestions or hard-block if we just hit 0. */
+      var t = getCurrentTier();
+      var spec = AI_QUOTA[t] || AI_QUOTA.free;
+      if (!spec.unlimited) {
+        AI_USED_DEMO[t] = Math.min(spec.limit, (AI_USED_DEMO[t] || 0) + 1);
+      }
+      paintCostStrip();
+      refreshAllButtonLabels();
+      var q = getQuotaState();
+      if (!q.unlimited && q.remaining === 0) {
+        renderAiState('out');
+        return;
+      }
+      renderAiState('loading');
+      setTimeout(function () {
+        aiState.suggestions = pickPreset(aiState.fieldName);
+        renderAiState('loaded');
+      }, 800);
+    };
     document.getElementById('tdf-ai-use').onclick = function () {
       if (aiState.selected < 0) return;
       var picked = aiState.suggestions[aiState.selected];
@@ -1027,11 +1290,83 @@
     };
   }
 
+  /* Live countdown ticker for the cost strip — repaints every 30s while
+     the modal is open, so the "resets in 8h 23m" line stays accurate. */
+  var costStripTimer = null;
+  function startCostStripTicker() {
+    stopCostStripTicker();
+    costStripTimer = setInterval(paintCostStrip, 30000);
+  }
+  function stopCostStripTicker() {
+    if (costStripTimer) { clearInterval(costStripTimer); costStripTimer = null; }
+  }
+
+  function paintCostStrip() {
+    var strip = document.getElementById('tdf-ai-cost');
+    if (!strip) return;
+    var q = getQuotaState();
+    if (q.unlimited) {
+      strip.setAttribute('hidden', '');
+      return;
+    }
+    strip.removeAttribute('hidden');
+    strip.classList.remove('is-low', 'is-out');
+    if (q.remaining === 0) strip.classList.add('is-out');
+    else if (q.remaining <= 2) strip.classList.add('is-low');
+
+    var line = document.getElementById('tdf-ai-cost-line');
+    var sub  = document.getElementById('tdf-ai-cost-sub');
+    var fill = document.getElementById('tdf-ai-cost-fill');
+    var pct  = Math.min(100, Math.round((q.used / q.limit) * 100));
+
+    if (q.remaining === 0) {
+      line.innerHTML = '<b>You\'ve used today\'s ' + q.limit + ' AI suggestions</b>';
+      sub.textContent = 'Resets in ' + formatCountdown(q.resetMs) + ' (midnight UTC)';
+    } else {
+      line.innerHTML = '<b>' + q.used + ' of ' + q.limit + '</b> suggestions today';
+      sub.textContent = 'Resets in ' + formatCountdown(q.resetMs) + ' · midnight UTC';
+    }
+    fill.style.width = pct + '%';
+  }
+
   function closeAi() {
     var bd = document.getElementById('tdf-ai-backdrop');
     if (!bd) return;
     bd.classList.remove('is-open');
     bd.setAttribute('hidden', '');
+    stopCostStripTicker();
+    /* Restore the standard footer in case we were last on the out-of-quota
+       state — otherwise the next open() inherits the upgrade-CTA buttons. */
+    var foot = document.getElementById('tdf-ai-foot');
+    if (foot && !document.getElementById('tdf-ai-refresh')) {
+      foot.innerHTML =
+        '<div class="left">' +
+          '<button type="button" class="tdf-ai-btn is-secondary" id="tdf-ai-refresh" title="Costs 1 from your daily limit. Different suggestions next time.">' +
+            '↻ Refresh<span class="refresh-cost"> (uses 1 daily)</span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="right">' +
+          '<button type="button" class="tdf-ai-btn is-ghost" id="tdf-ai-cancel">Cancel</button>' +
+          '<button type="button" class="tdf-ai-btn is-primary" id="tdf-ai-use" disabled>Use this</button>' +
+        '</div>';
+      document.getElementById('tdf-ai-cancel').onclick = closeAi;
+      document.getElementById('tdf-ai-refresh').onclick = function () {
+        var t = getCurrentTier();
+        var spec = AI_QUOTA[t] || AI_QUOTA.free;
+        if (!spec.unlimited) {
+          AI_USED_DEMO[t] = Math.min(spec.limit, (AI_USED_DEMO[t] || 0) + 1);
+        }
+        paintCostStrip();
+        refreshAllButtonLabels();
+        var q = getQuotaState();
+        if (!q.unlimited && q.remaining === 0) { renderAiState('out'); return; }
+        renderAiState('loading');
+        setTimeout(function () {
+          aiState.suggestions = pickPreset(aiState.fieldName);
+          renderAiState('loaded');
+        }, 800);
+      };
+    }
   }
 
   function renderAiState(kind) {
@@ -1109,15 +1444,54 @@
       if (gen) gen.onclick = function () { renderAiState('loading'); setTimeout(function () { aiState.suggestions = pickPreset(aiState.fieldName); renderAiState('loaded'); }, 800); };
       return;
     }
-    if (kind === 'rate') {
+    if (kind === 'rate' || kind === 'out') {
+      /* Hard-block out-of-quota — DEC-177 contract. Rendered identically
+         whether triggered by initial open() at 0 remaining or by Refresh
+         pushing the count to the cap. Pricing comes from TIER_PRICING. */
+      var q = getQuotaState();
+      var nextT = nextTierUp(q.tier);
+      var nextLabel = TIER_LABEL[nextT] || 'Pro';
+      var nextPrice = priceFor(nextT, 'monthly');
+      var nextSpec  = AI_QUOTA[nextT] || AI_QUOTA.pro;
+      var nextQuotaLabel = nextSpec.unlimited
+        ? 'unlimited suggestions'
+        : (nextSpec.limit + '/day');
+      var costPerCall = '$0.000223';
+
       body.innerHTML = ctx +
-        '<div class="tdf-ai-state is-rate">' +
-          '<div class="st-h">You have used today\'s AI credits</div>' +
-          '<div class="st-sub">Free creators get 30 ✨ Suggest clicks per day. Resets at midnight (your time zone). Upgrade for higher quotas.</div>' +
-          '<div class="st-actions"><button type="button" class="is-primary">Upgrade for more</button></div>' +
+        '<div class="tdf-ai-out" role="alert">' +
+          '<div class="out-icon" aria-hidden="true">⏳</div>' +
+          '<div class="out-h">Comes back at midnight UTC</div>' +
+          '<div class="out-countdown">in <b id="tdf-ai-out-cd">' + formatCountdown(q.resetMs) + '</b></div>' +
+          '<details class="out-why">' +
+            '<summary>Why we limit</summary>' +
+            '<p>AI suggestions cost us a fraction of a cent each (' + costPerCall + ' per call on Cloudflare Workers AI). We rate-limit to keep tadaify Free for everyone.</p>' +
+          '</details>' +
         '</div>';
-      refreshBtn.style.display = 'none';
-      useBtn.style.display = 'none';
+
+      /* Replace footer with sticky upsell pair (Wait + Upgrade). */
+      var foot = document.getElementById('tdf-ai-foot');
+      if (foot) {
+        foot.innerHTML =
+          '<div class="left"></div>' +
+          '<div class="right">' +
+            '<button type="button" class="tdf-ai-btn is-ghost" id="tdf-ai-out-wait">Wait until midnight</button>' +
+            '<button type="button" class="tdf-ai-btn is-primary" id="tdf-ai-out-upgrade" style="background:var(--brand-warm,#F59E0B)">' +
+              'Upgrade to ' + nextLabel + ' — $' + nextPrice + '/mo for ' + nextQuotaLabel +
+            '</button>' +
+          '</div>';
+        var wait = document.getElementById('tdf-ai-out-wait');
+        if (wait) wait.onclick = closeAi;
+        var up = document.getElementById('tdf-ai-out-upgrade');
+        if (up) up.onclick = function () {
+          closeAi();
+          /* Real app: window.location = '/settings/billing?upgrade=' + nextT;
+             In mockups we just log so the demo doesn't navigate away. */
+          try { console.log('[AI Suggest] upgrade CTA clicked → ' + nextT); } catch (e) {}
+        };
+      }
+      /* Also visually red-tint the cost strip when in this state. */
+      paintCostStrip();
       return;
     }
   }
@@ -1134,9 +1508,24 @@
     var target = document.getElementById('tdf-ai-target');
     if (target) target.textContent = aiState.fieldName;
 
-    /* Default flow: brief loading skeleton (800ms) then loaded state. */
-    renderAiState('loading');
-    setTimeout(function () { renderAiState('loaded'); }, 800);
+    /* Paint cost strip + decide whether to enter the modal in the
+       hard-block out-of-quota state right away. DEC-177 contract: even
+       the first click after hitting the cap shows the hard-block, not
+       a partial / cached result. */
+    paintCostStrip();
+    startCostStripTicker();
+
+    var q = getQuotaState();
+    if (!q.unlimited && q.remaining === 0) {
+      renderAiState('out');
+    } else {
+      /* Default flow: brief loading skeleton (800ms) then loaded state.
+         The opening "click" itself does NOT decrement quota in the mockup
+         — production decrements on the Worker only after a successful
+         response, mirrored here on Refresh which is the explicit re-spend. */
+      renderAiState('loading');
+      setTimeout(function () { renderAiState('loaded'); }, 800);
+    }
 
     var bd = document.getElementById('tdf-ai-backdrop');
     bd.removeAttribute('hidden');
@@ -1175,6 +1564,9 @@
      tracker on the page picks up the edit. */
   function fromButton(btn, fieldName, contextSummary) {
     if (!btn) return;
+    /* Belt-and-suspenders: ensure tooltip + badge are up to date even if
+       the auto-enhancer hasn't run yet (e.g. button added dynamically). */
+    enhanceButtonLabel(btn);
     var field = null;
     var el = btn;
     for (var i = 0; i < 4 && el && !field; i++) {
@@ -1212,8 +1604,52 @@
     close:      closeAi,
     fromButton: fromButton,
     /* Programmatic state — useful for tests and the standalone demo file. */
-    setState: function (kind) { renderAiState(kind); }
+    setState: function (kind) { renderAiState(kind); },
+    /* Tier-aware helpers (DEC-174..179, 2026-04-27). The standalone
+       app-ai-suggest-modal.html demo toolbar uses these to drive its
+       per-tier preview. Production app-block-editor wires the same
+       getCurrentTier()/getQuotaState() to the JWT/Worker response. */
+    getCurrentTier:        getCurrentTier,
+    getQuotaState:         getQuotaState,
+    formatCountdown:       formatCountdown,
+    nextTierUp:            nextTierUp,
+    enhanceButtonLabel:    enhanceButtonLabel,
+    refreshAllButtonLabels: refreshAllButtonLabels,
+    paintCostStrip:        paintCostStrip,
+    /* Demo-only setters — let the standalone modal page drive a tier
+       switcher + "used today" slider without reaching into globals. */
+    _setDemoTier: function (tier) {
+      if (!AI_QUOTA[tier]) return;
+      window.__tadaifyDemoTier = tier;
+      try { localStorage.setItem('tadaify_demo_tier', tier); } catch (e) {}
+      paintCostStrip();
+      refreshAllButtonLabels();
+    },
+    _setDemoUsed: function (tier, used) {
+      if (!AI_QUOTA[tier]) return;
+      AI_USED_DEMO[tier] = Math.max(0, Math.min(AI_QUOTA[tier].limit, used | 0));
+      paintCostStrip();
+      refreshAllButtonLabels();
+    },
+    _quotaSpec: AI_QUOTA
   };
+
+  /* Auto-enhance every existing ✨ Suggest entry point on the page once
+     the DOM is ready. Picks up every button wired via the canonical
+     onclick="window.AISuggest.fromButton(this, ...)" pattern.
+
+     We eagerly inject the AI Suggest CSS up-front so the per-button
+     [data-quota-badge]::after pill renders on initial page load, even
+     before the modal opens for the first time. */
+  function autoEnhanceSuggestButtons() {
+    ensureAiCss();
+    refreshAllButtonLabels();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoEnhanceSuggestButtons);
+  } else {
+    autoEnhanceSuggestButtons();
+  }
 })();
 
 /* =========================================================================

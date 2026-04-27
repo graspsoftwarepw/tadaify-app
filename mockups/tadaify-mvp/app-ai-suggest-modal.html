@@ -169,6 +169,104 @@
       color: #fff;
       border-color: var(--brand-primary);
     }
+    /* Demo controls — tier switcher + used-today slider */
+    .demo-toolbar-row {
+      margin-top: 12px;
+      display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+      font-size: 12px; color: var(--fg-muted);
+      padding: 12px 14px;
+      background: var(--bg-muted);
+      border-radius: 10px;
+    }
+    .demo-toolbar-row .tlabel {
+      font-size: 11.5px; font-weight: 600;
+      color: var(--fg-muted); white-space: nowrap;
+    }
+    .demo-toolbar-row .slider-wrap {
+      display: flex; gap: 8px; align-items: center;
+      flex: 1; min-width: 220px;
+    }
+    .demo-toolbar-row input[type="range"] {
+      flex: 1; accent-color: var(--brand-primary); cursor: pointer;
+    }
+    .demo-toolbar-row .slider-readout {
+      font-family: var(--font-mono);
+      font-size: 11px; font-weight: 600;
+      color: var(--fg);
+      min-width: 64px; text-align: right;
+    }
+
+    /* Cost transparency strip — embedded in static state-variants */
+    .ctx-cost {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px; line-height: 1.4; color: var(--fg-muted);
+    }
+    .ctx-cost .meter { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .ctx-cost .line { color: var(--fg); font-weight: 500; }
+    .ctx-cost .line b { font-weight: 700; }
+    .ctx-cost .sub { font-size: 11px; color: var(--fg-subtle); }
+    .ctx-cost .bar {
+      height: 4px; background: rgba(0,0,0,0.06);
+      border-radius: 99px; overflow: hidden; margin-top: 2px;
+    }
+    .ctx-cost .bar > i {
+      display: block; height: 100%;
+      background: var(--brand-primary); border-radius: 99px;
+    }
+    .ctx-cost.is-low { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.32); }
+    .ctx-cost.is-low .bar > i { background: #F59E0B; }
+    .ctx-cost.is-out { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.32); }
+    .ctx-cost.is-out .bar > i { background: #EF4444; }
+
+    /* Refresh button explicit cost label inside foot */
+    .refresh-cost {
+      font-size: 11px; font-weight: 500;
+      color: var(--fg-subtle); margin-left: 2px;
+    }
+
+    /* Out-of-quota hard-block state */
+    .out-box {
+      padding: 22px 18px; text-align: center;
+      background: rgba(239,68,68,0.04);
+      border: 1px solid rgba(239,68,68,0.20);
+      border-radius: 12px;
+    }
+    .out-box .out-icon {
+      width: 40px; height: 40px; border-radius: 99px;
+      background: rgba(239,68,68,0.12); color: #EF4444;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 12px;
+    }
+    .out-box .out-h {
+      font-family: var(--font-display);
+      font-size: 20px; font-weight: 600; color: var(--fg);
+      margin-bottom: 6px; letter-spacing: -0.01em;
+    }
+    .out-box .out-countdown {
+      font-size: 14px; color: var(--fg-muted); margin-bottom: 14px;
+    }
+    .out-box .out-countdown b {
+      font-family: var(--font-mono);
+      color: var(--fg); font-weight: 600;
+    }
+    .out-box details {
+      margin-top: 16px; padding-top: 14px;
+      border-top: 1px dashed rgba(0,0,0,0.10);
+      text-align: left;
+    }
+    .out-box details summary {
+      font-size: 12px; font-weight: 600; color: var(--fg-muted);
+      cursor: pointer; list-style: none; user-select: none;
+    }
+    .out-box details summary::-webkit-details-marker { display: none; }
+    .out-box details p {
+      margin: 8px 0 0; font-size: 12.5px; line-height: 1.55;
+      color: var(--fg-muted);
+    }
 
     /* =========================================================================
        Sub-modal (the AI Suggest UI itself — centered, NEVER right-drawer)
@@ -813,18 +911,37 @@
       block editor. The sub-modal reads what you've already entered (plus
       surrounding block context — type, URL, image alt-text, …) and returns
       five short alternatives in different tones. Pick one, click <b>Use this</b>,
-      and the field updates. <b>Cost:</b> ~$0.0001 per click on Claude Haiku
-      &mdash; baked into every paid tier with a soft 30/day cap on Free for
-      abuse protection.
+      and the field updates. <b>Cost:</b> $0.000223 per call on Cloudflare
+      Workers AI (llama-3.1-8b-instruct-fast). Per-tier daily quotas keep the
+      Free tier sustainable: <b>Free 5/day · Creator 50/day · Pro &amp; Business
+      unlimited</b> (DEC-174..179, locked 2026-04-27).
+    </div>
+
+    <!-- Demo controls — tier switcher (drives cost strip + per-button badges) -->
+    <div class="demo-toolbar-row">
+      <span class="tlabel">Tier:</span>
+      <button class="tier-chip is-active" type="button" data-tier="free"     onclick="setDemoTier(this, 'free')">Free · 5/day</button>
+      <button class="tier-chip"           type="button" data-tier="creator"  onclick="setDemoTier(this, 'creator')">Creator $8 · 50/day</button>
+      <button class="tier-chip"           type="button" data-tier="pro"      onclick="setDemoTier(this, 'pro')">Pro $19 · Unlimited</button>
+      <button class="tier-chip"           type="button" data-tier="business" onclick="setDemoTier(this, 'business')">Business $49 · Unlimited</button>
+    </div>
+
+    <!-- Demo controls — "used today" slider (lets reviewer preview every quota state) -->
+    <div class="demo-toolbar-row">
+      <span class="tlabel">Used today:</span>
+      <div class="slider-wrap">
+        <input type="range" id="used-slider" min="0" max="5" value="2" step="1" oninput="setDemoUsed(this.value)" />
+        <span class="slider-readout" id="used-readout">2 / 5</span>
+      </div>
     </div>
 
     <div class="tier-row">
       <span>Demo state:</span>
-      <button class="tier-chip is-active" type="button" data-state="loaded" onclick="setState(this, 'loaded')">5 suggestions</button>
+      <button class="tier-chip is-active" type="button" data-state="loaded"  onclick="setState(this, 'loaded')">5 suggestions</button>
       <button class="tier-chip" type="button" data-state="loading" onclick="setState(this, 'loading')">Loading</button>
-      <button class="tier-chip" type="button" data-state="error" onclick="setState(this, 'error')">Error</button>
-      <button class="tier-chip" type="button" data-state="empty" onclick="setState(this, 'empty')">Empty (no input)</button>
-      <button class="tier-chip" type="button" data-state="rate" onclick="setState(this, 'rate')">Rate-limited</button>
+      <button class="tier-chip" type="button" data-state="error"   onclick="setState(this, 'error')">Error</button>
+      <button class="tier-chip" type="button" data-state="empty"   onclick="setState(this, 'empty')">Empty (no input)</button>
+      <button class="tier-chip" type="button" data-state="out"     onclick="setState(this, 'out')">Out of quota (hard-block)</button>
     </div>
   </div>
 
@@ -852,6 +969,15 @@
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
+      </div>
+
+      <!-- Cost transparency strip — populated by paintCostStripLive() -->
+      <div class="ctx-cost" id="cost-strip" style="margin: 12px 22px 0">
+        <div class="meter">
+          <div class="line" id="cost-line"><b>2 of 5</b> suggestions today</div>
+          <div class="bar"><i id="cost-fill" style="width:40%"></i></div>
+          <div class="sub" id="cost-sub">Resets in 8h 23m · midnight UTC</div>
+        </div>
       </div>
 
       <div class="ai-modal-body" id="ai-body">
@@ -929,16 +1055,16 @@
         </ul>
       </div>
 
-      <div class="ai-modal-foot">
+      <div class="ai-modal-foot" id="ai-foot">
         <div class="left">
-          <button class="btn-secondary" type="button" id="refresh-btn" onclick="refreshSuggestions()">
+          <button class="btn-secondary" type="button" id="refresh-btn" onclick="refreshSuggestions()" title="Costs 1 from your daily limit. Different suggestions next time.">
             <span class="btn-spinner"></span>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="23 4 23 10 17 10"></polyline>
               <polyline points="1 20 1 14 7 14"></polyline>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
-            Refresh suggestions
+            Refresh<span class="refresh-cost" id="refresh-cost-label"> (uses 1 daily)</span>
           </button>
         </div>
         <div class="right">
@@ -959,8 +1085,54 @@
        ========================================================================= -->
   <div class="variants">
 
+    <h2>State 0 &mdash; Cost transparency strip (per tier)</h2>
+    <p>
+      The slim panel under the modal header. Always visible for Free / Creator
+      (with quota readout + countdown to midnight UTC). Hidden for Pro / Business
+      (no clutter for unlimited tiers). Color shifts: neutral → amber when ≤2 left
+      → red when at 0. Locked per DEC-176 + DEC-177.
+    </p>
+    <div class="frame" style="flex-direction:column; gap:12px; padding:24px">
+      <!-- Free tier, fresh -->
+      <div class="ctx-cost" style="width:min(540px,100%)">
+        <div class="meter">
+          <div class="line"><b>2 of 5</b> suggestions today <span style="color:var(--fg-subtle); font-weight:500; font-size:11px">· Free tier</span></div>
+          <div class="bar"><i style="width:40%"></i></div>
+          <div class="sub">Resets in 8h 23m · midnight UTC</div>
+        </div>
+      </div>
+      <!-- Free tier, near limit (amber) -->
+      <div class="ctx-cost is-low" style="width:min(540px,100%)">
+        <div class="meter">
+          <div class="line"><b>4 of 5</b> suggestions today <span style="color:var(--fg-subtle); font-weight:500; font-size:11px">· Free tier · 1 left</span></div>
+          <div class="bar"><i style="width:80%"></i></div>
+          <div class="sub">Resets in 5h 12m · midnight UTC</div>
+        </div>
+      </div>
+      <!-- Free tier, out (red) -->
+      <div class="ctx-cost is-out" style="width:min(540px,100%)">
+        <div class="meter">
+          <div class="line"><b>You've used today's 5 AI suggestions</b></div>
+          <div class="bar"><i style="width:100%"></i></div>
+          <div class="sub">Resets in 3h 45m (midnight UTC)</div>
+        </div>
+      </div>
+      <!-- Creator tier mid-session -->
+      <div class="ctx-cost" style="width:min(540px,100%)">
+        <div class="meter">
+          <div class="line"><b>23 of 50</b> suggestions today <span style="color:var(--fg-subtle); font-weight:500; font-size:11px">· Creator $8 tier</span></div>
+          <div class="bar"><i style="width:46%"></i></div>
+          <div class="sub">Resets in 7h 02m · midnight UTC</div>
+        </div>
+      </div>
+      <!-- Pro / Business: hidden -->
+      <div style="font-size:12px; color:var(--fg-subtle); padding:10px 14px; border:1px dashed var(--border); border-radius:10px; width:min(540px,100%); text-align:center">
+        Pro $19 + Business $49 tiers: cost strip is <b>hidden entirely</b> — unlimited usage, no clutter.
+      </div>
+    </div>
+
     <h2>State 1 &mdash; Loaded (5 suggestions)</h2>
-    <p>The default state once the API returns. Five short variants in different tones, click any card to select.</p>
+    <p>The default state once the API returns. Five short variants in different tones, click any card to select. Cost strip shows mid-session usage.</p>
     <div class="frame">
       <div class="ai-modal">
         <div class="ai-modal-head">
@@ -968,6 +1140,14 @@
           <button class="iconbtn" type="button" aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
+        </div>
+        <!-- Cost strip — Free tier mid-session, neutral -->
+        <div class="ctx-cost" style="margin: 12px 22px 0">
+          <div class="meter">
+            <div class="line"><b>2 of 5</b> suggestions today</div>
+            <div class="bar"><i style="width:40%"></i></div>
+            <div class="sub">Resets in 8h 23m · midnight UTC</div>
+          </div>
         </div>
         <div class="ai-modal-body">
           <div class="ctx-strip">
@@ -994,7 +1174,7 @@
           </ul>
         </div>
         <div class="ai-modal-foot">
-          <div class="left"><button class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Refresh suggestions</button></div>
+          <div class="left"><button class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Refresh<span class="refresh-cost"> (uses 1 daily)</span></button></div>
           <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary">Use this</button></div>
         </div>
       </div>
@@ -1030,7 +1210,7 @@
           </div>
         </div>
         <div class="ai-modal-foot">
-          <div class="left"><button class="btn-secondary is-loading"><span class="btn-spinner"></span>Refresh suggestions</button></div>
+          <div class="left"><button class="btn-secondary is-loading"><span class="btn-spinner"></span>Refresh<span class="refresh-cost"> (uses 1 daily)</span></button></div>
           <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary" disabled>Use this</button></div>
         </div>
       </div>
@@ -1105,49 +1285,94 @@
       </div>
     </div>
 
-    <h2>State 5 &mdash; Rate-limited (Free tier abuse cap)</h2>
-    <p>Free creator hit 30 clicks today. Typical creator never sees this — only those automating against the trigger. Upsell to a paid tier where AI Suggest is unlimited (Business) or much higher (Creator/Pro).</p>
+    <h2>State 5 &mdash; Out of quota (Free hits 5/5, hard-block per DEC-177)</h2>
+    <p>
+      Free creator hit today's 5-click cap. Locked strategy (DEC-177): hard-block modal
+      with countdown to midnight UTC + tier-specific Upgrade CTA in sticky footer.
+      Cost strip up top turns red. No silent degradation, no partial results.
+    </p>
     <div class="frame">
       <div class="ai-modal">
         <div class="ai-modal-head">
           <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Caption</span></h3>
           <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
+        <!-- Cost strip — red, "you've used today's 5" -->
+        <div class="ctx-cost is-out" style="margin: 12px 22px 0">
+          <div class="meter">
+            <div class="line"><b>You've used today's 5 AI suggestions</b></div>
+            <div class="bar"><i style="width:100%"></i></div>
+            <div class="sub">Resets in 8h 23m (midnight UTC)</div>
+          </div>
+        </div>
         <div class="ai-modal-body">
           <div class="ctx-strip">
             <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <div class="ctx-text">
-              Based on your <b>Image</b> &mdash; filename <code>studio-session.jpg</code>
-            </div>
+            <div class="ctx-text">Based on your <b>Image</b> &mdash; filename <code>studio-session.jpg</code></div>
           </div>
-          <div class="rate-box">
-            <svg class="rate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <div class="rate-body">
-              <div class="rate-h">You've used today's AI credits</div>
-              <div class="rate-sub">
-                Free creators get 30 ✨ Suggest clicks per day &mdash; that resets at
-                midnight (your time zone). Upgrade for higher quotas now or just
-                give it a few hours.
-              </div>
-              <div class="upsell-row">
-                <button class="upgrade-btn" type="button">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" transform="rotate(180 12 12)"></polyline></svg>
-                  Upgrade for unlimited
-                </button>
-                <button class="btn-secondary" type="button">See plans</button>
-              </div>
-              <div class="rate-meta">
-                Resets in 4h 12m &middot; Creator 50/day &middot; Pro 200/day &middot; Business unlimited
-              </div>
-            </div>
+          <div class="out-box" role="alert">
+            <div class="out-icon" aria-hidden="true">⏳</div>
+            <div class="out-h">Comes back at midnight UTC</div>
+            <div class="out-countdown">in <b>8 hours 23 minutes</b></div>
+            <details open>
+              <summary>Why we limit</summary>
+              <p>AI suggestions cost us a fraction of a cent each ($0.000223 per call on Cloudflare Workers AI). We rate-limit to keep tadaify Free for everyone.</p>
+            </details>
           </div>
         </div>
         <div class="ai-modal-foot">
           <div class="left"></div>
-          <div class="right"><button class="btn-ghost">Close</button></div>
+          <div class="right">
+            <button class="btn-ghost">Wait until midnight</button>
+            <button class="upgrade-btn" type="button" style="padding:9px 14px">
+              Upgrade to Creator &mdash; $8/mo for 50/day
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>State 5b &mdash; Out of quota on Creator tier (50/50, upsell to Pro)</h2>
+    <p>
+      Same hard-block, but Creator tier has hit its 50/day cap. Upsell now points
+      at Pro $19 with unlimited suggestions. Wait CTA stays available.
+    </p>
+    <div class="frame">
+      <div class="ai-modal">
+        <div class="ai-modal-head">
+          <h3><span class="sparkle">✨</span> AI suggestions for <span class="target-name">Block title</span></h3>
+          <button class="iconbtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="ctx-cost is-out" style="margin: 12px 22px 0">
+          <div class="meter">
+            <div class="line"><b>You've used today's 50 AI suggestions</b></div>
+            <div class="bar"><i style="width:100%"></i></div>
+            <div class="sub">Resets in 6h 04m (midnight UTC)</div>
+          </div>
+        </div>
+        <div class="ai-modal-body">
+          <div class="ctx-strip">
+            <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div class="ctx-text">Based on your <b>Link button</b> &mdash; URL: <code>open.spotify.com/album/spring-drops</code></div>
+          </div>
+          <div class="out-box" role="alert">
+            <div class="out-icon" aria-hidden="true">⏳</div>
+            <div class="out-h">Comes back at midnight UTC</div>
+            <div class="out-countdown">in <b>6 hours 4 minutes</b></div>
+            <details>
+              <summary>Why we limit</summary>
+              <p>AI suggestions cost us a fraction of a cent each ($0.000223 per call on Cloudflare Workers AI). We rate-limit to keep tadaify Free for everyone.</p>
+            </details>
+          </div>
+        </div>
+        <div class="ai-modal-foot">
+          <div class="left"></div>
+          <div class="right">
+            <button class="btn-ghost">Wait until midnight</button>
+            <button class="upgrade-btn" type="button" style="padding:9px 14px">
+              Upgrade to Pro &mdash; $19/mo for unlimited suggestions
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1180,7 +1405,7 @@
           </ul>
         </div>
         <div class="ai-modal-foot">
-          <div class="left"><button class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Refresh suggestions</button></div>
+          <div class="left"><button class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>Refresh<span class="refresh-cost"> (uses 1 daily)</span></button></div>
           <div class="right"><button class="btn-ghost">Cancel</button><button class="btn-primary" style="box-shadow:0 0 0 3px rgba(99,102,241,0.25);">Use this</button></div>
         </div>
       </div>
@@ -1235,15 +1460,143 @@
     var current = { trigger: 'title', selectedIdx: 1, dirty: false };
     var demoState = 'loaded';
 
+    /* Cost transparency demo state — drives the cost strip + per-button
+       badges + out-of-quota hard-block. Mirrors the AI_QUOTA contract
+       in shared/partials.js (kept local here so the standalone file works
+       offline / without partials.js). DEC-176 limits. */
+    var QUOTAS = {
+      free:     { limit: 5,    label: '5/day',     unlimited: false },
+      creator:  { limit: 50,   label: '50/day',    unlimited: false },
+      pro:      { limit: 500,  label: 'Unlimited', unlimited: true  },
+      business: { limit: 2000, label: 'Unlimited', unlimited: true  }
+    };
+    var TIER_LABELS = { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
+    var TIER_PRICES = { free: 0, creator: 8, pro: 19, business: 49 };
+    var demoTier = 'free';
+    var demoUsed = { free: 2, creator: 12, pro: 47, business: 132 };
+
+    function nextTierUp(t) {
+      if (t === 'free') return 'creator';
+      if (t === 'creator') return 'pro';
+      return 'pro';
+    }
+    function formatCountdown(ms) {
+      if (ms <= 0) return '0s';
+      var s = Math.floor(ms / 1000);
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      if (h > 0) return h + 'h ' + m + 'm';
+      if (m > 0) return m + 'm';
+      return (s % 60) + 's';
+    }
+    function getResetMs() {
+      var now = new Date();
+      var midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0);
+      return midnight - now.getTime();
+    }
+    function getQuota() {
+      var spec = QUOTAS[demoTier];
+      var used = demoUsed[demoTier] || 0;
+      return {
+        tier: demoTier,
+        used: used,
+        limit: spec.limit,
+        unlimited: spec.unlimited,
+        remaining: Math.max(0, spec.limit - used),
+        resetMs: getResetMs()
+      };
+    }
+
+    /* Paint the live modal's cost strip per current tier + used counter.
+       Pro+ tiers hide the strip entirely (no clutter for unlimited). */
+    function paintCostStripLive() {
+      var strip = document.getElementById('cost-strip');
+      if (!strip) return;
+      var q = getQuota();
+      if (q.unlimited) {
+        strip.style.display = 'none';
+        return;
+      }
+      strip.style.display = '';
+      strip.classList.remove('is-low', 'is-out');
+      if (q.remaining === 0) strip.classList.add('is-out');
+      else if (q.remaining <= 2) strip.classList.add('is-low');
+
+      var line = document.getElementById('cost-line');
+      var sub  = document.getElementById('cost-sub');
+      var fill = document.getElementById('cost-fill');
+      var pct  = Math.min(100, Math.round((q.used / q.limit) * 100));
+      if (q.remaining === 0) {
+        line.innerHTML = '<b>You\'ve used today\'s ' + q.limit + ' AI suggestions</b>';
+        sub.textContent = 'Resets in ' + formatCountdown(q.resetMs) + ' (midnight UTC)';
+      } else {
+        line.innerHTML = '<b>' + q.used + ' of ' + q.limit + '</b> suggestions today';
+        sub.textContent = 'Resets in ' + formatCountdown(q.resetMs) + ' · midnight UTC';
+      }
+      fill.style.width = pct + '%';
+    }
+
+    /* Demo tier switcher — also propagates to shared/partials.js so any
+       wired ✨ Suggest buttons elsewhere on the page (none here, but the
+       pattern is shared) re-render their per-tier hint. */
+    function setDemoTier(chip, tier) {
+      [].forEach.call(document.querySelectorAll('[data-tier]'), function (c) { c.classList.remove('is-active'); });
+      chip.classList.add('is-active');
+      demoTier = tier;
+      /* Reset slider bounds + value to current tier's "used" count. */
+      var slider   = document.getElementById('used-slider');
+      var readout  = document.getElementById('used-readout');
+      var spec     = QUOTAS[tier];
+      var maxLabel = spec.unlimited ? '500' : String(spec.limit);
+      slider.max   = spec.unlimited ? 500 : spec.limit;
+      slider.step  = spec.unlimited ? 50  : (spec.limit > 20 ? 5 : 1);
+      slider.value = demoUsed[tier];
+      readout.textContent = demoUsed[tier] + ' / ' + maxLabel;
+      paintCostStripLive();
+      renderState();
+      if (window.AISuggest && window.AISuggest._setDemoTier) {
+        window.AISuggest._setDemoTier(tier);
+      }
+    }
+    function setDemoUsed(value) {
+      demoUsed[demoTier] = parseInt(value, 10) || 0;
+      var spec     = QUOTAS[demoTier];
+      var maxLabel = spec.unlimited ? '500' : String(spec.limit);
+      document.getElementById('used-readout').textContent = demoUsed[demoTier] + ' / ' + maxLabel;
+      paintCostStripLive();
+      renderState();
+      if (window.AISuggest && window.AISuggest._setDemoUsed) {
+        window.AISuggest._setDemoUsed(demoTier, demoUsed[demoTier]);
+      }
+    }
+
     function openAi(triggerKey) {
       current.trigger = triggerKey;
       current.selectedIdx = -1;
       current.dirty = false;
 
       var ctx = TRIGGER_CONTEXTS[triggerKey];
-      document.getElementById('ai-target').textContent = ctx.label;
-      document.getElementById('ctx-text').innerHTML = ctx.ctxHtml;
+      var targetEl = document.getElementById('ai-target');
+      if (targetEl) targetEl.textContent = ctx.label;
+      /* ctx-text only exists on first paint; subsequent renderState()
+         calls rebuild the body and re-inject ctx-text via ctxHtml. */
+      var ctxEl = document.getElementById('ctx-text');
+      if (ctxEl) ctxEl.innerHTML = ctx.ctxHtml;
 
+      /* Reset to default loaded flow on every open so a stale 'out' /
+         'error' state from a previous session doesn't survive. The quota
+         gate immediately below flips back to 'out' if still capped. */
+      demoState = 'loaded';
+
+      /* Quota gate at open time — DEC-177 hard-block. If the creator
+         hits ✨ Suggest with 0 left, we show the out-of-quota panel
+         immediately (not a loading skeleton followed by an error). */
+      var q = getQuota();
+      if (!q.unlimited && q.remaining === 0) {
+        demoState = 'out';
+      }
+
+      paintCostStripLive();
       renderState();
 
       document.getElementById('ai-backdrop').classList.add('is-open');
@@ -1287,9 +1640,27 @@
     }
 
     function refreshSuggestions() {
+      /* Refresh = explicit 1-quota spend (DEC-179: bypass output cache).
+         Decrement counter, repaint cost strip, then either re-fetch or
+         flip to the out-of-quota hard-block if we just hit the cap. */
+      var spec = QUOTAS[demoTier];
+      if (!spec.unlimited) {
+        demoUsed[demoTier] = Math.min(spec.limit, (demoUsed[demoTier] || 0) + 1);
+      }
+      var slider  = document.getElementById('used-slider');
+      if (slider && !spec.unlimited) {
+        slider.value = demoUsed[demoTier];
+        document.getElementById('used-readout').textContent = demoUsed[demoTier] + ' / ' + spec.limit;
+      }
+      paintCostStripLive();
+      var q = getQuota();
+      if (!q.unlimited && q.remaining === 0) {
+        demoState = 'out';
+        renderState();
+        return;
+      }
       var btn = document.getElementById('refresh-btn');
       btn.classList.add('is-loading');
-      // In production: re-call the AI endpoint. In the demo: just blink.
       setTimeout(function () { btn.classList.remove('is-loading'); }, 900);
     }
 
@@ -1307,13 +1678,34 @@
     function renderState() {
       var ctx = TRIGGER_CONTEXTS[current.trigger];
       var body = document.getElementById('ai-body');
+      var foot = document.getElementById('ai-foot');
       var useBtn = document.getElementById('use-btn');
       var refreshBtn = document.getElementById('refresh-btn');
 
+      /* Restore default footer in case the previous render swapped it out
+         (e.g. coming back from the out-of-quota upsell footer). */
+      if (foot && !document.getElementById('refresh-btn')) {
+        foot.innerHTML =
+          '<div class="left">' +
+            '<button class="btn-secondary" type="button" id="refresh-btn" onclick="refreshSuggestions()" title="Costs 1 from your daily limit. Different suggestions next time.">' +
+              '<span class="btn-spinner"></span>' +
+              '↻ Refresh<span class="refresh-cost"> (uses 1 daily)</span>' +
+            '</button>' +
+          '</div>' +
+          '<div class="right">' +
+            '<button class="btn-ghost" type="button" onclick="closeAi()">Cancel</button>' +
+            '<button class="btn-primary" type="button" id="use-btn" onclick="useSelected()">Use this</button>' +
+          '</div>';
+        useBtn = document.getElementById('use-btn');
+        refreshBtn = document.getElementById('refresh-btn');
+      }
+
       // Reset the foot for the default state.
-      useBtn.style.display = '';
-      refreshBtn.style.display = '';
-      useBtn.disabled = true;
+      if (useBtn) { useBtn.style.display = ''; useBtn.disabled = true; }
+      if (refreshBtn) refreshBtn.style.display = '';
+
+      /* Always repaint cost strip — Pro+ tiers will hide it themselves. */
+      paintCostStripLive();
 
       var ctxHtml =
         '<div class="ctx-strip">' +
@@ -1371,20 +1763,45 @@
           '<button class="btn-primary" type="button" onclick="setState(document.querySelector(\'[data-state=loading]\'),\'loading\');setTimeout(function(){setState(document.querySelector(\'[data-state=loaded]\'),\'loaded\');},900);">Generate from context</button>' +
           '</div>';
         refreshBtn.style.display = 'none';
-      } else if (demoState === 'rate') {
+      } else if (demoState === 'rate' || demoState === 'out') {
+        /* Out-of-quota hard-block — DEC-177. Replaces 5 cards with a
+           friendly stop screen + countdown + per-tier upsell footer. */
+        var q = getQuota();
+        var nextT = nextTierUp(demoTier);
+        var nextLbl = TIER_LABELS[nextT];
+        var nextPrice = TIER_PRICES[nextT];
+        var nextSpec = QUOTAS[nextT];
+        var nextQuotaCopy = nextSpec.unlimited
+          ? 'unlimited suggestions'
+          : (nextSpec.limit + '/day');
         body.innerHTML = ctxHtml +
-          '<div class="rate-box">' +
-          '<svg class="rate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-          '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>' +
-          '<div class="rate-body">' +
-          '<div class="rate-h">You\'ve used today\'s AI credits</div>' +
-          '<div class="rate-sub">Free creators get 30 ✨ Suggest clicks per day — that resets at midnight (your time zone). Upgrade for higher quotas now or just give it a few hours.</div>' +
-          '<div class="upsell-row"><button class="upgrade-btn" type="button">Upgrade for unlimited</button><button class="btn-secondary" type="button">See plans</button></div>' +
-          '<div class="rate-meta">Resets in 4h 12m · Creator 50/day · Pro 200/day · Business unlimited</div>' +
-          '</div></div>';
-        refreshBtn.style.display = 'none';
-        useBtn.style.display = 'none';
+          '<div class="out-box" role="alert">' +
+            '<div class="out-icon" aria-hidden="true">⏳</div>' +
+            '<div class="out-h">Comes back at midnight UTC</div>' +
+            '<div class="out-countdown">in <b>' + formatCountdown(q.resetMs) + '</b></div>' +
+            '<details>' +
+              '<summary>Why we limit</summary>' +
+              '<p>AI suggestions cost us a fraction of a cent each ($0.000223 per call on Cloudflare Workers AI). We rate-limit to keep tadaify Free for everyone.</p>' +
+            '</details>' +
+          '</div>';
+        /* Swap footer to upsell-pair (Wait + Upgrade) — sticky under modal. */
+        if (foot) {
+          foot.innerHTML =
+            '<div class="left"></div>' +
+            '<div class="right">' +
+              '<button class="btn-ghost" type="button" onclick="closeAi()">Wait until midnight</button>' +
+              '<button class="upgrade-btn" type="button" onclick="onUpgradeClick(\'' + nextT + '\')" style="padding:9px 14px">' +
+                'Upgrade to ' + nextLbl + ' — $' + nextPrice + '/mo for ' + nextQuotaCopy +
+              '</button>' +
+            '</div>';
+        }
       }
+    }
+
+    function onUpgradeClick(tier) {
+      // In production: navigate to /settings/billing?upgrade=<tier>
+      try { console.log('[AI Suggest] upgrade CTA clicked → ' + tier); } catch (e) {}
+      closeAi();
     }
 
     function escapeHtml(s) {
