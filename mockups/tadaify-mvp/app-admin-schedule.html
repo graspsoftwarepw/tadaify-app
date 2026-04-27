@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Administration → Schedule (bookings calendar) — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Day-to-day bookings management. Pairs with app-page-schedule.html (page editor).
+
+  Locked rules honoured:
+    - feedback_tadaify_pages_vs_administration_separation
+    - feedback_no_right_side_drawers (booking detail = centered modal)
+    - feedback_no_blur_premium_features (No-show tracking Pro+ visible + interactive; gate at action)
+    - feedback_mockup_full_feature_vision
+
+  Demo state via URL: ?state=no-page | empty | filled (default: filled)
+                      ?tier=free | creator | pro | business (default: pro)
+                      ?view=day | week | month (default: month)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration · Schedule · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta { color: var(--wm-ta); } .wm .da { color: var(--wm-da); } .wm .ify { color: var(--wm-ify); }
+
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+    .chip.confirmed { background: var(--success-bg); color: #065F46; }
+    .chip.pending   { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .chip.cancelled { background: var(--bg-muted); color: var(--fg-muted); text-decoration: line-through; }
+    .chip.noshow    { background: rgba(239,68,68,0.12); color: #B91C1C; }
+    .chip.tier      { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+
+    .btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+
+    .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .appbar { position: sticky; top: 0; z-index: 40; background: var(--bg-elevated); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 14px; }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 13px; color: var(--fg-muted); }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 24px 20px 80px; min-width: 0; max-width: 1200px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    .crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .page-head h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+    .page-head .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+    .section-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+
+    /* Today panel */
+    .stats-row { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 18px; }
+    .stat-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .stat-card .stat-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-card .stat-value { font-family: var(--font-display); font-size: 26px; font-weight: 600; margin-top: 4px; }
+    .stat-card .stat-sub { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Bookings list */
+    .bookings { display: flex; flex-direction: column; gap: 10px; }
+    .booking-row {
+      display: grid; grid-template-columns: 84px 1fr auto; gap: 14px; align-items: center;
+      padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated);
+    }
+    @media (max-width: 640px) {
+      .booking-row { grid-template-columns: 64px 1fr auto; padding: 10px; }
+    }
+    .booking-row .b-time {
+      width: 84px; padding: 8px 10px; border-radius: 10px;
+      background: var(--bg-muted); text-align: center;
+    }
+    .booking-row .b-time .t-hour { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .booking-row .b-time .t-period { font-size: 11px; color: var(--fg-muted); }
+    .booking-row .b-meta { min-width: 0; }
+    .booking-row .b-attendee { font-weight: 600; font-size: 14px; margin: 0 0 3px; }
+    .booking-row .b-info { font-size: 12.5px; color: var(--fg-muted); display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .booking-row .b-actions { display: inline-flex; gap: 4px; align-items: center; }
+
+    /* Calendar */
+    .cal-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .cal-nav { display: inline-flex; gap: 6px; align-items: center; }
+    .cal-nav .month-label { font-family: var(--font-display); font-size: 18px; font-weight: 600; min-width: 160px; text-align: center; }
+    .view-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-muted); border-radius: 10px; }
+    .view-tab { padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+    .view-tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      background: var(--bg-elevated);
+    }
+    .cal-dow { padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; text-align: center; background: var(--bg-muted); border-bottom: 1px solid var(--border); }
+    .cal-cell { min-height: 96px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 6px; position: relative; cursor: pointer; }
+    .cal-cell:nth-child(7n+7) { border-right: 0; }
+    .cal-cell.is-other { background: var(--bg); color: var(--fg-subtle); }
+    .cal-cell.is-today { background: rgba(99,102,241,0.06); }
+    .cal-cell .c-num { font-size: 12px; font-weight: 600; color: var(--fg); }
+    .cal-cell.is-today .c-num { color: var(--brand-primary); }
+    .cal-cell .c-event { display: block; font-size: 10.5px; padding: 2px 5px; border-radius: 4px; margin-top: 3px; background: rgba(99,102,241,0.12); color: var(--brand-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-cell .c-event.warm { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .cal-cell .c-event.success { background: var(--success-bg); color: #065F46; }
+    @media (max-width: 640px) {
+      .cal-cell { min-height: 64px; padding: 4px; }
+      .cal-cell .c-event { display: none; }
+      .cal-cell.has-events::after { content: "•"; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: var(--brand-primary); }
+    }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 56px 24px; border: 1.5px dashed var(--border-strong); border-radius: 14px; background: var(--bg); }
+    .empty-icon { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #A5B4FC, #6366F1); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; margin-bottom: 18px; }
+    .empty h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 8px; }
+    .empty p { color: var(--fg-muted); font-size: 14px; max-width: 460px; margin: 0 auto 18px; line-height: 1.55; }
+    .empty .empty-actions { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    /* Modal — centered */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(17,24,39,0.55); z-index: 200; backdrop-filter: blur(2px); align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.is-open { display: flex; }
+    .modal { width: 100%; max-width: 640px; max-height: 90vh; background: var(--bg-elevated); border-radius: 16px; box-shadow: 0 24px 60px rgba(17,24,39,0.25); display: flex; flex-direction: column; overflow: hidden; }
+    .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; flex: 1; }
+    .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+    .modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    .detail-grid { display: grid; gap: 12px 16px; grid-template-columns: 120px 1fr; font-size: 13.5px; }
+    .detail-grid dt { font-weight: 600; color: var(--fg-muted); }
+    .detail-grid dd { margin: 0; color: var(--fg); }
+
+    .demo-toolbar { position: fixed; bottom: 16px; right: 16px; z-index: 30; background: var(--bg-dark); color: #fff; padding: 10px 14px; border-radius: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+    .demo-toolbar select { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; font-size: 12px; padding: 3px 8px; cursor: pointer; }
+    .demo-toolbar a { color: #A5B4FC; text-decoration: underline; }
+
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section, body.dark-mode .stat-card, body.dark-mode .booking-row, body.dark-mode .cal-grid { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .cal-cell { border-color: #1F2937; }
+    body.dark-mode .cal-dow { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .empty { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; }
+  </style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <span class="logo-mark" data-logo style="width:26px;height:26px"></span>
+    <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="handle-pill">
+    <span class="live-dot"></span>
+    <span>tadaify.com/<b>alexandra</b>/schedule</span>
+  </div>
+  <button class="iconbtn" aria-label="Toggle theme" onclick="document.body.classList.toggle('dark-mode')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+  </button>
+</header>
+
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="admin" data-admin-active="schedule" data-tier="pro" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb">
+      <a href="./app-dashboard.html">Dashboard</a>
+      <span class="sep">/</span>
+      <span class="here">Administration · Schedule</span>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <h1><span class="ph-emoji">📅</span> Bookings</h1>
+        <div class="sub">Confirm, reschedule, and track sessions. Page-level setup (booking types, calendar sync, payments) lives in <a href="./app-page-schedule.html" style="color: var(--brand-primary); text-decoration: underline;">Pages → Schedule</a>.</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm">Export CSV</button>
+        <button class="btn btn-primary">＋ New booking</button>
+      </div>
+    </header>
+
+    <!-- ========== STATE A: NO PAGE ========== -->
+    <section id="stateNoPage" hidden>
+      <div class="empty">
+        <div class="empty-icon">📅</div>
+        <h3>You don't have a Schedule page yet</h3>
+        <p>Schedule lets visitors book paid or free sessions with you — coaching calls, consultations, lessons. To start taking bookings, add a Schedule page first.</p>
+        <div class="empty-actions">
+          <a href="./app-dashboard.html?tab=page&template=schedule" class="btn btn-primary">＋ Add Schedule page now</a>
+          <button class="btn btn-ghost">Skip — what is Schedule?</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STATE B: FILLED ========== -->
+    <section id="stateFilled">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Today</div>
+          <div class="stat-value">3</div>
+          <div class="stat-sub">bookings · 2 confirmed, 1 pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">This week</div>
+          <div class="stat-value">11</div>
+          <div class="stat-sub">$1,320 expected revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">No-show rate <span class="chip tier">Pro</span></div>
+          <div class="stat-value">2.4%</div>
+          <div class="stat-sub">last 90 days · 3 of 124 sessions</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2>Today — Mon, Apr 27</h2>
+          <span class="sub">All times in PT</span>
+        </div>
+        <div class="section-body">
+          <div class="bookings">
+            <div class="booking-row" data-booking="bk-1">
+              <div class="b-time"><div class="t-hour">10:00</div><div class="t-period">AM</div></div>
+              <div class="b-meta">
+                <h4 class="b-attendee">Maya Rodriguez</h4>
+                <div class="b-info">
+                  <span class="chip confirmed">● Confirmed</span>
+                  <span>1h portfolio review · $120 paid</span>
+                </div>
+              </div>
+              <div class="b-actions">
+                <button class="btn btn-xs btn-ghost" onclick="openDetail('bk-1')">Details</button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </div>
+            <div class="booking-row">
+              <div class="b-time"><div class="t-hour">2:30</div><div class="t-period">PM</div></div>
+              <div class="b-meta">
+                <h4 class="b-attendee">Jonas Kemppi</h4>
+                <div class="b-info">
+                  <span class="chip pending">⏱ Pending confirm</span>
+                  <span>30m intro chat · Free</span>
+                </div>
+              </div>
+              <div class="b-actions">
+                <button class="btn btn-xs btn-primary">Confirm</button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </div>
+            <div class="booking-row">
+              <div class="b-time"><div class="t-hour">4:00</div><div class="t-period">PM</div></div>
+              <div class="b-meta">
+                <h4 class="b-attendee">Sara Lin (returning)</h4>
+                <div class="b-info">
+                  <span class="chip confirmed">● Confirmed</span>
+                  <span>1h coaching · $120 paid · 4th session</span>
+                </div>
+              </div>
+              <div class="b-actions">
+                <button class="btn btn-xs btn-ghost">Details</button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2>Upcoming — next 14 days</h2>
+          <span class="sub">8 sessions</span>
+        </div>
+        <div class="section-body">
+          <div class="bookings">
+            <div class="booking-row">
+              <div class="b-time"><div class="t-hour">Apr</div><div class="t-period">28 · 11:00</div></div>
+              <div class="b-meta">
+                <h4 class="b-attendee">David Chen</h4>
+                <div class="b-info">
+                  <span class="chip confirmed">● Confirmed</span>
+                  <span>1h portfolio review · $120</span>
+                </div>
+              </div>
+              <div class="b-actions">
+                <button class="iconbtn" data-tip="Reschedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </div>
+            <div class="booking-row">
+              <div class="b-time"><div class="t-hour">May</div><div class="t-period">2 · 09:00</div></div>
+              <div class="b-meta">
+                <h4 class="b-attendee">Priya Sharma</h4>
+                <div class="b-info">
+                  <span class="chip pending">⏱ Pending confirm</span>
+                  <span>30m intro · Free</span>
+                </div>
+              </div>
+              <div class="b-actions">
+                <button class="btn btn-xs btn-primary">Confirm</button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <h2>Calendar</h2>
+          <span class="head-spacer"></span>
+          <div class="cal-toolbar" style="margin: 0;">
+            <div class="cal-nav">
+              <button class="iconbtn" data-tip="Prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <span class="month-label">April 2026</span>
+              <button class="iconbtn" data-tip="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+            <div class="view-tabs">
+              <button class="view-tab" data-view="day">Day</button>
+              <button class="view-tab" data-view="week">Week</button>
+              <button class="view-tab is-active" data-view="month">Month</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="cal-grid" id="calGrid">
+            <div class="cal-dow">Sun</div><div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div><div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
+            <!-- Week 1 -->
+            <div class="cal-cell is-other"><span class="c-num">29</span></div>
+            <div class="cal-cell is-other"><span class="c-num">30</span></div>
+            <div class="cal-cell is-other"><span class="c-num">31</span></div>
+            <div class="cal-cell"><span class="c-num">1</span></div>
+            <div class="cal-cell has-events"><span class="c-num">2</span><span class="c-event">9:00 P. Sharma</span></div>
+            <div class="cal-cell"><span class="c-num">3</span></div>
+            <div class="cal-cell"><span class="c-num">4</span></div>
+            <!-- Week 2 -->
+            <div class="cal-cell"><span class="c-num">5</span></div>
+            <div class="cal-cell has-events"><span class="c-num">6</span><span class="c-event">11:00 D. Chen</span></div>
+            <div class="cal-cell"><span class="c-num">7</span></div>
+            <div class="cal-cell has-events"><span class="c-num">8</span><span class="c-event success">10:30 Coaching</span></div>
+            <div class="cal-cell"><span class="c-num">9</span></div>
+            <div class="cal-cell"><span class="c-num">10</span></div>
+            <div class="cal-cell"><span class="c-num">11</span></div>
+            <!-- Week 3 -->
+            <div class="cal-cell has-events"><span class="c-num">12</span><span class="c-event">3:00 J. Smith</span></div>
+            <div class="cal-cell"><span class="c-num">13</span></div>
+            <div class="cal-cell"><span class="c-num">14</span></div>
+            <div class="cal-cell has-events"><span class="c-num">15</span><span class="c-event warm">⏱ Pending</span></div>
+            <div class="cal-cell"><span class="c-num">16</span></div>
+            <div class="cal-cell"><span class="c-num">17</span></div>
+            <div class="cal-cell"><span class="c-num">18</span></div>
+            <!-- Week 4 -->
+            <div class="cal-cell"><span class="c-num">19</span></div>
+            <div class="cal-cell has-events"><span class="c-num">20</span><span class="c-event">2:00 R. Patel</span></div>
+            <div class="cal-cell"><span class="c-num">21</span></div>
+            <div class="cal-cell"><span class="c-num">22</span></div>
+            <div class="cal-cell has-events"><span class="c-num">23</span><span class="c-event success">11:00 Coaching</span></div>
+            <div class="cal-cell"><span class="c-num">24</span></div>
+            <div class="cal-cell"><span class="c-num">25</span></div>
+            <!-- Week 5 -->
+            <div class="cal-cell"><span class="c-num">26</span></div>
+            <div class="cal-cell is-today has-events"><span class="c-num">27</span><span class="c-event">10:00 M. Rodriguez</span><span class="c-event warm">2:30 J. Kemppi</span><span class="c-event success">4:00 S. Lin</span></div>
+            <div class="cal-cell has-events"><span class="c-num">28</span><span class="c-event">11:00 D. Chen</span></div>
+            <div class="cal-cell"><span class="c-num">29</span></div>
+            <div class="cal-cell"><span class="c-num">30</span></div>
+            <div class="cal-cell is-other"><span class="c-num">1</span></div>
+            <div class="cal-cell is-other"><span class="c-num">2</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Booking detail modal -->
+<div class="modal-backdrop" id="detailBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Booking — Maya Rodriguez</h3>
+      <span class="chip confirmed">● Confirmed</span>
+      <button class="iconbtn" aria-label="Close" onclick="closeDetail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <dl class="detail-grid">
+        <dt>When</dt><dd>Today, Apr 27 · 10:00–11:00 AM PT</dd>
+        <dt>Type</dt><dd>1h portfolio review</dd>
+        <dt>Price</dt><dd>$120 paid via Stripe (transaction <code>pi_3QXYz…</code>)</dd>
+        <dt>Email</dt><dd>maya.r@example.com</dd>
+        <dt>Phone</dt><dd>+1 415 555 0192</dd>
+        <dt>Notes</dt><dd>"Hi! I'm working on my freelance illustration site, would love feedback on portfolio structure + pricing page. Thanks!"</dd>
+        <dt>Meeting link</dt><dd><a style="color: var(--brand-primary); text-decoration: underline;">https://meet.google.com/xyz-abcd-efg</a> (auto-generated)</dd>
+        <dt>Reminder</dt><dd>Sent 24h before · also 1h before</dd>
+      </dl>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger-ghost btn-sm">Cancel booking</button>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost">Reschedule</button>
+      <button class="btn btn-primary">Send message</button>
+    </div>
+  </div>
+</div>
+
+<!-- Demo toolbar -->
+<div class="demo-toolbar">
+  <span style="opacity:0.7">State:</span>
+  <select id="demoState">
+    <option value="filled">Filled (today + upcoming + cal)</option>
+    <option value="no-page">No Schedule page yet</option>
+  </select>
+  <span style="opacity:0.7">Tier:</span>
+  <select id="demoTier">
+    <option value="pro">Pro</option>
+    <option value="creator">Creator</option>
+    <option value="business">Business</option>
+    <option value="free">Free</option>
+  </select>
+  <a href="./app-page-schedule.html">→ Page editor</a>
+</div>
+
+<script src="./shared/logo.js"></script>
+<script src="./shared/partials.js"></script>
+<script>
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    var state = qs.get('state') || 'filled';
+    var stateSel = document.getElementById('demoState');
+    if (stateSel) stateSel.value = state;
+    function applyState(s) {
+      document.getElementById('stateNoPage').hidden = s !== 'no-page';
+      document.getElementById('stateFilled').hidden = s !== 'filled';
+      var actions = document.querySelector('.page-head .actions');
+      if (actions) actions.style.display = s === 'no-page' ? 'none' : '';
+    }
+    applyState(state);
+    if (stateSel) stateSel.addEventListener('change', function () { applyState(this.value); });
+    var tierSel = document.getElementById('demoTier');
+    if (tierSel) tierSel.value = qs.get('tier') || 'pro';
+  })();
+  function openDetail() { document.getElementById('detailBackdrop').classList.add('is-open'); }
+  function closeDetail() { document.getElementById('detailBackdrop').classList.remove('is-open'); }
+  document.querySelectorAll('[data-booking]').forEach(function (el) {
+    el.addEventListener('click', function (e) { if (!e.target.closest('button')) openDetail(); });
+  });
+  document.getElementById('detailBackdrop').addEventListener('click', function (e) {
+    if (e.target === this) closeDetail();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDetail(); });
+  document.querySelectorAll('.view-tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.view-tab').forEach(function (x) { x.classList.remove('is-active'); });
+      t.classList.add('is-active');
+    });
+  });
+</script>
+</body>
+</html>
