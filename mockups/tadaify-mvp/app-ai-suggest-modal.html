@@ -1576,8 +1576,17 @@
       current.dirty = false;
 
       var ctx = TRIGGER_CONTEXTS[triggerKey];
-      document.getElementById('ai-target').textContent = ctx.label;
-      document.getElementById('ctx-text').innerHTML = ctx.ctxHtml;
+      var targetEl = document.getElementById('ai-target');
+      if (targetEl) targetEl.textContent = ctx.label;
+      /* ctx-text only exists on first paint; subsequent renderState()
+         calls rebuild the body and re-inject ctx-text via ctxHtml. */
+      var ctxEl = document.getElementById('ctx-text');
+      if (ctxEl) ctxEl.innerHTML = ctx.ctxHtml;
+
+      /* Reset to default loaded flow on every open so a stale 'out' /
+         'error' state from a previous session doesn't survive. The quota
+         gate immediately below flips back to 'out' if still capped. */
+      demoState = 'loaded';
 
       /* Quota gate at open time — DEC-177 hard-block. If the creator
          hits ✨ Suggest with 0 left, we show the out-of-quota panel
