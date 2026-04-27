@@ -278,6 +278,20 @@
   var TIER_RANK = { free: 0, creator: 1, pro: 2, business: 3 };
   var TIER_LABEL = { free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' };
 
+  /* Tier pricing — single source of truth, mirrors pricing.html.
+     Yearly = 10/12 of monthly (canonical "Save 2 months" rule). */
+  var TIER_PRICING = {
+    free:     { monthly: 0,  yearly: 0   },
+    creator:  { monthly: 8,  yearly: 80  },  // ~$6.67/mo billed yearly
+    pro:      { monthly: 19, yearly: 190 },  // ~$15.83/mo billed yearly
+    business: { monthly: 49, yearly: 490 }   // ~$40.83/mo billed yearly
+  };
+  function priceFor(tier, cycle) {
+    var t = TIER_PRICING[tier] || TIER_PRICING.business;
+    if (cycle === 'yearly') return Math.round((t.yearly / 12) * 100) / 100;
+    return t.monthly;
+  }
+
   var TIER_BADGE_CSS = '' +
     '<style data-source="tier-badge-partial">' +
     /* Inline pill rendered next to a section heading */
@@ -382,8 +396,63 @@
     'body.dark-mode .tdf-gate-actions { border-top-color: #1F2937; }' +
     'body.dark-mode .tdf-gate-actions .gate-secondary { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }' +
     'body.dark-mode .tdf-gate-actions .gate-secondary:hover { background: #1F2937; }' +
+    /* Monthly / yearly billing toggle inside the gate footer */
+    '.tdf-gate-cycle {' +
+    '  display: inline-flex; align-items: center; gap: 4px;' +
+    '  padding: 3px; border-radius: 99px;' +
+    '  background: var(--bg-muted, #F3F4F6);' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '  font-size: 11.5px; font-weight: 600;' +
+    '  margin: 0 auto 8px;' +
+    '}' +
+    '.tdf-gate-cycle button {' +
+    '  border: 0; background: transparent; cursor: pointer;' +
+    '  padding: 5px 12px; border-radius: 99px;' +
+    '  color: var(--fg-muted, #6B7280);' +
+    '  font: inherit;' +
+    '  transition: background .12s ease, color .12s ease;' +
+    '}' +
+    '.tdf-gate-cycle button.is-active {' +
+    '  background: var(--bg-elevated, #fff);' +
+    '  color: var(--fg, #111);' +
+    '  box-shadow: 0 1px 3px rgba(11,15,30,0.12);' +
+    '}' +
+    '.tdf-gate-cycle .save-badge {' +
+    '  font-size: 9.5px; font-weight: 700;' +
+    '  margin-left: 4px;' +
+    '  color: #047857; letter-spacing: 0.04em;' +
+    '}' +
+    'body.dark-mode .tdf-gate-cycle { background: #1F2937; }' +
+    'body.dark-mode .tdf-gate-cycle button { color: #9CA3AF; }' +
+    'body.dark-mode .tdf-gate-cycle button.is-active { background: #0B0F1E; color: #F3F4F6; }' +
+    'body.dark-mode .tdf-gate-cycle .save-badge { color: #6EE7B7; }' +
+    '.tdf-gate-actions .gate-primary .price-sub {' +
+    '  display: block;' +
+    '  font-size: 10.5px; font-weight: 500; opacity: 0.85;' +
+    '  margin-top: 2px;' +
+    '}' +
+    /* "All set" silent-success toast — bottom-right */
+    '.tdf-toast {' +
+    '  position: fixed; right: 20px; bottom: 20px; z-index: 1100;' +
+    '  display: inline-flex; align-items: center; gap: 8px;' +
+    '  padding: 10px 14px; border-radius: 10px;' +
+    '  background: #047857; color: #fff;' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '  font-size: 13px; font-weight: 600;' +
+    '  box-shadow: 0 12px 32px rgba(11,15,30,0.20);' +
+    '  opacity: 0; transform: translateY(8px);' +
+    '  transition: opacity .16s ease, transform .16s ease;' +
+    '  pointer-events: none;' +
+    '}' +
+    '.tdf-toast.is-visible { opacity: 1; transform: translateY(0); }' +
+    '.tdf-toast .toast-check {' +
+    '  width: 18px; height: 18px; border-radius: 50%;' +
+    '  background: rgba(255,255,255,0.20);' +
+    '  display: inline-flex; align-items: center; justify-content: center;' +
+    '  font-size: 11px;' +
+    '}' +
     '@media (prefers-reduced-motion: reduce) {' +
-    '  .tdf-gate-backdrop, .tdf-gate { transition: none !important; }' +
+    '  .tdf-gate-backdrop, .tdf-gate, .tdf-toast { transition: none !important; }' +
     '}' +
     '</style>';
 
@@ -439,6 +508,9 @@
     return highest;
   }
 
+  /* Per-modal billing cycle (default monthly; persisted across re-opens). */
+  var gateCycle = 'monthly';
+
   function ensureGateDom() {
     if (document.getElementById('tdf-gate-backdrop')) return;
     ensureTierCss();
@@ -454,6 +526,10 @@
             '<ul class="tdf-gate-list" id="tdf-gate-list"></ul>' +
           '</div>' +
           '<div class="tdf-gate-actions">' +
+            '<div class="tdf-gate-cycle" role="group" aria-label="Billing cycle">' +
+              '<button type="button" id="tdf-gate-monthly" class="is-active" data-cycle="monthly">Monthly</button>' +
+              '<button type="button" id="tdf-gate-yearly" data-cycle="yearly">Yearly<span class="save-badge">−2 mo</span></button>' +
+            '</div>' +
             '<button type="button" class="gate-primary" id="tdf-gate-upgrade">Upgrade →</button>' +
             '<button type="button" class="gate-secondary" id="tdf-gate-save-without">Save without premium changes</button>' +
             '<button type="button" class="gate-ghost" id="tdf-gate-cancel">Cancel — keep editing</button>' +
@@ -466,6 +542,17 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && bd.classList.contains('is-open')) closeGate();
     });
+  }
+
+  /* Update the upgrade button label to reflect current cycle + tier. */
+  function paintUpgradeButton(top) {
+    var btn = document.getElementById('tdf-gate-upgrade');
+    if (!btn) return;
+    var topLabel = TIER_LABEL[top] || 'Business';
+    var price = priceFor(top, gateCycle);
+    var cadence = gateCycle === 'yearly' ? '/mo billed yearly' : '/mo';
+    btn.innerHTML = 'Upgrade to ' + topLabel +
+      ' — $' + price + '<span class="price-sub">' + cadence + '</span>';
   }
 
   function closeGate() {
@@ -505,15 +592,48 @@
 
     /* Hide "save without" if there are no non-premium changes to save (caller signals via hooks.allowSaveWithout). */
     btnSv.style.display = (hooks && hooks.onSaveWithout) ? '' : 'none';
-    btnUp.textContent = 'Upgrade to ' + topLabel + ' →';
+    paintUpgradeButton(top);
 
-    btnUp.onclick = function () { closeGate(); if (hooks && hooks.onUpgrade) hooks.onUpgrade(top); };
+    /* Wire monthly/yearly toggle (re-paints upgrade label live). */
+    var btnMonthly = document.getElementById('tdf-gate-monthly');
+    var btnYearly  = document.getElementById('tdf-gate-yearly');
+    function setCycle(c) {
+      gateCycle = c;
+      btnMonthly.classList.toggle('is-active', c === 'monthly');
+      btnYearly.classList.toggle('is-active',  c === 'yearly');
+      paintUpgradeButton(top);
+    }
+    btnMonthly.onclick = function () { setCycle('monthly'); };
+    btnYearly.onclick  = function () { setCycle('yearly');  };
+    setCycle(gateCycle);
+
+    btnUp.onclick = function () { closeGate(); if (hooks && hooks.onUpgrade) hooks.onUpgrade(top, gateCycle); };
     btnSv.onclick = function () { closeGate(); if (hooks && hooks.onSaveWithout) hooks.onSaveWithout(); };
     btnCx.onclick = function () { closeGate(); if (hooks && hooks.onCancel) hooks.onCancel(); };
 
     bd.removeAttribute('hidden');
     requestAnimationFrame(function () { bd.classList.add('is-open'); });
     setTimeout(function () { btnUp.focus(); }, 60);
+  }
+
+  /* ---- "All set ✓" silent-success toast (used when current tier already
+         covers every requested feature — no modal, just confirmation). */
+  var toastTimer = null;
+  function showToast(msg) {
+    ensureTierCss();
+    var t = document.getElementById('tdf-toast');
+    if (!t) {
+      document.body.insertAdjacentHTML('beforeend',
+        '<div class="tdf-toast" id="tdf-toast" role="status" aria-live="polite">' +
+          '<span class="toast-check" aria-hidden="true">✓</span>' +
+          '<span class="toast-msg"></span>' +
+        '</div>');
+      t = document.getElementById('tdf-toast');
+    }
+    t.querySelector('.toast-msg').textContent = msg;
+    t.classList.add('is-visible');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('is-visible'); }, 2200);
   }
 
   function checkAndProceed(opts) {
@@ -524,6 +644,11 @@
     });
     if (features.length === 0) {
       if (opts.onProceed) opts.onProceed();
+      /* Silent success path: tiny "All set ✓" confirmation per
+         feedback_no_blur_premium_features (no modal when nothing is gated). */
+      if (opts.toast !== false) {
+        showToast(opts.toastMsg || 'All set ✓');
+      }
       return;
     }
     openGate(features, current, {
@@ -531,6 +656,374 @@
       onSaveWithout: opts.onSaveWithout,
       onCancel:      opts.onCancel
     });
+  }
+
+  /* ----------------------------------------------------------------- */
+  /* AI Suggest — global sub-modal for ✨ Suggest buttons              */
+  /*                                                                    */
+  /* Usage:                                                             */
+  /*   AISuggest.open({                                                 */
+  /*     fieldName: 'Block title',                                       */
+  /*     contextSummary: 'Link button → open.spotify.com/album/...',    */
+  /*     onApply: function (text) { input.value = text; }               */
+  /*   });                                                              */
+  /*                                                                    */
+  /* States: loaded (5 cards, default) / loading (skeletons) / error /  */
+  /* empty / rate / selected. The default open() flow shows Loading for */
+  /* 800ms then Loaded with 5 mocked suggestions matched to fieldName. */
+  /* ----------------------------------------------------------------- */
+  var AI_SUGGEST_CSS = '' +
+    '<style data-source="ai-suggest-partial">' +
+    '.tdf-ai-backdrop {' +
+    '  position: fixed; inset: 0; z-index: 1050;' +
+    '  background: rgba(11,15,30,0.55);' +
+    '  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);' +
+    '  display: none; align-items: center; justify-content: center;' +
+    '  padding: 16px; opacity: 0; transition: opacity .16s ease;' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '}' +
+    '.tdf-ai-backdrop.is-open { display: flex; opacity: 1; }' +
+    '.tdf-ai {' +
+    '  background: var(--bg-elevated, #fff); color: var(--fg, #111);' +
+    '  border: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25);' +
+    '  width: min(540px, 96vw); max-height: 88vh;' +
+    '  display: flex; flex-direction: column; overflow: hidden;' +
+    '  transform: translateY(8px) scale(0.985);' +
+    '  transition: transform .16s ease;' +
+    '}' +
+    '.tdf-ai-backdrop.is-open .tdf-ai { transform: translateY(0) scale(1); }' +
+    '.tdf-ai-head {' +
+    '  padding: 16px 20px; border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  display: flex; align-items: center; gap: 10px; flex-shrink: 0;' +
+    '}' +
+    '.tdf-ai-head h3 {' +
+    '  font-family: var(--font-display, "Crimson Pro", serif);' +
+    '  font-size: 18px; font-weight: 600; flex: 1; margin: 0;' +
+    '  letter-spacing: -0.01em;' +
+    '}' +
+    '.tdf-ai-head h3 .sparkle { color: var(--brand-warm, #F59E0B); margin-right: 4px; }' +
+    '.tdf-ai-head h3 .target  { color: var(--brand-primary, #6366F1); }' +
+    '.tdf-ai-head .ai-x {' +
+    '  border: 0; background: transparent; cursor: pointer;' +
+    '  width: 32px; height: 32px; border-radius: 8px;' +
+    '  color: var(--fg-muted, #6B7280);' +
+    '  display: inline-flex; align-items: center; justify-content: center;' +
+    '  font-size: 18px; line-height: 1;' +
+    '}' +
+    '.tdf-ai-head .ai-x:hover { background: var(--bg-muted, #F9FAFB); color: var(--fg, #111); }' +
+    '.tdf-ai-body {' +
+    '  padding: 14px 20px; overflow-y: auto;' +
+    '  display: flex; flex-direction: column; gap: 12px;' +
+    '}' +
+    '.tdf-ai-ctx {' +
+    '  display: flex; gap: 8px; padding: 10px 12px;' +
+    '  background: var(--bg-muted, #F9FAFB); border-radius: 10px;' +
+    '  font-size: 12.5px; color: var(--fg-muted, #6B7280); line-height: 1.5;' +
+    '}' +
+    '.tdf-ai-ctx .ctx-ico { flex-shrink: 0; color: var(--brand-primary, #6366F1); font-size: 14px; line-height: 1.2; }' +
+    '.tdf-ai-head-row {' +
+    '  display: flex; align-items: center; justify-content: space-between;' +
+    '  font-size: 11.5px; color: var(--fg-muted, #6B7280);' +
+    '  text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;' +
+    '}' +
+    '.tdf-ai-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }' +
+    '.tdf-ai-card {' +
+    '  display: flex; gap: 10px; align-items: flex-start; width: 100%;' +
+    '  padding: 11px 12px; background: var(--bg, #fff);' +
+    '  border: 1.5px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 10px; cursor: pointer; text-align: left;' +
+    '  font-family: inherit; transition: border-color .12s ease, background .12s ease;' +
+    '}' +
+    '.tdf-ai-card:hover { border-color: var(--border-strong, rgba(0,0,0,0.16)); background: var(--bg-elevated, #fff); }' +
+    '.tdf-ai-card.is-selected { border-color: var(--brand-primary, #6366F1); background: rgba(99,102,241,0.06); box-shadow: 0 0 0 3px rgba(99,102,241,0.10); }' +
+    '.tdf-ai-card .idx {' +
+    '  flex-shrink: 0; width: 22px; height: 22px; border-radius: 7px;' +
+    '  background: var(--bg-muted, #F9FAFB); color: var(--fg-muted, #6B7280);' +
+    '  font-size: 11px; font-weight: 700;' +
+    '  display: inline-flex; align-items: center; justify-content: center;' +
+    '  font-family: var(--font-mono, "JetBrains Mono", monospace);' +
+    '  margin-top: 1px;' +
+    '}' +
+    '.tdf-ai-card.is-selected .idx { background: var(--brand-primary, #6366F1); color: #fff; }' +
+    '.tdf-ai-card .copy { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--fg, #111); font-weight: 500; }' +
+    '.tdf-ai-card .tag { flex-shrink: 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 99px; background: var(--bg-muted, #F9FAFB); color: var(--fg-muted, #6B7280); margin-top: 2px; }' +
+    '.tdf-ai-card.is-selected .tag { background: rgba(245,158,11,0.16); color: #92400E; }' +
+    /* Skeleton (loading) */
+    '.tdf-ai-skel {' +
+    '  display: flex; gap: 10px; align-items: flex-start;' +
+    '  padding: 11px 12px; background: var(--bg, #fff);' +
+    '  border: 1.5px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 10px;' +
+    '}' +
+    '.tdf-ai-skel .sk {' +
+    '  background: linear-gradient(90deg, var(--bg-muted, #F3F4F6) 0%, rgba(0,0,0,0.04) 50%, var(--bg-muted, #F3F4F6) 100%);' +
+    '  background-size: 200% 100%;' +
+    '  animation: tdf-shim 1.4s linear infinite;' +
+    '  border-radius: 6px;' +
+    '}' +
+    '.tdf-ai-skel .sk-idx { width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; margin-top: 1px; }' +
+    '.tdf-ai-skel .sk-copy { flex: 1; }' +
+    '.tdf-ai-skel .sk-line { height: 12px; }' +
+    '.tdf-ai-skel .sk-line.l1 { width: 70%; }' +
+    '.tdf-ai-skel .sk-line.l2 { width: 45%; margin-top: 7px; }' +
+    '.tdf-ai-skel .sk-tag { width: 50px; height: 16px; border-radius: 99px; flex-shrink: 0; margin-top: 1px; }' +
+    '@keyframes tdf-shim { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }' +
+    /* Error / empty / rate-limited */
+    '.tdf-ai-state {' +
+    '  padding: 16px; border: 1px dashed var(--border-strong, rgba(0,0,0,0.16));' +
+    '  border-radius: 12px; text-align: center;' +
+    '  color: var(--fg, #111); font-size: 13px; line-height: 1.5;' +
+    '}' +
+    '.tdf-ai-state.is-error { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.30); }' +
+    '.tdf-ai-state.is-rate  { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.32); }' +
+    '.tdf-ai-state .st-h { font-weight: 600; margin-bottom: 4px; }' +
+    '.tdf-ai-state .st-sub { color: var(--fg-muted, #6B7280); font-size: 12.5px; }' +
+    '.tdf-ai-state .st-actions { margin-top: 12px; display: inline-flex; gap: 8px; }' +
+    '.tdf-ai-state .st-actions button {' +
+    '  padding: 7px 12px; font-size: 12.5px; font-weight: 600;' +
+    '  border-radius: 8px; cursor: pointer; font-family: inherit;' +
+    '  border: 1px solid var(--border-strong, rgba(0,0,0,0.16));' +
+    '  background: var(--bg-elevated, #fff); color: var(--fg, #111);' +
+    '}' +
+    '.tdf-ai-state .st-actions button.is-primary { background: var(--brand-primary, #6366F1); color: #fff; border-color: transparent; }' +
+    /* Footer */
+    '.tdf-ai-foot {' +
+    '  padding: 12px 20px; border-top: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  background: var(--bg-elevated, #fff);' +
+    '  display: flex; gap: 8px; align-items: center; flex-shrink: 0;' +
+    '}' +
+    '.tdf-ai-foot .left { display: flex; gap: 8px; }' +
+    '.tdf-ai-foot .right { display: flex; gap: 8px; margin-left: auto; }' +
+    '.tdf-ai-btn {' +
+    '  display: inline-flex; align-items: center; gap: 6px;' +
+    '  padding: 8px 12px; border-radius: 8px; font-family: inherit;' +
+    '  font-size: 13px; font-weight: 600; cursor: pointer;' +
+    '  border: 1px solid transparent; transition: background .12s ease, border-color .12s ease;' +
+    '}' +
+    '.tdf-ai-btn.is-primary { background: var(--brand-primary, #6366F1); color: #fff; }' +
+    '.tdf-ai-btn.is-primary:not(:disabled):hover { background: var(--brand-primary-hover, #4F46E5); }' +
+    '.tdf-ai-btn.is-primary:disabled { background: var(--bg-muted, #F3F4F6); color: var(--fg-subtle, #9CA3AF); cursor: not-allowed; }' +
+    '.tdf-ai-btn.is-secondary { background: var(--bg-elevated, #fff); color: var(--fg, #111); border-color: var(--border-strong, rgba(0,0,0,0.16)); }' +
+    '.tdf-ai-btn.is-secondary:hover { background: var(--bg-muted, #F9FAFB); }' +
+    '.tdf-ai-btn.is-ghost { background: transparent; color: var(--fg-muted, #6B7280); }' +
+    '.tdf-ai-btn.is-ghost:hover { color: var(--fg, #111); }' +
+    /* Dark mode */
+    'body.dark-mode .tdf-ai { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-ai-head { border-bottom-color: #1F2937; }' +
+    'body.dark-mode .tdf-ai-foot { background: #141A2D; border-top-color: #1F2937; }' +
+    'body.dark-mode .tdf-ai-ctx  { background: #0B0F1E; color: #9CA3AF; }' +
+    'body.dark-mode .tdf-ai-card { background: #0B0F1E; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-ai-card:hover { background: #141A2D; border-color: #374151; }' +
+    'body.dark-mode .tdf-ai-card .copy { color: #F3F4F6; }' +
+    'body.dark-mode .tdf-ai-card .tag, body.dark-mode .tdf-ai-card .idx { background: #1F2937; color: #9CA3AF; }' +
+    'body.dark-mode .tdf-ai-skel { background: #0B0F1E; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-ai-skel .sk { background: linear-gradient(90deg, #1F2937 0%, rgba(255,255,255,0.04) 50%, #1F2937 100%); background-size: 200% 100%; }' +
+    'body.dark-mode .tdf-ai-btn.is-secondary { background: #141A2D; color: #F3F4F6; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-ai-btn.is-secondary:hover { background: #1F2937; }' +
+    '@media (prefers-reduced-motion: reduce) {' +
+    '  .tdf-ai-backdrop, .tdf-ai, .tdf-ai-skel .sk { transition: none !important; animation: none !important; }' +
+    '}' +
+    '</style>';
+
+  var aiCssInjected = false;
+  function ensureAiCss() {
+    if (aiCssInjected) return;
+    document.head.insertAdjacentHTML('beforeend', AI_SUGGEST_CSS);
+    aiCssInjected = true;
+  }
+
+  /* Tone-tagged mocked suggestions per field flavour. Production: replace
+     with a Claude Haiku call. The set picked depends on the lower-cased
+     fieldName — title/label fields get short punchy lines, captions get
+     longer, button/CTA labels get verb-led action lines. */
+  var AI_PRESETS = {
+    title: [
+      { copy: 'Spring Drops — out now',                 tag: 'Direct'       },
+      { copy: 'Hit play, fresh feels inside',           tag: 'Playful'      },
+      { copy: 'My new album is here',                   tag: 'Friendly'     },
+      { copy: 'Listen to Spring Drops',                 tag: 'Professional' },
+      { copy: "Wonder what's new? Press play",          tag: 'Curious'      }
+    ],
+    caption: [
+      { copy: "The cover art that started it all",                        tag: 'Curious'      },
+      { copy: 'Spring Drops — full album, out everywhere now',            tag: 'Direct'       },
+      { copy: 'Behind the artwork: how Spring Drops came together',       tag: 'Friendly'     },
+      { copy: 'New album, stitched from late-night sessions',             tag: 'Professional' },
+      { copy: 'Pretty proud of this one, ngl',                            tag: 'Playful'      }
+    ],
+    cta: [
+      { copy: 'Listen now',           tag: 'Direct'       },
+      { copy: 'Hit play 🎧',          tag: 'Playful'      },
+      { copy: 'Stream Spring Drops',  tag: 'Professional' },
+      { copy: 'Take a listen',        tag: 'Friendly'     },
+      { copy: 'Curious? Press play',  tag: 'Curious'      }
+    ]
+  };
+
+  function pickPreset(fieldName) {
+    var n = (fieldName || '').toLowerCase();
+    if (/(button|cta|label)/.test(n)) return AI_PRESETS.cta;
+    if (/(caption|description|bio|body|paragraph|answer|outline)/.test(n)) return AI_PRESETS.caption;
+    return AI_PRESETS.title;
+  }
+
+  var aiState = { fieldName: '', contextSummary: '', onApply: null, selected: -1, suggestions: [] };
+
+  function ensureAiDom() {
+    if (document.getElementById('tdf-ai-backdrop')) return;
+    ensureAiCss();
+    var html = '' +
+      '<div class="tdf-ai-backdrop" id="tdf-ai-backdrop" role="dialog" aria-modal="true" aria-labelledby="tdf-ai-title" hidden>' +
+        '<div class="tdf-ai">' +
+          '<div class="tdf-ai-head">' +
+            '<h3 id="tdf-ai-title"><span class="sparkle">✨</span>Suggest for <span class="target" id="tdf-ai-target">field</span></h3>' +
+            '<button type="button" class="ai-x" id="tdf-ai-close" aria-label="Close">×</button>' +
+          '</div>' +
+          '<div class="tdf-ai-body" id="tdf-ai-body"></div>' +
+          '<div class="tdf-ai-foot">' +
+            '<div class="left">' +
+              '<button type="button" class="tdf-ai-btn is-secondary" id="tdf-ai-refresh">↻ Refresh suggestions</button>' +
+            '</div>' +
+            '<div class="right">' +
+              '<button type="button" class="tdf-ai-btn is-ghost" id="tdf-ai-cancel">Cancel</button>' +
+              '<button type="button" class="tdf-ai-btn is-primary" id="tdf-ai-use" disabled>Use this</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+    var bd = document.getElementById('tdf-ai-backdrop');
+    bd.addEventListener('click', function (e) { if (e.target === bd) closeAi(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && bd.classList.contains('is-open')) closeAi();
+    });
+    document.getElementById('tdf-ai-close').onclick = closeAi;
+    document.getElementById('tdf-ai-cancel').onclick = closeAi;
+    document.getElementById('tdf-ai-refresh').onclick = function () { renderAiState('loading'); setTimeout(function () { aiState.suggestions = pickPreset(aiState.fieldName); renderAiState('loaded'); }, 800); };
+    document.getElementById('tdf-ai-use').onclick = function () {
+      if (aiState.selected < 0) return;
+      var picked = aiState.suggestions[aiState.selected];
+      var text = picked && picked.copy;
+      closeAi();
+      if (aiState.onApply && text) aiState.onApply(text);
+    };
+  }
+
+  function closeAi() {
+    var bd = document.getElementById('tdf-ai-backdrop');
+    if (!bd) return;
+    bd.classList.remove('is-open');
+    bd.setAttribute('hidden', '');
+  }
+
+  function renderAiState(kind) {
+    var body = document.getElementById('tdf-ai-body');
+    var useBtn = document.getElementById('tdf-ai-use');
+    var refreshBtn = document.getElementById('tdf-ai-refresh');
+    if (!body) return;
+
+    var ctx = '<div class="tdf-ai-ctx"><span class="ctx-ico">ℹ</span><div>' +
+      (aiState.contextSummary || 'No additional context — generating from field name.') +
+      '</div></div>';
+
+    useBtn.disabled = true;
+    useBtn.style.display = '';
+    refreshBtn.style.display = '';
+
+    if (kind === 'loading') {
+      var skel = '';
+      for (var i = 0; i < 5; i++) {
+        skel += '<div class="tdf-ai-skel">' +
+                  '<div class="sk sk-idx"></div>' +
+                  '<div class="sk-copy"><div class="sk sk-line l1"></div><div class="sk sk-line l2"></div></div>' +
+                  '<div class="sk sk-tag"></div>' +
+                '</div>';
+      }
+      body.innerHTML = ctx +
+        '<div class="tdf-ai-head-row"><span>Pick one</span><span>Generating…</span></div>' +
+        '<div class="tdf-ai-list">' + skel + '</div>';
+      return;
+    }
+    if (kind === 'loaded') {
+      var cards = aiState.suggestions.map(function (s, i) {
+        return '<li><button type="button" class="tdf-ai-card" data-idx="' + i + '">' +
+          '<span class="idx">' + (i + 1) + '</span>' +
+          '<span class="copy">' + escapeAttr(s.copy) + '</span>' +
+          '<span class="tag">' + escapeAttr(s.tag) + '</span>' +
+        '</button></li>';
+      }).join('');
+      body.innerHTML = ctx +
+        '<div class="tdf-ai-head-row"><span>Pick one</span><span>' + aiState.suggestions.length + ' suggestions</span></div>' +
+        '<ul class="tdf-ai-list">' + cards + '</ul>';
+      Array.prototype.forEach.call(body.querySelectorAll('.tdf-ai-card'), function (btn) {
+        btn.onclick = function () {
+          Array.prototype.forEach.call(body.querySelectorAll('.tdf-ai-card'), function (b) { b.classList.remove('is-selected'); });
+          btn.classList.add('is-selected');
+          aiState.selected = parseInt(btn.getAttribute('data-idx'), 10);
+          useBtn.disabled = false;
+        };
+      });
+      return;
+    }
+    if (kind === 'error') {
+      body.innerHTML = ctx +
+        '<div class="tdf-ai-state is-error">' +
+          '<div class="st-h">Could not fetch suggestions</div>' +
+          '<div class="st-sub">The AI model is taking longer than expected. Give it another go.</div>' +
+          '<div class="st-actions"><button type="button" class="is-primary" id="tdf-ai-retry">Try again</button></div>' +
+        '</div>';
+      refreshBtn.style.display = 'none';
+      useBtn.style.display = 'none';
+      var retry = document.getElementById('tdf-ai-retry');
+      if (retry) retry.onclick = function () { renderAiState('loading'); setTimeout(function () { aiState.suggestions = pickPreset(aiState.fieldName); renderAiState('loaded'); }, 800); };
+      return;
+    }
+    if (kind === 'empty') {
+      body.innerHTML = ctx +
+        '<div class="tdf-ai-state">' +
+          '<div class="st-h">Tell us a bit about it first</div>' +
+          '<div class="st-sub">Type something in the field, paste a URL into the block, or describe it. We will generate five options.</div>' +
+          '<div class="st-actions"><button type="button" class="is-primary" id="tdf-ai-gen">Generate from context</button></div>' +
+        '</div>';
+      refreshBtn.style.display = 'none';
+      useBtn.style.display = 'none';
+      var gen = document.getElementById('tdf-ai-gen');
+      if (gen) gen.onclick = function () { renderAiState('loading'); setTimeout(function () { aiState.suggestions = pickPreset(aiState.fieldName); renderAiState('loaded'); }, 800); };
+      return;
+    }
+    if (kind === 'rate') {
+      body.innerHTML = ctx +
+        '<div class="tdf-ai-state is-rate">' +
+          '<div class="st-h">You have used today\'s AI credits</div>' +
+          '<div class="st-sub">Free creators get 30 ✨ Suggest clicks per day. Resets at midnight (your time zone). Upgrade for higher quotas.</div>' +
+          '<div class="st-actions"><button type="button" class="is-primary">Upgrade for more</button></div>' +
+        '</div>';
+      refreshBtn.style.display = 'none';
+      useBtn.style.display = 'none';
+      return;
+    }
+  }
+
+  function openAi(opts) {
+    opts = opts || {};
+    ensureAiDom();
+    aiState.fieldName      = opts.fieldName || 'this field';
+    aiState.contextSummary = opts.contextSummary || '';
+    aiState.onApply        = opts.onApply || null;
+    aiState.selected       = -1;
+    aiState.suggestions    = pickPreset(aiState.fieldName);
+
+    var target = document.getElementById('tdf-ai-target');
+    if (target) target.textContent = aiState.fieldName;
+
+    /* Default flow: brief loading skeleton (800ms) then loaded state. */
+    renderAiState('loading');
+    setTimeout(function () { renderAiState('loaded'); }, 800);
+
+    var bd = document.getElementById('tdf-ai-backdrop');
+    bd.removeAttribute('hidden');
+    requestAnimationFrame(function () { bd.classList.add('is-open'); });
   }
 
   /* Expose for tests + dynamic re-render (e.g. tier switcher in demo toolbar) */
@@ -542,7 +1035,66 @@
     checkAndProceed: checkAndProceed,
     open:  function (features, currentTier, hooks) { openGate(features, currentTier, hooks || {}); },
     close: closeGate,
-    TIER_RANK:  TIER_RANK,
-    TIER_LABEL: TIER_LABEL
+    showToast: showToast,
+    TIER_RANK:    TIER_RANK,
+    TIER_LABEL:   TIER_LABEL,
+    TIER_PRICING: TIER_PRICING
+  };
+  /* Convenience wrapper for the most common case: a ✨ Suggest button sat
+     next to an input or textarea inside a wrapper.
+
+     Usage in markup:
+       <div class="input-wrap">
+         <input id="seo-title" type="text" />
+         <button type="button"
+                 onclick="window.AISuggest.fromButton(this, 'SEO title')">
+           ✨ Suggest
+         </button>
+       </div>
+
+     The helper hunts up to 3 ancestors looking for an input / textarea
+     sibling; first match wins. It writes the picked suggestion back into
+     `.value` and fires both `input` and `change` events so any dirty
+     tracker on the page picks up the edit. */
+  function fromButton(btn, fieldName, contextSummary) {
+    if (!btn) return;
+    var field = null;
+    var el = btn;
+    for (var i = 0; i < 4 && el && !field; i++) {
+      el = el.parentElement;
+      if (!el) break;
+      field = el.querySelector('input:not([type=hidden]), textarea, [contenteditable="true"]');
+    }
+    /* Treat generic "Field" label as a fall-through hint to use the input's
+       own placeholder / id. Keeps mechanical wiring concise without losing
+       per-field context in the modal title. */
+    var label = fieldName;
+    if (!label || label === 'Field') {
+      label = (field && (field.getAttribute('placeholder') || field.getAttribute('aria-label') || field.id)) || 'this field';
+    }
+    openAi({
+      fieldName:      label,
+      contextSummary: contextSummary || '',
+      onApply: function (text) {
+        if (!field) return;
+        if (field.isContentEditable) {
+          field.textContent = text;
+        } else {
+          field.value = text;
+        }
+        try {
+          field.dispatchEvent(new Event('input',  { bubbles: true }));
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) { /* old browsers */ }
+      }
+    });
+  }
+
+  window.AISuggest = {
+    open:       openAi,
+    close:      closeAi,
+    fromButton: fromButton,
+    /* Programmatic state — useful for tests and the standalone demo file. */
+    setState: function (kind) { renderAiState(kind); }
   };
 })();

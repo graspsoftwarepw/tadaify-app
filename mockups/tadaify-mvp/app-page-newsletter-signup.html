@@ -928,14 +928,14 @@
                 <label class="field-label" for="seo-title">Meta title <span class="field-hint">~60 chars · used by Google + share previews</span></label>
                 <div class="field-prefix-wrap">
                   <input id="seo-title" type="text" value="Subscribe to Strong Not Skinny — by Alexandra Silva" />
-                  <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest opens centered modal with 5 variants')" type="button">✨ Suggest</button>
+                  <button class="field-suffix-action" onclick="window.AISuggest.fromButton(this, 'Field')" type="button">✨ Suggest</button>
                 </div>
               </div>
               <div class="field">
                 <label class="field-label" for="seo-desc">Meta description <span class="field-hint">~155 chars</span></label>
                 <div class="field-prefix-wrap" style="align-items:flex-start">
                   <textarea id="seo-desc" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">Honest essays on training, recovery and building strength without burning out. New posts every Tuesday — straight to your inbox.</textarea>
-                  <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+                  <button class="field-suffix-action" onclick="window.AISuggest.fromButton(this, 'Field')" type="button" style="margin-top:6px">✨ Suggest</button>
                 </div>
               </div>
               <div class="field">
@@ -1005,7 +1005,7 @@
             <label class="field-label" for="hero-headline">Headline <span class="field-hint">large, friendly, first thing visitors see</span></label>
             <div class="field-prefix-wrap">
               <input id="hero-headline" type="text" value="Get my weekly notes on training without burning out." />
-              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest 5 variants')" type="button">✨ Suggest</button>
+              <button class="field-suffix-action" onclick="window.AISuggest.fromButton(this, 'Field')" type="button">✨ Suggest</button>
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
               <button class="chip" type="button" onclick="setHeadline(this)" style="cursor:pointer">Get my weekly notes</button>
@@ -1019,7 +1019,7 @@
             <label class="field-label" for="hero-sub">Sub-headline</label>
             <div class="field-prefix-wrap" style="align-items:flex-start">
               <textarea id="hero-sub" class="field-area" style="border:0; box-shadow:none; padding:10px 12px;">One short, honest email every Tuesday. Drills, mindset shifts, recovery tactics — no spam, no fluff.</textarea>
-              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button" style="margin-top:6px">✨ Suggest</button>
+              <button class="field-suffix-action" onclick="window.AISuggest.fromButton(this, 'Field')" type="button" style="margin-top:6px">✨ Suggest</button>
             </div>
           </div>
 
@@ -1280,7 +1280,7 @@
             <label class="field-label" for="success-msg">Success message <span class="field-hint">shown after a visitor signs up</span></label>
             <div class="field-prefix-wrap">
               <input id="success-msg" type="text" value="Thanks! Check your inbox to confirm your subscription." />
-              <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button">✨ Suggest</button>
+              <button class="field-suffix-action" onclick="window.AISuggest.fromButton(this, 'Field')" type="button">✨ Suggest</button>
             </div>
           </div>
         </div>
@@ -1348,7 +1348,7 @@
               <label class="field-label" for="form-cta">Button label</label>
               <div class="field-prefix-wrap">
                 <input id="form-cta" type="text" value="Subscribe" />
-                <button class="field-suffix-action" onclick="alert('Mockup — AI Suggest')" type="button">✨ Suggest</button>
+                <button class="field-suffix-action" onclick="window.AISuggest.fromButton(this, 'Field')" type="button">✨ Suggest</button>
               </div>
             </div>
           </div>
@@ -1822,7 +1822,7 @@
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-warm btn-sm" onclick="alert('Mockup — AI generates 4 hero images')">✨ Generate with AI</button>
+      <button class="btn btn-warm btn-sm" onclick="window.AISuggest.fromButton(this, 'Hero image')">✨ Generate with AI</button>
       <span class="foot-spacer"></span>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('image-picker-modal')">Cancel</button>
       <button class="btn btn-primary btn-sm" onclick="closeModal('image-picker-modal')">Use selected</button>
@@ -2059,30 +2059,66 @@
     clearTimeout(saveTimer);
   }
   function savePage() {
-    /* TierGate placeholder — in production, collect every premium feature
-       the creator enabled (custom domain, A/B test, public count >2.5k for
-       Free tier, past-issues preview for Free tier) and call:
+    var tier = document.body.getAttribute('data-tier') || 'creator';
+    var features = [];
 
-         TierGate.checkAndProceed({
-           currentTier: document.body.getAttribute('data-tier'),
-           features: [
-             { id: 'custom-domain', name: 'Custom domain', requires: 'pro',
-               meta: 'subscribe.alexandrasilva.com' },
-             { id: 'ab-test', name: 'A/B test variants', requires: 'business',
-               meta: 'Two headline variants' },
-             { id: 'past-issues', name: 'Past issues preview', requires: 'creator',
-               meta: '3 most recent posts pulled from Kit' },
-             { id: 'public-count', name: 'Show subscriber count >2,500', requires: 'creator',
-               meta: 'Currently 24,512 subscribers' }
-           ],
-           onProceed:     function () { realSave(); },
-           onSaveWithout: function () { realSave({ skipPremium: true }); },
-           onUpgrade:     function (tier) { window.location.href = '/pricing?upgrade=' + tier; }
-         });
-    */
-    var st = document.getElementById('save-status');
-    st.classList.remove('is-dirty');
-    st.querySelector('span:last-child').textContent = 'All changes saved · just now';
+    // Custom domain (Pro+)
+    var dom = document.getElementById('custom-domain');
+    if (dom && dom.value && dom.value.trim()) {
+      features.push({
+        id: 'custom-domain', name: 'Custom signup domain', requires: 'pro',
+        meta: dom.value.trim()
+      });
+    }
+
+    // A/B test variants (Business+) — when both A and B headlines are set
+    var hA = document.getElementById('ab-headline-a');
+    var hB = document.getElementById('ab-headline-b');
+    if (hA && hB && hA.value.trim() && hB.value.trim() && hA.value.trim() !== hB.value.trim()) {
+      features.push({
+        id: 'ab-test', name: 'A/B test variants', requires: 'business',
+        meta: 'Two headline variants'
+      });
+    }
+
+    // Past-issues preview block (Creator+)
+    var pastIssues = document.querySelector('[data-section="past-issues"]:not([hidden])');
+    if (pastIssues) {
+      features.push({
+        id: 'past-issues', name: 'Past issues preview', requires: 'creator',
+        meta: 'Most recent posts pulled from your provider'
+      });
+    }
+
+    // Public subscriber count > 2,500 (Creator+)
+    var countEl = document.querySelector('[data-public-count]');
+    var countNum = countEl ? parseInt(String(countEl.getAttribute('data-public-count')).replace(/[^\d]/g, ''), 10) : 0;
+    if (countNum > 2500) {
+      features.push({
+        id: 'public-count', name: 'Show subscriber count above 2,500', requires: 'creator',
+        meta: 'Currently ' + countNum.toLocaleString() + ' subscribers'
+      });
+    }
+
+    function realSave() {
+      var st = document.getElementById('save-status');
+      st.classList.remove('is-dirty');
+      st.querySelector('span:last-child').textContent = 'All changes saved · just now';
+    }
+
+    if (window.TierGate) {
+      window.TierGate.checkAndProceed({
+        currentTier: tier,
+        features:    features,
+        onProceed:    realSave,
+        onSaveWithout: features.length ? realSave : null,
+        onUpgrade:    function (top) { alert('Mockup — opens upgrade flow → ' + top); },
+        onCancel:     function () {},
+        toastMsg: 'Signup page saved'
+      });
+    } else {
+      realSave();
+    }
   }
 
   // ── Init ──
