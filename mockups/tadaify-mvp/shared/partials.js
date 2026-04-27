@@ -1040,9 +1040,60 @@
     TIER_LABEL:   TIER_LABEL,
     TIER_PRICING: TIER_PRICING
   };
+  /* Convenience wrapper for the most common case: a ✨ Suggest button sat
+     next to an input or textarea inside a wrapper.
+
+     Usage in markup:
+       <div class="input-wrap">
+         <input id="seo-title" type="text" />
+         <button type="button"
+                 onclick="window.AISuggest.fromButton(this, 'SEO title')">
+           ✨ Suggest
+         </button>
+       </div>
+
+     The helper hunts up to 3 ancestors looking for an input / textarea
+     sibling; first match wins. It writes the picked suggestion back into
+     `.value` and fires both `input` and `change` events so any dirty
+     tracker on the page picks up the edit. */
+  function fromButton(btn, fieldName, contextSummary) {
+    if (!btn) return;
+    var field = null;
+    var el = btn;
+    for (var i = 0; i < 4 && el && !field; i++) {
+      el = el.parentElement;
+      if (!el) break;
+      field = el.querySelector('input:not([type=hidden]), textarea, [contenteditable="true"]');
+    }
+    /* Treat generic "Field" label as a fall-through hint to use the input's
+       own placeholder / id. Keeps mechanical wiring concise without losing
+       per-field context in the modal title. */
+    var label = fieldName;
+    if (!label || label === 'Field') {
+      label = (field && (field.getAttribute('placeholder') || field.getAttribute('aria-label') || field.id)) || 'this field';
+    }
+    openAi({
+      fieldName:      label,
+      contextSummary: contextSummary || '',
+      onApply: function (text) {
+        if (!field) return;
+        if (field.isContentEditable) {
+          field.textContent = text;
+        } else {
+          field.value = text;
+        }
+        try {
+          field.dispatchEvent(new Event('input',  { bubbles: true }));
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) { /* old browsers */ }
+      }
+    });
+  }
+
   window.AISuggest = {
-    open:  openAi,
-    close: closeAi,
+    open:       openAi,
+    close:      closeAi,
+    fromButton: fromButton,
     /* Programmatic state — useful for tests and the standalone demo file. */
     setState: function (kind) { renderAiState(kind); }
   };
