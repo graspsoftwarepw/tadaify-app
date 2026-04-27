@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — Team tab deep dive (F-APP-SETTINGS-TEAM-001 #38)
+  created_at: 2026-04-27
+  author: orchestrator
+  status: draft-for-review
+
+  Scope: stand-alone deep-dive of /app/settings#team. Business-only tab per
+  DEC-083 (Business plan = $49/mo, includes 10 team members account-level).
+  Free / Creator / Pro see a demo / upsell view (per
+  feedback_no_blur_premium_features — premium features visible & interactive,
+  gating happens at action time via TierGate.checkAndProceed).
+
+  Sections:
+    Section 1 — Seats overview (members-used progress bar, "Add seats" upsell)
+    Section 2 — Members table (Owner / Admin / Editor / Viewer / Pending)
+    Section 3 — Pending invites
+    Section 4 — Roles + permissions matrix (collapsible)
+    Section 5 — Audit log preview (last 12-15 events + Export CSV Business)
+    Section 6 — SAML SSO / Enterprise (link to sales)
+
+  Modals (centered, NEVER drawers per feedback_no_right_side_drawers):
+    - Invite member modal (email multi-recipient + role + per-page access Pro+ + welcome msg)
+    - Change role confirm modal
+    - Remove member confirm modal
+    - Resend invite confirm modal
+
+  Empty state: friendly emoji + "Why work as a team?" expander (course platform
+  / agency / podcast network use cases).
+
+  Demo toolbar:
+    Tier switcher: Business (full) / Free / Creator / Pro (upsell + demo data)
+    State switcher: empty / 5-members / 10-of-10-full / pending-invites-only
+
+  DEC trail:
+    DEC-083                 Business pricing $49/mo · 10 team members included · cap account-level
+    DEC-PRICELOCK-01        price-lock-for-life (cross-ref on upsell card)
+    AP-031                  no sticky upsell banners — only the upgrade card
+
+  Locked memory rules honoured:
+    * tadaify simple-UI         — plain copy, no jargon, per-row plain actions
+    * no-blur-premium           — every control fully visible + interactive on every tier
+    * no-right-side-drawers     — every modal centered (invite / role / remove / resend)
+    * mockup-full-feature       — empty / 5-members / 10/10 / pending-only states all drawn
+    * sidebar-pages-grouping    — canonical sidebar via shared partial
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team settings — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    /* ---------- Atoms shared with sister settings deep-dives ---------- */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.success  { background: var(--success-bg); color: #065F46; }
+    .chip.danger   { background: var(--danger-bg);  color: #991B1B; }
+    .chip.warn     { background: var(--warning-bg); color: #92400E; border: 1px solid rgba(245,158,11,0.30); }
+    .chip.info     { background: var(--info-bg);    color: #1E40AF; }
+    .chip.business {
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.10));
+      color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.30);
+    }
+    .chip.locked-life {
+      background: rgba(245,158,11,0.12); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease;
+      line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-warm { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger  { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px;  font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* Toggle switch */
+    .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .toggle::after {
+      content: ""; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: left .15s ease;
+    }
+    .toggle.on { background: var(--brand-primary); }
+    .toggle.on::after { left: 19px; }
+    .toggle.disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ---------- Top app bar ---------- */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ---------- Demo toolbar (mockup-only — disappears in production) ---------- */
+    .demo-toolbar {
+      background: linear-gradient(180deg, #0B0F1E 0%, #141A2D 100%);
+      color: #F3F4F6;
+      padding: 10px 16px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px;
+      font-size: 12px; border-bottom: 1px solid #1F2937;
+      position: sticky; top: 54px; z-index: 39;
+    }
+    .demo-toolbar .dt-label {
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #FCD34D; font-size: 10px;
+    }
+    .demo-toolbar .dt-group { display: inline-flex; align-items: center; gap: 6px; }
+    .demo-toolbar .dt-group > span:first-child { color: #9CA3AF; font-size: 11px; }
+    .demo-toolbar select {
+      background: #0B0F1E; color: #F3F4F6; border: 1px solid #374151;
+      border-radius: 6px; padding: 4px 24px 4px 8px; font-size: 12px;
+      font-family: inherit; cursor: pointer;
+    }
+    .demo-toolbar .dt-spacer { flex: 1; }
+    .demo-toolbar .dt-info { color: #9CA3AF; font-size: 11px; }
+    .demo-toolbar .dt-info code {
+      background: #1F2937; color: #F3F4F6; padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11px;
+    }
+
+    /* ---------- Layout: sidebar / main ---------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 20px 16px 60px; min-width: 0; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 60px; } }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(28px, 4vw, 36px); margin: 0;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 4px; }
+    .page-head .head-tier-badge { display: inline-flex; }
+
+    /* ---------- Settings layout (sub-nav + content) ---------- */
+    .settings-layout {
+      display: flex; gap: 32px;
+      align-items: flex-start;
+    }
+    .settings-nav {
+      display: flex; flex-direction: column; gap: 2px;
+      width: 200px; flex-shrink: 0;
+      position: sticky; top: 130px;
+    }
+    .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 8px;
+      border: 0; background: transparent;
+      color: var(--fg-muted); font-size: 13.5px; font-weight: 500;
+      text-align: left; cursor: pointer; transition: all .12s ease;
+      text-decoration: none;
+    }
+    .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle); }
+    .settings-nav-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary); font-weight: 600;
+    }
+    .settings-nav-item.active svg { color: var(--brand-primary); }
+    .settings-nav-divider { border-top: 1px solid var(--border); margin: 8px 0; }
+    .settings-nav-item .sn-pill {
+      margin-left: auto; font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 99px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .settings-nav-item .sn-pill.pro-pill { background: rgba(245,158,11,0.15); color: var(--brand-warm-dark); }
+    .settings-nav-item .sn-pill.biz-pill { background: rgba(99,102,241,0.18); color: var(--brand-primary); }
+
+    @media (max-width: 900px) {
+      .settings-layout { flex-direction: column; gap: 0; }
+      .settings-nav {
+        width: 100%; flex-direction: row; gap: 4px; overflow-x: auto;
+        position: relative; top: auto;
+        padding-bottom: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
+      }
+      .settings-nav-item { white-space: nowrap; padding: 8px 14px; }
+      .settings-nav-item.active { background: transparent; border-bottom: 2px solid var(--brand-primary); border-radius: 0; }
+      .settings-nav-item .sn-pill { display: none; }
+      .settings-nav-divider { display: none; }
+    }
+
+    .settings-content { flex: 1; min-width: 0; }
+
+    /* ---------- Sections ---------- */
+    .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+    .settings-section-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin-bottom: 14px;
+      color: var(--fg);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .settings-section-title.with-action {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .settings-section-title .st-left { display: inline-flex; align-items: center; gap: 8px; }
+    .section-help {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+      margin: -4px 0 14px;
+    }
+
+    /* ---------- Demo / upsell banner (non-Business tiers) ---------- */
+    .demo-banner {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-radius: 12px;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.04));
+      border: 1px solid rgba(99,102,241,0.30);
+      font-size: 13.5px; line-height: 1.5;
+      color: var(--fg);
+    }
+    .demo-banner .db-ico {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(99,102,241,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .demo-banner .db-body { flex: 1; min-width: 0; }
+    .demo-banner .db-body strong { display: block; font-size: 14px; margin-bottom: 2px; color: var(--fg); }
+    .demo-banner .db-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+
+    /* ---------- Seats overview ---------- */
+    .seats-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(245,158,11,0.04));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    @media (max-width: 620px) { .seats-card { grid-template-columns: 1fr; } }
+    .seats-card .sc-text { min-width: 0; }
+    .seats-card .sc-headline {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 22px; line-height: 1.2;
+      color: var(--fg);
+    }
+    .seats-card .sc-headline b { color: var(--brand-primary); font-weight: 700; }
+    .seats-card .sc-sub { font-size: 13px; color: var(--fg-muted); margin-top: 4px; }
+    .seats-card .sc-actions {
+      display: flex; gap: 6px; flex-direction: column; flex-shrink: 0; align-items: stretch;
+    }
+    @media (max-width: 620px) { .seats-card .sc-actions { flex-direction: row; flex-wrap: wrap; } }
+
+    .seats-bar-wrap {
+      grid-column: 1 / -1;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .seats-bar {
+      width: 100%; height: 8px;
+      background: var(--bg-muted);
+      border-radius: 99px; overflow: hidden;
+      position: relative;
+    }
+    .seats-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+      border-radius: 99px;
+      transition: width .35s ease;
+    }
+    .seats-bar-fill.is-near-cap { background: linear-gradient(90deg, var(--brand-warm), #FBBF24); }
+    .seats-bar-fill.is-at-cap   { background: linear-gradient(90deg, var(--danger), #F87171); }
+    .seats-bar-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--fg-muted); }
+    .seats-bar-meta b { color: var(--fg); font-weight: 600; }
+
+    .seats-foot-links {
+      display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px;
+    }
+    .seats-foot-links a, .seats-foot-links button {
+      color: var(--brand-primary); background: transparent; border: 0; padding: 0;
+      cursor: pointer; font: inherit; font-size: 12.5px;
+      text-decoration: none;
+    }
+    .seats-foot-links a:hover, .seats-foot-links button:hover { text-decoration: underline; }
+    .seats-foot-links .sfl-sep { color: var(--fg-subtle); }
+
+    /* ---------- Members table ---------- */
+    .members-toolbar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .filter-tabs {
+      display: inline-flex; align-items: center;
+      background: var(--bg-muted); border-radius: 99px; padding: 3px;
+      gap: 2px;
+    }
+    .filter-tabs button {
+      border: 0; background: transparent;
+      font-size: 12px; font-weight: 600; padding: 5px 12px;
+      border-radius: 99px; color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .filter-tabs button.active {
+      background: var(--bg-elevated); color: var(--fg);
+      box-shadow: var(--shadow-sm);
+    }
+    .filter-tabs button .ft-count {
+      margin-left: 4px; padding: 1px 5px;
+      border-radius: 99px; background: var(--bg-sunken);
+      font-size: 10px; color: var(--fg-muted);
+    }
+    .filter-tabs button.active .ft-count { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+
+    .search-input {
+      flex: 1; min-width: 180px; max-width: 320px;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--bg-elevated);
+      color: var(--fg);
+    }
+    .search-input svg { width: 14px; height: 14px; color: var(--fg-subtle); flex-shrink: 0; }
+    .search-input input {
+      flex: 1; min-width: 0; border: 0; outline: none;
+      background: transparent; color: inherit;
+      font-size: 13px;
+    }
+    .search-input input::placeholder { color: var(--fg-subtle); }
+
+    .members-toolbar .mt-spacer { flex: 1; min-width: 0; }
+    .members-toolbar .mt-invite { flex-shrink: 0; }
+
+    .members-table { width: 100%; border-collapse: collapse; }
+    .members-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+    }
+    .members-table td {
+      padding: 12px; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--fg);
+      vertical-align: middle;
+    }
+    .members-table tr:last-child td { border-bottom: 0; }
+    .members-table .col-actions { width: 40px; text-align: right; }
+
+    .member-id {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .member-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--hero-gradient);
+      color: #fff; font-weight: 600; font-size: 13.5px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--font-display);
+    }
+    .member-avatar.bg-1 { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .member-avatar.bg-2 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+    .member-avatar.bg-3 { background: linear-gradient(135deg, #10B981, #34D399); }
+    .member-avatar.bg-4 { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+    .member-avatar.bg-5 { background: linear-gradient(135deg, #EC4899, #F472B6); }
+    .member-avatar.is-pending {
+      background: var(--bg-muted); color: var(--fg-subtle); border: 1.5px dashed var(--border-strong);
+    }
+    .member-id .mi-meta { min-width: 0; }
+    .member-id .mi-name { font-weight: 600; color: var(--fg); }
+    .member-id .mi-name.is-you { display: inline-flex; align-items: center; gap: 6px; }
+    .member-id .mi-name .you-pill {
+      font-size: 9.5px; font-weight: 700; padding: 1px 6px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border-radius: 99px; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .member-id .mi-email { font-size: 12px; color: var(--fg-muted); margin-top: 1px; }
+
+    .role-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 99px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      white-space: nowrap;
+    }
+    .role-pill.role-owner   { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.32); }
+    .role-pill.role-admin   { background: rgba(99,102,241,0.14); color: var(--brand-primary); border: 1px solid rgba(99,102,241,0.30); }
+    .role-pill.role-editor  { background: rgba(16,185,129,0.13); color: #047857; border: 1px solid rgba(16,185,129,0.30); }
+    .role-pill.role-viewer  { background: var(--bg-muted); color: var(--fg-muted); border: 1px solid var(--border); }
+
+    .last-active { font-size: 12px; color: var(--fg-muted); }
+    .last-active.is-now { color: var(--success); font-weight: 600; }
+
+    .status-cell .chip { font-size: 10.5px; }
+    .status-cell .chip.pending { background: var(--info-bg); color: #1E40AF; }
+
+    /* Kebab menu */
+    .kebab-wrap { position: relative; display: inline-block; }
+    .kebab-menu {
+      position: absolute; top: 100%; right: 0; margin-top: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      padding: 6px;
+      min-width: 180px;
+      display: none;
+      z-index: 20;
+    }
+    .kebab-menu.open { display: block; }
+    .kebab-menu button {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 8px 10px;
+      background: transparent; border: 0; border-radius: 6px;
+      font-size: 13px; color: var(--fg);
+      text-align: left; cursor: pointer;
+      font-family: inherit;
+    }
+    .kebab-menu button:hover { background: var(--bg-muted); }
+    .kebab-menu button.is-danger { color: var(--danger); }
+    .kebab-menu button.is-danger:hover { background: var(--danger-bg); }
+    .kebab-menu .km-divider { border-top: 1px solid var(--border); margin: 4px 2px; }
+    .kebab-menu svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--fg-muted); }
+    .kebab-menu button.is-danger svg { color: var(--danger); }
+
+    /* Empty state */
+    .empty-state {
+      padding: 40px 24px;
+      text-align: center;
+      background: var(--bg);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 14px;
+    }
+    .empty-state .es-emoji {
+      font-size: 48px; line-height: 1;
+      margin-bottom: 14px;
+    }
+    .empty-state .es-title {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 600;
+      margin-bottom: 8px; color: var(--fg);
+    }
+    .empty-state .es-sub {
+      font-size: 14px; color: var(--fg-muted);
+      max-width: 460px; margin: 0 auto 16px;
+      line-height: 1.55;
+    }
+    .empty-state .es-cta { margin-bottom: 18px; }
+    .empty-state details {
+      max-width: 580px; margin: 0 auto;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: left;
+    }
+    .empty-state details summary {
+      cursor: pointer; font-weight: 600; font-size: 13.5px;
+      color: var(--brand-primary); list-style: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .empty-state details summary::-webkit-details-marker { display: none; }
+    .empty-state details summary::before { content: "›"; transition: transform .15s ease; display: inline-block; }
+    .empty-state details[open] summary::before { transform: rotate(90deg); }
+    .empty-state .use-case-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      margin-top: 14px;
+    }
+    @media (max-width: 540px) { .empty-state .use-case-grid { grid-template-columns: 1fr; } }
+    .empty-state .use-case {
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .empty-state .use-case b { color: var(--fg); }
+
+    /* ---------- Pending invites mini-section ---------- */
+    .pending-list { display: flex; flex-direction: column; gap: 8px; }
+    .pending-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .pending-row .pr-ico {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--info-bg); color: #1E40AF;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+    .pending-row .pr-meta { flex: 1; min-width: 0; }
+    .pending-row .pr-email { font-weight: 600; font-size: 13.5px; color: var(--fg); word-break: break-all; }
+    .pending-row .pr-detail { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; }
+    .pending-row .pr-detail .pr-expires { color: var(--brand-warm-dark); font-weight: 600; }
+    .pending-row .pr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ---------- Roles + permissions matrix ---------- */
+    .matrix-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; border: 0; padding: 0;
+      color: var(--brand-primary); font-size: 13px; font-weight: 500;
+      cursor: pointer;
+    }
+    .matrix-toggle .mt-caret { transition: transform .15s ease; display: inline-block; }
+    .matrix-toggle.open .mt-caret { transform: rotate(90deg); }
+
+    .matrix-wrap {
+      display: none;
+      margin-top: 14px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .matrix-wrap.open { display: block; }
+    .matrix-table {
+      width: 100%; border-collapse: collapse;
+      min-width: 540px;
+    }
+    .matrix-table th, .matrix-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+      text-align: center;
+      color: var(--fg);
+    }
+    .matrix-table th {
+      background: var(--bg);
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px;
+      position: sticky; top: 0;
+    }
+    .matrix-table tbody tr:last-child td { border-bottom: 0; }
+    .matrix-table th:first-child, .matrix-table td:first-child {
+      text-align: left;
+      font-weight: 500;
+      color: var(--fg);
+    }
+    .matrix-table .yes { color: var(--success); font-weight: 700; font-size: 14px; }
+    .matrix-table .no  { color: var(--fg-subtle); font-weight: 700; font-size: 14px; }
+    .matrix-table .partial { color: var(--brand-warm-dark); font-weight: 700; font-size: 14px; }
+
+    /* ---------- Audit log ---------- */
+    .audit-toolbar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .audit-toolbar select {
+      font: inherit; font-size: 12px; padding: 5px 22px 5px 10px;
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--bg-elevated); color: var(--fg);
+    }
+    .audit-toolbar .at-spacer { flex: 1; }
+
+    .audit-table { width: 100%; border-collapse: collapse; }
+    .audit-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 9px 12px; border-bottom: 1px solid var(--border);
+    }
+    .audit-table td {
+      padding: 11px 12px; border-bottom: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg);
+      vertical-align: middle;
+    }
+    .audit-table tr:last-child td { border-bottom: 0; }
+    .audit-table .audit-when { color: var(--fg-muted); white-space: nowrap; font-family: var(--font-mono); font-size: 11.5px; }
+    .audit-table .audit-actor { display: flex; align-items: center; gap: 8px; }
+    .audit-table .audit-actor .member-avatar { width: 24px; height: 24px; font-size: 11px; }
+    .audit-table .audit-action {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11.5px; font-weight: 600;
+      padding: 2px 8px; border-radius: 99px;
+      white-space: nowrap;
+    }
+    .audit-table .audit-action.act-edit    { background: var(--info-bg); color: #1E40AF; }
+    .audit-table .audit-action.act-publish { background: var(--success-bg); color: #065F46; }
+    .audit-table .audit-action.act-invite  { background: rgba(99,102,241,0.13); color: var(--brand-primary); }
+    .audit-table .audit-action.act-role    { background: var(--warning-bg); color: #92400E; }
+    .audit-table .audit-action.act-remove  { background: var(--danger-bg); color: #991B1B; }
+    .audit-table .audit-action.act-signin  { background: var(--bg-muted); color: var(--fg-muted); }
+    .audit-table .audit-action.act-billing { background: rgba(245,158,11,0.13); color: var(--brand-warm-dark); }
+    .audit-table .audit-target {
+      font-size: 12px; color: var(--fg-muted);
+      max-width: 280px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .audit-table .audit-target b { color: var(--fg); font-weight: 600; }
+    .audit-table .audit-ip { font-family: var(--font-mono); font-size: 11px; color: var(--fg-subtle); }
+
+    .audit-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .audit-footer .af-count { font-size: 12px; color: var(--fg-muted); }
+
+    /* ---------- SAML / SSO card ---------- */
+    .sso-card {
+      display: flex; gap: 16px; align-items: center;
+      padding: 16px 18px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .sso-card .sso-ico {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .sso-card .sso-meta { flex: 1; min-width: 0; }
+    .sso-card .sso-meta .sm-title { font-weight: 600; font-size: 14px; color: var(--fg); display: inline-flex; align-items: center; gap: 8px; }
+    .sso-card .sso-meta .sm-sub   { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.5; }
+    .sso-card .sso-actions { flex-shrink: 0; }
+
+    /* ---------- Sticky save bar ---------- */
+    .sticky-save {
+      position: fixed; bottom: 16px; left: 16px; right: 16px; z-index: 50;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow-xl);
+      padding: 12px 18px;
+      display: none; align-items: center; gap: 14px; flex-wrap: wrap;
+      animation: slide-up .25s ease-out;
+    }
+    .sticky-save.visible { display: flex; }
+    @keyframes slide-up {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .sticky-save .ss-msg { font-size: 13.5px; color: var(--fg-muted); flex: 1; min-width: 0; }
+    .sticky-save .ss-msg b { color: var(--fg); }
+    .sticky-save .ss-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    @media (min-width: 1100px) { .sticky-save { left: 256px; } }
+
+    /* ---------- Cross-link footer ---------- */
+    .cross-link-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: 13px; color: var(--fg-muted); line-height: 1.5;
+      flex-wrap: wrap;
+    }
+    .cross-link-row .cl-link {
+      color: var(--brand-primary); font-weight: 600;
+      background: transparent; border: 0; padding: 0; font-family: inherit; font-size: inherit;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .cross-link-row .cl-ico { font-size: 16px; }
+
+    /* ---------- Modals (centered, NEVER drawers per feedback_no_right_side_drawers) ---------- */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-elevated);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      width: min(560px, 100%);
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 28px;
+    }
+    .modal.modal-md { width: min(720px, 100%); padding: 32px; }
+    .modal h3 {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 600;
+      margin: 0 0 6px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .modal .modal-sub {
+      font-size: 13.5px; color: var(--fg-muted); line-height: 1.55;
+      margin-bottom: 20px;
+    }
+    .modal .modal-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 22px; flex-wrap: wrap;
+    }
+    .modal label {
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      display: block; margin-bottom: 6px;
+    }
+    .modal .field-input {
+      display: block; width: 100%;
+      padding: 10px 14px; font-size: 14px;
+      background: var(--bg); border: 1px solid var(--border-strong);
+      border-radius: 10px; color: var(--fg);
+      font-family: inherit;
+      resize: vertical;
+    }
+    .modal .field-input:focus {
+      outline: none; border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .modal .field-help {
+      font-size: 11.5px; color: var(--fg-muted); margin-top: 6px; line-height: 1.5;
+    }
+    .modal .field-help.is-warn { color: var(--brand-warm-dark); }
+    .modal .field-help.is-error { color: var(--danger); }
+    .modal .field-row { margin-bottom: 16px; }
+
+    .role-radio-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 520px) { .role-radio-list { grid-template-columns: 1fr; } }
+    .role-radio {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all .12s ease;
+    }
+    .role-radio:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
+    .role-radio input[type="radio"] {
+      margin-top: 2px;
+      accent-color: var(--brand-primary);
+      flex-shrink: 0;
+    }
+    .role-radio.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.05);
+    }
+    .role-radio .rr-body { flex: 1; min-width: 0; }
+    .role-radio .rr-name { font-weight: 600; font-size: 13.5px; color: var(--fg); }
+    .role-radio .rr-sub  { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.5; }
+
+    .per-page-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 200px; overflow-y: auto;
+      padding: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .per-page-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .per-page-row:hover { background: var(--bg-muted); }
+    .per-page-row input[type="checkbox"] {
+      accent-color: var(--brand-primary);
+      flex-shrink: 0;
+    }
+    .per-page-row .pp-name { flex: 1; }
+    .per-page-row .pp-meta { font-size: 11px; color: var(--fg-subtle); }
+
+    /* Pro+ tier-gated section in invite modal */
+    .modal .pro-section {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      background: var(--bg);
+    }
+    .modal .pro-section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; margin-bottom: 10px;
+    }
+    .modal .pro-section-title {
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    /* Invite success state inside modal */
+    .invite-success {
+      display: none;
+      text-align: center;
+      padding: 14px 0;
+    }
+    .invite-success.visible { display: block; }
+    .invite-success .is-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--success-bg); color: #065F46;
+      font-size: 32px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .invite-success .is-title {
+      font-family: var(--font-display); font-size: 22px; font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .invite-success .is-sub { color: var(--fg-muted); font-size: 13.5px; line-height: 1.55; margin-bottom: 12px; }
+    .invite-success .is-list {
+      list-style: none; padding: 0; margin: 0 0 16px;
+      display: flex; flex-direction: column; gap: 6px;
+      max-height: 200px; overflow-y: auto;
+      text-align: left;
+    }
+    .invite-success .is-list li {
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12.5px; color: var(--fg);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .invite-form { display: block; }
+    .invite-form.hidden { display: none; }
+
+    /* ---------- Help footer ---------- */
+    .help-footer {
+      margin-top: 24px; padding-top: 18px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px; color: var(--fg-subtle);
+      line-height: 1.6;
+    }
+    .help-footer a { color: var(--brand-primary); }
+
+    /* ---------- Dark mode ---------- */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill { background: #0B0F1E; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .settings-section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .settings-section-title { color: #F3F4F6; }
+    body.dark-mode .seats-card { background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.05)); border-color: #1F2937; }
+    body.dark-mode .seats-bar { background: #1F2937; }
+    body.dark-mode .demo-banner { background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.06)); border-color: #1F2937; }
+    body.dark-mode .demo-banner strong { color: #F3F4F6; }
+    body.dark-mode .members-table th,
+    body.dark-mode .audit-table th { color: #6B7280; border-bottom-color: #1F2937; background: transparent; }
+    body.dark-mode .members-table td,
+    body.dark-mode .audit-table td { border-bottom-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .member-id .mi-name { color: #F3F4F6; }
+    body.dark-mode .member-id .mi-email { color: #9CA3AF; }
+    body.dark-mode .last-active { color: #9CA3AF; }
+    body.dark-mode .filter-tabs { background: #1F2937; }
+    body.dark-mode .filter-tabs button { color: #9CA3AF; }
+    body.dark-mode .filter-tabs button.active { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .search-input { background: #0B0F1E; border-color: #374151; }
+    body.dark-mode .search-input input { color: #F3F4F6; }
+    body.dark-mode .pending-row,
+    body.dark-mode .sso-card,
+    body.dark-mode .empty-state { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .empty-state .es-title { color: #F3F4F6; }
+    body.dark-mode .empty-state details,
+    body.dark-mode .empty-state .use-case { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .empty-state .use-case b { color: #F3F4F6; }
+    body.dark-mode .matrix-wrap { border-color: #1F2937; }
+    body.dark-mode .matrix-table th { background: #0B0F1E; color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .matrix-table td { border-bottom-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .matrix-table th:first-child, body.dark-mode .matrix-table td:first-child { color: #F3F4F6; }
+    body.dark-mode .audit-toolbar select { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .kebab-menu { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .kebab-menu button { color: #F3F4F6; }
+    body.dark-mode .kebab-menu button:hover { background: #1F2937; }
+    body.dark-mode .kebab-menu .km-divider { border-top-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; color: #F3F4F6; }
+    body.dark-mode .modal .field-input { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .role-radio { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .role-radio .rr-name { color: #F3F4F6; }
+    body.dark-mode .role-radio.is-selected { background: rgba(99,102,241,0.12); border-color: var(--brand-primary); }
+    body.dark-mode .per-page-list { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .per-page-row:hover { background: #1F2937; }
+    body.dark-mode .modal .pro-section { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .invite-success .is-list li { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .cross-link-row { background: #0B0F1E; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .settings-nav-item { color: #9CA3AF; }
+    body.dark-mode .settings-nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .settings-nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .settings-nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .sticky-save { background: #141A2D; border-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP APP BAR (mirrors sister settings deep-dives)
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b id="handle-text">alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode" style="position:relative">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     DEMO TOOLBAR (mockup-only)
+     ============================================================ -->
+<div class="demo-toolbar" role="region" aria-label="Mockup demo controls">
+  <span class="dt-label">Demo</span>
+
+  <span class="dt-group">
+    <span>Members state:</span>
+    <select id="state-switcher" onchange="setState(this.value)">
+      <option value="five-members" selected>5 members (3 used + 1 pending)</option>
+      <option value="empty">Empty — no team yet</option>
+      <option value="ten-of-ten">10 of 10 — at cap (cannot invite)</option>
+      <option value="pending-only">Pending invites only (3 sent, 0 joined)</option>
+    </select>
+  </span>
+
+  <span class="dt-group">
+    <span>Tier:</span>
+    <select id="tier-switcher" onchange="setTier(this.value)">
+      <option value="business" selected>Business — full access</option>
+      <option value="free">Free — demo + upsell</option>
+      <option value="creator">Creator — demo + upsell</option>
+      <option value="pro">Pro — demo + upsell</option>
+    </select>
+  </span>
+
+  <span class="dt-spacer"></span>
+  <span class="dt-info">DEC-083 · Business $49/mo includes <code>10 members</code> account-level · cap → contact support</span>
+</div>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout">
+
+  <!-- ====== PRIMARY SIDEBAR (canonical, injected via shared/partials.js) ====== -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="business" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="content">
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1>Settings</h1>
+        <div class="sub">Manage your account, billing, security, and team.</div>
+      </div>
+      <div class="head-tier-badge" id="head-tier-badge">
+        <span class="chip business">⭐ Business plan</span>
+      </div>
+    </div>
+
+    <!-- Settings layout: left rail + content -->
+    <div class="settings-layout">
+
+      <!-- Settings sub-navigation (left rail).
+           Cross-links target sibling app-settings-<tab>.html files —
+           those are shipped or in-flight on parallel worktrees. -->
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a class="settings-nav-item" href="./app-settings-account.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </a>
+        <a class="settings-nav-item" href="./app-settings-billing.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a class="settings-nav-item" href="./app-settings-security.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security
+        </a>
+        <a class="settings-nav-item" href="./app-settings-gdpr.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          GDPR &amp; data
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a class="settings-nav-item" href="./app-settings-api.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          API keys
+          <span class="sn-pill pro-pill">Pro</span>
+        </a>
+        <a class="settings-nav-item active" href="./app-settings-team.html" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team
+          <span class="sn-pill biz-pill">Business</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a class="settings-nav-item" href="./app-settings-danger.html" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger)"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger zone
+        </a>
+      </nav>
+
+      <!-- Settings content area: TEAM tab -->
+      <div class="settings-content" id="pane-team" data-tab="team">
+
+        <!-- =====================================================
+             DEMO BANNER — visible only when current tier < Business.
+             Per feedback_no_blur_premium_features the whole tab stays
+             visible + interactive on every tier. Real save / invite
+             actions route through TierGate.checkAndProceed.
+             ===================================================== -->
+        <div class="demo-banner" id="demo-banner" hidden>
+          <div class="db-ico" aria-hidden="true">⭐</div>
+          <div class="db-body">
+            <strong>Team is part of Business · $49/mo</strong>
+            You're previewing with sample data — invites and role changes won't actually send. Upgrade to Business and your real team comes with 10 included members, audit log, and SAML SSO.
+          </div>
+          <div class="db-actions">
+            <button class="btn btn-primary btn-sm" onclick="upgradeToBusiness()">Upgrade to Business →</button>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 1 — Seats overview
+             ===================================================== -->
+        <div class="settings-section" id="seats-section">
+          <div class="settings-section-title with-action">
+            <span class="st-left">Seats &amp; usage</span>
+            <span class="chip locked-life" title="DEC-083 · Business price locked at signup forever">🔒 Locked at $49/mo for life</span>
+          </div>
+
+          <div class="seats-card">
+            <div class="sc-text">
+              <div class="sc-headline" id="seats-headline"><b>5</b> of 10 team members · <b>5</b> available</div>
+              <div class="sc-sub" id="seats-sub">Business plan includes 10 members at no extra cost. You're using half — plenty of room.</div>
+
+              <div class="seats-foot-links">
+                <button onclick="alert('Mockup: would email support@tadaify.com asking to raise the cap above 10. We don\\'t self-serve >10 members in Phase A — see DEC-083.')">
+                  Need more than 10? Contact support →
+                </button>
+                <span class="sfl-sep">·</span>
+                <a href="./pricing.html#business">View Business plan benefits</a>
+              </div>
+            </div>
+
+            <div class="sc-actions">
+              <button class="btn btn-primary btn-sm mt-invite" id="invite-cta" onclick="openInviteModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Invite member
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="alert('Mockup: would scroll to Audit log section')">View audit log ↓</button>
+            </div>
+
+            <div class="seats-bar-wrap">
+              <div class="seats-bar" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10" aria-label="Team members usage">
+                <div class="seats-bar-fill" id="seats-bar-fill" style="width:50%"></div>
+              </div>
+              <div class="seats-bar-meta">
+                <span><b id="seats-used-label">5</b> used · <b id="seats-available-label">5</b> available</span>
+                <span id="seats-cap-label">Cap: 10 (Business plan)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 2 — Members
+             ===================================================== -->
+        <div class="settings-section" id="members-section">
+          <div class="settings-section-title with-action">
+            <span class="st-left">Members</span>
+            <button class="btn btn-primary btn-sm" onclick="openInviteModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Invite member
+            </button>
+          </div>
+
+          <p class="section-help">
+            Owner has full access and cannot be changed. Admins can manage everything except the owner; Editors can edit pages and blocks; Viewers are read-only.
+          </p>
+
+          <!-- Toolbar: filter tabs + search -->
+          <div class="members-toolbar">
+            <span class="filter-tabs" role="tablist" aria-label="Filter members">
+              <button id="ft-all" class="active" onclick="filterMembers('all')">All <span class="ft-count" id="ft-count-all">5</span></button>
+              <button id="ft-active"  onclick="filterMembers('active')">Active <span class="ft-count" id="ft-count-active">3</span></button>
+              <button id="ft-pending" onclick="filterMembers('pending')">Pending <span class="ft-count" id="ft-count-pending">2</span></button>
+              <button id="ft-removed" onclick="filterMembers('removed')">Removed <span class="ft-count" id="ft-count-removed">0</span></button>
+            </span>
+
+            <span class="search-input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="member-search" placeholder="Search by name or email…" oninput="filterBySearch(this.value)" />
+            </span>
+
+            <span class="mt-spacer"></span>
+          </div>
+
+          <!-- Members table (visible when state has members) -->
+          <div id="members-table-wrap">
+            <div style="overflow-x:auto">
+              <table class="members-table" id="members-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Role</th>
+                    <th>Last active</th>
+                    <th>Status</th>
+                    <th class="col-actions"></th>
+                  </tr>
+                </thead>
+                <tbody id="members-tbody">
+                  <!-- rows injected by renderMembers() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Empty state (state=empty) -->
+          <div id="members-empty" class="empty-state" hidden>
+            <div class="es-emoji" aria-hidden="true">👥</div>
+            <div class="es-title">No team members yet</div>
+            <div class="es-sub">
+              Bring in your team to share editing, publishing, and review work — fully audited and role-scoped. Business includes 10 members, no extra cost.
+            </div>
+            <button class="btn btn-primary es-cta" onclick="openInviteModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Invite your first collaborator
+            </button>
+            <details>
+              <summary>Why work as a team?</summary>
+              <div class="use-case-grid">
+                <div class="use-case"><b>Course creators.</b> Bring in your editor to fix typos and your VA to schedule publishes — without sharing your Owner password.</div>
+                <div class="use-case"><b>Agencies.</b> Each client gets a Viewer seat to review pages before launch; your team has Editor access; only Owner sees billing.</div>
+                <div class="use-case"><b>Podcast networks.</b> Producers (Editor) can create new episode pages; hosts (Viewer) can preview without breaking anything.</div>
+                <div class="use-case"><b>Solo + assistant.</b> Promote your VA to Admin so they can also send invites and manage the team — but never touch billing or delete the account.</div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 3 — Pending invites
+             ===================================================== -->
+        <div class="settings-section" id="pending-section">
+          <div class="settings-section-title with-action">
+            <span class="st-left">Pending invites <span class="chip" id="pending-count">2 sent</span></span>
+            <span class="section-help" style="margin:0">Invites auto-expire after 7 days · resend or revoke any time.</span>
+          </div>
+
+          <div class="pending-list" id="pending-list">
+            <!-- rows injected by renderPending() -->
+          </div>
+
+          <div id="pending-empty" class="empty-state" style="padding:18px;border-style:solid;background:var(--bg-elevated)" hidden>
+            <div class="es-sub" style="margin:0">No pending invites — everyone you invited has joined.</div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 4 — Roles + permissions matrix
+             ===================================================== -->
+        <div class="settings-section" id="permissions-section">
+          <div class="settings-section-title">
+            <span class="st-left">Roles &amp; permissions</span>
+          </div>
+
+          <p class="section-help">
+            What each role can do in your tadaify account. Owner is always you and cannot be changed. Promote to Admin only when you trust full account access (except deleting the account itself).
+          </p>
+
+          <button type="button" class="matrix-toggle" id="matrix-toggle" onclick="toggleMatrix(this)" aria-expanded="false" aria-controls="matrix-wrap">
+            <span class="mt-caret">›</span> Show full permissions matrix
+          </button>
+
+          <div class="matrix-wrap" id="matrix-wrap" role="region" aria-label="Roles and permissions matrix">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Owner</th>
+                  <th>Admin</th>
+                  <th>Editor</th>
+                  <th>Viewer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>View pages and blocks</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Edit blocks</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Create / delete pages</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Publish + unpublish</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Manage custom domains</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Manage account &amp; security settings</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Manage team (invite / remove / change role)</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Manage billing &amp; payment method</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>Delete account</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+                <tr>
+                  <td>View audit log</td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="yes">✓</span></td>
+                  <td><span class="partial" title="Editors see only their own actions">partial</span></td>
+                  <td><span class="no">✗</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 5 — Audit log preview
+             ===================================================== -->
+        <div class="settings-section" id="audit-section">
+          <div class="settings-section-title with-action">
+            <span class="st-left">Audit log <span class="chip" id="audit-count-chip">last 14 events</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="exportAuditCSV()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+
+          <p class="section-help">
+            Every meaningful action by team members. Stored 90 days · longer retention available on Enterprise. Export filters to your selected range.
+          </p>
+
+          <div class="audit-toolbar">
+            <span class="dt-group" style="display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--fg-muted)">
+              Range:
+              <select id="audit-range" onchange="filterAudit()">
+                <option value="7d" selected>Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="custom">Custom…</option>
+              </select>
+            </span>
+
+            <span class="dt-group" style="display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--fg-muted)">
+              Member:
+              <select id="audit-member" onchange="filterAudit()">
+                <option value="all" selected>All members</option>
+                <option value="alexandra">Alexandra Silva (you)</option>
+                <option value="maya">Maya Patel</option>
+                <option value="alex">Alex Chen</option>
+                <option value="jordan">Jordan Rivera</option>
+                <option value="sam">Sam Müller</option>
+              </select>
+            </span>
+
+            <span class="dt-group" style="display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--fg-muted)">
+              Action:
+              <select id="audit-action" onchange="filterAudit()">
+                <option value="all" selected>All actions</option>
+                <option value="edit">Edits</option>
+                <option value="publish">Publishes</option>
+                <option value="invite">Invites</option>
+                <option value="role">Role changes</option>
+                <option value="remove">Removals</option>
+                <option value="signin">Sign-ins</option>
+                <option value="billing">Billing</option>
+              </select>
+            </span>
+
+            <span class="at-spacer"></span>
+            <span class="search-input" style="max-width:240px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="audit-search" placeholder="Search target…" oninput="filterAudit()" />
+            </span>
+          </div>
+
+          <div style="overflow-x:auto">
+            <table class="audit-table" id="audit-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Member</th>
+                  <th>Action</th>
+                  <th>Target</th>
+                  <th>IP</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody">
+                <!-- rows injected by renderAudit() -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="audit-footer">
+            <span class="af-count">Showing <b id="audit-shown">14</b> of <b id="audit-total">214</b> events</span>
+            <a href="./app-team-audit-log.html" class="btn btn-ghost btn-sm" onclick="event.preventDefault();alert('Mockup: would link to /app/team/audit-log full page (paginated 50/page)')">
+              Open full audit log →
+            </a>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 6 — SAML SSO / Enterprise
+             ===================================================== -->
+        <div class="settings-section" id="sso-section">
+          <div class="settings-section-title">
+            <span class="st-left">Single sign-on (SAML)</span>
+          </div>
+
+          <div class="sso-card">
+            <div class="sso-ico" aria-hidden="true">🔐</div>
+            <div class="sso-meta">
+              <div class="sm-title">SAML SSO via Okta, Google Workspace, Azure AD, or any IdP <span class="chip business">Enterprise</span></div>
+              <div class="sm-sub">
+                Available on the Enterprise plan. SCIM provisioning, custom domain login, JIT user creation, and audit log retention beyond 90 days. Get in touch — we set it up with you.
+              </div>
+            </div>
+            <div class="sso-actions">
+              <a href="mailto:enterprise@tadaify.com?subject=SAML%20SSO%20setup%20for%20%40alexandra" class="btn btn-ghost btn-sm">
+                Talk to sales →
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cross-link footer -->
+        <div class="cross-link-row" style="margin-top:18px">
+          <span class="cl-ico" aria-hidden="true">🛡️</span>
+          <span>
+            Looking for personal security (password / 2FA / sessions)? Those live on the
+            <a href="./app-settings-security.html" class="cl-link" style="color:var(--brand-primary)">Security tab →</a>
+            Looking to delete the whole account? See
+            <a href="./app-settings-danger.html" class="cl-link" style="color:var(--danger)">Danger zone →</a>
+            (only the Owner can do this).
+          </span>
+        </div>
+
+        <!-- Help footer -->
+        <div class="help-footer">
+          <p>
+            Team is included on the <b>Business plan ($49/mo)</b> with up to 10 members at no extra cost — see <a href="./pricing.html#business">pricing</a> · need more? <a href="mailto:support@tadaify.com?subject=Raise%20team%20cap%20above%2010">support@tadaify.com</a>
+            <br>
+            DEC-083 · DEC-PRICELOCK-01 · Audit log retention 90 days (Enterprise: longer) · GDPR-compliant data processing.
+          </p>
+        </div>
+
+      </div><!-- /.settings-content -->
+    </div><!-- /.settings-layout -->
+  </main>
+</div><!-- /.layout -->
+
+<!-- ============================================================
+     STICKY SAVE BAR (only when seat add-on / per-page access edited)
+     ============================================================ -->
+<div class="sticky-save" id="sticky-save">
+  <span class="ss-msg"><b>Unsaved changes</b> — per-page access for <b id="ss-target">Maya Patel</b> updated. Save to apply.</span>
+  <div class="ss-actions">
+    <button class="btn btn-ghost btn-sm" onclick="discardChanges()">Discard</button>
+    <button class="btn btn-primary btn-sm" onclick="saveChanges()">Save changes</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     INVITE MODAL (centered — NEVER drawer per feedback_no_right_side_drawers)
+     ============================================================ -->
+<div class="modal-backdrop" id="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title" onclick="if(event.target===this)closeInviteModal()">
+  <div class="modal modal-md">
+
+    <div class="invite-form" id="invite-form">
+      <h3 id="invite-modal-title">
+        <span aria-hidden="true">✉️</span> Invite team members
+      </h3>
+      <p class="modal-sub">
+        Send up to 5 invites at once · invitees get a magic-link email and join when they click. Cap counts pending invites against your 10-member limit.
+      </p>
+
+      <div class="field-row">
+        <label for="invite-emails">Email addresses <span style="color:var(--fg-subtle);font-weight:400">— comma separated, max 5</span></label>
+        <textarea id="invite-emails" class="field-input" rows="2" placeholder="maya@studio.com, jordan@example.com">maya@studio.com, jordan@example.com</textarea>
+        <div class="field-help" id="invite-emails-help">2 valid recipients · 3 more allowed in this batch.</div>
+      </div>
+
+      <div class="field-row">
+        <label>Role for these invites</label>
+        <div class="role-radio-list">
+          <label class="role-radio">
+            <input type="radio" name="invite-role" value="admin" />
+            <div class="rr-body">
+              <div class="rr-name">Admin</div>
+              <div class="rr-sub">Everything except billing &amp; deleting the account.</div>
+            </div>
+          </label>
+          <label class="role-radio is-selected">
+            <input type="radio" name="invite-role" value="editor" checked />
+            <div class="rr-body">
+              <div class="rr-name">Editor</div>
+              <div class="rr-sub">Edit pages, blocks, and publish — no settings.</div>
+            </div>
+          </label>
+          <label class="role-radio">
+            <input type="radio" name="invite-role" value="viewer" />
+            <div class="rr-body">
+              <div class="rr-name">Viewer</div>
+              <div class="rr-sub">Read-only access · perfect for reviewers.</div>
+            </div>
+          </label>
+          <label class="role-radio" title="Owner role is reserved — only one Owner per account; transfer ownership lives on the Account tab.">
+            <input type="radio" name="invite-role" value="owner" disabled />
+            <div class="rr-body">
+              <div class="rr-name">Owner <span class="chip" style="margin-left:4px;font-size:9.5px">reserved</span></div>
+              <div class="rr-sub">Always the account holder · transfer separately.</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Per-page access: Pro+ sub-feature, Business has it included.
+           Per feedback_no_blur_premium_features — fully visible & interactive
+           on every tier; gate fires on Save via TierGate.checkAndProceed. -->
+      <div class="pro-section">
+        <div class="pro-section-head">
+          <span class="pro-section-title">
+            Restrict to specific pages
+            <span class="chip business" style="font-size:9.5px">Business</span>
+          </span>
+          <button type="button" class="toggle" id="per-page-toggle" onclick="togglePerPage()" aria-pressed="false" aria-label="Restrict per page"></button>
+        </div>
+        <p class="field-help" style="margin-top:0;margin-bottom:10px">
+          By default new members can edit every page. Turn this on to scope them to a subset — useful when contractors only need to touch one page (e.g. a shop manager who only edits Products).
+        </p>
+        <div class="per-page-list" id="per-page-list" hidden>
+          <label class="per-page-row">
+            <input type="checkbox" checked />
+            <span class="pp-name">Home</span>
+            <span class="pp-meta">/alexandra</span>
+          </label>
+          <label class="per-page-row">
+            <input type="checkbox" />
+            <span class="pp-name">Blog</span>
+            <span class="pp-meta">/alexandra/blog</span>
+          </label>
+          <label class="per-page-row">
+            <input type="checkbox" />
+            <span class="pp-name">Press kit</span>
+            <span class="pp-meta">/alexandra/press</span>
+          </label>
+          <label class="per-page-row">
+            <input type="checkbox" />
+            <span class="pp-name">Shop</span>
+            <span class="pp-meta">/alexandra/shop</span>
+          </label>
+          <label class="per-page-row">
+            <input type="checkbox" />
+            <span class="pp-name">Newsletter</span>
+            <span class="pp-meta">/alexandra/subscribe</span>
+          </label>
+          <label class="per-page-row">
+            <input type="checkbox" />
+            <span class="pp-name">Booking</span>
+            <span class="pp-meta">/alexandra/book</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label for="invite-message">Custom welcome message <span style="color:var(--fg-subtle);font-weight:400">— optional</span></label>
+        <textarea id="invite-message" class="field-input" rows="3" placeholder="Hey! Welcoming you to my team — feel free to start with the Blog page first.">Hey! Welcoming you to my team — feel free to start with the Blog page first.</textarea>
+        <div class="field-help">Appears at the top of the invitation email · plain text · 240 char max.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeInviteModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="submitInvites()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send invites
+        </button>
+      </div>
+    </div>
+
+    <!-- Success state inside same modal -->
+    <div class="invite-success" id="invite-success">
+      <div class="is-icon" aria-hidden="true">✓</div>
+      <div class="is-title">2 invites sent</div>
+      <div class="is-sub">
+        We emailed magic links to <b>maya@studio.com</b> and <b>jordan@example.com</b>. They'll show up as Pending below until they click and join.
+      </div>
+      <ul class="is-list" id="is-list">
+        <li><span aria-hidden="true">📨</span> <b>maya@studio.com</b> · Editor · expires in 7 days</li>
+        <li><span aria-hidden="true">📨</span> <b>jordan@example.com</b> · Editor · expires in 7 days</li>
+      </ul>
+      <div class="modal-actions" style="justify-content:center">
+        <button class="btn btn-ghost btn-sm" onclick="resetInviteForm()">Invite more</button>
+        <button class="btn btn-primary btn-sm" onclick="closeInviteModal()">Done</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     CHANGE ROLE MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="role-modal" role="dialog" aria-modal="true" aria-labelledby="role-modal-title" onclick="if(event.target===this)closeRoleModal()">
+  <div class="modal">
+    <h3 id="role-modal-title">
+      <span aria-hidden="true">🔁</span> Change role for <span id="role-modal-name">Maya Patel</span>
+    </h3>
+    <p class="modal-sub">
+      Current role: <b id="role-modal-current">Editor</b>. Pick a new role — change applies immediately and is logged in the audit log.
+    </p>
+
+    <div class="role-radio-list">
+      <label class="role-radio">
+        <input type="radio" name="new-role" value="admin" />
+        <div class="rr-body">
+          <div class="rr-name">Admin</div>
+          <div class="rr-sub">Manage team, settings &amp; everything except billing.</div>
+        </div>
+      </label>
+      <label class="role-radio is-selected">
+        <input type="radio" name="new-role" value="editor" checked />
+        <div class="rr-body">
+          <div class="rr-name">Editor</div>
+          <div class="rr-sub">Edit pages, blocks, and publish.</div>
+        </div>
+      </label>
+      <label class="role-radio">
+        <input type="radio" name="new-role" value="viewer" />
+        <div class="rr-body">
+          <div class="rr-name">Viewer</div>
+          <div class="rr-sub">Read-only.</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeRoleModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmRoleChange()">Update role</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     REMOVE MEMBER MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="remove-modal" role="dialog" aria-modal="true" aria-labelledby="remove-modal-title" onclick="if(event.target===this)closeRemoveModal()">
+  <div class="modal">
+    <h3 id="remove-modal-title">
+      <span aria-hidden="true">🗑️</span> Remove <span id="remove-modal-name">Jordan Rivera</span> from your team?
+    </h3>
+    <p class="modal-sub">
+      They lose access immediately on their next page load. Pages and blocks they created stay — ownership transfers to <b>you</b>. This action is logged.
+    </p>
+
+    <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.30);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#991B1B;line-height:1.55">
+      <b>This frees one seat</b> — you'll be able to invite a replacement right after.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeRemoveModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmRemoveMember()">Remove member</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     RESEND INVITE MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="resend-modal" role="dialog" aria-modal="true" aria-labelledby="resend-modal-title" onclick="if(event.target===this)closeResendModal()">
+  <div class="modal">
+    <h3 id="resend-modal-title">
+      <span aria-hidden="true">📨</span> Resend invitation
+    </h3>
+    <p class="modal-sub">
+      Send a fresh magic link to <b id="resend-modal-email">jordan@example.com</b>. The old link is invalidated immediately and a new 7-day window starts.
+    </p>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeResendModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmResend()">Resend invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     REVOKE INVITE MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="revoke-modal" role="dialog" aria-modal="true" aria-labelledby="revoke-modal-title" onclick="if(event.target===this)closeRevokeModal()">
+  <div class="modal">
+    <h3 id="revoke-modal-title">
+      <span aria-hidden="true">⛔</span> Revoke pending invite?
+    </h3>
+    <p class="modal-sub">
+      The link sent to <b id="revoke-modal-email">jordan@example.com</b> stops working — they'll see an "invitation expired" page if they try. The seat is freed immediately.
+    </p>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeRevokeModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="confirmRevoke()">Revoke invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SHARED PARTIAL + TOKENS
+     ============================================================ -->
+<script src="./shared/partials.js"></script>
+<script>
+
+  /* -------------------------------------------------------------
+     0. Theme toggle (mirrors sister deep-dives)
+     ------------------------------------------------------------- */
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  /* -------------------------------------------------------------
+     1. Sample members (5-members default state)
+     ------------------------------------------------------------- */
+  var SAMPLE_MEMBERS_5 = [
+    { id: 'm1', name: 'Alexandra Silva',  email: 'alexandra@silva.studio', role: 'owner',  status: 'active',  lastActive: 'now',          isYou: true,  bg: 'bg-1', initial: 'A' },
+    { id: 'm2', name: 'Maya Patel',       email: 'maya@studio.com',        role: 'admin',  status: 'active',  lastActive: '14 min ago',   isYou: false, bg: 'bg-2', initial: 'M' },
+    { id: 'm3', name: 'Alex Chen',        email: 'alex@chen.dev',          role: 'editor', status: 'active',  lastActive: '2 hours ago',  isYou: false, bg: 'bg-3', initial: 'A' },
+    { id: 'm4', name: 'Sam Müller',       email: 'sam.m@designstudio.de',  role: 'viewer', status: 'active',  lastActive: 'yesterday',    isYou: false, bg: 'bg-4', initial: 'S' },
+    { id: 'm5', name: 'Jordan Rivera',    email: 'jordan@example.com',     role: 'editor', status: 'pending', lastActive: '— invited 3d', isYou: false, bg: 'bg-5', initial: 'J', pending: true, expiresIn: '4d' }
+  ];
+
+  var SAMPLE_MEMBERS_10 = [
+    { id: 'm1',  name: 'Alexandra Silva',  email: 'alexandra@silva.studio', role: 'owner',  status: 'active', lastActive: 'now',         isYou: true,  bg: 'bg-1', initial: 'A' },
+    { id: 'm2',  name: 'Maya Patel',       email: 'maya@studio.com',        role: 'admin',  status: 'active', lastActive: '14 min ago',  isYou: false, bg: 'bg-2', initial: 'M' },
+    { id: 'm3',  name: 'Alex Chen',        email: 'alex@chen.dev',          role: 'editor', status: 'active', lastActive: '2 hours ago', isYou: false, bg: 'bg-3', initial: 'A' },
+    { id: 'm4',  name: 'Sam Müller',       email: 'sam.m@designstudio.de',  role: 'viewer', status: 'active', lastActive: 'yesterday',   isYou: false, bg: 'bg-4', initial: 'S' },
+    { id: 'm5',  name: 'Lila Okonkwo',     email: 'lila@oko.co',            role: 'editor', status: 'active', lastActive: '4 days ago',  isYou: false, bg: 'bg-5', initial: 'L' },
+    { id: 'm6',  name: 'Tomás Vargas',     email: 'tomas@vargas.mx',        role: 'editor', status: 'active', lastActive: '1 hour ago',  isYou: false, bg: 'bg-1', initial: 'T' },
+    { id: 'm7',  name: 'Yuki Tanaka',      email: 'yuki@yk.jp',             role: 'admin',  status: 'active', lastActive: 'just now',    isYou: false, bg: 'bg-2', initial: 'Y' },
+    { id: 'm8',  name: 'Priya Iyer',       email: 'priya.iyer@stud.in',     role: 'viewer', status: 'active', lastActive: '6 days ago',  isYou: false, bg: 'bg-3', initial: 'P' },
+    { id: 'm9',  name: 'Mateo Rossi',      email: 'mateo@rossi.it',         role: 'editor', status: 'active', lastActive: '20 min ago',  isYou: false, bg: 'bg-4', initial: 'M' },
+    { id: 'm10', name: 'Hannah Berg',      email: 'hannah@berg.no',         role: 'viewer', status: 'active', lastActive: '3 hours ago', isYou: false, bg: 'bg-5', initial: 'H' }
+  ];
+
+  var SAMPLE_PENDING = [
+    { email: 'jordan@example.com', role: 'editor', sent: '3 days ago',  expiresIn: '4 days' },
+    { email: 'taylor@brandco.io',  role: 'viewer', sent: '1 hour ago',  expiresIn: '7 days' }
+  ];
+
+  var SAMPLE_PENDING_ONLY = [
+    { email: 'maya@studio.com',    role: 'admin',  sent: '2 hours ago', expiresIn: '6 days 22 hours' },
+    { email: 'jordan@example.com', role: 'editor', sent: '3 days ago',  expiresIn: '4 days' },
+    { email: 'taylor@brandco.io',  role: 'viewer', sent: '1 hour ago',  expiresIn: '7 days' }
+  ];
+
+  /* -------------------------------------------------------------
+     2. Render members table
+     ------------------------------------------------------------- */
+  var currentMembers = SAMPLE_MEMBERS_5.slice();
+  var currentPending = SAMPLE_PENDING.slice();
+  var currentFilter  = 'all';
+  var currentSearch  = '';
+  var currentTier    = 'business';
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function rolePill(role) {
+    var label = ({ owner: 'Owner', admin: 'Admin', editor: 'Editor', viewer: 'Viewer' })[role] || role;
+    return '<span class="role-pill role-' + role + '">' + label + '</span>';
+  }
+
+  function statusCell(m) {
+    if (m.status === 'pending') {
+      return '<div class="status-cell"><span class="chip pending">⏳ Pending · expires in ' + escapeHtml(m.expiresIn || '7d') + '</span></div>';
+    }
+    if (m.status === 'removed') {
+      return '<div class="status-cell"><span class="chip">🗑️ Removed</span></div>';
+    }
+    return '<div class="status-cell"><span class="chip success">● Active</span></div>';
+  }
+
+  function lastActiveCell(m) {
+    var cls = m.lastActive === 'now' || m.lastActive === 'just now' ? ' is-now' : '';
+    return '<span class="last-active' + cls + '">' + escapeHtml(m.lastActive) + '</span>';
+  }
+
+  function kebabActions(m) {
+    /* Owner row: kebab is a no-op (only Account tab can transfer ownership) */
+    if (m.role === 'owner') {
+      return '<button class="iconbtn" title="Owner role — managed on Account tab" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>';
+    }
+
+    var menu = '';
+    if (m.status === 'pending') {
+      menu += '<button onclick="openResendModal(\'' + escapeHtml(m.email) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Resend invite</button>';
+      menu += '<button class="is-danger" onclick="openRevokeModal(\'' + escapeHtml(m.email) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Revoke invite</button>';
+    } else {
+      menu += '<button onclick="openRoleModal(\'' + escapeHtml(m.id) + '\',\'' + escapeHtml(m.name) + '\',\'' + m.role + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Change role</button>';
+      menu += '<button onclick="markPerPageDirty(\'' + escapeHtml(m.name) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Per-page access</button>';
+      menu += '<div class="km-divider"></div>';
+      menu += '<button class="is-danger" onclick="openRemoveModal(\'' + escapeHtml(m.id) + '\',\'' + escapeHtml(m.name) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg> Remove from team</button>';
+    }
+
+    return '' +
+      '<div class="kebab-wrap">' +
+        '<button class="iconbtn" onclick="toggleKebab(this)" aria-label="Member actions" aria-haspopup="menu">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>' +
+        '</button>' +
+        '<div class="kebab-menu" role="menu">' + menu + '</div>' +
+      '</div>';
+  }
+
+  function toggleKebab(btn) {
+    var menu = btn.nextElementSibling;
+    var open = menu.classList.contains('open');
+    document.querySelectorAll('.kebab-menu.open').forEach(function (m) { m.classList.remove('open'); });
+    if (!open) menu.classList.add('open');
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.kebab-wrap')) {
+      document.querySelectorAll('.kebab-menu.open').forEach(function (m) { m.classList.remove('open'); });
+    }
+  });
+
+  function memberMatchesFilter(m, filter) {
+    if (filter === 'all') return true;
+    if (filter === 'active')  return m.status === 'active';
+    if (filter === 'pending') return m.status === 'pending';
+    if (filter === 'removed') return m.status === 'removed';
+    return true;
+  }
+  function memberMatchesSearch(m, q) {
+    if (!q) return true;
+    var s = q.toLowerCase();
+    return m.name.toLowerCase().indexOf(s) >= 0 || m.email.toLowerCase().indexOf(s) >= 0;
+  }
+
+  function renderMembers() {
+    var tbody = document.getElementById('members-tbody');
+    var rows = currentMembers
+      .filter(function (m) { return memberMatchesFilter(m, currentFilter); })
+      .filter(function (m) { return memberMatchesSearch(m, currentSearch); });
+
+    /* Update filter counts (always against full set) */
+    document.getElementById('ft-count-all').textContent     = currentMembers.length;
+    document.getElementById('ft-count-active').textContent  = currentMembers.filter(function (m) { return m.status === 'active'; }).length;
+    document.getElementById('ft-count-pending').textContent = currentMembers.filter(function (m) { return m.status === 'pending'; }).length;
+    document.getElementById('ft-count-removed').textContent = currentMembers.filter(function (m) { return m.status === 'removed'; }).length;
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--fg-muted);padding:28px">No members match this filter / search.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(function (m) {
+      var avatarCls = 'member-avatar ' + (m.bg || 'bg-1');
+      if (m.status === 'pending') avatarCls += ' is-pending';
+      var initial = m.status === 'pending' ? '?' : escapeHtml(m.initial);
+      var nameHtml = m.isYou
+        ? '<span class="mi-name is-you">' + escapeHtml(m.name) + ' <span class="you-pill">You</span></span>'
+        : '<span class="mi-name">' + escapeHtml(m.name) + '</span>';
+
+      return '<tr>' +
+        '<td>' +
+          '<div class="member-id">' +
+            '<div class="' + avatarCls + '">' + initial + '</div>' +
+            '<div class="mi-meta">' +
+              nameHtml +
+              '<div class="mi-email">' + escapeHtml(m.email) + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</td>' +
+        '<td>' + rolePill(m.role) + '</td>' +
+        '<td>' + lastActiveCell(m) + '</td>' +
+        '<td>' + statusCell(m) + '</td>' +
+        '<td class="col-actions">' + kebabActions(m) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function filterMembers(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tabs button').forEach(function (b) { b.classList.remove('active'); });
+    var btn = document.getElementById('ft-' + filter);
+    if (btn) btn.classList.add('active');
+    renderMembers();
+  }
+  function filterBySearch(q) {
+    currentSearch = (q || '').trim();
+    renderMembers();
+  }
+
+  /* -------------------------------------------------------------
+     3. Render pending invites mini-section
+     ------------------------------------------------------------- */
+  function renderPending() {
+    var list = document.getElementById('pending-list');
+    var emptyEl = document.getElementById('pending-empty');
+    var chip = document.getElementById('pending-count');
+
+    if (!currentPending.length) {
+      list.hidden = true;
+      emptyEl.hidden = false;
+      chip.textContent = '0 sent';
+      return;
+    }
+
+    emptyEl.hidden = true;
+    list.hidden = false;
+    chip.textContent = currentPending.length + ' sent';
+
+    list.innerHTML = currentPending.map(function (p) {
+      return '<div class="pending-row">' +
+        '<div class="pr-ico" aria-hidden="true">📨</div>' +
+        '<div class="pr-meta">' +
+          '<div class="pr-email">' + escapeHtml(p.email) + ' · ' + rolePill(p.role) + '</div>' +
+          '<div class="pr-detail">Sent ' + escapeHtml(p.sent) + ' · <span class="pr-expires">expires in ' + escapeHtml(p.expiresIn) + '</span></div>' +
+        '</div>' +
+        '<div class="pr-actions">' +
+          '<button class="btn btn-ghost btn-xs" onclick="openResendModal(\'' + escapeHtml(p.email) + '\')">Resend</button>' +
+          '<button class="btn btn-danger-ghost btn-xs" onclick="openRevokeModal(\'' + escapeHtml(p.email) + '\')">Revoke</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  /* -------------------------------------------------------------
+     4. Audit log — sample 14 rows
+     ------------------------------------------------------------- */
+  var SAMPLE_AUDIT = [
+    { when: '2026-04-26 14:32', actor: 'Maya Patel',      bg: 'bg-2', initial: 'M', action: 'edit',    label: '✎ Edited block',     target: 'Blog · <b>"5 spring rituals"</b> · headline + image', ip: '78.42.18.4',   actorKey: 'maya' },
+    { when: '2026-04-26 14:18', actor: 'Alex Chen',       bg: 'bg-3', initial: 'A', action: 'publish', label: '🚀 Published page',  target: 'Press kit · <b>/alexandra/press</b>',                  ip: '92.118.4.230', actorKey: 'alex' },
+    { when: '2026-04-26 13:45', actor: 'Alexandra Silva', bg: 'bg-1', initial: 'A', action: 'role',    label: '🔁 Changed role',    target: 'Sam Müller · Viewer → <b>Editor</b>',                  ip: '212.83.45.9',  actorKey: 'alexandra' },
+    { when: '2026-04-26 11:02', actor: 'Maya Patel',      bg: 'bg-2', initial: 'M', action: 'edit',    label: '✎ Edited block',     target: 'Home · Hero text · 2 changes',                         ip: '78.42.18.4',   actorKey: 'maya' },
+    { when: '2026-04-25 19:50', actor: 'Alexandra Silva', bg: 'bg-1', initial: 'A', action: 'invite',  label: '✉️ Sent invite',     target: 'jordan@example.com · Editor',                          ip: '212.83.45.9',  actorKey: 'alexandra' },
+    { when: '2026-04-25 16:22', actor: 'Sam Müller',      bg: 'bg-4', initial: 'S', action: 'edit',    label: '✎ Edited block',     target: 'Blog · <b>"Why I switched stacks"</b> · body',         ip: '94.231.10.18', actorKey: 'sam' },
+    { when: '2026-04-25 15:08', actor: 'Alexandra Silva', bg: 'bg-1', initial: 'A', action: 'billing', label: '💳 Updated card',    target: 'Stripe Customer Portal · card ending 4242',            ip: '212.83.45.9',  actorKey: 'alexandra' },
+    { when: '2026-04-25 12:14', actor: 'Alex Chen',       bg: 'bg-3', initial: 'A', action: 'edit',    label: '✎ Edited block',     target: 'Newsletter · CTA copy + footer link',                  ip: '92.118.4.230', actorKey: 'alex' },
+    { when: '2026-04-24 18:40', actor: 'Maya Patel',      bg: 'bg-2', initial: 'M', action: 'publish', label: '🚀 Published page',  target: 'Blog · <b>"5 spring rituals"</b>',                     ip: '78.42.18.4',   actorKey: 'maya' },
+    { when: '2026-04-24 16:11', actor: 'Alexandra Silva', bg: 'bg-1', initial: 'A', action: 'invite',  label: '✉️ Sent invite',     target: 'taylor@brandco.io · Viewer',                           ip: '212.83.45.9',  actorKey: 'alexandra' },
+    { when: '2026-04-24 14:00', actor: 'Sam Müller',      bg: 'bg-4', initial: 'S', action: 'signin',  label: '→ Signed in',         target: 'Method: Google OAuth · Berlin, DE',                    ip: '94.231.10.18', actorKey: 'sam' },
+    { when: '2026-04-23 09:38', actor: 'Alexandra Silva', bg: 'bg-1', initial: 'A', action: 'remove',  label: '🗑️ Removed member',  target: 'former-contractor@old.studio',                         ip: '212.83.45.9',  actorKey: 'alexandra' },
+    { when: '2026-04-22 21:15', actor: 'Maya Patel',      bg: 'bg-2', initial: 'M', action: 'edit',    label: '✎ Edited block',     target: 'About · timeline entry · added 2026',                  ip: '78.42.18.4',   actorKey: 'maya' },
+    { when: '2026-04-22 11:42', actor: 'Alexandra Silva', bg: 'bg-1', initial: 'A', action: 'role',    label: '🔁 Changed role',    target: 'Maya Patel · Editor → <b>Admin</b>',                   ip: '212.83.45.9',  actorKey: 'alexandra' }
+  ];
+
+  function actionClass(a) {
+    return ({
+      edit: 'act-edit', publish: 'act-publish', invite: 'act-invite',
+      role: 'act-role', remove: 'act-remove', signin: 'act-signin', billing: 'act-billing'
+    })[a] || 'act-edit';
+  }
+
+  function renderAudit() {
+    var range  = document.getElementById('audit-range').value;
+    var member = document.getElementById('audit-member').value;
+    var action = document.getElementById('audit-action').value;
+    var search = (document.getElementById('audit-search').value || '').trim().toLowerCase();
+
+    var rows = SAMPLE_AUDIT.filter(function (e) {
+      if (member !== 'all' && e.actorKey !== member) return false;
+      if (action !== 'all' && e.action !== action)   return false;
+      if (search && e.target.toLowerCase().indexOf(search) < 0 && e.actor.toLowerCase().indexOf(search) < 0) return false;
+      /* range filter is decorative in mockup */
+      return true;
+    });
+
+    var tbody = document.getElementById('audit-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--fg-muted);padding:24px">No events match your filters.</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(function (e) {
+        return '<tr>' +
+          '<td><span class="audit-when">' + escapeHtml(e.when) + '</span></td>' +
+          '<td>' +
+            '<div class="audit-actor">' +
+              '<div class="member-avatar ' + e.bg + '">' + e.initial + '</div>' +
+              '<span>' + escapeHtml(e.actor) + '</span>' +
+            '</div>' +
+          '</td>' +
+          '<td><span class="audit-action ' + actionClass(e.action) + '">' + e.label + '</span></td>' +
+          '<td><span class="audit-target" title="' + escapeHtml(e.target.replace(/<[^>]+>/g, '')) + '">' + e.target + '</span></td>' +
+          '<td><span class="audit-ip">' + escapeHtml(e.ip) + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    document.getElementById('audit-shown').textContent = rows.length;
+  }
+  function filterAudit() { renderAudit(); }
+
+  function exportAuditCSV() {
+    /* Per feedback_no_blur_premium_features — gate fires at action time, not visually.
+       In Business this just downloads. In lower tiers we route through TierGate. */
+    if (currentTier !== 'business' && window.TierGate) {
+      window.TierGate.checkAndProceed({
+        currentTier: currentTier,
+        features: [{ id: 'audit-csv', name: 'Audit log CSV export', requires: 'business', meta: '90-day retention · filtered by your selections' }],
+        onUpgrade: upgradeToBusiness,
+        onCancel: function () {}
+      });
+      return;
+    }
+    alert('Mockup: would download audit-log-2026-04-26.csv with current filter applied.');
+  }
+
+  /* -------------------------------------------------------------
+     5. State switcher
+     ------------------------------------------------------------- */
+  function setState(state) {
+    /* Reset visibility */
+    var emptyEl   = document.getElementById('members-empty');
+    var tableWrap = document.getElementById('members-table-wrap');
+    var seatsSec  = document.getElementById('seats-section');
+    var pendingSec = document.getElementById('pending-section');
+    var inviteCta = document.getElementById('invite-cta');
+
+    var used, total = 10, available, headline, sub, fillPct, fillCls = '';
+
+    switch (state) {
+      case 'empty':
+        currentMembers = [];
+        currentPending = [];
+        used = 0; available = 10; fillPct = 0;
+        headline = '<b>0</b> of 10 team members · <b>10</b> available';
+        sub = "Your Business plan covers 10 members at no extra cost. Invite your first one to get started.";
+        emptyEl.hidden = false;
+        tableWrap.hidden = true;
+        pendingSec.hidden = true;
+        inviteCta.disabled = false;
+        break;
+
+      case 'ten-of-ten':
+        currentMembers = SAMPLE_MEMBERS_10.slice();
+        currentPending = [];
+        used = 10; available = 0; fillPct = 100; fillCls = 'is-at-cap';
+        headline = '<b>10</b> of 10 team members · <b>0</b> available';
+        sub = "You've reached the 10-member cap. Free a seat by removing someone, or contact support to discuss a higher cap.";
+        emptyEl.hidden = true;
+        tableWrap.hidden = false;
+        pendingSec.hidden = false;
+        inviteCta.disabled = true;
+        inviteCta.title = "Cap reached — remove a member first or contact support@tadaify.com";
+        break;
+
+      case 'pending-only':
+        currentMembers = [
+          { id: 'm1', name: 'Alexandra Silva', email: 'alexandra@silva.studio', role: 'owner', status: 'active', lastActive: 'now', isYou: true, bg: 'bg-1', initial: 'A' },
+          { id: 'p1', name: 'maya@studio.com',    email: 'maya@studio.com',    role: 'admin',  status: 'pending', expiresIn: '6d 22h', lastActive: '— invited 2h', isYou: false, bg: 'bg-2', initial: '?', pending: true },
+          { id: 'p2', name: 'jordan@example.com', email: 'jordan@example.com', role: 'editor', status: 'pending', expiresIn: '4d',     lastActive: '— invited 3d', isYou: false, bg: 'bg-5', initial: '?', pending: true },
+          { id: 'p3', name: 'taylor@brandco.io',  email: 'taylor@brandco.io',  role: 'viewer', status: 'pending', expiresIn: '7d',     lastActive: '— invited 1h', isYou: false, bg: 'bg-3', initial: '?', pending: true }
+        ];
+        currentPending = SAMPLE_PENDING_ONLY.slice();
+        used = 1; available = 6; fillPct = 40; fillCls = '';  /* used = owner; pending counts towards cap = 4 of 10 → 40% */
+        headline = '<b>4</b> of 10 team members · <b>6</b> available <span style="color:var(--fg-muted);font-weight:400;font-size:13.5px">(1 joined · 3 pending)</span>';
+        sub = "Pending invites count against your cap until they expire or get accepted.";
+        emptyEl.hidden = true;
+        tableWrap.hidden = false;
+        pendingSec.hidden = false;
+        inviteCta.disabled = false;
+        break;
+
+      case 'five-members':
+      default:
+        currentMembers = SAMPLE_MEMBERS_5.slice();
+        currentPending = SAMPLE_PENDING.slice();
+        used = 4; available = 6; fillPct = 40;
+        headline = '<b>5</b> of 10 team members · <b>5</b> available <span style="color:var(--fg-muted);font-weight:400;font-size:13.5px">(4 joined · 1 pending)</span>';
+        sub = "Business plan includes 10 members at no extra cost. You're using half — plenty of room.";
+        emptyEl.hidden = true;
+        tableWrap.hidden = false;
+        pendingSec.hidden = false;
+        inviteCta.disabled = false;
+        break;
+    }
+
+    document.getElementById('seats-headline').innerHTML = headline;
+    document.getElementById('seats-sub').textContent    = sub;
+    var bar = document.getElementById('seats-bar-fill');
+    bar.style.width = fillPct + '%';
+    bar.className = 'seats-bar-fill ' + fillCls + (fillPct >= 80 && fillPct < 100 ? ' is-near-cap' : '');
+    document.getElementById('seats-used-label').textContent      = used;
+    document.getElementById('seats-available-label').textContent = available;
+
+    filterMembers('all');
+    renderPending();
+    renderAudit();
+  }
+
+  /* -------------------------------------------------------------
+     6. Tier switcher (drives demo banner + sidebar tier)
+     ------------------------------------------------------------- */
+  function setTier(tier) {
+    currentTier = tier;
+    var aside = document.querySelector('aside.tdf-side');
+    if (aside && window.TadaifyPartials) {
+      aside.outerHTML = window.TadaifyPartials.renderSidebar('settings', tier, 'alexandra', 'Alexandra Silva');
+    }
+
+    var banner = document.getElementById('demo-banner');
+    var headBadge = document.getElementById('head-tier-badge');
+    if (tier === 'business') {
+      banner.hidden = true;
+      headBadge.innerHTML = '<span class="chip business">⭐ Business plan</span>';
+    } else {
+      banner.hidden = false;
+      var label = ({ free: 'Free', creator: 'Creator', pro: 'Pro' })[tier] || tier;
+      headBadge.innerHTML = '<span class="chip warn">⭐ Preview · you\'re on ' + escapeHtml(label) + '</span>';
+    }
+  }
+
+  function upgradeToBusiness() {
+    alert('Mockup: would route to /pricing#business with checkout-intent=team and locked-for-life $49/mo.');
+  }
+
+  /* -------------------------------------------------------------
+     7. Roles + permissions matrix toggle
+     ------------------------------------------------------------- */
+  function toggleMatrix(btn) {
+    var wrap = document.getElementById('matrix-wrap');
+    var open = wrap.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.firstElementChild.nextSibling; /* no-op: keep node order */
+    btn.innerHTML = '<span class="mt-caret">›</span> ' + (open ? 'Hide full permissions matrix' : 'Show full permissions matrix');
+  }
+
+  /* -------------------------------------------------------------
+     8. Invite modal
+     ------------------------------------------------------------- */
+  function openInviteModal() {
+    /* Block invite if at cap */
+    var inviteCta = document.getElementById('invite-cta');
+    if (inviteCta && inviteCta.disabled) {
+      alert('Cap reached (10/10) — remove a member first, or email support@tadaify.com to discuss a higher cap.');
+      return;
+    }
+
+    /* Lower-tier preview: gate at action via TierGate, but also let user inspect form. */
+    if (currentTier !== 'business' && window.TierGate) {
+      window.TierGate.checkAndProceed({
+        currentTier: currentTier,
+        features: [{ id: 'team-invite', name: 'Invite a team member', requires: 'business', meta: '10 members included on Business · $49/mo locked-for-life' }],
+        onProceed:    function () { showInviteModal(); },
+        onUpgrade:    upgradeToBusiness,
+        onSaveWithout: null,  /* hide that branch */
+        onCancel:     function () {}
+      });
+      /* ALSO show the form so the user can preview the controls per no-blur rule. */
+      showInviteModal();
+      return;
+    }
+    showInviteModal();
+  }
+  function showInviteModal() {
+    document.getElementById('invite-form').classList.remove('hidden');
+    document.getElementById('invite-success').classList.remove('visible');
+    document.getElementById('invite-modal').classList.add('open');
+  }
+  function closeInviteModal() {
+    document.getElementById('invite-modal').classList.remove('open');
+  }
+  function resetInviteForm() {
+    document.getElementById('invite-success').classList.remove('visible');
+    document.getElementById('invite-form').classList.remove('hidden');
+  }
+
+  /* Sync .is-selected highlight on radios */
+  document.addEventListener('change', function (e) {
+    if (e.target.matches('input[type="radio"][name="invite-role"], input[type="radio"][name="new-role"]')) {
+      var group = e.target.name;
+      document.querySelectorAll('input[type="radio"][name="' + group + '"]').forEach(function (r) {
+        r.closest('.role-radio').classList.toggle('is-selected', r.checked);
+      });
+    }
+  });
+
+  function togglePerPage() {
+    var btn = document.getElementById('per-page-toggle');
+    var list = document.getElementById('per-page-list');
+    var on = btn.classList.toggle('on');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    list.hidden = !on;
+  }
+
+  function submitInvites() {
+    var emails = (document.getElementById('invite-emails').value || '').split(/[, \n]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!emails.length) {
+      alert('Add at least one email address.');
+      return;
+    }
+    if (emails.length > 5) {
+      alert('Max 5 invites per batch — split into two sends.');
+      return;
+    }
+
+    /* Real impl would POST /api/team/invite { emails, role, perPage, message }. */
+
+    var role = document.querySelector('input[name="invite-role"]:checked').value;
+    var listEl = document.getElementById('is-list');
+    listEl.innerHTML = emails.map(function (e) {
+      return '<li><span aria-hidden="true">📨</span> <b>' + escapeHtml(e) + '</b> · ' + role.charAt(0).toUpperCase() + role.slice(1) + ' · expires in 7 days</li>';
+    }).join('');
+    document.querySelector('.invite-success .is-title').textContent = emails.length + ' invite' + (emails.length === 1 ? '' : 's') + ' sent';
+
+    document.getElementById('invite-form').classList.add('hidden');
+    document.getElementById('invite-success').classList.add('visible');
+  }
+
+  /* -------------------------------------------------------------
+     9. Change role / Remove / Resend / Revoke modals
+     ------------------------------------------------------------- */
+  var pendingRoleChange   = null;
+  var pendingRemove       = null;
+  var pendingResendEmail  = null;
+  var pendingRevokeEmail  = null;
+
+  function openRoleModal(memberId, name, currentRole) {
+    pendingRoleChange = { memberId: memberId, name: name, currentRole: currentRole };
+    document.getElementById('role-modal-name').textContent    = name;
+    document.getElementById('role-modal-current').textContent = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+    /* Pre-select current role in radios */
+    document.querySelectorAll('input[name="new-role"]').forEach(function (r) {
+      r.checked = (r.value === currentRole);
+      r.closest('.role-radio').classList.toggle('is-selected', r.checked);
+    });
+    document.getElementById('role-modal').classList.add('open');
+  }
+  function closeRoleModal() { document.getElementById('role-modal').classList.remove('open'); }
+  function confirmRoleChange() {
+    var newRole = document.querySelector('input[name="new-role"]:checked').value;
+    closeRoleModal();
+    /* Real impl: POST /api/team/members/<id>/role { role } */
+    alert('Mockup: ' + (pendingRoleChange ? pendingRoleChange.name : 'member') + ' role changed to ' + newRole + '. Logged to audit log.');
+  }
+
+  function openRemoveModal(memberId, name) {
+    pendingRemove = { memberId: memberId, name: name };
+    document.getElementById('remove-modal-name').textContent = name;
+    document.getElementById('remove-modal').classList.add('open');
+  }
+  function closeRemoveModal() { document.getElementById('remove-modal').classList.remove('open'); }
+  function confirmRemoveMember() {
+    closeRemoveModal();
+    alert('Mockup: ' + (pendingRemove ? pendingRemove.name : 'member') + ' removed. Pages they authored transferred to you. Logged to audit log.');
+  }
+
+  function openResendModal(email) {
+    pendingResendEmail = email;
+    document.getElementById('resend-modal-email').textContent = email;
+    document.getElementById('resend-modal').classList.add('open');
+  }
+  function closeResendModal() { document.getElementById('resend-modal').classList.remove('open'); }
+  function confirmResend() {
+    closeResendModal();
+    alert('Mockup: fresh magic link emailed to ' + pendingResendEmail + ' · old link invalidated · 7-day window restarted.');
+  }
+
+  function openRevokeModal(email) {
+    pendingRevokeEmail = email;
+    document.getElementById('revoke-modal-email').textContent = email;
+    document.getElementById('revoke-modal').classList.add('open');
+  }
+  function closeRevokeModal() { document.getElementById('revoke-modal').classList.remove('open'); }
+  function confirmRevoke() {
+    closeRevokeModal();
+    alert('Mockup: invite to ' + pendingRevokeEmail + ' revoked · seat freed · old link returns expired page.');
+  }
+
+  /* Esc closes any open modal */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    ['invite-modal','role-modal','remove-modal','resend-modal','revoke-modal'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && el.classList.contains('open')) el.classList.remove('open');
+    });
+  });
+
+  /* -------------------------------------------------------------
+     10. Sticky save bar (per-page access edits)
+     ------------------------------------------------------------- */
+  function markPerPageDirty(name) {
+    document.getElementById('ss-target').textContent = name;
+    document.getElementById('sticky-save').classList.add('visible');
+  }
+  function discardChanges() { document.getElementById('sticky-save').classList.remove('visible'); }
+  function saveChanges() {
+    if (currentTier !== 'business' && window.TierGate) {
+      window.TierGate.checkAndProceed({
+        currentTier: currentTier,
+        features: [{ id: 'per-page-access', name: 'Per-page member access', requires: 'business', meta: 'Restrict members to specific pages' }],
+        onProceed: function () { document.getElementById('sticky-save').classList.remove('visible'); alert('Mockup: per-page access updated.'); },
+        onUpgrade: upgradeToBusiness,
+        onCancel: function () {}
+      });
+      return;
+    }
+    document.getElementById('sticky-save').classList.remove('visible');
+    alert('Mockup: per-page access updated. Logged to audit log.');
+  }
+
+  /* -------------------------------------------------------------
+     11. Boot
+     ------------------------------------------------------------- */
+  document.addEventListener('DOMContentLoaded', function () {
+    setState('five-members');
+    setTier('business');
+  });
+</script>
+</body>
+</html>
