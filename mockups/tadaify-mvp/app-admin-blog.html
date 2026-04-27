@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Administration → Blog (publishing flow) — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Day-to-day publishing surface. Pairs with app-page-blog.html (page editor).
+
+  Locked rules honoured:
+    - feedback_tadaify_pages_vs_administration_separation (NEW — this is the canonical admin pattern)
+    - feedback_no_blur_premium_features (Author Business+ field visible + interactive; gate at Save)
+    - feedback_no_right_side_drawers (post composer = centered modal, NEVER drawer)
+    - feedback_tadaify_simple_ui_no_advanced_toggle (no "Show advanced" toggle)
+    - feedback_mockup_full_feature_vision (every interaction wired)
+    - feedback_tadaify_three_viewport_support (mobile <720, tablet 720-1099 rail, desktop 1100+)
+
+  Demo state via URL:
+    ?state=no-page | empty | filled (default: filled, 23 posts)
+    ?tier=free | creator | pro | business (default: creator)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration · Blog · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Wordmark ── */
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    /* ── Atoms ── */
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap;
+    }
+    .chip.live      { background: var(--success-bg); color: #065F46; }
+    .chip.draft     { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.scheduled { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+    .chip.tier      { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease; line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm    { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-sm  { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs  { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* ── Top app bar ── */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; gap: 14px;
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg); font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+
+    /* ── Layout grid ── */
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    /* ── Main content ── */
+    main.content { padding: 24px 20px 80px; min-width: 0; max-width: 1080px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    .crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .page-head .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    /* Section card */
+    .section {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 14px; margin-bottom: 18px; overflow: hidden;
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+
+    /* Toolbar tabs */
+    .posts-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-muted); border-radius: 10px; }
+    .tab {
+      padding: 6px 12px; border: 0; border-radius: 8px;
+      background: transparent; color: var(--fg-muted);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+    .tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+    .tab .tab-count {
+      margin-left: 6px; font-size: 11px;
+      background: var(--bg-sunken); color: var(--fg-muted);
+      padding: 1px 6px; border-radius: 999px;
+    }
+    .tab.is-active .tab-count { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+
+    .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
+    .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--fg-subtle); }
+    .search-wrap input {
+      width: 100%; padding: 8px 12px 8px 32px;
+      border: 1px solid var(--border-strong); border-radius: 9px;
+      background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 13px; outline: 0;
+    }
+
+    /* Posts list */
+    .posts-list { display: flex; flex-direction: column; gap: 10px; }
+    .post-row {
+      display: grid; grid-template-columns: 96px 1fr auto;
+      gap: 14px; align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-elevated);
+      position: relative;
+    }
+    .post-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    @media (max-width: 640px) {
+      .post-row { grid-template-columns: 64px 1fr auto; gap: 10px; padding: 10px; }
+    }
+    .post-row .pr-thumb {
+      width: 96px; height: 64px; border-radius: 8px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 18px;
+    }
+    @media (max-width: 640px) {
+      .post-row .pr-thumb { width: 64px; height: 48px; font-size: 14px; }
+    }
+    .post-row .pr-thumb.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .post-row .pr-thumb.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .post-row .pr-thumb.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .post-row .pr-thumb.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .post-row .pr-thumb.t-warm    { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .post-row .pr-meta { min-width: 0; }
+    .post-row .pr-title {
+      font-weight: 600; font-size: 14.5px; color: var(--fg); margin: 0 0 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .post-row .pr-sub {
+      font-size: 12.5px; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .post-row .pr-actions { display: inline-flex; align-items: center; gap: 4px; }
+
+    /* Pagination */
+    .pagination { display: inline-flex; gap: 4px; align-items: center; margin-top: 16px; }
+    .pagination .page-btn {
+      min-width: 32px; height: 32px; border: 1px solid var(--border);
+      background: var(--bg-elevated); color: var(--fg-muted);
+      border-radius: 8px; cursor: pointer; font-size: 13px;
+    }
+    .pagination .page-btn.is-current { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .pagination .page-btn:hover:not(.is-current) { background: var(--bg-muted); color: var(--fg); }
+
+    /* Empty state */
+    .empty {
+      text-align: center; padding: 56px 24px;
+      border: 1.5px dashed var(--border-strong); border-radius: 14px;
+      background: var(--bg);
+    }
+    .empty-icon {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, #FDE68A, #F59E0B);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 28px; margin-bottom: 18px;
+    }
+    .empty h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 8px; }
+    .empty p { color: var(--fg-muted); font-size: 14px; max-width: 460px; margin: 0 auto 18px; line-height: 1.55; }
+    .empty .empty-actions { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    .explainer { margin-top: 28px; }
+    .explainer summary {
+      cursor: pointer; padding: 10px 14px; list-style: none;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated);
+      font-weight: 600; font-size: 13.5px; display: inline-block;
+    }
+    .explainer summary::-webkit-details-marker { display: none; }
+    .explainer .ex-body { margin-top: 12px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); font-size: 14px; line-height: 1.6; color: var(--fg-muted); }
+
+    /* Comments admin */
+    .comments-list { display: flex; flex-direction: column; gap: 10px; }
+    .comment {
+      padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      display: grid; grid-template-columns: 36px 1fr auto; gap: 12px;
+    }
+    .comment .av { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-muted); display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--fg-muted); font-size: 13px; }
+    .comment .c-body { min-width: 0; }
+    .comment .c-author { font-weight: 600; font-size: 13px; }
+    .comment .c-meta { font-size: 12px; color: var(--fg-muted); margin-bottom: 4px; }
+    .comment .c-text { font-size: 13.5px; color: var(--fg); line-height: 1.5; }
+    .comment .c-actions { display: inline-flex; gap: 4px; align-items: flex-start; }
+
+    /* Modal — centered (no drawer) */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(17,24,39,0.55);
+      z-index: 200; backdrop-filter: blur(2px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-backdrop.is-open { display: flex; }
+    .modal {
+      width: 100%; max-width: 760px; max-height: 90vh;
+      background: var(--bg-elevated); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.25);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal-head {
+      padding: 18px 22px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; flex: 1; }
+    .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+    .modal-foot {
+      padding: 14px 22px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;
+    }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    /* Compose form */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+    .field-input, .field-area, .field-select {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg);
+      font: inherit; font-size: 14px; outline: 0;
+    }
+    .field-area { min-height: 200px; resize: vertical; line-height: 1.55; font-family: var(--font-mono); font-size: 13px; }
+    .field-input:focus, .field-area:focus, .field-select:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+
+    .cover-uploader {
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      padding: 28px; text-align: center; background: var(--bg);
+      color: var(--fg-muted); font-size: 13px; cursor: pointer;
+    }
+    .cover-uploader:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+
+    .toolbar-rich {
+      display: flex; gap: 4px; padding: 6px; background: var(--bg-muted);
+      border: 1px solid var(--border-strong); border-bottom: 0; border-radius: 10px 10px 0 0;
+    }
+    .toolbar-rich .iconbtn { width: 28px; height: 28px; }
+    .field-area.with-toolbar { border-top-left-radius: 0; border-top-right-radius: 0; min-height: 240px; }
+
+    /* Demo toolbar */
+    .demo-toolbar {
+      position: fixed; bottom: 16px; right: 16px; z-index: 30;
+      background: var(--bg-dark); color: #fff;
+      padding: 10px 14px; border-radius: 12px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    .demo-toolbar .group { display: inline-flex; gap: 4px; align-items: center; }
+    .demo-toolbar select {
+      background: rgba(255,255,255,0.08); color: #fff;
+      border: 1px solid rgba(255,255,255,0.16); border-radius: 6px;
+      font-size: 12px; padding: 3px 8px; cursor: pointer;
+    }
+    .demo-toolbar a { color: #A5B4FC; text-decoration: underline; }
+
+    /* Dark mode */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .section-head { border-color: #1F2937; }
+    body.dark-mode .post-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .empty { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; }
+    body.dark-mode .modal-head, body.dark-mode .modal-foot { border-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<!-- Top app bar -->
+<header class="appbar">
+  <div class="brand">
+    <span class="logo-mark" data-logo style="width:26px;height:26px"></span>
+    <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="handle-pill">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span>tadaify.com/<b>alexandra</b><span style="margin:0 4px">/</span>blog</span>
+  </div>
+  <button class="iconbtn theme-toggle" aria-label="Toggle theme" onclick="document.body.classList.toggle('dark-mode')">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+</header>
+
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="admin" data-admin-active="blog" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb" aria-label="Breadcrumb">
+      <a href="./app-dashboard.html">Dashboard</a>
+      <span class="sep">/</span>
+      <span class="here">Administration · Blog</span>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <h1><span class="ph-emoji">✍️</span> Blog publishing</h1>
+        <div class="sub">Write, schedule, and manage posts. Page-level setup (theme, layout, SEO) lives in <a href="./app-page-blog.html" style="color: var(--brand-primary); text-decoration: underline;">Pages → Blog</a>.</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm">Comments</button>
+        <button class="btn btn-primary" id="btnNewPost">＋ New post</button>
+      </div>
+    </header>
+
+    <!-- ========== STATE A: NO BLOG PAGE ========== -->
+    <section id="stateNoPage" hidden>
+      <div class="empty">
+        <div class="empty-icon">📝</div>
+        <h3>You don't have a Blog page yet</h3>
+        <p>Blog posts let you share long-form updates with your audience. To start publishing, add a Blog page first — pick a theme, lock the URL, and you're live.</p>
+        <div class="empty-actions">
+          <a href="./app-dashboard.html?tab=page&template=blog" class="btn btn-primary">＋ Add Blog page now</a>
+          <button class="btn btn-ghost" onclick="document.getElementById('explainer').open = true; document.getElementById('explainer').scrollIntoView({behavior:'smooth'});">Skip — what is Blog?</button>
+        </div>
+      </div>
+      <details class="explainer" id="explainer">
+        <summary>What is the Blog page?</summary>
+        <div class="ex-body">
+          <p><b>Blog</b> is the long-form content surface for your tadaify creator page. Use it for:</p>
+          <ul>
+            <li><b>Behind-the-scenes posts</b> — process notes, sketches, drafts your audience won't see anywhere else</li>
+            <li><b>Newsletters that live somewhere</b> — searchable archive of every issue</li>
+            <li><b>SEO-friendly long content</b> — articles that bring search traffic to your tadaify page</li>
+            <li><b>Substack alternative</b> — bring your existing audience without the Substack take-rate</li>
+          </ul>
+          <p>The Blog page is one of the page templates available on every paid plan (Creator+). Free tier ships Home only — upgrade to add Blog.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ========== STATE B: BLOG PAGE EXISTS, FILLED ========== -->
+    <section id="stateFilled">
+      <div class="section">
+        <div class="section-head">
+          <h2>Posts</h2>
+          <span class="sub">23 posts · 4 drafts · 1 scheduled</span>
+        </div>
+        <div class="section-body">
+          <div class="posts-toolbar">
+            <div class="tabs" role="tablist">
+              <button class="tab is-active" data-filter="all">All <span class="tab-count">23</span></button>
+              <button class="tab" data-filter="published">Published <span class="tab-count">18</span></button>
+              <button class="tab" data-filter="drafts">Drafts <span class="tab-count">4</span></button>
+              <button class="tab" data-filter="scheduled">Scheduled <span class="tab-count">1</span></button>
+            </div>
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" placeholder="Search posts by title…" />
+            </div>
+          </div>
+
+          <div class="posts-list">
+            <article class="post-row">
+              <div class="pr-thumb t-indigo">⚡</div>
+              <div class="pr-meta">
+                <h4 class="pr-title">How I price my custom illustration commissions in 2026</h4>
+                <div class="pr-sub">
+                  <span class="chip live">● Published</span>
+                  <span>Apr 24 · 1.2k reads · 8 comments</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="iconbtn" data-tip="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+
+            <article class="post-row">
+              <div class="pr-thumb t-rose">📖</div>
+              <div class="pr-meta">
+                <h4 class="pr-title">3 lessons after 6 months of selling on tadaify</h4>
+                <div class="pr-sub">
+                  <span class="chip scheduled">⏱ Scheduled</span>
+                  <span>Goes live Apr 30 · 09:00 PT</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="iconbtn" data-tip="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+
+            <article class="post-row">
+              <div class="pr-thumb t-emerald">🌱</div>
+              <div class="pr-meta">
+                <h4 class="pr-title">Building a small audience the slow way (draft)</h4>
+                <div class="pr-sub">
+                  <span class="chip draft">○ Draft</span>
+                  <span>Last edited 2 hours ago · 1,840 words</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="iconbtn" data-tip="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+
+            <article class="post-row">
+              <div class="pr-thumb t-warm">☕</div>
+              <div class="pr-meta">
+                <h4 class="pr-title">My morning routine + the tools I actually use</h4>
+                <div class="pr-sub">
+                  <span class="chip live">● Published</span>
+                  <span>Apr 18 · 894 reads · 3 comments</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="iconbtn" data-tip="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+
+            <article class="post-row">
+              <div class="pr-thumb t-slate">🧵</div>
+              <div class="pr-meta">
+                <h4 class="pr-title">Why I left Patreon for tadaify (and what I'd do differently)</h4>
+                <div class="pr-sub">
+                  <span class="chip live">● Published</span>
+                  <span>Apr 12 · 3.4k reads · 22 comments</span>
+                </div>
+              </div>
+              <div class="pr-actions">
+                <button class="iconbtn" data-tip="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+          </div>
+
+          <div class="pagination">
+            <button class="page-btn">‹</button>
+            <button class="page-btn is-current">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <details class="section" style="border-radius: 14px;">
+        <summary class="section-head" style="cursor: pointer; list-style: none;">
+          <h2>Recent comments</h2>
+          <span class="sub">Disqus · 12 awaiting reply</span>
+          <span class="head-spacer"></span>
+          <span class="chip">Disqus connected</span>
+        </summary>
+        <div class="section-body">
+          <div class="comments-list">
+            <div class="comment">
+              <div class="av">M</div>
+              <div class="c-body">
+                <div class="c-author">Maya R.</div>
+                <div class="c-meta">on "How I price my custom illustration commissions" · 3h ago</div>
+                <div class="c-text">This pricing breakdown is exactly what I needed. Saved + sharing with my whole studio group.</div>
+              </div>
+              <div class="c-actions">
+                <button class="btn btn-xs btn-ghost">Reply</button>
+              </div>
+            </div>
+            <div class="comment">
+              <div class="av">J</div>
+              <div class="c-body">
+                <div class="c-author">Jonas K.</div>
+                <div class="c-meta">on "Why I left Patreon for tadaify" · 1 day ago</div>
+                <div class="c-text">Curious — did you migrate your existing patrons or start over? Would love a follow-up post on that.</div>
+              </div>
+              <div class="c-actions">
+                <button class="btn btn-xs btn-ghost">Reply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- ========== STATE: EMPTY (page exists but no posts) ========== -->
+    <section id="stateEmpty" hidden>
+      <div class="empty">
+        <div class="empty-icon">✍️</div>
+        <h3>No posts yet</h3>
+        <p>Your Blog page is live at <code>tadaify.com/alexandra/blog</code> but it's empty. Publish your first post — even a 200-word welcome — to give visitors something to read.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" onclick="document.getElementById('btnNewPost').click()">＋ Write your first post</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ========== POST COMPOSER MODAL (centered, NEVER drawer) ========== -->
+<div class="modal-backdrop" id="composerBackdrop" role="dialog" aria-modal="true" aria-labelledby="composerTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="composerTitle">New post</h3>
+      <span class="chip draft">○ Draft</span>
+      <button class="iconbtn" aria-label="Close" onclick="closeComposer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="cover-uploader" tabindex="0">
+        <div style="font-size: 28px; margin-bottom: 6px;">📷</div>
+        <b>Drop cover image here</b> or click to upload
+        <div style="font-size: 12px; margin-top: 4px;">PNG / JPG / WebP · max 5MB · 1600×900 recommended</div>
+      </div>
+      <div style="margin-top: 16px;"></div>
+
+      <div class="field">
+        <label class="field-label">Title</label>
+        <input class="field-input" type="text" placeholder="A title that earns the click…" value="" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">URL slug</label>
+          <input class="field-input" type="text" placeholder="auto-generated-from-title" />
+        </div>
+        <div class="field">
+          <label class="field-label">Tags</label>
+          <input class="field-input" type="text" placeholder="pricing, freelance, illustration" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Body</label>
+        <div class="toolbar-rich">
+          <button class="iconbtn" data-tip="Bold"><b>B</b></button>
+          <button class="iconbtn" data-tip="Italic"><i>I</i></button>
+          <button class="iconbtn" data-tip="Heading">H</button>
+          <button class="iconbtn" data-tip="Link">🔗</button>
+          <button class="iconbtn" data-tip="Image">🖼</button>
+          <button class="iconbtn" data-tip="Quote">"</button>
+          <button class="iconbtn" data-tip="Code">{ }</button>
+        </div>
+        <textarea class="field-area with-toolbar" placeholder="Write your post in Markdown…&#10;&#10;## A heading&#10;A paragraph with **bold** and _italic_ and a [link](https://)."></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">
+            Author
+            <span class="chip tier">Business</span>
+          </label>
+          <select class="field-select">
+            <option>Alexandra Silva (you)</option>
+            <option disabled>Jonas K. — invite a teammate (Business+)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Schedule</label>
+          <input class="field-input" type="datetime-local" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger-ghost btn-sm">Delete draft</button>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost" onclick="closeComposer()">Save draft</button>
+      <button class="btn btn-warm">Schedule</button>
+      <button class="btn btn-primary">Publish now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Demo toolbar -->
+<div class="demo-toolbar" aria-hidden="true">
+  <div class="group">
+    <span style="opacity:0.7">State:</span>
+    <select id="demoState">
+      <option value="filled">Filled (23 posts)</option>
+      <option value="empty">Empty (0 posts)</option>
+      <option value="no-page">No Blog page yet</option>
+    </select>
+  </div>
+  <div class="group">
+    <span style="opacity:0.7">Tier:</span>
+    <select id="demoTier">
+      <option value="creator">Creator</option>
+      <option value="pro">Pro</option>
+      <option value="business">Business</option>
+      <option value="free">Free</option>
+    </select>
+  </div>
+  <a href="./app-page-blog.html">→ Page editor</a>
+</div>
+
+<script src="./shared/logo.js"></script>
+<script src="./shared/partials.js"></script>
+<script>
+  // Demo state switcher
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    var state = qs.get('state') || 'filled';
+    var stateSel = document.getElementById('demoState');
+    if (stateSel) stateSel.value = state;
+    function applyState(s) {
+      document.getElementById('stateNoPage').hidden = s !== 'no-page';
+      document.getElementById('stateEmpty').hidden  = s !== 'empty';
+      document.getElementById('stateFilled').hidden = s !== 'filled';
+      // Hide page-head action buttons in no-page state
+      var actions = document.querySelector('.page-head .actions');
+      if (actions) actions.style.display = s === 'no-page' ? 'none' : '';
+    }
+    applyState(state);
+    if (stateSel) stateSel.addEventListener('change', function () { applyState(this.value); });
+
+    var tierSel = document.getElementById('demoTier');
+    if (tierSel) {
+      tierSel.value = qs.get('tier') || 'creator';
+      tierSel.addEventListener('change', function () {
+        qs.set('tier', this.value);
+        location.search = qs.toString();
+      });
+    }
+  })();
+
+  // Composer modal
+  function openComposer() { document.getElementById('composerBackdrop').classList.add('is-open'); }
+  function closeComposer() { document.getElementById('composerBackdrop').classList.remove('is-open'); }
+  document.getElementById('btnNewPost').addEventListener('click', openComposer);
+  document.getElementById('composerBackdrop').addEventListener('click', function (e) {
+    if (e.target === this) closeComposer();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeComposer();
+  });
+</script>
+</body>
+</html>
