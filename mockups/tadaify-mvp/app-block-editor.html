@@ -3471,7 +3471,10 @@
                label below). Suggest stays out of URL / numeric / date
                / toggle / dropdown / icon-picker fields per the spec. */
             { kind: 'text', name: 'label', label: 'Button label', value: state.label || 'Listen on Spotify', ai: true, help: 'Short and clickable. Use a verb where you can.' },
-            { kind: 'url',  name: 'url',   label: 'URL', value: state.url || 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF' },
+            /* FIX-6B — link-target replaces plain URL: creator can pick
+               an internal page (Pages tab) or paste an external URL
+               (External URL tab). Default tab auto-detects from value. */
+            { kind: 'link-target', name: 'url',   label: 'URL', value: state.url || 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF' },
             { kind: 'icon-picker', name: 'icon', label: 'Icon', value: state.icon || 'spotify',
               help: 'Pick a brand logo for social platforms or a generic glyph for any other link.' },
             { kind: 'check', name: 'newtab', label: 'Open in new tab', value: state.newtab !== false },
@@ -3494,7 +3497,8 @@
             { kind: 'upload', name: 'src',   label: 'Image (jpg / png / webp · max 5MB)' },
             { kind: 'text',   name: 'alt',   label: 'Alt text (accessibility)', value: state.alt || 'Album cover for "Spring Drops"', help: 'Describe the image for screen readers and SEO. Not visible on the public page.' },
             { kind: 'text',   name: 'caption', label: 'Caption (optional, shown under the image)', value: state.caption || 'Album cover for "Spring Drops"', ai: true, help: 'Visible text shown on the public page, beneath the image.' },
-            { kind: 'url',    name: 'href',  label: 'Click-through URL (optional)', value: state.href || '' },
+            /* FIX-6B — link-target replaces plain URL for click-through. */
+            { kind: 'link-target', name: 'href', label: 'Click-through URL (optional)', value: state.href || '' },
             { kind: 'text',   name: 'ctaLabel', label: 'CTA label (shown when click-through URL is set)', value: state.ctaLabel || 'Listen now', ai: true, help: 'Small inline link rendered inside the card, e.g. "Listen now", "Buy", "Read".' },
             { kind: 'select', name: 'aspect', label: 'Aspect ratio',
               options: [['1','Square 1:1'], ['43','Standard 4:3'], ['169','Wide 16:9'], ['rounded','Rounded card']],
@@ -3803,8 +3807,12 @@
             { kind: 'text', name: 'price', label: 'Price (free text — include currency)', value: state.price || '$24',
               help: 'Type the price exactly as you want it shown, e.g. "$24", "€19.99", "PLN 79".' },
             { kind: 'upload', name: 'image', label: 'Product image (jpg / png / webp · max 5MB)' },
-            { kind: 'url', name: 'url', label: 'External product URL (required)', value: state.url || 'https://shop.example.com/spring-drop',
-              help: 'Where shoppers land when they click "Buy". Shopify / Stripe / Etsy / Gumroad / your own store — any URL.' },
+            /* FIX-6B — link-target with External URL as the default
+               tab, since most product URLs are external stores. Creators
+               who sell their own gated content can flip to Pages. */
+            { kind: 'link-target', name: 'url', label: 'External product URL (required)', value: state.url || 'https://shop.example.com/spring-drop',
+              defaultTab: 'external',
+              help: 'Where shoppers land when they click "Buy". Shopify / Stripe / Etsy / Gumroad / your own store — any URL. You can also link to one of your own pages.' },
             { kind: 'text', name: 'cta', label: 'Buy button label', value: state.cta || 'Buy on Shopify', ai: true,
               help: 'Tell shoppers where they\'re going, e.g. "Buy on Shopify", "Get yours", "Order now".' },
             { kind: 'icon-picker', name: 'ctaIcon', label: 'Buy button icon', value: state.ctaIcon || 'shopping-cart',
@@ -4397,6 +4405,42 @@
                  '<input id="' + id + '" type="' + (f.kind === 'url' ? 'url' : 'text') + '" value="' + escapeHtml(f.value || '') + '" oninput="updateField(\'' + f.name + '\', this.value)"' + (f.readonly ? ' readonly style="background:var(--bg-muted);color:var(--fg-muted)"' : '') + '/>' +
                  aiBtn + help + '</div>';
         }
+        /* FIX-6B — link-target field kind: tabbed Pages / External URL
+           picker (window.LinkTarget). Trigger button shows current value
+           with an "Internal" or "External" tag. Click → centered modal.
+           Falls back to a plain url input when window.LinkTarget is
+           absent (safety net for JS-load order). */
+        if (f.kind === 'link-target') {
+          var rawVal = f.value || '';
+          var isExt = window.LinkTarget && window.LinkTarget.isExternalUrl
+            ? window.LinkTarget.isExternalUrl(rawVal)
+            : /^(https?:\/\/|mailto:|tel:)/i.test(rawVal);
+          var displayVal;
+          if (!rawVal) {
+            displayVal = 'Choose a page or paste a URL…';
+          } else if (isExt) {
+            displayVal = rawVal;
+          } else if (window.LinkTarget && window.LinkTarget.fullUrl) {
+            displayVal = window.LinkTarget.fullUrl(rawVal);
+          } else {
+            displayVal = 'tadaify.com/alexandra' + rawVal;
+          }
+          var tagLabel = !rawVal ? 'Empty' : (isExt ? 'External' : 'Internal');
+          var tagCls   = isExt ? '' : (rawVal ? ' is-internal' : '');
+          var defaultTab = f.defaultTab || '';
+          return '<div class="field tdf-lt-field">' +
+                 '<label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
+                 '<button id="' + id + '" type="button" class="tdf-lt-trigger' + tagCls + '" ' +
+                   'data-link-target-trigger="' + escapeHtml(f.name) + '" ' +
+                   'data-default-tab="' + escapeHtml(defaultTab) + '" ' +
+                   'data-current-value="' + escapeHtml(rawVal) + '" ' +
+                   'data-field-label="' + escapeHtml(f.label) + '">' +
+                   '<span class="lt-kind">' + escapeHtml(tagLabel) + '</span>' +
+                   '<span class="lt-val' + (rawVal ? '' : ' is-empty') + '">' + escapeHtml(displayVal) + '</span>' +
+                   '<span class="lt-edit">Edit</span>' +
+                 '</button>' +
+                 help + '</div>';
+        }
         if (f.kind === 'datetime') {
           return '<div class="field"><label for="' + id + '">' + escapeHtml(f.label) + '</label>' +
                  '<input id="' + id + '" type="datetime-local" value="' + escapeHtml(f.value || '') + '" oninput="updateField(\'' + f.name + '\', this.value)"/>' +
@@ -4585,6 +4629,25 @@
         return '';
       }).join('');
       document.getElementById('form-body').innerHTML = html;
+      /* FIX-6B — wire link-target trigger buttons to the LinkTarget
+         picker. Re-bound after every form re-render (innerHTML wipes
+         listeners). */
+      document.querySelectorAll('#form-body [data-link-target-trigger]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!window.LinkTarget) return;
+          var fieldName  = btn.getAttribute('data-link-target-trigger');
+          var fieldLabel = btn.getAttribute('data-field-label') || '';
+          var current    = btn.getAttribute('data-current-value') || '';
+          var defaultTab = btn.getAttribute('data-default-tab') || undefined;
+          window.LinkTarget.openPicker({
+            fieldId:      'block-' + state.type + '-' + fieldName,
+            fieldLabel:   fieldLabel,
+            currentValue: current,
+            defaultTab:   defaultTab || undefined,
+            onSelect:     function (value) { updateField(fieldName, value); }
+          });
+        });
+      });
       renderPreview();
     }
 
