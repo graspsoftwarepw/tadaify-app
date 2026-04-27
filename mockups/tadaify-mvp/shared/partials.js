@@ -1215,3 +1215,271 @@
     setState: function (kind) { renderAiState(kind); }
   };
 })();
+
+/* =========================================================================
+   Viewport Switcher Toolbar — preview DevTools bar (Desktop / Tablet / Mobile)
+   Appears at the top of every mockup page as a dark "DevTools-style" bar.
+
+   Rules:
+   - Suppressed inside iframes (window !== window.top) to prevent recursion
+   - Suppressed when URL has ?_no_viewport_toolbar=1
+   - Pure vanilla JS, no dependencies, no framework
+   - Does NOT touch any existing mockup DOM/CSS — purely additive
+   - Keeps the existing mobile drawer code (from PR #98) fully intact
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  /* ---- Guard: never run inside an iframe -------------------------------- */
+  try { if (window !== window.top) return; } catch (e) { return; }
+
+  /* ---- Guard: explicit opt-out via URL param ---------------------------- */
+  if (/[?&]_no_viewport_toolbar=1/.test(location.search)) return;
+
+  /* ---- Config ----------------------------------------------------------- */
+  var BRAND_COLOR = '#6366F1';
+  var TOOLBAR_H   = 40; /* px */
+  var VIEWPORTS = {
+    desktop: { label: '🖥 Desktop', w: null, h: null },
+    tablet:  { label: '📱 Tablet',  w: 820,  h: 1180 },
+    mobile:  { label: '☎ Mobile',         w: 390,  h: 844  }
+  };
+  var LS_KEY = 'tadaify_viewport';
+
+  /* ---- State ------------------------------------------------------------ */
+  var current = 'desktop';
+  var originalBodyHTML = null; /* saved on first non-desktop switch */
+
+  /* ---- Helpers ---------------------------------------------------------- */
+  function dims() {
+    if (current === 'desktop') return window.innerWidth + ' × ' + window.innerHeight;
+    var vp = VIEWPORTS[current];
+    return vp.w + ' × ' + vp.h;
+  }
+
+  /* ---- Build toolbar CSS ------------------------------------------------ */
+  var toolbarCss = [
+    /* Push page body content below toolbar */
+    'body { padding-top: ' + TOOLBAR_H + 'px !important; }',
+    /* Toolbar container */
+    '#tdf-vp-toolbar {',
+    '  position: fixed; top: 0; left: 0; right: 0; z-index: 999999;',
+    '  height: ' + TOOLBAR_H + 'px;',
+    '  background: #1f2937;',
+    '  display: flex; align-items: center; gap: 8px; padding: 0 16px;',
+    '  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;',
+    '  font-size: 12px; color: #d1d5db;',
+    '  box-shadow: 0 1px 0 rgba(0,0,0,0.4);',
+    '  box-sizing: border-box;',
+    '}',
+    '#tdf-vp-toolbar .vpt-label {',
+    '  font-size: 11px; color: #6b7280; white-space: nowrap; user-select: none;',
+    '}',
+    '#tdf-vp-toolbar .vpt-btns {',
+    '  display: flex; align-items: center; gap: 4px;',
+    '}',
+    '#tdf-vp-toolbar .vpt-btn {',
+    '  height: 28px; padding: 0 10px; border-radius: 99px;',
+    '  font-family: inherit; font-size: 12px; font-weight: 500;',
+    '  cursor: pointer; border: 1px solid #374151; background: transparent;',
+    '  color: #9ca3af; white-space: nowrap;',
+    '  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;',
+    '  display: inline-flex; align-items: center;',
+    '}',
+    '#tdf-vp-toolbar .vpt-btn:hover {',
+    '  background: #374151; color: #f3f4f6; transform: translateY(-1px);',
+    '}',
+    '#tdf-vp-toolbar .vpt-btn.vpt-active {',
+    '  background: ' + BRAND_COLOR + '; color: #fff; border-color: ' + BRAND_COLOR + ';',
+    '}',
+    '#tdf-vp-toolbar .vpt-btn.vpt-active:hover {',
+    '  background: #4f46e5; border-color: #4f46e5;',
+    '}',
+    '#tdf-vp-toolbar .vpt-spacer { flex: 1; }',
+    '#tdf-vp-toolbar .vpt-dims {',
+    '  font-family: ui-monospace, "JetBrains Mono", "Cascadia Code", monospace;',
+    '  font-size: 11px; color: #6b7280; white-space: nowrap; user-select: none;',
+    '}',
+    '#tdf-vp-toolbar .vpt-info {',
+    '  position: relative; display: inline-flex; align-items: center; justify-content: center;',
+    '  width: 18px; height: 18px; border-radius: 50%;',
+    '  border: 1px solid #374151; background: transparent;',
+    '  color: #6b7280; font-size: 10px; font-weight: 700;',
+    '  cursor: default; user-select: none; margin-left: 4px; flex-shrink: 0;',
+    '}',
+    '#tdf-vp-toolbar .vpt-info:hover .vpt-tip { opacity: 1; pointer-events: auto; }',
+    '#tdf-vp-toolbar .vpt-tip {',
+    '  position: absolute; right: 0; top: calc(100% + 6px);',
+    '  background: #111827; color: #d1d5db; font-size: 11px; line-height: 1.5;',
+    '  padding: 8px 10px; border-radius: 8px; white-space: normal; max-width: 260px;',
+    '  box-shadow: 0 4px 16px rgba(0,0,0,0.5); z-index: 1000000;',
+    '  opacity: 0; pointer-events: none; transition: opacity 0.15s ease;',
+    '}',
+    /* iframe device frame container */
+    '#tdf-vp-frame-wrap {',
+    '  width: 100%; display: flex; justify-content: center;',
+    '  padding-top: 60px; padding-bottom: 60px; box-sizing: border-box;',
+    '  background: #111827; min-height: calc(100vh - ' + TOOLBAR_H + 'px);',
+    '}',
+    '#tdf-vp-frame {',
+    '  border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.25);',
+    '  border: 1px solid #1f2937; background: #ffffff; display: block;',
+    '}'
+  ].join('\n');
+
+  var styleEl = document.createElement('style');
+  styleEl.setAttribute('data-source', 'viewport-toolbar');
+  styleEl.textContent = toolbarCss;
+  document.head.appendChild(styleEl);
+
+  /* ---- Build toolbar element -------------------------------------------- */
+  var toolbar = document.createElement('div');
+  toolbar.id = 'tdf-vp-toolbar';
+  toolbar.setAttribute('role', 'toolbar');
+  toolbar.setAttribute('aria-label', 'Viewport preview switcher');
+  toolbar.innerHTML =
+    '<span class="vpt-label">Preview viewport:</span>' +
+    '<div class="vpt-btns" id="vpt-btns">' +
+      '<button type="button" class="vpt-btn vpt-active" data-vp="desktop">' + VIEWPORTS.desktop.label + '</button>' +
+      '<button type="button" class="vpt-btn" data-vp="tablet">' + VIEWPORTS.tablet.label + '</button>' +
+      '<button type="button" class="vpt-btn" data-vp="mobile">' + VIEWPORTS.mobile.label + '</button>' +
+    '</div>' +
+    '<span class="vpt-spacer"></span>' +
+    '<span class="vpt-dims" id="vpt-dims">' + dims() + '</span>' +
+    '<span class="vpt-info" aria-label="About this bar">' +
+      '?' +
+      '<span class="vpt-tip" role="tooltip">This bar is a preview tool — it is not part of the mockup. Use Desktop / Tablet / Mobile to simulate viewport sizes via an embedded iframe.</span>' +
+    '</span>';
+
+  /* Insert at the very top of body, before anything else */
+  document.body.insertBefore(toolbar, document.body.firstChild);
+
+  /* ---- Update button active state --------------------------------------- */
+  function paintButtons(vp) {
+    var btns = document.querySelectorAll('#tdf-vp-toolbar .vpt-btn');
+    Array.prototype.forEach.call(btns, function (btn) {
+      btn.classList.toggle('vpt-active', btn.getAttribute('data-vp') === vp);
+    });
+  }
+
+  /* ---- Update dimensions readout ---------------------------------------- */
+  function paintDims() {
+    var el = document.getElementById('vpt-dims');
+    if (el) el.textContent = dims();
+  }
+
+  /* ---- Build iframe src URL (suppresses toolbar recursion) -------------- */
+  function buildIframeSrc() {
+    var qs = location.search;
+    var sep = qs ? '&' : '?';
+    return location.pathname + qs + sep + '_no_viewport_toolbar=1' + (location.hash || '');
+  }
+
+  /* ---- Switch to non-desktop viewport ----------------------------------- */
+  function applyViewport(vp) {
+    var vpCfg = VIEWPORTS[vp];
+    if (!vpCfg || vpCfg.w === null) return;
+
+    if (current === 'desktop') {
+      /* Save full body HTML (excluding toolbar) so Desktop restores correctly */
+      var clone = document.body.cloneNode(true);
+      var tbClone = clone.querySelector('#tdf-vp-toolbar');
+      if (tbClone) tbClone.remove();
+      originalBodyHTML = clone.innerHTML;
+    }
+
+    current = vp;
+    paintButtons(vp);
+    paintDims();
+    try { localStorage.setItem(LS_KEY, vp); } catch (e) {}
+
+    /* Clear body content (keep toolbar) */
+    var children = Array.prototype.slice.call(document.body.childNodes);
+    children.forEach(function (node) {
+      if (node !== toolbar) document.body.removeChild(node);
+    });
+
+    /* Build frame wrapper + iframe */
+    var wrap = document.createElement('div');
+    wrap.id = 'tdf-vp-frame-wrap';
+
+    var iframe = document.createElement('iframe');
+    iframe.id = 'tdf-vp-frame';
+    iframe.src = buildIframeSrc();
+    iframe.width  = String(vpCfg.w);
+    iframe.height = String(vpCfg.h);
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('scrolling', 'yes');
+    iframe.setAttribute('title', 'Viewport preview — ' + vp);
+    iframe.setAttribute('loading', 'eager');
+
+    wrap.appendChild(iframe);
+    document.body.appendChild(wrap);
+  }
+
+  /* ---- Restore desktop view --------------------------------------------- */
+  function applyDesktop() {
+    current = 'desktop';
+    paintButtons('desktop');
+    try { localStorage.setItem(LS_KEY, 'desktop'); } catch (e) {}
+
+    if (originalBodyHTML !== null) {
+      /* Clear body content (keep toolbar) */
+      var children = Array.prototype.slice.call(document.body.childNodes);
+      children.forEach(function (node) {
+        if (node !== toolbar) document.body.removeChild(node);
+      });
+
+      /* Re-inject saved HTML */
+      var tmp = document.createElement('div');
+      tmp.innerHTML = originalBodyHTML;
+      while (tmp.firstChild) {
+        document.body.appendChild(tmp.firstChild);
+      }
+      originalBodyHTML = null;
+
+      /* Re-fire logo render hook if available */
+      try {
+        if (window.tadaifyTokens && typeof window.tadaifyTokens.renderLogo === 'function') {
+          window.tadaifyTokens.renderLogo();
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    paintDims();
+  }
+
+  /* ---- Button click handler --------------------------------------------- */
+  document.getElementById('vpt-btns').addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.vpt-btn') : null;
+    if (!btn && e.target.classList && e.target.classList.contains('vpt-btn')) btn = e.target;
+    if (!btn) return;
+    var vp = btn.getAttribute('data-vp');
+    if (!vp || vp === current) return;
+    if (vp === 'desktop') { applyDesktop(); } else { applyViewport(vp); }
+  });
+
+  /* ---- Keyboard shortcuts: Cmd/Ctrl+Shift+1/2/3 ------------------------- */
+  document.addEventListener('keydown', function (e) {
+    if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
+    if (e.key === '1') { e.preventDefault(); if (current !== 'desktop') applyDesktop(); }
+    if (e.key === '2') { e.preventDefault(); if (current !== 'tablet')  applyViewport('tablet'); }
+    if (e.key === '3') { e.preventDefault(); if (current !== 'mobile')  applyViewport('mobile'); }
+  });
+
+  /* ---- Live resize readout (desktop mode only) -------------------------- */
+  window.addEventListener('resize', function () {
+    if (current === 'desktop') paintDims();
+  });
+
+  /* ---- Restore persisted viewport on load ------------------------------- */
+  (function restorePersisted() {
+    var saved = '';
+    try { saved = localStorage.getItem(LS_KEY) || ''; } catch (e) {}
+    if (saved === 'tablet' || saved === 'mobile') {
+      /* Defer so partials / tokens have rendered first */
+      setTimeout(function () { applyViewport(saved); }, 150);
+    }
+  })();
+
+})();
