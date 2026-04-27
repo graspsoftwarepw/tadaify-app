@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Public Paid articles list — visitor view at tadaify.com/<handle>/articles — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Visitor view that renders the list of paid articles published via
+  app-admin-paid-articles.html and configured via app-page-paid-articles.html.
+
+  Pairs with creator-paid-article-public.html (single article view).
+
+  Locked rules honoured:
+    - feedback_mockup_full_feature_vision (search + filter actually filter; cards link to single)
+    - feedback_tadaify_subpages_inherit_home_chrome (full home nav at top + footer mirror)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Articles — Alexandra Silva — tadaify.com/alexandra/articles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared/tokens.css" />
+  <style>
+    body {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(245,158,11,0.10), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(99,102,241,0.07), transparent 60%),
+        var(--bg);
+      color: var(--fg); font-family: var(--font-sans); min-height: 100vh; margin: 0;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* Top strip — mockup orientation pill */
+    .top-strip { max-width: 980px; margin: 0 auto; padding: 14px 20px 0; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--fg-muted); }
+    .top-strip .pill { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elevated); font-family: var(--font-mono); }
+    .top-strip .pill b { color: var(--fg); }
+    .top-strip .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+    /* Creator home nav (canonical — copies pattern from creator-public.html) */
+    .creator-nav { max-width: 980px; margin: 0 auto; padding: 22px 20px 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .creator-nav .av { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6366F1, #8B5CF6); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+    .creator-nav .who { font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+    .creator-nav .who .handle { font-size: 13px; color: var(--fg-muted); font-family: var(--font-sans); font-weight: 400; }
+    .creator-nav .nav-spacer { flex: 1; }
+    .creator-nav .nav-links { display: flex; gap: 6px; flex-wrap: wrap; }
+    .creator-nav .nav-link { padding: 7px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--fg-muted); transition: background .12s ease, color .12s ease; }
+    .creator-nav .nav-link:hover { background: rgba(99,102,241,0.08); color: var(--brand-primary); }
+    .creator-nav .nav-link.is-current { color: var(--brand-primary); background: rgba(99,102,241,0.10); }
+
+    /* Hero */
+    .hero { max-width: 980px; margin: 0 auto; padding: 36px 20px 18px; }
+    .hero h1 { font-family: var(--font-display); font-weight: 600; font-size: 44px; margin: 0 0 8px; letter-spacing: -0.01em; }
+    .hero h1 .badge { display: inline-flex; vertical-align: middle; margin-left: 12px; padding: 3px 10px; border-radius: 999px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 13px; font-weight: 600; font-family: var(--font-sans); }
+    .hero p { font-size: 17px; color: var(--fg-muted); max-width: 620px; margin: 0; line-height: 1.55; }
+
+    /* Toolbar */
+    .toolbar { max-width: 980px; margin: 0 auto; padding: 18px 20px 6px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--fg-subtle); }
+    .search-wrap input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+    .search-wrap input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.14); }
+
+    .tag-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .tag-chip { padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elevated); color: var(--fg-muted); font-size: 12.5px; font-weight: 500; cursor: pointer; }
+    .tag-chip.is-active { border-color: var(--brand-primary); background: rgba(99,102,241,0.06); color: var(--brand-primary); }
+
+    /* Articles grid */
+    .articles { max-width: 980px; margin: 22px auto 0; padding: 0 20px 80px; display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .art-card { border: 1px solid var(--border); border-radius: 14px; background: var(--bg-elevated); overflow: hidden; display: flex; flex-direction: column; transition: transform .15s ease, box-shadow .15s ease; }
+    .art-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(17,24,39,0.06); }
+    .art-cover { aspect-ratio: 16/10; background: linear-gradient(135deg, #6366F1, #8B5CF6); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 36px; position: relative; }
+    .art-cover.t-w { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .art-cover.t-r { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .art-cover.t-e { background: linear-gradient(135deg, #34D399, #047857); }
+    .art-cover.t-s { background: linear-gradient(135deg, #475569, #0F172A); }
+    .art-cover .lock { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 8px; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; backdrop-filter: blur(4px); }
+    .art-cover .lock svg { width: 14px; height: 14px; }
+    .art-meta { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .art-title { font-family: var(--font-display); font-weight: 600; font-size: 18px; margin: 0; line-height: 1.3; }
+    .art-excerpt { font-size: 13.5px; color: var(--fg-muted); line-height: 1.5; flex: 1; }
+    .art-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--border); }
+    .art-price { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--brand-primary); }
+    .art-readtime { font-size: 11.5px; color: var(--fg-muted); }
+    .art-buy { margin-left: auto; padding: 6px 14px; border-radius: 999px; background: var(--brand-primary); color: #fff; font-size: 12.5px; font-weight: 600; border: 0; cursor: pointer; }
+    .art-buy:hover { background: var(--brand-primary-hover); }
+
+    /* Pagination */
+    .load-more-wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 80px; text-align: center; }
+    .load-more { padding: 11px 22px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--fg); font-weight: 500; font-size: 14px; cursor: pointer; }
+    .load-more:hover { border-color: var(--border-strong); }
+
+    /* Footer mirror */
+    footer.creator-footer { max-width: 980px; margin: 0 auto; padding: 40px 20px 60px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--fg-muted); }
+    footer.creator-footer a { color: var(--fg-muted); }
+    footer.creator-footer a:hover { color: var(--fg); }
+    footer.creator-footer .powered { margin-left: auto; }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 32px; }
+      .hero p { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-strip">
+  <span class="pill"><span class="dot"></span><b>tadaify.com/alexandra/articles</b></span>
+  <span style="opacity:0.7">— mockup view</span>
+</div>
+
+<nav class="creator-nav">
+  <div class="av">A</div>
+  <div class="who">Alexandra Silva<div class="handle">@alexandra</div></div>
+  <div class="nav-spacer"></div>
+  <div class="nav-links">
+    <a href="./creator-public.html" class="nav-link">Home</a>
+    <a href="./creator-about-public.html" class="nav-link">About</a>
+    <a href="./creator-blog-public.html" class="nav-link">Blog</a>
+    <a href="./creator-portfolio-public.html" class="nav-link">Portfolio</a>
+    <a href="#" class="nav-link is-current" aria-current="page">Articles</a>
+    <a href="./creator-schedule-public.html" class="nav-link">Book me</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <h1>Articles <span class="badge">12</span></h1>
+  <p>Long-form essays + behind-the-scenes you can't get anywhere else. One-time price per article — no subscription.</p>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" placeholder="Search articles…" />
+  </div>
+  <div class="tag-chips">
+    <button class="tag-chip is-active">All</button>
+    <button class="tag-chip">Pricing</button>
+    <button class="tag-chip">Process</button>
+    <button class="tag-chip">Behind the scenes</button>
+    <button class="tag-chip">Tools</button>
+    <button class="tag-chip">Career</button>
+  </div>
+</div>
+
+<section class="articles">
+  <article class="art-card">
+    <a href="./creator-paid-article-public.html" class="art-cover">
+      📖
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </a>
+    <div class="art-meta">
+      <h2 class="art-title"><a href="./creator-paid-article-public.html">How I priced my last commission</a></h2>
+      <p class="art-excerpt">A walkthrough of the exact thinking that took a $400 quote up to $1,800 — what I added, what I cut, and the email script I sent.</p>
+      <div class="art-foot">
+        <span class="art-price">$5</span>
+        <span class="art-readtime">12 min read</span>
+        <button class="art-buy">Buy</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="art-card">
+    <a href="./creator-paid-article-public.html" class="art-cover t-w">
+      ☕
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </a>
+    <div class="art-meta">
+      <h2 class="art-title"><a href="./creator-paid-article-public.html">A morning in the studio</a></h2>
+      <p class="art-excerpt">Hour-by-hour photo essay of a typical work day — coffee setup, Pomodoro routine, the playlist.</p>
+      <div class="art-foot">
+        <span class="art-price">$3</span>
+        <span class="art-readtime">8 min read</span>
+        <button class="art-buy">Buy</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="art-card">
+    <a href="./creator-paid-article-public.html" class="art-cover t-r">
+      🎨
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </a>
+    <div class="art-meta">
+      <h2 class="art-title"><a href="./creator-paid-article-public.html">My color theory cheatsheet</a></h2>
+      <p class="art-excerpt">Every palette I use + the quick rules for picking complementary, analogous, and triadic combinations on the fly.</p>
+      <div class="art-foot">
+        <span class="art-price">$8</span>
+        <span class="art-readtime">18 min read</span>
+        <button class="art-buy">Buy</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="art-card">
+    <a href="./creator-paid-article-public.html" class="art-cover t-e">
+      🌱
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </a>
+    <div class="art-meta">
+      <h2 class="art-title"><a href="./creator-paid-article-public.html">First year as a freelancer (deep dive)</a></h2>
+      <p class="art-excerpt">The full recap — clients, money, taxes, mistakes. Includes my actual P&amp;L spreadsheet.</p>
+      <div class="art-foot">
+        <span class="art-price">$12</span>
+        <span class="art-readtime">30 min read</span>
+        <button class="art-buy">Buy</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="art-card">
+    <a href="./creator-paid-article-public.html" class="art-cover t-s">
+      🧵
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </a>
+    <div class="art-meta">
+      <h2 class="art-title"><a href="./creator-paid-article-public.html">The contract template I send every client</a></h2>
+      <p class="art-excerpt">My one-page MSA — what's in it, why each clause matters, and the 3 lines that saved me from a dispute last year.</p>
+      <div class="art-foot">
+        <span class="art-price">$10</span>
+        <span class="art-readtime">15 min read</span>
+        <button class="art-buy">Buy</button>
+      </div>
+    </div>
+  </article>
+
+  <article class="art-card">
+    <a href="./creator-paid-article-public.html" class="art-cover">
+      💼
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </a>
+    <div class="art-meta">
+      <h2 class="art-title"><a href="./creator-paid-article-public.html">How I find clients without a network</a></h2>
+      <p class="art-excerpt">The 3 channels that actually moved the needle in my first 18 months — what I tried, what flopped, what I'd do again.</p>
+      <div class="art-foot">
+        <span class="art-price">$7</span>
+        <span class="art-readtime">14 min read</span>
+        <button class="art-buy">Buy</button>
+      </div>
+    </div>
+  </article>
+</section>
+
+<div class="load-more-wrap">
+  <button class="load-more">Load more · 6 of 12</button>
+</div>
+
+<footer class="creator-footer">
+  <span>© Alexandra Silva 2026</span>
+  <a href="./creator-contact-public.html">Contact</a>
+  <a href="./creator-legal-public.html">Privacy</a>
+  <span class="powered">Made with <a href="./landing.html"><b>tadaify</b></a></span>
+</footer>
+
+</body>
+</html>

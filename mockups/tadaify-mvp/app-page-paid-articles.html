@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Page editor — Paid articles list page (creator-facing) — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  The PAGE that visitors land on at tadaify.com/<handle>/articles — lists all
+  the creator's paid articles. Per-article publishing/management lives in
+  app-admin-paid-articles.html.
+
+  Locked rules honoured:
+    - feedback_tadaify_pages_vs_administration_separation
+    - feedback_no_blur_premium_features (custom domain Pro+ visible + interactive; gate at Save)
+    - feedback_tadaify_simple_ui_no_advanced_toggle
+    - feedback_sidebar_pages_grouping
+    - feedback_mockup_full_feature_vision
+
+  Demo state via URL: ?tier=free | creator | pro | business (default: creator)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paid articles — Page editor — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta { color: var(--wm-ta); } .wm .da { color: var(--wm-da); } .wm .ify { color: var(--wm-ify); }
+
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+    .chip.live { background: var(--success-bg); color: #065F46; }
+    .chip.tier { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+
+    .btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+
+    .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+    .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+    .toggle.is-on { background: var(--brand-primary); }
+    .toggle.is-on::after { transform: translateX(16px); }
+
+    .appbar { position: sticky; top: 0; z-index: 40; background: var(--bg-elevated); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 14px; }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 13px; color: var(--fg-muted); }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 24px 20px 120px; min-width: 0; max-width: 1080px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 120px; } }
+
+    .crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .page-head h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+    .page-head .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+    .url-pill b { color: var(--fg); font-weight: 600; }
+
+    .section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+    .section-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+    .field-input, .field-area, .field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+    .field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus, .field-select:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+    .field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+    .field-prefix-wrap:focus-within { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+    .field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+    .field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; }
+
+    /* Layout selector */
+    .layout-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+    .layout-option { padding: 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg); text-align: center; cursor: pointer; }
+    .layout-option:hover { border-color: var(--border-strong); }
+    .layout-option.is-selected { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .layout-option .lo-thumb { aspect-ratio: 16/10; background: var(--bg-muted); border-radius: 8px; margin-bottom: 10px; display: grid; gap: 4px; padding: 8px; }
+    .layout-option .lo-thumb.grid { grid-template-columns: repeat(2, 1fr); }
+    .layout-option .lo-thumb.list { grid-template-columns: 1fr; }
+    .layout-option .lo-thumb.feat { grid-template-columns: 1fr; grid-template-rows: 1.5fr 1fr 1fr; }
+    .layout-option .lo-thumb > div { background: var(--brand-primary); opacity: 0.4; border-radius: 4px; }
+    .layout-option .lo-name { font-weight: 600; font-size: 13.5px; }
+
+    /* Toggles */
+    .row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); margin-bottom: 8px; }
+    .row-toggle .rt-name { font-weight: 600; font-size: 14px; }
+    .row-toggle .rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* Theme swatches */
+    .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); }
+    .swatch.is-selected { border-color: var(--brand-primary); }
+
+    /* Sample preview */
+    .preview-frame { border: 1px solid var(--border-strong); border-radius: 14px; background: var(--bg); padding: 22px; margin-top: 14px; }
+    .preview-hero h3 { font-family: var(--font-display); font-weight: 600; font-size: 24px; margin: 0 0 6px; }
+    .preview-hero p { color: var(--fg-muted); font-size: 13.5px; margin: 0 0 18px; }
+    .preview-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    .preview-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-elevated); }
+    .preview-card .pc-cover { aspect-ratio: 16/10; background: linear-gradient(135deg, #FB7185, #BE185D); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; }
+    .preview-card .pc-cover.t-i { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .preview-card .pc-cover.t-w { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .preview-card .pc-cover.t-e { background: linear-gradient(135deg, #34D399, #047857); }
+    .preview-card .pc-meta { padding: 10px 12px; }
+    .preview-card .pc-title { font-weight: 600; font-size: 13px; margin: 0 0 4px; }
+    .preview-card .pc-price { font-size: 11px; color: var(--brand-primary); font-weight: 600; }
+
+    /* Sticky save bar */
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: var(--bg-elevated); border-top: 1px solid var(--border);
+      padding: 12px 24px; display: flex; gap: 10px; justify-content: flex-end; align-items: center;
+      box-shadow: 0 -4px 20px rgba(17,24,39,0.06);
+    }
+    .save-bar .save-status { margin-right: auto; font-size: 12.5px; color: var(--fg-muted); }
+    @media (min-width: 1180px) { .save-bar { left: 240px; } }
+    @media (min-width: 720px) and (max-width: 1179px) { .save-bar { left: 72px; } }
+
+    /* SEO expander */
+    details.expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+    details.expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+    details.expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+    details.expander > summary::-webkit-details-marker { display: none; }
+    details.expander > summary .ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+    details.expander[open] > summary .ex-caret { transform: rotate(180deg); }
+    details.expander .ex-body { padding: 4px 14px 14px; }
+
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar, body.dark-mode .section, body.dark-mode .save-bar, body.dark-mode .preview-frame, body.dark-mode .preview-card { background: #141A2D; border-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <span class="logo-mark" data-logo style="width:26px;height:26px"></span>
+    <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="handle-pill"><span class="live-dot"></span><span>tadaify.com/<b>alexandra</b>/articles</span></div>
+  <button class="iconbtn" onclick="document.body.classList.toggle('dark-mode')" aria-label="Toggle theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg></button>
+</header>
+
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="pages" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb">
+      <a href="./app-dashboard.html">Dashboard</a>
+      <span class="sep">/</span>
+      <a href="./app-dashboard.html?tab=page">Pages</a>
+      <span class="sep">/</span>
+      <span class="here">Paid articles</span>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <h1><span class="ph-emoji">💰</span> Paid articles</h1>
+        <div class="sub">The page that lists all your monetized articles for visitors. Publish individual articles in <a href="./app-admin-paid-articles.html" style="color: var(--brand-primary); text-decoration: underline;">Administration → Paid articles</a>.</div>
+      </div>
+      <div class="actions">
+        <span class="url-pill"><span class="live-dot" style="width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,0.18)"></span><b>tadaify.com/alexandra</b>/articles</span>
+        <button class="btn btn-ghost btn-sm">Preview</button>
+      </div>
+    </header>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Page settings</h2>
+      </div>
+      <div class="section-body">
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label">Page title (visitor-facing)</label>
+            <input class="field-input" value="Articles" />
+          </div>
+          <div class="field">
+            <label class="field-label">URL slug</label>
+            <div class="field-prefix-wrap">
+              <span class="field-prefix">/alexandra/</span>
+              <input value="articles" />
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Lede / intro line (shown above the grid)</label>
+          <input class="field-input" value="Long-form essays + behind-the-scenes you can't get anywhere else." />
+        </div>
+        <div class="row-toggle">
+          <div>
+            <div class="rt-name">Page is published</div>
+            <div class="rt-sub">Visitors can browse the article list at the URL above.</div>
+          </div>
+          <button class="toggle is-on" aria-pressed="true"></button>
+        </div>
+        <div class="row-toggle">
+          <div>
+            <div class="rt-name">Show in navigation <span class="chip tier">Creator</span></div>
+            <div class="rt-sub">Add an "Articles" link to your home page header.</div>
+          </div>
+          <button class="toggle is-on" aria-pressed="true"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Layout</h2>
+        <span class="sub">How visitors see the article list</span>
+      </div>
+      <div class="section-body">
+        <div class="layout-options">
+          <button class="layout-option is-selected">
+            <div class="lo-thumb grid"><div></div><div></div><div></div><div></div></div>
+            <div class="lo-name">Grid (default)</div>
+          </button>
+          <button class="layout-option">
+            <div class="lo-thumb list"><div></div><div></div><div></div></div>
+            <div class="lo-name">List</div>
+          </button>
+          <button class="layout-option">
+            <div class="lo-thumb feat"><div style="opacity:0.7"></div><div></div><div></div></div>
+            <div class="lo-name">Featured-on-top</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Visitor controls</h2>
+        <span class="sub">What filters appear above the grid</span>
+      </div>
+      <div class="section-body">
+        <div class="row-toggle">
+          <div><div class="rt-name">Search bar</div><div class="rt-sub">Filter by title.</div></div>
+          <button class="toggle is-on" aria-pressed="true"></button>
+        </div>
+        <div class="row-toggle">
+          <div><div class="rt-name">Tag filter chips</div><div class="rt-sub">Filter by article tag.</div></div>
+          <button class="toggle is-on" aria-pressed="true"></button>
+        </div>
+        <div class="row-toggle">
+          <div><div class="rt-name">Sort selector (Newest / Most popular / Price)</div><div class="rt-sub">Visitor can re-order articles.</div></div>
+          <button class="toggle" aria-pressed="false"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Theme</h2>
+        <span class="sub">Page background color</span>
+      </div>
+      <div class="section-body">
+        <div class="swatch-row">
+          <button class="swatch is-selected" style="background:#FFFFFF" data-tip="Default white"></button>
+          <button class="swatch" style="background:#FAF5FF" data-tip="Cream"></button>
+          <button class="swatch" style="background:#F0FDF4" data-tip="Mint"></button>
+          <button class="swatch" style="background:#0F172A" data-tip="Slate dark"></button>
+          <button class="swatch" style="background:#7C3AED" data-tip="Violet"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>SEO &amp; sharing</h2>
+      </div>
+      <div class="section-body">
+        <details class="expander">
+          <summary>Custom meta + OG image (optional) <svg class="ex-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <div class="ex-body">
+            <div class="field">
+              <label class="field-label">Page title for search engines</label>
+              <input class="field-input" placeholder="Alexandra Silva — Paid articles" />
+            </div>
+            <div class="field">
+              <label class="field-label">Meta description</label>
+              <textarea class="field-area" placeholder="One-line description that shows up in Google."></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label">Open Graph image (1200×630)</label>
+              <input class="field-input" type="file" />
+            </div>
+            <div class="field">
+              <label class="field-label">Custom domain <span class="chip tier">Pro</span></label>
+              <input class="field-input" placeholder="articles.alexandra.com" />
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Preview</h2>
+        <span class="sub">Sample of how visitors see this page</span>
+        <span class="head-spacer"></span>
+        <a href="./creator-paid-articles-public.html" class="btn btn-ghost btn-sm">Open full preview ↗</a>
+      </div>
+      <div class="section-body" style="padding: 0;">
+        <div class="preview-frame">
+          <div class="preview-hero">
+            <h3>Articles <span class="chip" style="vertical-align:middle">12</span></h3>
+            <p>Long-form essays + behind-the-scenes you can't get anywhere else.</p>
+          </div>
+          <div class="preview-grid">
+            <div class="preview-card">
+              <div class="pc-cover t-i">📖</div>
+              <div class="pc-meta"><div class="pc-title">How I priced my last commission</div><div class="pc-price">$5 · 12 min read</div></div>
+            </div>
+            <div class="preview-card">
+              <div class="pc-cover t-w">☕</div>
+              <div class="pc-meta"><div class="pc-title">A morning in the studio</div><div class="pc-price">$3 · 8 min read</div></div>
+            </div>
+            <div class="preview-card">
+              <div class="pc-cover">🎨</div>
+              <div class="pc-meta"><div class="pc-title">My color theory cheatsheet</div><div class="pc-price">$8 · 18 min read</div></div>
+            </div>
+            <div class="preview-card">
+              <div class="pc-cover t-e">🌱</div>
+              <div class="pc-meta"><div class="pc-title">First year as a freelancer (deep dive)</div><div class="pc-price">$12 · 30 min read</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Sticky save bar -->
+<div class="save-bar">
+  <span class="save-status">Last saved 2 min ago · Autosave on</span>
+  <button class="btn btn-ghost btn-sm">Discard changes</button>
+  <button class="btn btn-primary btn-sm">Save changes</button>
+</div>
+
+<script src="./shared/logo.js"></script>
+<script src="./shared/partials.js"></script>
+<script>
+  document.querySelectorAll('.toggle').forEach(function (t) {
+    t.addEventListener('click', function () {
+      t.classList.toggle('is-on');
+      t.setAttribute('aria-pressed', t.classList.contains('is-on'));
+    });
+  });
+  document.querySelectorAll('.layout-option').forEach(function (o) {
+    o.addEventListener('click', function () {
+      document.querySelectorAll('.layout-option').forEach(function (x) { x.classList.remove('is-selected'); });
+      o.classList.add('is-selected');
+    });
+  });
+  document.querySelectorAll('.swatch').forEach(function (s) {
+    s.addEventListener('click', function () {
+      document.querySelectorAll('.swatch').forEach(function (x) { x.classList.remove('is-selected'); });
+      s.classList.add('is-selected');
+    });
+  });
+</script>
+</body>
+</html>

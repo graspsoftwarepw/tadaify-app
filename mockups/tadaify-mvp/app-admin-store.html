@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Administration → Store (v2 placeholder) — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Per feedback_tadaify_no_shop_in_mvp — Store ships in v2 with Stripe Connect,
+  product CRUD, checkout, and orders. MVP only ships the Product BLOCK that
+  links to the creator's external store (Shopify / Stripe / Etsy / Gumroad / etc).
+
+  This admin page renders ONLY the empty state regardless of whether the creator
+  has added any "Store" affordance — because the Store PAGE itself isn't in MVP.
+
+  Demo state via URL: ?tier=free | creator | pro | business (default: creator)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration · Store · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta { color: var(--wm-ta); } .wm .da { color: var(--wm-da); } .wm .ify { color: var(--wm-ify); }
+
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+    .chip.v2 { background: rgba(139,92,246,0.14); color: #6D28D9; }
+
+    .btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-warm { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+
+    .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .appbar { position: sticky; top: 0; z-index: 40; background: var(--bg-elevated); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 14px; }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 24px 20px 80px; min-width: 0; max-width: 880px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    .crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .page-head h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+    .page-head .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+
+    /* Hero v2 placeholder */
+    .v2-hero {
+      text-align: center; padding: 80px 32px 56px;
+      border: 1.5px dashed var(--border-strong); border-radius: 18px;
+      background: linear-gradient(180deg, rgba(139,92,246,0.04), transparent);
+    }
+    .v2-icon { width: 88px; height: 88px; border-radius: 24px; background: linear-gradient(135deg, #A78BFA, #6D28D9); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 40px; margin-bottom: 22px; box-shadow: 0 8px 24px rgba(139,92,246,0.24); }
+    .v2-hero h2 { font-family: var(--font-display); font-weight: 600; font-size: 32px; margin: 0 0 12px; letter-spacing: -0.01em; }
+    .v2-hero p { color: var(--fg-muted); font-size: 15px; max-width: 560px; margin: 0 auto 24px; line-height: 1.6; }
+    .v2-hero .timeline-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: rgba(139,92,246,0.10); color: #6D28D9; font-size: 12.5px; font-weight: 600; margin-bottom: 16px; }
+    .v2-hero .v2-actions { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    .signup-card { margin-top: 24px; padding: 22px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-elevated); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .signup-card .label { font-weight: 600; font-size: 13.5px; }
+    .signup-card .sub { font-size: 12.5px; color: var(--fg-muted); }
+    .signup-card form { display: flex; gap: 8px; flex: 1; min-width: 240px; }
+    .signup-card input[type="email"] { flex: 1; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--bg); color: var(--fg); font: inherit; font-size: 13.5px; outline: 0; }
+    .signup-card input[type="email"]:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.14); }
+
+    .feature-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 32px; }
+    .feature-card { padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); }
+    .feature-card .feat-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(139,92,246,0.10); color: #6D28D9; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+    .feature-card .feat-name { font-weight: 600; font-size: 14.5px; margin: 0 0 6px; }
+    .feature-card .feat-sub { font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; }
+
+    .crosslink {
+      margin-top: 32px; padding: 22px;
+      border: 1px solid var(--border); border-radius: 14px;
+      background: var(--bg-elevated);
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    }
+    .crosslink .cl-icon { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #FDE68A, #F59E0B); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; flex-shrink: 0; }
+    .crosslink .cl-meta { flex: 1; min-width: 220px; }
+    .crosslink .cl-name { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0 0 4px; }
+    .crosslink .cl-sub { color: var(--fg-muted); font-size: 13px; line-height: 1.5; }
+
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .signup-card, body.dark-mode .feature-card, body.dark-mode .crosslink { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .v2-hero { border-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <span class="logo-mark" data-logo style="width:26px;height:26px"></span>
+    <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+  </div>
+  <div class="spacer"></div>
+  <button class="iconbtn" onclick="document.body.classList.toggle('dark-mode')" aria-label="Toggle theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg></button>
+</header>
+
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="admin" data-admin-active="store" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb">
+      <a href="./app-dashboard.html">Dashboard</a>
+      <span class="sep">/</span>
+      <span class="here">Administration · Store</span>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <h1><span class="ph-emoji">🛍</span> Store <span class="chip v2">v2</span></h1>
+        <div class="sub">Native commerce, products, inventory, and orders ship in tadaify v2.</div>
+      </div>
+    </header>
+
+    <div class="v2-hero">
+      <div class="v2-icon">🛍</div>
+      <div class="timeline-pill">⏱ Targeting v2 · later this year</div>
+      <h2>Native Store comes in v2</h2>
+      <p>tadaify MVP doesn't include a native commerce platform. For now, sell via your existing store — Shopify, Stripe Payment Links, Etsy, Gumroad, Lemon Squeezy, or any URL — by adding a <b>Product block</b> to your home page. The block links visitors directly to your checkout.</p>
+      <div class="v2-actions">
+        <a href="./app-block-editor.html?type=product" class="btn btn-primary">＋ Add a Product block now</a>
+        <a href="./app-block-picker.html" class="btn btn-ghost">Browse other blocks</a>
+      </div>
+    </div>
+
+    <div class="signup-card">
+      <div style="flex: 1; min-width: 200px;">
+        <div class="label">Get notified when Store ships</div>
+        <div class="sub">One email when v2 launches with native commerce. No promo, no spam.</div>
+      </div>
+      <form onsubmit="event.preventDefault(); this.querySelector('input').value=''; alert('Mockup — you would receive a notification when Store v2 ships.');">
+        <input type="email" placeholder="alexandra@example.com" />
+        <button class="btn btn-primary btn-sm" type="submit">Notify me</button>
+      </form>
+    </div>
+
+    <h3 style="font-family: var(--font-display); font-weight: 600; font-size: 18px; margin: 32px 0 0;">What's coming in v2</h3>
+    <div class="feature-list">
+      <div class="feature-card">
+        <div class="feat-icon">📦</div>
+        <h4 class="feat-name">Product CRUD</h4>
+        <div class="feat-sub">Create, edit, archive products. Cover, gallery, variants (size/color), inventory tracking, SKU.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">💳</div>
+        <h4 class="feat-name">Stripe Connect checkout</h4>
+        <div class="feat-sub">Native checkout with Stripe Connect. Payouts to your bank, Apple Pay / Google Pay, EU tax handling.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">📋</div>
+        <h4 class="feat-name">Orders inbox</h4>
+        <div class="feat-sub">All orders in one view. Mark fulfilled, print packing slips, refund, contact buyer.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">📊</div>
+        <h4 class="feat-name">Sales analytics</h4>
+        <div class="feat-sub">Revenue per product, cart abandonment, top referrer, monthly snapshots.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🚚</div>
+        <h4 class="feat-name">Shipping & digital</h4>
+        <div class="feat-sub">Physical (rates by zone) + digital (auto-deliver download link on payment).</div>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🎁</div>
+        <h4 class="feat-name">Discount codes</h4>
+        <div class="feat-sub">Percentage + flat-amount codes, expiry, usage limits. Free Stripe automatic taxes.</div>
+      </div>
+    </div>
+
+    <div class="crosslink">
+      <div class="cl-icon">🔗</div>
+      <div class="cl-meta">
+        <div class="cl-name">In the meantime — use the Product block</div>
+        <div class="cl-sub">The Product block on your home page can link to ANY external store URL — Shopify, Etsy, Gumroad, Stripe Payment Link. Visitors click → land on your existing checkout. Zero migration needed.</div>
+      </div>
+      <a href="./app-block-editor.html?type=product" class="btn btn-warm">Open block editor</a>
+    </div>
+  </main>
+</div>
+
+<script src="./shared/logo.js"></script>
+<script src="./shared/partials.js"></script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Administration → Portfolio (projects mgmt) — Fix #5
+  created_at: 2026-04-27
+  author: orchestrator-opus-4.7
+  status: draft-for-review
+
+  Day-to-day project management. Pairs with app-page-portfolio.html (page editor).
+
+  Locked rules honoured:
+    - feedback_tadaify_pages_vs_administration_separation
+    - feedback_no_right_side_drawers (project composer = centered modal)
+    - feedback_no_blur_premium_features
+    - feedback_mockup_full_feature_vision
+
+  Demo state via URL: ?state=no-page | empty | filled (default: filled, 12 projects)
+                      ?tier=free | creator | pro | business (default: creator)
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration · Portfolio · tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); min-height: 100vh; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta { color: var(--wm-ta); } .wm .da { color: var(--wm-da); } .wm .ify { color: var(--wm-ify); }
+
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+    .chip.live { background: var(--success-bg); color: #065F46; }
+    .chip.draft { background: var(--bg-muted); color: var(--fg-muted); }
+    .chip.archived { background: var(--bg-sunken); color: var(--fg-subtle); }
+    .chip.featured { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+
+    .btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+
+    .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    .appbar { position: sticky; top: 0; z-index: 40; background: var(--bg-elevated); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 14px; }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 13px; color: var(--fg-muted); }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px  1fr; } }
+    @media (min-width: 1180px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 24px 20px 80px; min-width: 0; max-width: 1200px; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 80px; } }
+
+    .crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+    .crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; }
+    .crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+    .crumb .sep { color: var(--fg-subtle); }
+    .crumb .here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .page-head h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+    .page-head .ph-emoji { font-size: 26px; }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+    .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+    .section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+    .section-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; }
+    .section-head .sub { color: var(--fg-muted); font-size: 12.5px; }
+    .section-head .head-spacer { flex: 1; }
+    .section-body { padding: 18px; }
+
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-muted); border-radius: 10px; }
+    .tab { padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+    .tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+    .tab .tab-count { margin-left: 6px; font-size: 11px; background: var(--bg-sunken); color: var(--fg-muted); padding: 1px 6px; border-radius: 999px; }
+    .tab.is-active .tab-count { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+
+    .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
+    .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--fg-subtle); }
+    .search-wrap input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; outline: 0; }
+
+    .sort-select { padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
+
+    /* Projects grid */
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    .proj-card { border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); overflow: hidden; cursor: grab; transition: border-color .12s ease, box-shadow .12s ease; }
+    .proj-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .proj-cover { aspect-ratio: 4/3; background: linear-gradient(135deg, #FB7185, #BE185D); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 32px; color: #fff; position: relative; }
+    .proj-cover.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .proj-cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+    .proj-cover.t-warm    { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .proj-cover.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+    .proj-cover.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+    .proj-cover .badge-row { position: absolute; top: 8px; left: 8px; display: flex; gap: 4px; }
+    .proj-cover .drag-handle { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; backdrop-filter: blur(4px); }
+    .proj-meta { padding: 12px 14px; }
+    .proj-title { font-weight: 600; font-size: 14.5px; margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .proj-sub { font-size: 12.5px; color: var(--fg-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .proj-actions { padding: 0 12px 12px; display: flex; gap: 4px; justify-content: flex-end; }
+
+    .pagination { display: inline-flex; gap: 4px; align-items: center; margin-top: 16px; }
+    .page-btn { min-width: 32px; height: 32px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--fg-muted); border-radius: 8px; cursor: pointer; font-size: 13px; }
+    .page-btn.is-current { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .page-btn:hover:not(.is-current) { background: var(--bg-muted); color: var(--fg); }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 56px 24px; border: 1.5px dashed var(--border-strong); border-radius: 14px; background: var(--bg); }
+    .empty-icon { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #FB7185, #BE185D); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; margin-bottom: 18px; }
+    .empty h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 8px; }
+    .empty p { color: var(--fg-muted); font-size: 14px; max-width: 460px; margin: 0 auto 18px; line-height: 1.55; }
+    .empty .empty-actions { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 24px; max-width: 640px; margin-left: auto; margin-right: auto; }
+    .template-card { padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); cursor: pointer; text-align: left; }
+    .template-card:hover { border-color: var(--brand-primary); }
+    .template-card .t-name { font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+    .template-card .t-sub { font-size: 12px; color: var(--fg-muted); }
+
+    /* Modal */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(17,24,39,0.55); z-index: 200; backdrop-filter: blur(2px); align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.is-open { display: flex; }
+    .modal { width: 100%; max-width: 760px; max-height: 90vh; background: var(--bg-elevated); border-radius: 16px; box-shadow: 0 24px 60px rgba(17,24,39,0.25); display: flex; flex-direction: column; overflow: hidden; }
+    .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; flex: 1; }
+    .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+    .modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .modal-foot .foot-spacer { flex: 1; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); }
+    .field-input, .field-area, .field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+    .field-area { min-height: 100px; resize: vertical; line-height: 1.5; }
+    .field-input:focus, .field-area:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.14); }
+    .cover-uploader { border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 28px; text-align: center; background: var(--bg); color: var(--fg-muted); font-size: 13px; cursor: pointer; }
+    .cover-uploader:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .field-row { grid-template-columns: 1fr; } }
+    .gallery-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 10px; }
+    .gallery-thumb { aspect-ratio: 1; border-radius: 8px; background: var(--bg-muted); display: flex; align-items: center; justify-content: center; color: var(--fg-subtle); font-size: 18px; cursor: pointer; }
+    .gallery-thumb.add { border: 1.5px dashed var(--border-strong); }
+
+    .demo-toolbar { position: fixed; bottom: 16px; right: 16px; z-index: 30; background: var(--bg-dark); color: #fff; padding: 10px 14px; border-radius: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+    .demo-toolbar select { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; font-size: 12px; padding: 3px 8px; cursor: pointer; }
+    .demo-toolbar a { color: #A5B4FC; text-decoration: underline; }
+
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar, body.dark-mode .section, body.dark-mode .proj-card, body.dark-mode .modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .empty { background: #0B0F1E; border-color: #1F2937; }
+  </style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <span class="logo-mark" data-logo style="width:26px;height:26px"></span>
+    <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="handle-pill"><span class="live-dot"></span><span>tadaify.com/<b>alexandra</b>/portfolio</span></div>
+  <button class="iconbtn" aria-label="Toggle theme" onclick="document.body.classList.toggle('dark-mode')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg></button>
+</header>
+
+<div class="layout">
+  <div data-partial="app-sidebar" data-active="admin" data-admin-active="portfolio" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <main class="content">
+    <nav class="crumb">
+      <a href="./app-dashboard.html">Dashboard</a>
+      <span class="sep">/</span>
+      <span class="here">Administration · Portfolio</span>
+    </nav>
+
+    <header class="page-head">
+      <div>
+        <h1><span class="ph-emoji">🎨</span> Projects</h1>
+        <div class="sub">Add, edit, and reorder projects. Page-level setup (layout, items per row, visitor controls) lives in <a href="./app-page-portfolio.html" style="color: var(--brand-primary); text-decoration: underline;">Pages → Portfolio</a>.</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm">Bulk import</button>
+        <button class="btn btn-primary" id="btnNewProj">＋ New project</button>
+      </div>
+    </header>
+
+    <!-- ========== STATE A: NO PAGE ========== -->
+    <section id="stateNoPage" hidden>
+      <div class="empty">
+        <div class="empty-icon">🎨</div>
+        <h3>You don't have a Portfolio page yet</h3>
+        <p>Portfolio is your project showcase — case studies, design work, photography, code repos, anything that proves you can do the thing. Add a Portfolio page first, then come back here to publish projects.</p>
+        <div class="empty-actions">
+          <a href="./app-dashboard.html?tab=page&template=portfolio" class="btn btn-primary">＋ Add Portfolio page now</a>
+          <button class="btn btn-ghost">Skip — what is Portfolio?</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STATE: EMPTY (page exists, no projects) ========== -->
+    <section id="stateEmpty" hidden>
+      <div class="empty">
+        <div class="empty-icon">🎨</div>
+        <h3>No projects yet</h3>
+        <p>Your Portfolio page is live at <code>tadaify.com/alexandra/portfolio</code>. Start with one of these templates or create from scratch.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" onclick="openComposer()">＋ Add first project</button>
+        </div>
+        <div class="templates">
+          <button class="template-card"><div class="t-name">📐 Case study</div><div class="t-sub">Problem → process → result</div></button>
+          <button class="template-card"><div class="t-name">📸 Image gallery</div><div class="t-sub">Cover + lightbox grid</div></button>
+          <button class="template-card"><div class="t-name">🎬 Video showcase</div><div class="t-sub">Embed + description</div></button>
+          <button class="template-card"><div class="t-name">💻 Code project</div><div class="t-sub">Repo link + screenshots</div></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== STATE B: FILLED ========== -->
+    <section id="stateFilled">
+      <div class="section">
+        <div class="section-head">
+          <h2>Projects</h2>
+          <span class="sub">12 total · 9 published, 2 drafts, 1 archived</span>
+        </div>
+        <div class="section-body">
+          <div class="toolbar">
+            <div class="tabs">
+              <button class="tab is-active">All <span class="tab-count">12</span></button>
+              <button class="tab">Published <span class="tab-count">9</span></button>
+              <button class="tab">Drafts <span class="tab-count">2</span></button>
+              <button class="tab">Archived <span class="tab-count">1</span></button>
+            </div>
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" placeholder="Search projects…" />
+            </div>
+            <select class="sort-select">
+              <option>Custom order (drag to reorder)</option>
+              <option>Newest first</option>
+              <option>Oldest first</option>
+              <option>Most viewed</option>
+              <option>A → Z</option>
+            </select>
+          </div>
+
+          <div class="projects-grid">
+            <article class="proj-card">
+              <div class="proj-cover t-indigo">
+                <div class="badge-row"><span class="chip live">● Published</span><span class="chip featured">★ Featured</span></div>
+                <div class="drag-handle">⋮⋮</div>
+                ✦
+              </div>
+              <div class="proj-meta">
+                <h4 class="proj-title">Cosmic Brand Identity — Stellar Coffee Co.</h4>
+                <div class="proj-sub"><span>Branding</span><span>·</span><span>1.4k views</span></div>
+              </div>
+              <div class="proj-actions">
+                <button class="iconbtn" data-tip="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn" data-tip="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+            <article class="proj-card">
+              <div class="proj-cover t-warm">
+                <div class="badge-row"><span class="chip live">● Published</span></div>
+                <div class="drag-handle">⋮⋮</div>
+                🌅
+              </div>
+              <div class="proj-meta">
+                <h4 class="proj-title">Sunrise Series — Photography</h4>
+                <div class="proj-sub"><span>Photo</span><span>·</span><span>892 views</span></div>
+              </div>
+              <div class="proj-actions">
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+            <article class="proj-card">
+              <div class="proj-cover t-emerald">
+                <div class="badge-row"><span class="chip live">● Published</span></div>
+                <div class="drag-handle">⋮⋮</div>
+                🌿
+              </div>
+              <div class="proj-meta">
+                <h4 class="proj-title">Greenhouse — App Redesign</h4>
+                <div class="proj-sub"><span>UI/UX</span><span>·</span><span>2.1k views</span></div>
+              </div>
+              <div class="proj-actions">
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+            <article class="proj-card">
+              <div class="proj-cover t-rose">
+                <div class="badge-row"><span class="chip draft">○ Draft</span></div>
+                <div class="drag-handle">⋮⋮</div>
+                🎭
+              </div>
+              <div class="proj-meta">
+                <h4 class="proj-title">Theatre Posters — A Midsummer Night's Dream</h4>
+                <div class="proj-sub"><span>Print</span><span>·</span><span>Not published</span></div>
+              </div>
+              <div class="proj-actions">
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+            <article class="proj-card">
+              <div class="proj-cover t-slate">
+                <div class="badge-row"><span class="chip live">● Published</span></div>
+                <div class="drag-handle">⋮⋮</div>
+                🏔
+              </div>
+              <div class="proj-meta">
+                <h4 class="proj-title">Alpine Field Notes — Editorial</h4>
+                <div class="proj-sub"><span>Editorial</span><span>·</span><span>674 views</span></div>
+              </div>
+              <div class="proj-actions">
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+            <article class="proj-card">
+              <div class="proj-cover t-indigo">
+                <div class="badge-row"><span class="chip archived">📦 Archived</span></div>
+                <div class="drag-handle">⋮⋮</div>
+                🗄
+              </div>
+              <div class="proj-meta">
+                <h4 class="proj-title">Old Portfolio Site (2021)</h4>
+                <div class="proj-sub"><span>Web</span><span>·</span><span>Hidden from visitors</span></div>
+              </div>
+              <div class="proj-actions">
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+                <button class="iconbtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+              </div>
+            </article>
+          </div>
+
+          <div class="pagination">
+            <button class="page-btn">‹</button>
+            <button class="page-btn is-current">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Project composer modal -->
+<div class="modal-backdrop" id="composerBackdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>New project</h3>
+      <span class="chip draft">○ Draft</span>
+      <button class="iconbtn" aria-label="Close" onclick="closeComposer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="cover-uploader">
+        <div style="font-size:28px;margin-bottom:6px;">🖼</div>
+        <b>Drop cover image here</b> or click to upload
+        <div style="font-size:12px;margin-top:4px;">PNG / JPG / WebP · max 5MB · 1600×1200 recommended</div>
+      </div>
+      <div style="margin-top:16px"></div>
+      <div class="field">
+        <label class="field-label">Title</label>
+        <input class="field-input" placeholder="Stellar Coffee Co. — Brand Identity" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Category</label>
+          <select class="field-select">
+            <option>Branding</option><option>UI/UX</option><option>Photography</option><option>Print</option><option>Code</option><option>Editorial</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">URL slug</label>
+          <input class="field-input" placeholder="auto-generated-from-title" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Short description (visitor card)</label>
+        <textarea class="field-area" placeholder="One sentence that earns the click."></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Long description (project page)</label>
+        <textarea class="field-area" style="min-height:140px" placeholder="Problem → process → result. Markdown supported."></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Gallery</label>
+        <div class="gallery-thumbs">
+          <div class="gallery-thumb">📷</div>
+          <div class="gallery-thumb">📷</div>
+          <div class="gallery-thumb">📷</div>
+          <div class="gallery-thumb add">＋</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">External link (optional)</label>
+          <input class="field-input" placeholder="https://stellar-coffee.com" />
+        </div>
+        <div class="field">
+          <label class="field-label">Tags (comma-separated)</label>
+          <input class="field-input" placeholder="brand, packaging, illustration" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger-ghost btn-sm">Delete draft</button>
+      <span class="foot-spacer"></span>
+      <button class="btn btn-ghost" onclick="closeComposer()">Save draft</button>
+      <button class="btn btn-primary">Publish</button>
+    </div>
+  </div>
+</div>
+
+<div class="demo-toolbar">
+  <span style="opacity:0.7">State:</span>
+  <select id="demoState">
+    <option value="filled">Filled (12 projects)</option>
+    <option value="empty">Empty (page exists, 0 projects)</option>
+    <option value="no-page">No Portfolio page yet</option>
+  </select>
+  <a href="./app-page-portfolio.html">→ Page editor</a>
+</div>
+
+<script src="./shared/logo.js"></script>
+<script src="./shared/partials.js"></script>
+<script>
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    var state = qs.get('state') || 'filled';
+    var stateSel = document.getElementById('demoState');
+    if (stateSel) stateSel.value = state;
+    function applyState(s) {
+      document.getElementById('stateNoPage').hidden = s !== 'no-page';
+      document.getElementById('stateEmpty').hidden  = s !== 'empty';
+      document.getElementById('stateFilled').hidden = s !== 'filled';
+      var actions = document.querySelector('.page-head .actions');
+      if (actions) actions.style.display = s === 'no-page' ? 'none' : '';
+    }
+    applyState(state);
+    if (stateSel) stateSel.addEventListener('change', function () { applyState(this.value); });
+  })();
+  function openComposer() { document.getElementById('composerBackdrop').classList.add('is-open'); }
+  function closeComposer() { document.getElementById('composerBackdrop').classList.remove('is-open'); }
+  document.getElementById('btnNewProj').addEventListener('click', openComposer);
+  document.getElementById('composerBackdrop').addEventListener('click', function (e) { if (e.target === this) closeComposer(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeComposer(); });
+</script>
+</body>
+</html>
