@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<!--
+  type: mockup
+  project: tadaify
+  title: Settings — API keys tab deep dive (F-APP-SETTINGS-API-KEYS-001 #37)
+  created_at: 2026-04-27
+  author: orchestrator
+  status: draft-for-review
+
+  Scope: stand-alone deep-dive of /app/settings#api per story #37.
+    - API keys table (Pro+ feature, fully visible to every tier per
+      `feedback_no_blur_premium_features` — Free creators see the table
+      in demonstration mode and every action triggers the upsell)
+    - Generate-key centered modal (NEVER drawer per
+      `feedback_no_right_side_drawers`) with scopes checklist,
+      expiry dropdown, and one-time reveal of the full key
+    - Permissions matrix expander
+    - MCP install snippet section (Claude Desktop config + npm install)
+    - Custom GPT template section (JSON schema + 3-step quickstart)
+    - Webhook delivery log (Pro+, 10 sample rows, filterable) — kept
+      visible per F-MULTIPAGE webhooks placeholder context (the story's
+      Webhooks placeholder section is honoured below the live log so
+      readers see both the present and the planned future)
+    - Rate-limit panel showing live usage vs per-tier limits
+    - Free tier upsell card on top — every section stays fully visible
+      below it (no blur, no hidden sub-sections)
+
+  Cross-link convention (per task brief): tab nav links to sibling
+  app-settings-<tab>.html files. Billing's nav still references
+  app-settings-api.html — that is a stale link in billing that will be
+  cleaned up in a follow-up; this file lives at the canonical
+  app-settings-apikeys.html name (matches the slug in the file naming
+  pattern: account / billing / security / gdpr / apikeys).
+
+  DEC trail / sources:
+    BR-API-001..004        from issue #37 body
+    DEC-MULTIPAGE-01       Webhooks placeholder kept (Coming Q+1)
+    AP-031                 no sticky upsell banners — only the upgrade card
+
+  Locked memory rules honoured:
+    * tadaify simple-UI         — no Advanced toggles; copy is plain English
+    * no-blur-premium           — every Pro+ surface fully visible + interactive
+                                  on every tier; gate fires at action via TierGate
+    * no-right-side-drawers     — generate / reveal / rotate / delete / view
+                                  payload all centered modals
+    * mockup-full-feature       — full-feature vision (rotate, delete-confirm,
+                                  payload viewer, MCP, GPT export) shown even
+                                  though Webhooks live UI is post-MVP
+    * sidebar-pages-grouping    — canonical sidebar via shared partial
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API keys settings — tadaify</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./shared/tokens.css">
+  <style>
+    /* ---------- Atoms shared with sister settings deep dives ---------- */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .wm { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .wm .ta  { color: var(--wm-ta); }
+    .wm .da  { color: var(--wm-da); }
+    .wm .ify { color: var(--wm-ify); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1;
+      background: var(--bg-muted); color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .chip.success { background: var(--success-bg); color: #065F46; }
+    .chip.danger  { background: var(--danger-bg);  color: #991B1B; }
+    .chip.warn    { background: var(--warning-bg); color: #92400E; border: 1px solid rgba(245,158,11,0.30); }
+    .chip.info    { background: var(--info-bg);    color: #1E40AF; }
+    .chip.pro     { background: rgba(99,102,241,0.14); color: var(--brand-primary); border: 1px solid rgba(99,102,241,0.30); }
+    .chip.biz     { background: rgba(245,158,11,0.18); color: var(--brand-warm-dark); border: 1px solid rgba(245,158,11,0.30); }
+    .chip.scope   { background: var(--bg-muted); color: var(--fg-muted); border: 1px solid var(--border); padding: 2px 7px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; }
+
+    .btn {
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      border-radius: 10px; padding: 9px 16px;
+      border: 1px solid transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .15s ease;
+      line-height: 1.2;
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover); }
+    .btn-warm { background: var(--brand-warm); color: #1F2937; }
+    .btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+    .btn-ghost   { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--bg-muted); }
+    .btn-danger  { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .btn-sm      { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+    .btn-xs      { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent; color: var(--fg-muted);
+      transition: all .12s ease;
+    }
+    .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .iconbtn svg { width: 16px; height: 16px; }
+
+    /* ---------- Top app bar ---------- */
+    .appbar {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.02);
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; }
+    .appbar .brand .wm { font-size: 20px; }
+    .appbar .spacer { flex: 1; }
+    .appbar .handle-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg);
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .appbar .handle-pill b { color: var(--fg); font-weight: 600; }
+    .appbar .handle-pill .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+    .appbar .handle-pill .hide-sm { display: none; }
+    @media (min-width: 640px) { .appbar .handle-pill .hide-sm { display: inline; } }
+    .appbar .theme-toggle svg {
+      width: 18px; height: 18px;
+      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .appbar .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
+    body.dark-mode .appbar .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* ---------- Demo toolbar (mockup-only) ---------- */
+    .demo-toolbar {
+      background: linear-gradient(180deg, #0B0F1E 0%, #141A2D 100%);
+      color: #F3F4F6;
+      padding: 10px 16px;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px;
+      font-size: 12px; border-bottom: 1px solid #1F2937;
+      position: sticky; top: 54px; z-index: 39;
+    }
+    .demo-toolbar .dt-label {
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #FCD34D; font-size: 10px;
+    }
+    .demo-toolbar .dt-group { display: inline-flex; align-items: center; gap: 6px; }
+    .demo-toolbar .dt-group > span:first-child { color: #9CA3AF; font-size: 11px; }
+    .demo-toolbar select {
+      background: #0B0F1E; color: #F3F4F6; border: 1px solid #374151;
+      border-radius: 6px; padding: 4px 24px 4px 8px; font-size: 12px;
+      font-family: inherit; cursor: pointer;
+    }
+    .demo-toolbar .dt-spacer { flex: 1; }
+    .demo-toolbar .dt-info { color: #9CA3AF; font-size: 11px; }
+    .demo-toolbar .dt-info code {
+      background: #1F2937; color: #F3F4F6; padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11px;
+    }
+
+    /* ---------- Layout: sidebar / main ---------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: calc(100vh - 54px);
+    }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: 20px 16px 60px; min-width: 0; }
+    @media (min-width: 720px) { main.content { padding: 28px 32px 60px; } }
+
+    .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: clamp(28px, 4vw, 36px); margin: 0;
+      display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .page-head h1 .tier-tag-inline {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-family: var(--font-sans); font-weight: 600; font-size: 12px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.32);
+      vertical-align: middle;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 4px; }
+
+    /* ---------- Settings layout (sub-nav + content) ---------- */
+    .settings-layout {
+      display: flex; gap: 32px;
+      align-items: flex-start;
+    }
+    .settings-nav {
+      display: flex; flex-direction: column; gap: 2px;
+      width: 200px; flex-shrink: 0;
+      position: sticky; top: 130px;
+    }
+    .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 8px;
+      border: 0; background: transparent;
+      color: var(--fg-muted); font-size: 13.5px; font-weight: 500;
+      text-align: left; cursor: pointer; transition: all .12s ease;
+      text-decoration: none;
+    }
+    .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle); }
+    .settings-nav-item:hover { background: var(--bg-muted); color: var(--fg); }
+    .settings-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary); font-weight: 600;
+    }
+    .settings-nav-item.active svg { color: var(--brand-primary); }
+    .settings-nav-divider { border-top: 1px solid var(--border); margin: 8px 0; }
+    .settings-nav-item .sn-pill {
+      margin-left: auto; font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 99px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .settings-nav-item .sn-pill.pro-pill { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+    .settings-nav-item .sn-pill.biz-pill { background: rgba(245,158,11,0.18); color: var(--brand-warm-dark); }
+
+    @media (max-width: 900px) {
+      .settings-layout { flex-direction: column; gap: 0; }
+      .settings-nav {
+        width: 100%; flex-direction: row; gap: 4px; overflow-x: auto;
+        position: relative; top: auto;
+        padding-bottom: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
+      }
+      .settings-nav-item { white-space: nowrap; padding: 8px 14px; }
+      .settings-nav-item.active { background: transparent; border-bottom: 2px solid var(--brand-primary); border-radius: 0; }
+      .settings-nav-item .sn-pill { display: none; }
+      .settings-nav-divider { display: none; }
+    }
+
+    .settings-content { flex: 1; min-width: 0; }
+
+    /* ---------- Sections ---------- */
+    .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+    .settings-section-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin-bottom: 14px;
+      color: var(--fg);
+    }
+    .settings-section-title.with-action {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .settings-section-title .sec-tier-pill {
+      margin-left: 8px; vertical-align: middle;
+    }
+    .section-help {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+      margin: -4px 0 14px;
+    }
+    .section-help code {
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11.5px;
+    }
+
+    /* ---------- Demo-mode banner (Free tier — every action upsells) ---------- */
+    .demo-mode-strip {
+      display: none;
+      align-items: center; gap: 8px;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      background: rgba(99,102,241,0.06);
+      border: 1px dashed rgba(99,102,241,0.40);
+      border-radius: 10px;
+      font-size: 12.5px; color: var(--brand-primary);
+      line-height: 1.45;
+    }
+    body[data-tier="free"] .demo-mode-strip,
+    body[data-tier="creator"] .demo-mode-strip { display: flex; }
+    .demo-mode-strip .dms-ico { font-size: 16px; }
+    .demo-mode-strip b { color: var(--brand-primary); }
+
+    /* ---------- Pro upsell hero (top-of-tab) ---------- */
+    .upsell-hero {
+      display: none;
+      gap: 18px;
+      padding: 22px 24px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.30);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      align-items: center;
+    }
+    body[data-tier="free"] .upsell-hero,
+    body[data-tier="creator"] .upsell-hero { display: flex; }
+    .upsell-hero .uh-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; background: var(--bg-elevated);
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .upsell-hero .uh-body { flex: 1; min-width: 0; }
+    .upsell-hero .uh-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 19px; margin: 0 0 4px;
+    }
+    .upsell-hero .uh-sub { font-size: 13px; color: var(--fg-muted); line-height: 1.55; }
+    .upsell-hero .uh-cta { flex-shrink: 0; }
+    @media (max-width: 620px) {
+      .upsell-hero { flex-direction: column; align-items: flex-start; }
+      .upsell-hero .uh-cta { width: 100%; }
+      .upsell-hero .uh-cta .btn { width: 100%; }
+    }
+
+    /* ---------- API keys table ---------- */
+    .keys-table-wrap { overflow-x: auto; margin: 0 -4px; }
+    .keys-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .keys-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .keys-table td {
+      padding: 14px 12px; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--fg);
+      vertical-align: middle;
+    }
+    .keys-table tr:last-child td { border-bottom: 0; }
+    .keys-table .k-name { font-weight: 600; }
+    .keys-table .k-name-meta {
+      display: block; font-weight: 400; color: var(--fg-subtle);
+      font-size: 11.5px; margin-top: 3px;
+    }
+    .keys-table .k-token {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--fg-muted);
+      white-space: nowrap;
+    }
+    .keys-table .k-scopes {
+      display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px;
+    }
+    .keys-table .k-date { color: var(--fg-muted); font-size: 12.5px; white-space: nowrap; }
+    .keys-table .k-actions {
+      display: flex; gap: 4px; justify-content: flex-end;
+      white-space: nowrap;
+    }
+    .keys-table tr.is-revoked td { opacity: 0.55; }
+    .keys-table tr.is-revoked .k-name::after {
+      content: " · revoked"; color: var(--danger); font-weight: 500; font-size: 11.5px;
+    }
+
+    .keys-empty {
+      padding: 36px 20px;
+      text-align: center;
+      color: var(--fg-muted); font-size: 13.5px;
+      background: var(--bg);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      line-height: 1.55;
+    }
+    .keys-empty .ke-ico { font-size: 32px; margin-bottom: 8px; }
+    .keys-empty .ke-cta { margin-top: 14px; }
+
+    /* ---------- Permissions matrix ---------- */
+    .permissions-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; border: 0; padding: 0;
+      color: var(--brand-primary); font-size: 13px; font-weight: 500;
+      cursor: pointer; margin-top: 4px;
+    }
+    .permissions-toggle .pt-caret { transition: transform .15s ease; display: inline-block; }
+    .permissions-toggle.open .pt-caret { transform: rotate(90deg); }
+    .permissions-grid {
+      display: none;
+      margin-top: 14px;
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden;
+    }
+    .permissions-grid.open { display: block; }
+    .perm-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 120px;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; align-items: center;
+    }
+    .perm-row:last-child { border-bottom: 0; }
+    .perm-row.is-head {
+      background: var(--bg-muted);
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--fg-muted);
+    }
+    .perm-row .perm-name { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--fg); }
+    .perm-row .perm-desc { color: var(--fg-muted); font-size: 12.5px; line-height: 1.5; }
+    .perm-row .perm-cat { font-size: 11px; color: var(--fg-subtle); text-align: right; }
+    .perm-row .perm-cat .perm-tag {
+      display: inline-block;
+      padding: 2px 8px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-weight: 600; letter-spacing: 0.02em; text-transform: none;
+    }
+    .perm-row .perm-cat .perm-tag.write { background: rgba(245,158,11,0.18); color: var(--brand-warm-dark); }
+    @media (max-width: 720px) {
+      .perm-row { grid-template-columns: 1fr; gap: 4px; }
+      .perm-row .perm-cat { text-align: left; }
+    }
+
+    /* ---------- Code blocks (MCP, GPT) ---------- */
+    .code-block {
+      position: relative;
+      background: #0B0F1E; color: #E5E7EB;
+      border: 1px solid #1F2937;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: var(--font-mono); font-size: 12.5px;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-block .cb-copy {
+      position: absolute; top: 8px; right: 8px;
+      background: #1F2937; color: #F3F4F6; border: 1px solid #374151;
+      padding: 4px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .code-block .cb-copy:hover { background: #374151; }
+    .code-block .cb-copy.copied { background: rgba(16,185,129,0.30); border-color: rgba(16,185,129,0.50); color: #6EE7B7; }
+    .code-block-label {
+      font-size: 11px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-top: 14px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .code-block-label code {
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 10.5px; text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .mcp-note {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px;
+      margin-top: 12px;
+      font-size: 12.5px; color: var(--brand-warm-dark);
+      line-height: 1.55;
+    }
+    .mcp-note .mn-ico { font-size: 16px; line-height: 1; flex-shrink: 0; }
+    .mcp-note a { color: var(--brand-warm-dark); text-decoration: underline; }
+
+    /* ---------- Quickstart steps ---------- */
+    .quickstart-list {
+      counter-reset: q;
+      display: flex; flex-direction: column; gap: 10px;
+      margin: 14px 0 0;
+      padding: 0; list-style: none;
+    }
+    .quickstart-list li {
+      display: flex; gap: 12px; align-items: flex-start;
+      counter-increment: q;
+    }
+    .quickstart-list li::before {
+      content: counter(q);
+      flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 999px;
+      background: var(--brand-primary); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12.5px;
+    }
+    .quickstart-list .qs-body { flex: 1; font-size: 13px; line-height: 1.55; color: var(--fg); }
+    .quickstart-list .qs-body b { font-weight: 600; }
+    .quickstart-list .qs-body code {
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11.5px;
+    }
+    .quickstart-list .qs-body .qs-sub { display: block; color: var(--fg-muted); font-size: 12px; margin-top: 2px; }
+
+    /* ---------- Webhook log table ---------- */
+    .wh-toolbar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .wh-toolbar .wht-label { font-size: 11.5px; color: var(--fg-muted); }
+    .wh-toolbar select {
+      font: inherit; font-size: 12px; padding: 5px 22px 5px 10px;
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--bg-elevated); color: var(--fg);
+    }
+    .wh-toolbar .wht-count { margin-left: auto; font-size: 12px; color: var(--fg-muted); }
+
+    .wh-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    .wh-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .wh-table td {
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg);
+      vertical-align: middle;
+    }
+    .wh-table tr:last-child td { border-bottom: 0; }
+    .wh-table td.endpoint {
+      font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-muted);
+      max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .wh-table td.event { font-family: var(--font-mono); font-size: 11.5px; }
+    .wh-table td.rt { font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+    .wh-table td.retries { color: var(--fg-muted); font-size: 12px; }
+    .wh-status {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      font-family: var(--font-mono);
+    }
+    .wh-status.s2xx { background: var(--success-bg); color: #065F46; }
+    .wh-status.s4xx { background: var(--warning-bg); color: #92400E; }
+    .wh-status.s5xx { background: var(--danger-bg);  color: #991B1B; }
+    .wh-status.spending { background: var(--info-bg); color: #1E40AF; }
+
+    /* ---------- Webhooks placeholder card (DEC-MULTIPAGE-01: Coming Q+1) ---------- */
+    .webhook-future {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 16px;
+      margin-top: 16px;
+      background: var(--bg);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+    }
+    .webhook-future .wf-ico {
+      flex-shrink: 0; font-size: 24px;
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--bg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .webhook-future .wf-body { flex: 1; min-width: 0; }
+    .webhook-future .wf-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 14.5px; margin: 0 0 4px;
+      color: var(--fg);
+    }
+    .webhook-future .wf-sub { font-size: 12.5px; color: var(--fg-muted); line-height: 1.55; }
+    .webhook-future .wf-events {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: 10px;
+    }
+    .webhook-future .wf-events .chip { font-family: var(--font-mono); font-size: 10.5px; }
+
+    /* ---------- Rate-limit panel ---------- */
+    .rate-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 720px) { .rate-panel { grid-template-columns: 1fr; } }
+    .rate-card {
+      padding: 16px 18px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .rate-card .rc-label {
+      font-size: 11px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .rate-card .rc-value {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 26px; line-height: 1.05; color: var(--fg);
+    }
+    .rate-card .rc-value .rc-divisor {
+      color: var(--fg-muted); font-weight: 400; font-size: 18px;
+    }
+    .rate-card .rc-sub { font-size: 12px; color: var(--fg-muted); margin-top: 4px; }
+    .rate-bar-wrap {
+      margin-top: 12px;
+      height: 8px; border-radius: 999px;
+      background: var(--bg-muted);
+      overflow: hidden;
+    }
+    .rate-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+      transition: width .35s ease, background .35s ease;
+    }
+    .rate-bar-fill.is-warn { background: linear-gradient(90deg, var(--brand-warm), var(--brand-warm-dark)); }
+    .rate-bar-fill.is-crit { background: linear-gradient(90deg, var(--danger), #B91C1C); }
+
+    .rate-tier-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .rate-tier-row:first-child { padding-top: 0; }
+    .rate-tier-row:last-child  { border-bottom: 0; padding-bottom: 0; }
+    .rate-tier-row .rtr-name { font-weight: 600; min-width: 90px; }
+    .rate-tier-row .rtr-name.is-current { color: var(--brand-primary); }
+    .rate-tier-row .rtr-limit { font-family: var(--font-mono); font-size: 12.5px; }
+    .rate-tier-row .rtr-note  { color: var(--fg-muted); font-size: 12px; flex: 1; min-width: 0; }
+
+    .rate-banner {
+      display: none; gap: 12px; align-items: flex-start;
+      padding: 14px 16px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.30);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 13.5px; color: #991B1B; line-height: 1.5;
+    }
+    body[data-state="rate-limited"] .rate-banner { display: flex; }
+    .rate-banner .rb-ico { font-size: 18px; line-height: 1.2; flex-shrink: 0; }
+    .rate-banner strong { display: block; color: #7F1D1D; font-size: 14px; margin-bottom: 2px; }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0B0F1E; color: #F3F4F6;
+      padding: 10px 18px; border-radius: 999px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0; pointer-events: none;
+      transition: all .25s cubic-bezier(.2,.8,.2,1);
+      z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ---------- Modals (centered, NEVER drawers) ---------- */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-elevated);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      width: min(640px, 100%);
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 28px;
+    }
+    .modal.modal-md { width: min(720px, 100%); padding: 32px; }
+    .modal.modal-sm { width: min(480px, 100%); padding: 24px; }
+    .modal h3 {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 600;
+      margin: 0 0 6px;
+    }
+    .modal .modal-sub {
+      font-size: 13.5px; color: var(--fg-muted); line-height: 1.55;
+      margin-bottom: 20px;
+    }
+    .modal .modal-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 22px; flex-wrap: wrap;
+    }
+    .modal label {
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      display: block; margin-bottom: 6px;
+    }
+    .modal .field-input {
+      display: block; width: 100%;
+      padding: 10px 14px; font-size: 14px;
+      background: var(--bg); border: 1px solid var(--border-strong);
+      border-radius: 10px; color: var(--fg);
+      font-family: inherit;
+    }
+    .modal .field-input:focus {
+      outline: none; border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    .scope-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 14px; }
+    .scope-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; transition: all .12s ease;
+      font-size: 13.5px;
+    }
+    .scope-item:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
+    .scope-item input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; accent-color: var(--brand-primary); }
+    .scope-item .si-body { flex: 1; }
+    .scope-item .si-title {
+      font-weight: 600; color: var(--fg);
+      font-family: var(--font-mono); font-size: 12.5px;
+    }
+    .scope-item .si-title .si-write {
+      font-family: var(--font-sans);
+      font-weight: 600; font-size: 10.5px;
+      background: rgba(245,158,11,0.18); color: var(--brand-warm-dark);
+      border-radius: 99px; padding: 1px 7px; margin-left: 6px;
+      letter-spacing: 0.02em;
+    }
+    .scope-item .si-sub { font-size: 11.5px; color: var(--fg-muted); margin-top: 3px; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 540px) { .field-row { grid-template-columns: 1fr; } }
+
+    /* Reveal step specific */
+    .reveal-banner {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.40);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 12.5px; color: var(--brand-warm-dark); line-height: 1.55;
+    }
+    .reveal-banner b { color: #78350F; }
+    .reveal-key {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px;
+      background: #0B0F1E; color: #E5E7EB;
+      border-radius: 12px;
+      font-family: var(--font-mono); font-size: 13px;
+      word-break: break-all;
+      margin-bottom: 14px;
+    }
+    .reveal-key .rk-key { flex: 1; min-width: 0; }
+    .reveal-key .rk-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .reveal-key .rk-actions button {
+      background: #1F2937; color: #F3F4F6; border: 1px solid #374151;
+      padding: 5px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .reveal-key .rk-actions button:hover { background: #374151; }
+    .reveal-key .rk-actions button.copied { background: rgba(16,185,129,0.30); border-color: rgba(16,185,129,0.50); color: #6EE7B7; }
+
+    .gen-step { display: none; }
+    .gen-step.active { display: block; }
+
+    /* Delete confirm specific */
+    .delete-summary {
+      padding: 14px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.30);
+      border-radius: 10px;
+      margin: 14px 0;
+      font-size: 13px; color: #991B1B;
+      line-height: 1.55;
+    }
+    .delete-summary b { color: #7F1D1D; }
+
+    /* Payload viewer modal */
+    .payload-meta {
+      display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px;
+      font-size: 12.5px; color: var(--fg);
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 14px;
+    }
+    .payload-meta dt { color: var(--fg-muted); font-weight: 500; }
+    .payload-meta dd { margin: 0; font-family: var(--font-mono); font-size: 12px; word-break: break-all; }
+
+    /* ---------- Help footer ---------- */
+    .help-footer {
+      margin-top: 24px; padding-top: 18px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px; color: var(--fg-subtle);
+      line-height: 1.6;
+    }
+    .help-footer a { color: var(--brand-primary); }
+
+    /* ---------- Dark mode ---------- */
+    body.dark-mode {
+      --wm-ify: #F3F4F6;
+    }
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-bottom-color: #1F2937; }
+    body.dark-mode .appbar .handle-pill { background: #0B0F1E; border-color: #1F2937; color: #9CA3AF; }
+    body.dark-mode .appbar .handle-pill b { color: #F3F4F6; }
+    body.dark-mode .settings-section { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .settings-section-title { color: #F3F4F6; }
+    body.dark-mode .keys-table th { color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .keys-table td { border-bottom-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .wh-table th { color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .wh-table td { border-bottom-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .keys-empty,
+    body.dark-mode .rate-card,
+    body.dark-mode .webhook-future,
+    body.dark-mode .perm-row.is-head,
+    body.dark-mode .scope-item,
+    body.dark-mode .payload-meta { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .perm-row { border-bottom-color: #1F2937; }
+    body.dark-mode .permissions-grid { border-color: #1F2937; }
+    body.dark-mode .modal { background: #141A2D; color: #F3F4F6; }
+    body.dark-mode .modal .field-input { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .scope-item { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .scope-item .si-title { color: #F3F4F6; }
+    body.dark-mode .settings-nav-item { color: #9CA3AF; }
+    body.dark-mode .settings-nav-item:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .settings-nav-item.active { background: rgba(99,102,241,0.18); color: #A5B4FC; }
+    body.dark-mode .settings-nav-item.active svg { color: #A5B4FC; }
+    body.dark-mode .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .page-head h1 .tier-tag-inline {
+      background: rgba(99,102,241,0.20); color: #A5B4FC; border-color: rgba(99,102,241,0.50);
+    }
+    body.dark-mode .upsell-hero {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.10));
+      border-color: rgba(99,102,241,0.45);
+    }
+    body.dark-mode .upsell-hero .uh-icon { background: #0B0F1E; }
+    body.dark-mode .demo-mode-strip {
+      background: rgba(99,102,241,0.12);
+      border-color: rgba(99,102,241,0.50);
+      color: #A5B4FC;
+    }
+    body.dark-mode .demo-mode-strip b { color: #A5B4FC; }
+    body.dark-mode .perm-row .perm-name { color: #F3F4F6; }
+    body.dark-mode .wh-toolbar select {
+      background: #0B0F1E; border-color: #374151; color: #F3F4F6;
+    }
+    body.dark-mode .field-input[readonly] { background: #1A2236; }
+  </style>
+</head>
+<body data-tier="pro" data-state="filled">
+
+<!-- ============================================================
+     TOP APP BAR (mirrors sister settings deep dives)
+     ============================================================ -->
+<header class="appbar" role="banner">
+  <div class="brand">
+    <a href="./index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify" style="font-size:20px">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+  </div>
+
+  <a href="./creator-public.html" target="_blank" class="handle-pill" title="View your live page" style="margin-left:10px">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span class="hide-sm">tadaify.com/</span><b id="handle-text">alexandra</b>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </a>
+
+  <div class="spacer"></div>
+
+  <button class="iconbtn theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode" style="position:relative">
+    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+
+<!-- ============================================================
+     DEMO TOOLBAR (mockup-only)
+     ============================================================ -->
+<div class="demo-toolbar" role="region" aria-label="Mockup demo controls">
+  <span class="dt-label">Demo</span>
+
+  <span class="dt-group">
+    <span>Tier:</span>
+    <select id="tier-switcher" onchange="setTier(this.value)">
+      <option value="pro" selected>Pro · functional</option>
+      <option value="business">Business · functional · 5,000/h</option>
+      <option value="creator">Creator · demonstration mode (upsell)</option>
+      <option value="free">Free · demonstration mode (upsell)</option>
+    </select>
+  </span>
+
+  <span class="dt-group">
+    <span>State:</span>
+    <select id="state-switcher" onchange="setState(this.value)">
+      <option value="filled" selected>Filled · 5 keys</option>
+      <option value="empty">Empty · no keys yet</option>
+      <option value="rate-limited">Rate-limited · banner shown</option>
+      <option value="cap-reached">Cap reached · 25 keys</option>
+    </select>
+  </span>
+
+  <span class="dt-spacer"></span>
+  <span class="dt-info">BR-API-001..004 · centered modals · MCP <code>@tadaify/mcp</code> · Custom GPT JSON</span>
+</div>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="layout">
+
+  <!-- ====== PRIMARY SIDEBAR (canonical, injected via shared/partials.js) ====== -->
+  <div data-partial="app-sidebar" data-active="settings" data-tier="pro" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main class="content">
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1>
+          Settings
+          <span class="tier-tag-inline" id="tier-tag-inline">Pro+ feature</span>
+        </h1>
+        <div class="sub">Manage your account, billing, security, and data.</div>
+      </div>
+    </div>
+
+    <!-- Settings layout: left rail + content -->
+    <div class="settings-layout">
+
+      <!-- Settings sub-navigation (left rail).
+           Cross-links target sibling app-settings-<tab>.html files. -->
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a class="settings-nav-item" href="./app-settings-account.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Account
+        </a>
+        <a class="settings-nav-item" href="./app-settings-billing.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a class="settings-nav-item" href="./app-settings-security.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security
+        </a>
+        <a class="settings-nav-item" href="./app-settings-gdpr.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          GDPR &amp; data
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a class="settings-nav-item active" href="./app-settings-apikeys.html" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          API keys
+          <span class="sn-pill pro-pill">Pro</span>
+        </a>
+        <a class="settings-nav-item" href="./app-settings-team.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team
+          <span class="sn-pill biz-pill">Business</span>
+        </a>
+        <div class="settings-nav-divider"></div>
+        <a class="settings-nav-item" href="./app-settings-danger.html" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger)"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Danger zone
+        </a>
+      </nav>
+
+      <!-- Settings content area: API KEYS tab -->
+      <div class="settings-content" id="pane-api" data-tab="api">
+
+        <!-- ============================================================
+             UPSELL HERO — only visible for Free / Creator tier per
+             feedback_no_blur_premium_features. Every section below stays
+             fully visible + interactive even on Free; actions trigger
+             the shared TierGate upsell.
+             ============================================================ -->
+        <div class="upsell-hero" id="upsell-hero" role="region" aria-label="API access requires Pro">
+          <div class="uh-icon" aria-hidden="true">🔑</div>
+          <div class="uh-body">
+            <div class="uh-title">Creator API comes with the Pro plan</div>
+            <div class="uh-sub">
+              Generate API keys, plug tadaify into Claude Desktop via MCP, or build a Custom GPT that publishes to your page.
+              Everything below is shown in <b>demonstration mode</b> — explore the layout; we'll ask you to upgrade when you click an action.
+            </div>
+          </div>
+          <div class="uh-cta">
+            <button class="btn btn-primary" onclick="upsellGate('api-access')">Upgrade to Pro — $19/mo →</button>
+          </div>
+        </div>
+
+        <!-- Demonstration-mode hint banner (below the hero) -->
+        <div class="demo-mode-strip" aria-live="polite">
+          <span class="dms-ico" aria-hidden="true">👀</span>
+          <div>
+            <b>Demonstration mode.</b>
+            Free + Creator tiers see the full API surface so you can decide if it's worth upgrading.
+            Buttons here open the upgrade modal instead of taking action — no fake-disabled controls,
+            no blur, no surprises.
+          </div>
+        </div>
+
+        <!-- Rate-limited banner (state=rate-limited) -->
+        <div class="rate-banner" role="alert">
+          <span class="rb-ico" aria-hidden="true">🚦</span>
+          <div>
+            <strong>Rate limit reached — hold up briefly</strong>
+            You've hit <b>1,000 requests in the last hour</b> on Pro. New calls return <code>HTTP 429</code> with a
+            <code>retry-after: 1820</code> header. The window resets at the top of the hour. Upgrade to Business for 5× the headroom.
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 1 — Your API keys
+             ===================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>
+              Your API keys
+              <span class="chip pro sec-tier-pill" aria-label="Pro feature">Pro+</span>
+            </span>
+            <button class="btn btn-primary btn-sm" onclick="openGenerateModal()" id="btn-generate-key">
+              + Generate new key
+            </button>
+          </div>
+          <p class="section-help">
+            Each key authenticates a single integration — give it a clear name so you can rotate it later without breaking anything else.
+            Keys live in our DB as <code>SHA-256(key)</code>; the prefix you see is the only identifier we keep in plaintext (BR-API-001).
+          </p>
+
+          <!-- Filled state: 5 sample keys -->
+          <div id="keys-filled-wrap">
+            <div class="keys-table-wrap">
+              <table class="keys-table" id="keys-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Key</th>
+                    <th>Permissions</th>
+                    <th>Created</th>
+                    <th>Last used</th>
+                    <th style="text-align:right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="keys-tbody">
+                  <!-- populated by initKeys() -->
+                </tbody>
+              </table>
+            </div>
+            <p style="font-size:11.5px; color:var(--fg-subtle); margin-top:10px; line-height:1.55">
+              Lost a key? You can't recover the value — only see it once at generation. Rotate or revoke instead, then create a fresh one.
+              Cap: <b id="keys-cap-text">25 active keys per account</b> (revoked keys don't count).
+            </p>
+          </div>
+
+          <!-- Empty state -->
+          <div id="keys-empty" class="keys-empty" hidden>
+            <div class="ke-ico" aria-hidden="true">🔑</div>
+            <div><b style="color:var(--fg)">No keys yet</b></div>
+            <div style="margin-top:4px">Create your first key to plug tadaify into Claude, ChatGPT, Make.com, or your own scripts.</div>
+            <div class="ke-cta">
+              <button class="btn btn-primary btn-sm" onclick="openGenerateModal()">+ Generate your first key</button>
+            </div>
+          </div>
+
+          <!-- Permissions matrix expander -->
+          <button type="button" class="permissions-toggle" id="permissions-toggle" onclick="togglePermissions(this)" aria-expanded="false" aria-controls="permissions-grid">
+            <span class="pt-caret">›</span> What can each scope do?
+          </button>
+          <div class="permissions-grid" id="permissions-grid" role="region" aria-label="Permission scope reference">
+
+            <div class="perm-row is-head">
+              <div>Scope</div>
+              <div>What it lets the key do</div>
+              <div style="text-align:right">Category</div>
+            </div>
+
+            <div class="perm-row">
+              <div class="perm-name">read:pages</div>
+              <div class="perm-desc">List your pages, read settings, layout, theme, and SEO meta. No PII.</div>
+              <div class="perm-cat"><span class="perm-tag">Read</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">read:blocks</div>
+              <div class="perm-desc">Read every block on every page (link / video / form / shop / FAQ / portfolio / blog).</div>
+              <div class="perm-cat"><span class="perm-tag">Read</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">write:pages</div>
+              <div class="perm-desc">Create new pages, change page settings (title, slug, theme), publish or unpublish. Renames trigger DEC-074 redirects.</div>
+              <div class="perm-cat"><span class="perm-tag write">Write</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">write:blocks</div>
+              <div class="perm-desc">Add, edit, reorder, delete blocks. Bulk-publish a draft. Counts against AI quota when ✨ Suggest is invoked.</div>
+              <div class="perm-cat"><span class="perm-tag write">Write</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">read:analytics</div>
+              <div class="perm-desc">Pull views, click counts, conversion KPIs, time-series. 1 hour cache window — fresh data costs more requests.</div>
+              <div class="perm-cat"><span class="perm-tag">Read</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">read:subscribers</div>
+              <div class="perm-desc">List your email subscribers (creator-side). PII access — appears in your audit log on every call.</div>
+              <div class="perm-cat"><span class="perm-tag">Read</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">write:subscribers</div>
+              <div class="perm-desc">Add or unsubscribe people from your list. Honours double opt-in flag and GDPR consent state.</div>
+              <div class="perm-cat"><span class="perm-tag write">Write</span></div>
+            </div>
+            <div class="perm-row">
+              <div class="perm-name">webhooks</div>
+              <div class="perm-desc">Register endpoints to receive event callbacks (page.published, subscriber.added, …). Required for the live webhook log below.</div>
+              <div class="perm-cat"><span class="perm-tag write">Write</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 2 — Plug into Claude (MCP)
+             ===================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>
+              Plug into Claude (MCP)
+              <span class="chip pro sec-tier-pill" aria-label="Pro feature">Pro+</span>
+            </span>
+            <a href="https://docs.anthropic.com/en/docs/build-with-claude/mcp" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+              What's MCP? ↗
+            </a>
+          </div>
+          <p class="section-help">
+            MCP (Model Context Protocol) is how Claude Desktop talks to outside services. Drop these snippets in and Claude can list, edit,
+            and publish your pages from inside any conversation. The official tadaify MCP server (<code>@tadaify/mcp</code>) is open-source and runs locally.
+          </p>
+
+          <div class="code-block-label">One-liner — add tadaify MCP to Claude Code</div>
+          <div class="code-block">
+            <button class="cb-copy" onclick="copyCode(this, 'claude mcp add tadaify --url https://api.tadaify.com/mcp --header \"Authorization: Bearer YOUR_KEY\"')">Copy</button>
+<span style="color:#9CA3AF">$ </span>claude mcp add tadaify --url https://api.tadaify.com/mcp \
+    --header "Authorization: Bearer YOUR_KEY"
+          </div>
+
+          <div class="code-block-label">npm install for self-hosted server (optional)</div>
+          <div class="code-block">
+            <button class="cb-copy" onclick="copyCode(this, 'npm install -g @tadaify/mcp')">Copy</button>
+<span style="color:#9CA3AF">$ </span>npm install -g @tadaify/mcp
+          </div>
+
+          <div class="code-block-label">Claude Desktop config — <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></div>
+          <div class="code-block">
+            <button class="cb-copy" onclick="copyCode(this, JSON.stringify(MCP_DESKTOP_CONFIG, null, 2))">Copy</button>
+{
+  "mcpServers": {
+    "tadaify": {
+      "command": "tadaify-mcp",
+      "env": {
+        "TADAIFY_API_KEY": "<span id="mcp-key-placeholder">sk_tdf_•••…x9k2</span>"
+      }
+    }
+  }
+}
+          </div>
+
+          <div class="mcp-note">
+            <span class="mn-ico" aria-hidden="true">⚡</span>
+            <div>
+              The MCP package <code>@tadaify/mcp</code> ships separately at <a href="https://github.com/graspsoftwarepw/tadaify-mcp" target="_blank" rel="noopener">github.com/graspsoftwarepw/tadaify-mcp</a>.
+              The config above is ready for when it lands — copy buttons still work today.
+              <br>
+              Docs &amp; examples: <a href="https://docs.tadaify.com/api/mcp" target="_blank" rel="noopener">docs.tadaify.com/api/mcp ↗</a>
+            </div>
+          </div>
+
+          <!-- Quickstart for non-tech creators -->
+          <div class="settings-section-title" style="margin-top:18px; font-size:14.5px">Set up Claude Desktop in 4 steps</div>
+          <ol class="quickstart-list">
+            <li><span class="qs-body">
+              <b>Open Claude Desktop → Settings → Developer → Edit config.</b>
+              <span class="qs-sub">If "Developer" isn't visible, enable it under <code>Settings → General → Show developer options</code>.</span>
+            </span></li>
+            <li><span class="qs-body">
+              <b>Paste the JSON above.</b> Replace <code>sk_tdf_•••…x9k2</code> with your real key — generate one above if you haven't yet.
+            </span></li>
+            <li><span class="qs-body">
+              <b>Save and quit Claude Desktop.</b> Re-open it — the tadaify tool icon (🔑) should appear in the conversation footer.
+            </span></li>
+            <li><span class="qs-body">
+              <b>Try a prompt:</b> <i>"What's on my main page right now?"</i> — Claude reads your blocks live. Then try <i>"Add a 'New album out!' announcement at the top."</i>
+            </span></li>
+          </ol>
+        </div>
+
+        <!-- =====================================================
+             SECTION 3 — Custom GPT template (ChatGPT)
+             ===================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>
+              Custom GPT template (ChatGPT)
+              <span class="chip pro sec-tier-pill" aria-label="Pro feature">Pro+</span>
+            </span>
+            <button class="btn btn-ghost btn-sm" onclick="downloadGptTemplate()">⬇ Download .json</button>
+          </div>
+          <p class="section-help">
+            Build your own ChatGPT Custom GPT that reads from and writes to your tadaify page in one click. The JSON below is the OpenAPI 3.1 schema
+            ChatGPT's "Configure → Actions" expects, with auth pre-filled for our REST API. Pair it with your generated key and the
+            <a href="./app-settings-apikeys.html#mcp" style="color:var(--brand-primary)">MCP config above</a> covers Claude.
+          </p>
+
+          <div class="code-block-label">OpenAPI 3.1 schema — paste into <code>Configure → Actions → Schema</code></div>
+          <div class="code-block">
+            <button class="cb-copy" onclick="copyCode(this, GPT_OPENAPI_SCHEMA)">Copy</button>
+<span style="color:#FCD34D">openapi</span>: 3.1.0
+<span style="color:#FCD34D">info</span>:
+  <span style="color:#FCD34D">title</span>: tadaify Creator API
+  <span style="color:#FCD34D">version</span>: "1.0"
+  <span style="color:#FCD34D">description</span>: Read and update your tadaify pages, blocks, and subscribers.
+<span style="color:#FCD34D">servers</span>:
+  - <span style="color:#FCD34D">url</span>: https://api.tadaify.com/v1
+<span style="color:#FCD34D">paths</span>:
+  /pages:
+    get:
+      <span style="color:#FCD34D">operationId</span>: listPages
+      <span style="color:#FCD34D">summary</span>: List all pages on this account
+      <span style="color:#FCD34D">responses</span>: { "200": { description: OK } }
+  /pages/{slug}/blocks:
+    get:
+      <span style="color:#FCD34D">operationId</span>: listBlocks
+      <span style="color:#FCD34D">parameters</span>:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+    post:
+      <span style="color:#FCD34D">operationId</span>: addBlock
+      <span style="color:#FCD34D">requestBody</span>:
+        <span style="color:#FCD34D">content</span>:
+          application/json:
+            <span style="color:#FCD34D">schema</span>: { $ref: "#/components/schemas/Block" }
+<span style="color:#FCD34D">components</span>:
+  <span style="color:#FCD34D">securitySchemes</span>:
+    <span style="color:#FCD34D">tadaifyBearer</span>:
+      <span style="color:#FCD34D">type</span>: http
+      <span style="color:#FCD34D">scheme</span>: bearer
+<span style="color:#FCD34D">security</span>: [{ tadaifyBearer: [] }]
+          </div>
+
+          <div class="code-block-label">Authentication settings (paste below the schema)</div>
+          <div class="code-block">
+            <button class="cb-copy" onclick="copyCode(this, 'Authentication Type: API Key\\nAuth Type: Bearer\\nAPI Key: sk_tdf_<paste your key>')">Copy</button>
+<span style="color:#9CA3AF"># In ChatGPT Custom GPT builder → Configure → Authentication:</span>
+Authentication Type:  API Key
+Auth Type:            Bearer
+API Key:              sk_tdf_&lt;paste your key&gt;
+          </div>
+
+          <!-- 3-step quickstart -->
+          <div class="settings-section-title" style="margin-top:18px; font-size:14.5px">Make your Custom GPT in 3 steps</div>
+          <ol class="quickstart-list">
+            <li><span class="qs-body">
+              <b>Go to <a href="https://chatgpt.com/gpts/editor" target="_blank" rel="noopener">chatgpt.com/gpts/editor</a> and start a new GPT.</b>
+              <span class="qs-sub">Requires ChatGPT Plus or Team. Name it something like "My tadaify page assistant".</span>
+            </span></li>
+            <li><span class="qs-body">
+              <b>Open Configure → Actions → Create new action.</b>
+              Paste the schema above and the auth block below it. Set Authentication Type to <code>API Key</code> and your key as the bearer token.
+            </span></li>
+            <li><span class="qs-body">
+              <b>Save and try it.</b> Ask: <i>"List my pages."</i> The GPT should call <code>listPages</code> and respond with your slugs.
+              <span class="qs-sub">Want examples that actually publish? Browse <a href="https://docs.tadaify.com/api/gpt-recipes" target="_blank" rel="noopener">docs.tadaify.com/api/gpt-recipes ↗</a></span>
+            </span></li>
+          </ol>
+        </div>
+
+        <!-- =====================================================
+             SECTION 4 — Webhook delivery log
+             ===================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title with-action">
+            <span>
+              Webhook delivery log
+              <span class="chip pro sec-tier-pill" aria-label="Pro feature">Pro+</span>
+            </span>
+            <span class="wh-toolbar" style="margin-bottom:0">
+              <span class="wht-label">Filter:</span>
+              <select id="wh-event-filter" onchange="renderWebhooks()">
+                <option value="all">All events</option>
+                <option value="page.published">page.published</option>
+                <option value="page.unpublished">page.unpublished</option>
+                <option value="block.created">block.created</option>
+                <option value="subscriber.added">subscriber.added</option>
+                <option value="subscriber.removed">subscriber.removed</option>
+                <option value="form.submitted">form.submitted</option>
+              </select>
+              <select id="wh-status-filter" onchange="renderWebhooks()">
+                <option value="all">All statuses</option>
+                <option value="2xx">2xx success</option>
+                <option value="4xx">4xx client error</option>
+                <option value="5xx">5xx server error</option>
+                <option value="pending">Pending retry</option>
+              </select>
+            </span>
+          </div>
+          <p class="section-help">
+            Last 7 days of outbound webhook attempts. Click any row to inspect the payload, request headers, and response body.
+            We retry failed deliveries 8 times with exponential backoff (1m → 24h) before giving up. After give-up the event lands in the dead-letter queue you can replay from the API.
+          </p>
+
+          <div class="keys-table-wrap">
+            <table class="wh-table" id="wh-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Endpoint</th>
+                  <th>Event</th>
+                  <th>Status</th>
+                  <th>Time</th>
+                  <th>Retries</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="wh-tbody">
+                <!-- populated by renderWebhooks() -->
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+            <span style="font-size:12px; color:var(--fg-muted)">Showing <b id="wh-shown">10</b> of <b id="wh-total">348</b></span>
+            <a href="https://docs.tadaify.com/api/webhooks" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">
+              Webhook events reference ↗
+            </a>
+          </div>
+
+          <!-- Webhooks placeholder (DEC-MULTIPAGE-01) — kept per story body for parity with shell -->
+          <div class="webhook-future" id="webhook-future">
+            <div class="wf-ico" aria-hidden="true">🪝</div>
+            <div class="wf-body">
+              <div class="wf-title">Self-serve webhook endpoint manager — Coming Q+1</div>
+              <div class="wf-sub">
+                Today the log above is read-only — you register endpoints via the API. The dashboard manager (add endpoint with secret, simulate event, replay failed deliveries from the UI) ships in the next quarter.
+              </div>
+              <div class="wf-events">
+                <span class="chip">page.published</span>
+                <span class="chip">page.unpublished</span>
+                <span class="chip">block.created</span>
+                <span class="chip">block.updated</span>
+                <span class="chip">subscriber.added</span>
+                <span class="chip">subscriber.removed</span>
+                <span class="chip">form.submitted</span>
+                <span class="chip">order.placed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             SECTION 5 — Rate limits + usage
+             ===================================================== -->
+        <div class="settings-section">
+          <div class="settings-section-title">
+            Rate limits &amp; usage
+          </div>
+          <p class="section-help">
+            Counters are per-key per clock hour. Hitting the limit returns <code>HTTP 429</code> with a <code>retry-after</code> header.
+            We don't silently drop requests — your client must back off.
+          </p>
+
+          <div class="rate-panel">
+            <!-- Current usage -->
+            <div class="rate-card">
+              <div class="rc-label">This hour · <span id="rc-tier-label">Pro</span> tier</div>
+              <div class="rc-value">
+                <span id="rc-used">423</span><span class="rc-divisor"> / <span id="rc-limit">1,000</span> requests</span>
+              </div>
+              <div class="rc-sub" id="rc-sub">8% used · resets in <b id="rc-reset">38 min</b> at the top of the hour (UTC)</div>
+              <div class="rate-bar-wrap"><div class="rate-bar-fill" id="rate-bar-fill" style="width:42%"></div></div>
+            </div>
+
+            <!-- Today total (informational) -->
+            <div class="rate-card">
+              <div class="rc-label">Today · all keys combined</div>
+              <div class="rc-value">
+                <span>3,184</span><span class="rc-divisor"> / day requests</span>
+              </div>
+              <div class="rc-sub">Across 4 active keys · <b>Production</b> 71% / <b>GPT integration</b> 19% / <b>Make.com</b> 9% / others 1%</div>
+              <div class="rate-bar-wrap"><div class="rate-bar-fill" style="width:33%"></div></div>
+            </div>
+          </div>
+
+          <!-- Per-tier reference -->
+          <div style="margin-top:18px">
+            <div class="rate-tier-row">
+              <span class="rtr-name" id="row-pro-name">Pro</span>
+              <span class="rtr-limit">1,000 req/h</span>
+              <span class="rtr-note">Per key. Resets on the clock hour. 8 webhook retries per failed delivery.</span>
+            </div>
+            <div class="rate-tier-row">
+              <span class="rtr-name" id="row-business-name">Business</span>
+              <span class="rtr-limit">5,000 req/h</span>
+              <span class="rtr-note">Per key. Higher webhook concurrency (16 in flight). Fair-use cap ~50,000/day account-wide.</span>
+            </div>
+            <div class="rate-tier-row">
+              <span class="rtr-name" style="color:var(--fg-subtle)">Free / Creator</span>
+              <span class="rtr-limit" style="color:var(--fg-subtle)">— no API access</span>
+              <span class="rtr-note">Upgrade to Pro to unlock keys.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Help footer -->
+        <div class="help-footer">
+          Lost a key? You can't recover the value — rotate or revoke and create a fresh one.
+          ·
+          Found a bug or have feature ideas? Open one at
+          <a href="https://github.com/graspsoftwarepw/tadaify-app/issues" target="_blank" rel="noopener">github.com/graspsoftwarepw/tadaify-app/issues ↗</a>
+          ·
+          Status &amp; uptime: <a href="https://status.tadaify.com" target="_blank" rel="noopener">status.tadaify.com ↗</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================
+     MODAL — Generate new key (centered, multi-step, NEVER drawer)
+     Step 1: form (name + scopes + expiry)
+     Step 2: reveal (full key shown ONCE)
+     ============================================================ -->
+<div class="modal-backdrop" id="generate-modal" role="dialog" aria-modal="true" aria-labelledby="generate-title">
+  <div class="modal modal-md">
+
+    <!-- Step 1: form -->
+    <div class="gen-step active" data-step="form">
+      <h3 id="generate-title">Generate a new API key</h3>
+      <p class="modal-sub">
+        We'll show you the full key on the next screen — copy it then. After this dialog closes you'll only see the prefix
+        (<code style="background:var(--bg-muted); padding:1px 6px; border-radius:4px; font-family:var(--font-mono)">sk_tdf_…</code>) ever again.
+      </p>
+
+      <div class="field-row">
+        <div>
+          <label for="gen-name">Key name</label>
+          <input type="text" id="gen-name" class="field-input" placeholder="e.g. Production · Make.com · GPT integration" maxlength="60" autocomplete="off">
+        </div>
+        <div>
+          <label for="gen-expires">Expires</label>
+          <select id="gen-expires" class="field-input">
+            <option value="never" selected>Never</option>
+            <option value="30">30 days</option>
+            <option value="90">90 days</option>
+            <option value="365">1 year</option>
+            <option value="custom">Custom date…</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="margin-top:6px">Permissions (pick at least one)</label>
+      <div class="scope-list" role="group" aria-label="API key scopes">
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="read:pages" checked>
+          <span class="si-body">
+            <span class="si-title">read:pages</span>
+            <span class="si-sub">List pages, read settings + theme + SEO. No PII.</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="read:blocks" checked>
+          <span class="si-body">
+            <span class="si-title">read:blocks</span>
+            <span class="si-sub">Read every block on every page.</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="write:pages">
+          <span class="si-body">
+            <span class="si-title">write:pages <span class="si-write">write</span></span>
+            <span class="si-sub">Create + edit + publish pages. Renames trigger DEC-074 redirects.</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="write:blocks">
+          <span class="si-body">
+            <span class="si-title">write:blocks <span class="si-write">write</span></span>
+            <span class="si-sub">Add / edit / reorder / delete blocks on any page.</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="read:analytics">
+          <span class="si-body">
+            <span class="si-title">read:analytics</span>
+            <span class="si-sub">Pull views, clicks, conversions. 1-hour cache.</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="read:subscribers">
+          <span class="si-body">
+            <span class="si-title">read:subscribers</span>
+            <span class="si-sub">List subscribers (PII — appears in audit log).</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="write:subscribers">
+          <span class="si-body">
+            <span class="si-title">write:subscribers <span class="si-write">write</span></span>
+            <span class="si-sub">Add / unsubscribe people. Honours double opt-in.</span>
+          </span>
+        </label>
+        <label class="scope-item">
+          <input type="checkbox" name="gen-scope" value="webhooks">
+          <span class="si-body">
+            <span class="si-title">webhooks <span class="si-write">write</span></span>
+            <span class="si-sub">Register endpoints to receive event callbacks.</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('generate-modal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="genStepReveal()" id="btn-gen-confirm">Generate key</button>
+      </div>
+    </div>
+
+    <!-- Step 2: reveal (one-time) -->
+    <div class="gen-step" data-step="reveal">
+      <h3>Your new API key</h3>
+      <div class="reveal-banner">
+        <span style="font-size:18px" aria-hidden="true">⚠️</span>
+        <div>
+          <b>Copy it now — you won't see this key again.</b>
+          We store only the SHA-256 hash and the 12-char prefix. Lose this and you'll have to rotate.
+        </div>
+      </div>
+
+      <label>Full key</label>
+      <div class="reveal-key">
+        <span class="rk-key" id="reveal-key-text">sk_tdf_3HnX9ZkPq2VtRm7sLwY4d8FxkJ1cN6Bo</span>
+        <span class="rk-actions">
+          <button onclick="copyReveal(this)">Copy</button>
+          <button onclick="downloadKeyTxt()">⬇ .txt</button>
+        </span>
+      </div>
+
+      <dl class="payload-meta">
+        <dt>Name</dt><dd id="reveal-meta-name">—</dd>
+        <dt>Prefix</dt><dd>sk_tdf_3HnX9ZkPq2Vt</dd>
+        <dt>Expires</dt><dd id="reveal-meta-expires">Never</dd>
+        <dt>Scopes</dt><dd id="reveal-meta-scopes">—</dd>
+      </dl>
+
+      <p style="font-size:12px; color:var(--fg-muted); line-height:1.55">
+        Test it in your terminal:
+      </p>
+      <div class="code-block" style="font-size:11.5px">
+        <button class="cb-copy" onclick="copyCode(this, 'curl -H \"Authorization: Bearer sk_tdf_3HnX9ZkPq2VtRm7sLwY4d8FxkJ1cN6Bo\" https://api.tadaify.com/v1/pages')">Copy</button>
+<span style="color:#9CA3AF">$ </span>curl -H "Authorization: Bearer sk_tdf_3HnX..." \
+    https://api.tadaify.com/v1/pages
+          </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-sm" onclick="closeModal('generate-modal'); toast('Key saved · stored as SHA-256 hash')">I've copied it · Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Rotate key
+     ============================================================ -->
+<div class="modal-backdrop" id="rotate-modal" role="dialog" aria-modal="true" aria-labelledby="rotate-title">
+  <div class="modal modal-sm">
+    <h3 id="rotate-title">Rotate <span id="rotate-name">Production</span></h3>
+    <p class="modal-sub">
+      We'll generate a fresh value with the same name and scopes. The old value works for 24 more hours so you can swap it without downtime.
+      After 24h it returns <code style="background:var(--bg-muted); padding:1px 5px; border-radius:4px; font-family:var(--font-mono)">401</code>.
+    </p>
+
+    <dl class="payload-meta">
+      <dt>Name</dt><dd id="rotate-meta-name">Production</dd>
+      <dt>Old prefix</dt><dd id="rotate-meta-prefix">sk_tdf_•••…x9k2</dd>
+      <dt>Scopes preserved</dt><dd id="rotate-meta-scopes">read:pages, read:blocks, write:blocks, webhooks</dd>
+      <dt>Old key invalid after</dt><dd>2026-04-28 08:30 UTC (24h grace)</dd>
+    </dl>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('rotate-modal')">Cancel</button>
+      <button class="btn btn-warm btn-sm" onclick="confirmRotate()">Rotate &amp; reveal new key</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Delete (revoke) key — type-to-confirm
+     ============================================================ -->
+<div class="modal-backdrop" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+  <div class="modal modal-sm">
+    <h3 id="delete-title">Delete <span id="delete-name">Webhook receiver</span>?</h3>
+    <p class="modal-sub">
+      Revoking is irreversible. Calls with this key return <code style="background:var(--bg-muted); padding:1px 5px; border-radius:4px; font-family:var(--font-mono)">401</code> within 60 seconds (cache TTL).
+      In-flight requests already authorised at the gateway will complete.
+    </p>
+
+    <div class="delete-summary">
+      <b>What stops:</b><br>
+      · Make.com automation pulling new form submissions<br>
+      · Webhook deliveries to <code>https://hooks.zapier.com/hooks/catch/123/abc</code><br>
+      · Any background job using this key
+    </div>
+
+    <label for="delete-confirm-input">Type the key name to confirm: <code id="delete-confirm-name" style="background:var(--bg-muted); padding:1px 6px; border-radius:4px; font-family:var(--font-mono)">Webhook receiver</code></label>
+    <input type="text" id="delete-confirm-input" class="field-input" autocomplete="off" oninput="onDeleteConfirmInput(this)">
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('delete-modal')">Keep key</button>
+      <button class="btn btn-danger btn-sm" id="btn-confirm-delete" disabled onclick="confirmDelete()">Delete forever</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Webhook payload viewer
+     ============================================================ -->
+<div class="modal-backdrop" id="payload-modal" role="dialog" aria-modal="true" aria-labelledby="payload-title">
+  <div class="modal modal-md">
+    <h3 id="payload-title">Webhook delivery · <span id="payload-event">page.published</span></h3>
+    <p class="modal-sub">
+      Single attempt against your endpoint. Click "Replay" to fire the same payload again — useful when fixing your handler.
+    </p>
+
+    <dl class="payload-meta">
+      <dt>Event</dt><dd id="pm-event">page.published</dd>
+      <dt>Endpoint</dt><dd id="pm-endpoint">https://hooks.zapier.com/hooks/catch/12345678/abc</dd>
+      <dt>Status</dt><dd id="pm-status">200 OK · 412 ms · attempt 1/8</dd>
+      <dt>Sent at</dt><dd id="pm-sent">2026-04-27 06:14:08 UTC</dd>
+      <dt>Signature</dt><dd>sha256=8f3c…b2a1 (verify with your endpoint secret)</dd>
+    </dl>
+
+    <div class="code-block-label">Request body</div>
+    <div class="code-block" style="white-space:pre-wrap">
+      <button class="cb-copy" onclick="copyCode(this, '{\"event\":\"page.published\",\"page\":{\"slug\":\"main\",\"url\":\"https://tadaify.com/alexandra\"},\"timestamp\":\"2026-04-27T06:14:08Z\"}')">Copy</button>
+{
+  "event": "page.published",
+  "page": {
+    "slug": "main",
+    "url": "https://tadaify.com/alexandra",
+    "blocks_count": 14
+  },
+  "timestamp": "2026-04-27T06:14:08Z",
+  "tadaify_event_id": "evt_3Hn9ZkPqX2"
+}
+    </div>
+
+    <div class="code-block-label">Response from your endpoint</div>
+    <div class="code-block">
+<span style="color:#10B981">200 OK · 412 ms</span>
+content-type: application/json
+x-zapier-zap-id: 1234567
+
+{"received":true}
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('payload-modal')">Close</button>
+      <button class="btn btn-warm btn-sm" onclick="replayWebhook()">Replay this delivery</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL — Upgrade gate (shared TierGate stub)
+     ============================================================ -->
+<div class="modal-backdrop" id="upsell-modal" role="dialog" aria-modal="true" aria-labelledby="upsell-title">
+  <div class="modal modal-md">
+    <h3 id="upsell-title">Just one step — <span id="upsell-feature">API access</span> needs Pro</h3>
+    <p class="modal-sub">
+      Generate keys, plug into Claude via MCP, build a Custom GPT, register webhooks.
+      Your demo configuration is saved as a draft — upgrade and we'll apply it the moment you're in.
+    </p>
+
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">
+        <span style="color:var(--fg-muted)">Current plan</span>
+        <span><b id="upsell-current">Free</b></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">
+        <span style="color:var(--fg-muted)">Pro adds</span>
+        <span style="text-align:right; max-width:60%; line-height:1.45">API keys + MCP + Custom GPT + 1,000 req/h + custom domain + 100 AI uses/day</span>
+      </div>
+      <div style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:14px">
+        <span style="font-weight:600">Pro · monthly</span>
+        <span style="font-family:var(--font-mono);font-weight:700">$19/mo · locked for life</span>
+      </div>
+    </div>
+
+    <p style="font-size:12px;color:var(--fg-muted);line-height:1.55">
+      Cancel anytime in <a href="./app-settings-billing.html" style="color:var(--brand-primary)">Billing → Danger zone</a>. 30-day money-back on first charge.
+    </p>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('upsell-modal')">Stay on Free</button>
+      <button class="btn btn-primary btn-sm" onclick="closeModal('upsell-modal'); toast('Mockup: would redirect to Stripe Checkout');">Upgrade to Pro — $19/mo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOAST
+     ============================================================ -->
+<div class="toast" id="toast" role="status" aria-live="polite">Copied!</div>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script src="./shared/partials.js"></script>
+<script>
+  /* -------------------------------------------------------------
+     1. Theme
+     ------------------------------------------------------------- */
+  function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+  /* -------------------------------------------------------------
+     2. Modal helpers
+     ------------------------------------------------------------- */
+  function openModal(id) {
+    var bd = document.getElementById(id);
+    if (!bd) return;
+    bd.classList.add('open');
+  }
+  function closeModal(id) {
+    var bd = document.getElementById(id);
+    if (!bd) return;
+    bd.classList.remove('open');
+    if (id === 'generate-modal') genStepGoTo('form');
+    if (id === 'delete-modal') {
+      document.getElementById('delete-confirm-input').value = '';
+      document.getElementById('btn-confirm-delete').disabled = true;
+    }
+  }
+  document.querySelectorAll('.modal-backdrop').forEach(function (bd) {
+    bd.addEventListener('click', function (e) { if (e.target === bd) closeModal(bd.id); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(function (m) { closeModal(m.id); });
+  });
+
+  /* -------------------------------------------------------------
+     3. Toast + clipboard
+     ------------------------------------------------------------- */
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+  function copyCode(btn, text) {
+    if (navigator.clipboard) { navigator.clipboard.writeText(text).catch(function(){}); }
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function () {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 1500);
+    toast('Copied to clipboard');
+  }
+  function copyReveal(btn) {
+    var text = document.getElementById('reveal-key-text').textContent;
+    copyCode(btn, text);
+  }
+
+  /* -------------------------------------------------------------
+     4. Tier-gated demo mode (Free + Creator)
+        Per feedback_no_blur_premium_features: every action stays
+        clickable; if tier is below Pro, route to upsell modal.
+     ------------------------------------------------------------- */
+  function isPaidTier() {
+    var t = document.body.dataset.tier;
+    return t === 'pro' || t === 'business';
+  }
+  function upsellGate(feature) {
+    document.getElementById('upsell-feature').textContent = feature || 'API access';
+    document.getElementById('upsell-current').textContent =
+      ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[document.body.dataset.tier] || 'Free';
+    openModal('upsell-modal');
+  }
+
+  /* -------------------------------------------------------------
+     5. Tier switcher (re-render sidebar partial + adjust UI)
+     ------------------------------------------------------------- */
+  function setTier(tier) {
+    document.body.dataset.tier = tier;
+
+    /* Re-render the canonical sidebar at the new tier */
+    var aside = document.querySelector('aside.tdf-side');
+    if (aside && window.TadaifyPartials) {
+      var html = window.TadaifyPartials.renderSidebar('settings', tier, 'alexandra', 'Alexandra Silva');
+      aside.outerHTML = html;
+    }
+
+    /* Update inline tier tag in page head */
+    var tag = document.getElementById('tier-tag-inline');
+    if (tier === 'pro')          tag.textContent = 'Pro+ feature · active on your plan';
+    else if (tier === 'business') tag.textContent = 'Business · 5,000 req/h headroom';
+    else if (tier === 'creator')  tag.textContent = 'Pro+ feature · demonstration mode';
+    else                          tag.textContent = 'Pro+ feature';
+    tag.style.background = isPaidTier() ? 'rgba(16,185,129,0.14)' : 'rgba(99,102,241,0.12)';
+    tag.style.color      = isPaidTier() ? '#065F46' : 'var(--brand-primary)';
+    tag.style.borderColor = isPaidTier() ? 'rgba(16,185,129,0.30)' : 'rgba(99,102,241,0.32)';
+
+    /* Update rate card */
+    var limit = (tier === 'business') ? 5000 : 1000;
+    document.getElementById('rc-limit').textContent = limit.toLocaleString();
+    document.getElementById('rc-tier-label').textContent = ({ pro: 'Pro', business: 'Business', creator: 'Pro (demo)', free: 'Pro (demo)' })[tier];
+    var pct = Math.round((423 / limit) * 100);
+    document.getElementById('rc-sub').innerHTML = pct + '% used · resets in <b id="rc-reset">38 min</b> at the top of the hour (UTC)';
+    var bar = document.getElementById('rate-bar-fill');
+    bar.style.width = Math.min(100, pct) + '%';
+
+    /* Highlight current tier in reference rows */
+    document.getElementById('row-pro-name').classList.toggle('is-current', tier === 'pro');
+    document.getElementById('row-business-name').classList.toggle('is-current', tier === 'business');
+  }
+
+  /* -------------------------------------------------------------
+     6. State switcher
+     ------------------------------------------------------------- */
+  function setState(state) {
+    document.body.dataset.state = state;
+
+    var emptyEl   = document.getElementById('keys-empty');
+    var filledEl  = document.getElementById('keys-filled-wrap');
+    var bar       = document.getElementById('rate-bar-fill');
+
+    if (state === 'empty') {
+      filledEl.hidden = true;
+      emptyEl.hidden  = false;
+    } else {
+      filledEl.hidden = false;
+      emptyEl.hidden  = true;
+    }
+
+    if (state === 'cap-reached') {
+      document.getElementById('btn-generate-key').disabled = true;
+      document.getElementById('btn-generate-key').textContent = '✕ Cap reached (25 / 25)';
+      document.getElementById('btn-generate-key').onclick = function () {
+        toast('Cap reached — revoke an existing key first');
+      };
+      document.getElementById('keys-cap-text').innerHTML = '<span style="color:var(--danger)">Cap reached: 25 / 25 active keys</span>';
+    } else {
+      document.getElementById('btn-generate-key').disabled = false;
+      document.getElementById('btn-generate-key').textContent = '+ Generate new key';
+      document.getElementById('btn-generate-key').onclick = openGenerateModal;
+      document.getElementById('keys-cap-text').textContent = '25 active keys per account';
+    }
+
+    if (state === 'rate-limited') {
+      document.getElementById('rc-used').textContent = '1,000';
+      bar.style.width = '100%';
+      bar.classList.remove('is-warn');
+      bar.classList.add('is-crit');
+      document.getElementById('rc-sub').innerHTML = '100% used · resets in <b>38 min</b> at the top of the hour (UTC)';
+    } else {
+      document.getElementById('rc-used').textContent = '423';
+      var limit = parseInt(document.getElementById('rc-limit').textContent.replace(/,/g, ''), 10) || 1000;
+      var pct = Math.round((423 / limit) * 100);
+      bar.style.width = pct + '%';
+      bar.classList.remove('is-crit');
+      if (pct > 80) bar.classList.add('is-warn'); else bar.classList.remove('is-warn');
+    }
+  }
+
+  /* -------------------------------------------------------------
+     7. Permissions matrix expander
+     ------------------------------------------------------------- */
+  function togglePermissions(btn) {
+    var open = btn.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+    document.getElementById('permissions-grid').classList.toggle('open', open);
+  }
+
+  /* -------------------------------------------------------------
+     8. Keys table — sample data + render
+     ------------------------------------------------------------- */
+  var SAMPLE_KEYS = [
+    {
+      id: 'ak_001', name: 'Production',
+      scopes: ['read:pages','read:blocks','write:blocks','webhooks'],
+      created: 'Mar 2, 2026', lastUsed: '12 min ago', last4: 'x9k2',
+      desc: 'Live integration · main pipeline'
+    },
+    {
+      id: 'ak_002', name: 'Staging',
+      scopes: ['read:pages','read:blocks','write:pages','write:blocks'],
+      created: 'Feb 18, 2026', lastUsed: '4 hours ago', last4: 'mPq7',
+      desc: 'Used by staging.tadaify.example for QA'
+    },
+    {
+      id: 'ak_003', name: 'Webhook receiver',
+      scopes: ['webhooks'],
+      created: 'Jan 11, 2026', lastUsed: 'Yesterday', last4: 'jL3v',
+      desc: 'Zapier — page.published → email blast'
+    },
+    {
+      id: 'ak_004', name: 'GPT integration',
+      scopes: ['read:pages','read:blocks','read:analytics'],
+      created: 'Dec 22, 2025', lastUsed: '2 hours ago', last4: 'fA8t',
+      desc: 'My Custom GPT on chatgpt.com'
+    },
+    {
+      id: 'ak_005', name: 'Make.com automation',
+      scopes: ['read:subscribers','write:subscribers','webhooks'],
+      created: 'Nov 4, 2025', lastUsed: '6 days ago', last4: 'wK1n',
+      desc: 'New form submission → Notion + Klaviyo · revoked Apr 8',
+      revoked: true
+    }
+  ];
+  function renderKeys() {
+    var body = document.getElementById('keys-tbody');
+    body.innerHTML = SAMPLE_KEYS.map(function (k) {
+      var token = 'sk_tdf_•••…' + k.last4;
+      var scopesHtml = k.scopes.map(function (s) { return '<span class="chip scope">' + s + '</span>'; }).join('');
+      var actionsHtml = k.revoked
+        ? '<span style="font-size:11.5px; color:var(--fg-subtle); padding-right:8px">Revoked Apr 8, 2026</span>'
+        : '<button class="btn btn-ghost btn-xs" onclick="openRevealAgain(\'' + k.id + '\')">Reveal once</button>' +
+          '<button class="btn btn-ghost btn-xs" onclick="openRotate(\'' + k.id + '\')">Rotate</button>' +
+          '<button class="btn btn-danger-ghost btn-xs" onclick="openDelete(\'' + k.id + '\')">Delete</button>';
+      return '<tr' + (k.revoked ? ' class="is-revoked"' : '') + '>' +
+        '<td><span class="k-name">' + escapeHtml(k.name) + '</span><span class="k-name-meta">' + escapeHtml(k.desc) + '</span></td>' +
+        '<td><span class="k-token">' + token + '</span></td>' +
+        '<td><div class="k-scopes">' + scopesHtml + '</div></td>' +
+        '<td class="k-date">' + k.created + '</td>' +
+        '<td class="k-date">' + k.lastUsed + '</td>' +
+        '<td class="k-actions">' + actionsHtml + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[c];
+    });
+  }
+
+  /* -------------------------------------------------------------
+     9. Generate-key flow (multi-step modal)
+     ------------------------------------------------------------- */
+  function openGenerateModal() {
+    if (!isPaidTier()) return upsellGate('Generate API key');
+    /* reset form */
+    document.getElementById('gen-name').value = '';
+    document.getElementById('gen-expires').value = 'never';
+    document.querySelectorAll('input[name="gen-scope"]').forEach(function (cb, i) { cb.checked = (i < 2); });
+    genStepGoTo('form');
+    openModal('generate-modal');
+    setTimeout(function () { document.getElementById('gen-name').focus(); }, 50);
+  }
+  function genStepGoTo(step) {
+    document.querySelectorAll('#generate-modal .gen-step').forEach(function (el) {
+      el.classList.toggle('active', el.dataset.step === step);
+    });
+  }
+  function genStepReveal() {
+    var name = (document.getElementById('gen-name').value || '').trim();
+    var scopes = [].slice.call(document.querySelectorAll('input[name="gen-scope"]:checked')).map(function (cb) { return cb.value; });
+    if (!name) {
+      document.getElementById('gen-name').focus();
+      toast('Give your key a name first');
+      return;
+    }
+    if (scopes.length === 0) {
+      toast('Pick at least one scope');
+      return;
+    }
+    var expires = document.getElementById('gen-expires').value;
+    var expLabel = ({ never:'Never', '30':'In 30 days · May 27, 2026', '90':'In 90 days · Jul 26, 2026', '365':'In 1 year · Apr 27, 2027', custom:'Custom date' })[expires] || 'Never';
+
+    document.getElementById('reveal-meta-name').textContent = name;
+    document.getElementById('reveal-meta-expires').textContent = expLabel;
+    document.getElementById('reveal-meta-scopes').textContent = scopes.join(', ');
+    genStepGoTo('reveal');
+  }
+  function downloadKeyTxt() {
+    /* Real impl: blob + a[download]. Mockup: pretend. */
+    toast('Mockup: downloads tadaify-key-' + Date.now() + '.txt');
+  }
+
+  /* -------------------------------------------------------------
+     10. Rotate flow
+     ------------------------------------------------------------- */
+  function openRotate(keyId) {
+    if (!isPaidTier()) return upsellGate('Rotate API key');
+    var k = SAMPLE_KEYS.find(function (x) { return x.id === keyId; }) || SAMPLE_KEYS[0];
+    document.getElementById('rotate-name').textContent = k.name;
+    document.getElementById('rotate-meta-name').textContent = k.name;
+    document.getElementById('rotate-meta-prefix').textContent = 'sk_tdf_•••…' + k.last4;
+    document.getElementById('rotate-meta-scopes').textContent = k.scopes.join(', ');
+    openModal('rotate-modal');
+  }
+  function confirmRotate() {
+    closeModal('rotate-modal');
+    /* Reuse generate reveal step with fresh value */
+    document.getElementById('reveal-key-text').textContent = 'sk_tdf_R0Tt8XnQzWmK4pVjL2sH7yBuC5dE3fAg';
+    document.getElementById('reveal-meta-name').textContent = document.getElementById('rotate-name').textContent;
+    document.getElementById('reveal-meta-expires').textContent = 'Never · old value valid 24h';
+    document.getElementById('reveal-meta-scopes').textContent = document.getElementById('rotate-meta-scopes').textContent;
+    genStepGoTo('reveal');
+    openModal('generate-modal');
+  }
+
+  /* -------------------------------------------------------------
+     11. Delete flow (type-to-confirm)
+     ------------------------------------------------------------- */
+  function openDelete(keyId) {
+    if (!isPaidTier()) return upsellGate('Delete API key');
+    var k = SAMPLE_KEYS.find(function (x) { return x.id === keyId; }) || SAMPLE_KEYS[0];
+    document.getElementById('delete-name').textContent = k.name;
+    document.getElementById('delete-confirm-name').textContent = k.name;
+    document.getElementById('delete-confirm-input').value = '';
+    document.getElementById('btn-confirm-delete').disabled = true;
+    openModal('delete-modal');
+  }
+  function onDeleteConfirmInput(input) {
+    var target = document.getElementById('delete-confirm-name').textContent;
+    document.getElementById('btn-confirm-delete').disabled = (input.value.trim() !== target);
+  }
+  function confirmDelete() {
+    closeModal('delete-modal');
+    toast('Mockup: key revoked — DELETE /api/keys/{id}');
+  }
+
+  /* -------------------------------------------------------------
+     12. Reveal-once-again (dev helper that just shows the prefix)
+     ------------------------------------------------------------- */
+  function openRevealAgain(keyId) {
+    if (!isPaidTier()) return upsellGate('Reveal API key');
+    var k = SAMPLE_KEYS.find(function (x) { return x.id === keyId; }) || SAMPLE_KEYS[0];
+    /* By design we DON'T have the full key — show a friendly explanation */
+    toast("Can't reveal — we only store SHA-256. Rotate to get a fresh value.");
+  }
+
+  /* -------------------------------------------------------------
+     13. Webhooks — sample data + render
+     ------------------------------------------------------------- */
+  var SAMPLE_WEBHOOKS = [
+    { when: '2 min ago',  endpoint: 'https://hooks.zapier.com/hooks/catch/12345678/abc',     event: 'page.published',      status: '200', code: '2xx', rt: '412 ms', retries: 0 },
+    { when: '14 min ago', endpoint: 'https://hooks.make.com/r/x9KQpZ',                       event: 'subscriber.added',    status: '200', code: '2xx', rt: '184 ms', retries: 0 },
+    { when: '38 min ago', endpoint: 'https://hooks.zapier.com/hooks/catch/12345678/abc',     event: 'block.created',       status: '200', code: '2xx', rt: '298 ms', retries: 0 },
+    { when: '1 h ago',    endpoint: 'https://my-api.alexandra.com/webhooks/tadaify',         event: 'form.submitted',      status: '500', code: '5xx', rt: '5,003 ms', retries: 3 },
+    { when: '2 h ago',    endpoint: 'https://hooks.zapier.com/hooks/catch/12345678/abc',     event: 'page.unpublished',    status: '200', code: '2xx', rt: '356 ms', retries: 0 },
+    { when: '3 h ago',    endpoint: 'https://my-api.alexandra.com/webhooks/tadaify',         event: 'subscriber.removed',  status: '404', code: '4xx', rt: '129 ms', retries: 1 },
+    { when: '5 h ago',    endpoint: 'https://hooks.make.com/r/x9KQpZ',                       event: 'block.created',       status: 'pending',  code: 'pending', rt: '—', retries: 2 },
+    { when: '8 h ago',    endpoint: 'https://hooks.zapier.com/hooks/catch/12345678/abc',     event: 'page.published',      status: '200', code: '2xx', rt: '267 ms', retries: 0 },
+    { when: '11 h ago',   endpoint: 'https://my-api.alexandra.com/webhooks/tadaify',         event: 'form.submitted',      status: '200', code: '2xx', rt: '412 ms', retries: 1 },
+    { when: 'Yesterday',  endpoint: 'https://hooks.make.com/r/x9KQpZ',                       event: 'subscriber.added',    status: '200', code: '2xx', rt: '202 ms', retries: 0 }
+  ];
+  function statusChipFor(w) {
+    if (w.code === 'pending') return '<span class="wh-status spending">pending</span>';
+    var label = w.status;
+    return '<span class="wh-status s' + w.code + '">' + label + '</span>';
+  }
+  function renderWebhooks() {
+    var ev = document.getElementById('wh-event-filter').value;
+    var st = document.getElementById('wh-status-filter').value;
+    var rows = SAMPLE_WEBHOOKS.filter(function (w) {
+      if (ev !== 'all' && w.event !== ev) return false;
+      if (st !== 'all' && w.code !== st) return false;
+      return true;
+    });
+    var body = document.getElementById('wh-tbody');
+    body.innerHTML = rows.map(function (w, i) {
+      return '<tr style="cursor:pointer" onclick="openPayload(' + i + ')">' +
+        '<td>' + w.when + '</td>' +
+        '<td class="endpoint" title="' + w.endpoint + '">' + w.endpoint + '</td>' +
+        '<td class="event">' + w.event + '</td>' +
+        '<td>' + statusChipFor(w) + '</td>' +
+        '<td class="rt">' + w.rt + '</td>' +
+        '<td class="retries">' + (w.retries === 0 ? '—' : w.retries + '×') + '</td>' +
+        '<td><a href="#" onclick="event.stopPropagation();openPayload(' + i + ');return false" class="btn btn-ghost btn-xs">View payload</a></td>' +
+        '</tr>';
+    }).join('');
+    document.getElementById('wh-shown').textContent = rows.length;
+  }
+  function openPayload(idx) {
+    if (!isPaidTier()) return upsellGate('View webhook payload');
+    var w = SAMPLE_WEBHOOKS[idx] || SAMPLE_WEBHOOKS[0];
+    document.getElementById('payload-event').textContent = w.event;
+    document.getElementById('pm-event').textContent = w.event;
+    document.getElementById('pm-endpoint').textContent = w.endpoint;
+    document.getElementById('pm-status').textContent = w.status + (w.code === '2xx' ? ' OK' : '') + ' · ' + w.rt + ' · attempt ' + (w.retries + 1) + '/8';
+    openModal('payload-modal');
+  }
+  function replayWebhook() {
+    closeModal('payload-modal');
+    toast('Mockup: enqueued replay — POST /api/webhooks/replay');
+  }
+
+  /* -------------------------------------------------------------
+     14. MCP / GPT static blobs (used by copy buttons)
+     ------------------------------------------------------------- */
+  var MCP_DESKTOP_CONFIG = {
+    mcpServers: {
+      tadaify: {
+        command: 'tadaify-mcp',
+        env: { TADAIFY_API_KEY: 'sk_tdf_•••…x9k2' }
+      }
+    }
+  };
+  var GPT_OPENAPI_SCHEMA = [
+    'openapi: 3.1.0',
+    'info:',
+    '  title: tadaify Creator API',
+    '  version: "1.0"',
+    '  description: Read and update your tadaify pages, blocks, and subscribers.',
+    'servers:',
+    '  - url: https://api.tadaify.com/v1',
+    'paths:',
+    '  /pages:',
+    '    get:',
+    '      operationId: listPages',
+    '      summary: List all pages on this account',
+    '      responses: { "200": { description: OK } }',
+    '  /pages/{slug}/blocks:',
+    '    get:',
+    '      operationId: listBlocks',
+    '      parameters:',
+    '        - { name: slug, in: path, required: true, schema: { type: string } }',
+    '    post:',
+    '      operationId: addBlock',
+    '      requestBody:',
+    '        content:',
+    '          application/json:',
+    '            schema: { $ref: "#/components/schemas/Block" }',
+    'components:',
+    '  securitySchemes:',
+    '    tadaifyBearer:',
+    '      type: http',
+    '      scheme: bearer',
+    'security: [{ tadaifyBearer: [] }]'
+  ].join('\n');
+  function downloadGptTemplate() {
+    if (!isPaidTier()) return upsellGate('Download Custom GPT template');
+    toast('Mockup: downloads tadaify-gpt-template.json (OpenAPI 3.1 + auth)');
+  }
+
+  /* -------------------------------------------------------------
+     15. Boot
+     ------------------------------------------------------------- */
+  document.addEventListener('DOMContentLoaded', function () {
+    renderKeys();
+    renderWebhooks();
+    setTier('pro');
+    setState('filled');
+  });
+</script>
+</body>
+</html>
