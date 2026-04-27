@@ -1919,3 +1919,338 @@
   })();
 
 })();
+
+/* =========================================================================
+   Page editor — sticky right-column Preview pane with 3-viewport switcher.
+   ─────────────────────────────────────────────────────────────────────────
+   Activates on any page that declares a content container with
+   `data-preview-pane="<page-type>"`. The pane:
+     - sits sticky to the right of the editor on viewports >= 1024px
+     - collapses below the editor (full-width) on smaller viewports
+     - renders an <iframe> loading creator-<page-type>-public.html?_preview=1
+       (the `_no_viewport_toolbar=1` query param suppresses recursion of the
+       PR #99 viewport toolbar inside the iframe)
+     - exposes a 3-viewport switcher (Desktop / Tablet / Mobile) and a
+       Light / Dark toggle in the pane header
+     - live-updates: editor form input/change events broadcast a
+       `postMessage({type: 'preview-update', state})` to the iframe — the
+       iframe is welcome to ignore (mockup contract; production wires it)
+
+   Pattern source: app-settings-theme.html "Live preview" pane (sticky
+   right column, 3-toggle device switcher, light / dark toggle, live
+   update banner).
+
+   This IIFE is INDEPENDENT of the global PR #99 viewport toolbar — they
+   answer different questions:
+     - PR #99 toolbar:    "How does the WHOLE EDITOR PAGE render at
+                           Desktop / Tablet / Mobile?"
+     - Preview pane here: "How does the VISITOR'S VIEW of the creator's
+                           page render at Desktop / Tablet / Mobile?"
+   ========================================================================= */
+(function injectPagePreviewPane() {
+  'use strict';
+
+  /* Guard: never run inside an iframe (the inner public render is loaded
+     in an iframe and must NOT recursively grow another preview pane). */
+  try { if (window !== window.top) return; } catch (e) { return; }
+
+  /* Guard: explicit opt-out via URL param (e.g. when preview iframe loads
+     editor pages directly, though that is not the typical flow). */
+  if (/[?&]_no_preview_pane=1/.test(location.search)) return;
+
+  /* ---- Locate the editor's content container --------------------------- */
+  /* Convention: each app-page-*.html editor adds
+       data-preview-pane="<page-type>"
+     to its main.content element. Page-type is the slug used in the
+     companion creator-<page-type>-public.html public render
+     (e.g. "blog", "about", "portfolio"). */
+  var contentEl = document.querySelector('[data-preview-pane]');
+  if (!contentEl) return;
+
+  var pageType = contentEl.getAttribute('data-preview-pane') || '';
+  if (!pageType) return;
+
+  var publicSrc = './creator-' + pageType + '-public.html?_no_viewport_toolbar=1&_preview=1';
+
+  /* ---- Viewport configurations ---------------------------------------- */
+  var VIEWPORTS = {
+    desktop: { label: 'Desktop', w: null, h: null, scale: 1 },
+    tablet:  { label: 'Tablet',  w: 820,  h: 1180, scale: null },
+    mobile:  { label: 'Mobile',  w: 390,  h: 844,  scale: null }
+  };
+  var LS_KEY  = 'tadaify_preview_pane_vp_' + pageType;
+  var LS_DARK = 'tadaify_preview_pane_dark_' + pageType;
+
+  /* ---- Inject CSS once ------------------------------------------------- */
+  var css = [
+    '.tdf-pp-shell {',
+    '  display: grid; grid-template-columns: 1fr; gap: 24px;',
+    '  align-items: start; min-width: 0;',
+    '}',
+    '@media (min-width: 1024px) {',
+    '  .tdf-pp-shell { grid-template-columns: minmax(0, 1fr) 480px; }',
+    '}',
+    '.tdf-pp-editor { min-width: 0; }',
+    '.tdf-pp-col {',
+    '  position: static; align-self: start; min-width: 0;',
+    '}',
+    '@media (min-width: 1024px) {',
+    '  .tdf-pp-col {',
+    '    position: sticky; top: 78px;',
+    '    max-height: calc(100vh - 100px);',
+    '    display: flex; flex-direction: column;',
+    '  }',
+    '}',
+    '.tdf-pp-panel {',
+    '  background: var(--bg-elevated, #fff);',
+    '  border: 1px solid var(--border, #E5E7EB);',
+    '  border-radius: 14px;',
+    '  overflow: hidden;',
+    '  display: flex; flex-direction: column;',
+    '  box-shadow: 0 4px 12px rgba(17,24,39,0.05);',
+    '  flex: 1; min-height: 0;',
+    '}',
+    '.tdf-pp-head {',
+    '  padding: 10px 14px;',
+    '  border-bottom: 1px solid var(--border, #E5E7EB);',
+    '  background: var(--bg, #F9FAFB);',
+    '  display: flex; align-items: center; justify-content: space-between;',
+    '  gap: 10px; flex-wrap: wrap;',
+    '}',
+    '.tdf-pp-title {',
+    '  font-size: 11px; font-weight: 700;',
+    '  text-transform: uppercase; letter-spacing: 0.08em;',
+    '  color: var(--fg-subtle, #6B7280);',
+    '}',
+    '.tdf-pp-segment {',
+    '  display: inline-flex; gap: 0;',
+    '  background: var(--bg-muted, #F3F4F6); border-radius: 7px;',
+    '  padding: 2px;',
+    '}',
+    '.tdf-pp-segment button {',
+    '  padding: 4px 10px; border: 0; background: transparent;',
+    '  font-size: 11px; font-weight: 600; color: var(--fg-muted, #6B7280);',
+    '  border-radius: 5px; cursor: pointer;',
+    '  display: inline-flex; align-items: center; gap: 4px;',
+    '  font-family: inherit;',
+    '}',
+    '.tdf-pp-segment button.is-active {',
+    '  background: var(--bg-elevated, #fff); color: var(--fg, #111827);',
+    '  box-shadow: 0 1px 2px rgba(17,24,39,0.06);',
+    '}',
+    '.tdf-pp-segment svg { width: 12px; height: 12px; }',
+    '.tdf-pp-stage {',
+    '  background:',
+    '    radial-gradient(120% 80% at 50% 0%, rgba(99,102,241,0.06), transparent 60%),',
+    '    var(--bg-muted, #F3F4F6);',
+    '  display: flex; align-items: flex-start; justify-content: center;',
+    '  padding: 18px 14px; min-height: 480px; flex: 1;',
+    '  overflow: auto;',
+    '}',
+    '.tdf-pp-stage[data-device="desktop"] .tdf-pp-frame-wrap {',
+    '  width: 100%; max-width: 100%;',
+    '}',
+    '.tdf-pp-stage[data-device="tablet"] .tdf-pp-frame-wrap,',
+    '.tdf-pp-stage[data-device="mobile"] .tdf-pp-frame-wrap {',
+    '  display: inline-block;',
+    '  transform-origin: top center;',
+    '}',
+    '.tdf-pp-frame-wrap {',
+    '  border-radius: 12px;',
+    '  box-shadow: 0 12px 30px rgba(17,24,39,0.16);',
+    '  overflow: hidden; background: #fff;',
+    '  transition: width .25s ease, height .25s ease;',
+    '}',
+    '.tdf-pp-frame {',
+    '  border: 0; display: block; background: #fff;',
+    '  width: 100%; height: 600px;',
+    '}',
+    '.tdf-pp-stage[data-device="desktop"] .tdf-pp-frame { height: 600px; }',
+    '.tdf-pp-stage[data-device="tablet"] .tdf-pp-frame { width: 820px; height: 1180px; }',
+    '.tdf-pp-stage[data-device="mobile"] .tdf-pp-frame { width: 390px; height: 844px; }',
+    '.tdf-pp-foot {',
+    '  padding: 10px 14px;',
+    '  background: var(--bg, #F9FAFB);',
+    '  border-top: 1px solid var(--border, #E5E7EB);',
+    '  display: flex; align-items: center; justify-content: space-between;',
+    '  gap: 10px; flex-wrap: wrap;',
+    '  font-size: 11.5px; color: var(--fg-muted, #6B7280);',
+    '}',
+    '.tdf-pp-update { display: inline-flex; align-items: center; gap: 6px; }',
+    '.tdf-pp-dot {',
+    '  width: 7px; height: 7px; border-radius: 50%;',
+    '  background: #10B981;',
+    '  box-shadow: 0 0 0 3px rgba(16,185,129,0.20);',
+    '}',
+    '.tdf-pp-dark-btn {',
+    '  border: 1px solid var(--border, #E5E7EB);',
+    '  background: var(--bg-elevated, #fff);',
+    '  color: var(--fg-muted, #6B7280);',
+    '  border-radius: 99px; padding: 4px 10px; cursor: pointer;',
+    '  font-size: 11px; font-weight: 600; font-family: inherit;',
+    '  display: inline-flex; align-items: center; gap: 4px;',
+    '}',
+    '.tdf-pp-dark-btn.is-dark {',
+    '  background: #111827; color: #F9FAFB; border-color: #111827;',
+    '}',
+    /* Dark-mode tokens */
+    'body.dark-mode .tdf-pp-panel { background: #141A2D; border-color: #1F2937; }',
+    'body.dark-mode .tdf-pp-head, body.dark-mode .tdf-pp-foot { background: #0B0F1E; border-color: #1F2937; }',
+    'body.dark-mode .tdf-pp-stage { background: #0B0F1E; }',
+    'body.dark-mode .tdf-pp-segment { background: #1A2236; }',
+    'body.dark-mode .tdf-pp-segment button.is-active { background: #141A2D; color: #F3F4F6; }'
+  ].join('\n');
+
+  var styleEl = document.createElement('style');
+  styleEl.setAttribute('data-source', 'page-preview-pane');
+  styleEl.textContent = css;
+  document.head.appendChild(styleEl);
+
+  /* ---- SVG icons ------------------------------------------------------- */
+  var ICON_DESKTOP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+  var ICON_TABLET  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+  var ICON_MOBILE  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+
+  /* ---- Build pane DOM -------------------------------------------------- */
+  var aside = document.createElement('aside');
+  aside.className = 'tdf-pp-col';
+  aside.setAttribute('aria-label', 'Live preview — visitor view');
+  aside.innerHTML =
+    '<div class="tdf-pp-panel">' +
+      '<div class="tdf-pp-head">' +
+        '<div class="tdf-pp-title">Live preview · /' + pageType + '</div>' +
+        '<div class="tdf-pp-segment" role="tablist" aria-label="Viewport">' +
+          '<button type="button" class="is-active" data-device="desktop" title="Desktop" aria-label="Desktop">' + ICON_DESKTOP + '</button>' +
+          '<button type="button" data-device="tablet" title="Tablet" aria-label="Tablet">' + ICON_TABLET + '</button>' +
+          '<button type="button" data-device="mobile" title="Mobile" aria-label="Mobile">' + ICON_MOBILE + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tdf-pp-stage" data-device="desktop">' +
+        '<div class="tdf-pp-frame-wrap">' +
+          '<iframe class="tdf-pp-frame" src="' + publicSrc + '" title="Visitor preview" loading="lazy"></iframe>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tdf-pp-foot">' +
+        '<span class="tdf-pp-update"><span class="tdf-pp-dot"></span> Live · updates as you edit</span>' +
+        '<button type="button" class="tdf-pp-dark-btn" data-action="toggle-dark">🌙 Dark</button>' +
+      '</div>' +
+    '</div>';
+
+  /* ---- Wrap editor + pane in 2-column shell ---------------------------- */
+  /* Insert a wrapper element AROUND the editor's content. The original
+     parent keeps its layout (sidebar grid in the dashboard layout) and
+     the wrapper turns the right column into "editor + preview". */
+  var parent = contentEl.parentNode;
+  if (!parent) return;
+
+  var shell = document.createElement('div');
+  shell.className = 'tdf-pp-shell';
+
+  var editorWrap = document.createElement('div');
+  editorWrap.className = 'tdf-pp-editor';
+
+  /* Move <main> into editorWrap, then editorWrap + aside into shell, then
+     insert shell where <main> originally lived. */
+  parent.insertBefore(shell, contentEl);
+  editorWrap.appendChild(contentEl);
+  shell.appendChild(editorWrap);
+  shell.appendChild(aside);
+
+  /* ---- Switcher behaviour --------------------------------------------- */
+  var stage = aside.querySelector('.tdf-pp-stage');
+  var segBtns = aside.querySelectorAll('.tdf-pp-segment button');
+
+  function setDevice(device) {
+    if (!VIEWPORTS[device]) return;
+    stage.setAttribute('data-device', device);
+    Array.prototype.forEach.call(segBtns, function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-device') === device);
+    });
+    try { localStorage.setItem(LS_KEY, device); } catch (e) {}
+  }
+
+  Array.prototype.forEach.call(segBtns, function (btn) {
+    btn.addEventListener('click', function () {
+      setDevice(btn.getAttribute('data-device'));
+    });
+  });
+
+  /* Restore persisted viewport */
+  var savedDevice = '';
+  try { savedDevice = localStorage.getItem(LS_KEY) || ''; } catch (e) {}
+  if (VIEWPORTS[savedDevice]) setDevice(savedDevice);
+
+  /* ---- Light / dark toggle (preview-only, doesn't touch parent body) -- */
+  var darkBtn = aside.querySelector('[data-action="toggle-dark"]');
+  var iframe  = aside.querySelector('.tdf-pp-frame');
+
+  function applyDark(isDark) {
+    if (isDark) {
+      darkBtn.classList.add('is-dark');
+      darkBtn.textContent = '☀ Light';
+    } else {
+      darkBtn.classList.remove('is-dark');
+      darkBtn.textContent = '🌙 Dark';
+    }
+    /* Ask the iframe to toggle its own body.dark-mode. Listener is
+       optional in the public mockup — if absent, the request is a no-op. */
+    try {
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'preview-theme',
+          theme: isDark ? 'dark' : 'light'
+        }, '*');
+      }
+    } catch (e) { /* ignore cross-origin */ }
+    try { localStorage.setItem(LS_DARK, isDark ? '1' : '0'); } catch (e) {}
+  }
+
+  darkBtn.addEventListener('click', function () {
+    var nowDark = !darkBtn.classList.contains('is-dark');
+    applyDark(nowDark);
+  });
+
+  /* Restore persisted dark flag */
+  var savedDark = '0';
+  try { savedDark = localStorage.getItem(LS_DARK) || '0'; } catch (e) {}
+  if (savedDark === '1') applyDark(true);
+
+  /* ---- Live update contract ------------------------------------------- */
+  /* Snapshot current editor state from any input/select/textarea inside
+     the editor, then postMessage to the iframe. The iframe doesn't have
+     to act on it (mockup), but the contract is documented and a future
+     production renderer can wire it. Debounced to 200 ms. */
+  function snapshotEditorState() {
+    var state = {};
+    var fields = editorWrap.querySelectorAll('input, select, textarea');
+    Array.prototype.forEach.call(fields, function (f) {
+      var name = f.id || f.getAttribute('name');
+      if (!name) return;
+      if (f.type === 'checkbox' || f.type === 'radio') {
+        state[name] = !!f.checked;
+      } else {
+        state[name] = f.value;
+      }
+    });
+    return state;
+  }
+
+  var debounceTimer = null;
+  function scheduleBroadcast() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function () {
+      try {
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'preview-update',
+            pageType: pageType,
+            state: snapshotEditorState()
+          }, '*');
+        }
+      } catch (e) { /* ignore */ }
+    }, 200);
+  }
+
+  editorWrap.addEventListener('input',  scheduleBroadcast);
+  editorWrap.addEventListener('change', scheduleBroadcast);
+})();
