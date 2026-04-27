@@ -92,12 +92,63 @@
 
   var SIDEBAR_CSS = '' +
     '<style data-source="app-sidebar-partial">' +
+    /* Mobile (<720px): sidebar hidden by default, shown as full-screen centered overlay
+       when .is-open class is added by the hamburger toggle (no right-side drawer per
+       feedback_no_right_side_drawers — full-screen modal pattern). */
     'aside.tdf-side {' +
     '  display: none; background: var(--bg-elevated); border-right: 1px solid var(--border);' +
     '  padding: 18px 10px; flex-direction: column; gap: 8px; position: sticky; top: 54px; align-self: start;' +
     '  height: calc(100vh - 54px); overflow-y: auto;' +
     '}' +
+    /* Tablet+ (>=720px): sticky sidebar visible */
     '@media (min-width: 720px) { aside.tdf-side { display: flex; } }' +
+    /* Mobile drawer: centered full-screen modal sheet when toggled open */
+    '@media (max-width: 719px) {' +
+    '  aside.tdf-side.is-open {' +
+    '    display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;' +
+    '    width: 100vw; height: 100vh; max-height: 100vh; z-index: 1100;' +
+    '    padding: 60px 20px 24px; gap: 10px; overflow-y: auto;' +
+    '    background: var(--bg-elevated); border-right: 0;' +
+    '    animation: tdfSideIn .18s ease-out;' +
+    '  }' +
+    '  aside.tdf-side.is-open .nav-item { padding: 12px 14px; font-size: 15px; min-height: 44px; }' +
+    '  aside.tdf-side.is-open .nav-sub-item { padding: 10px 12px; font-size: 14px; min-height: 40px; }' +
+    '}' +
+    '@keyframes tdfSideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }' +
+    /* Mobile topbar with hamburger (auto-injected on pages that have the sidebar partial) */
+    '.tdf-mobile-topbar {' +
+    '  display: none; position: sticky; top: 0; z-index: 1050;' +
+    '  background: var(--bg-elevated); border-bottom: 1px solid var(--border);' +
+    '  padding: 10px 14px; align-items: center; gap: 12px;' +
+    '}' +
+    '@media (max-width: 719px) {' +
+    '  .tdf-mobile-topbar { display: flex; }' +
+    '}' +
+    '.tdf-mobile-topbar .tdf-hamburger {' +
+    '  display: inline-flex; align-items: center; justify-content: center;' +
+    '  width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--border);' +
+    '  background: var(--bg); color: var(--fg); cursor: pointer;' +
+    '}' +
+    '.tdf-mobile-topbar .tdf-hamburger svg { width: 20px; height: 20px; }' +
+    '.tdf-mobile-topbar .tdf-mobile-brand {' +
+    '  font-family: var(--font-display, inherit); font-weight: 600; font-size: 15px;' +
+    '  color: var(--fg); display: inline-flex; align-items: center; gap: 8px;' +
+    '}' +
+    '.tdf-mobile-topbar .tdf-mobile-close {' +
+    '  display: none; margin-left: auto; width: 44px; height: 44px; border-radius: 10px;' +
+    '  border: 1px solid var(--border); background: var(--bg); color: var(--fg); cursor: pointer;' +
+    '  align-items: center; justify-content: center;' +
+    '}' +
+    /* When the sidebar is open on mobile, swap hamburger for close (X) inside the topbar */
+    'body.tdf-side-open .tdf-mobile-topbar .tdf-hamburger { display: none; }' +
+    'body.tdf-side-open .tdf-mobile-topbar .tdf-mobile-close { display: inline-flex; }' +
+    'body.tdf-side-open { overflow: hidden; }' +
+    /* Backdrop behind drawer */
+    '.tdf-side-backdrop {' +
+    '  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);' +
+    '  z-index: 1080; backdrop-filter: blur(2px);' +
+    '}' +
+    'body.tdf-side-open .tdf-side-backdrop { display: block; }' +
     '.tdf-side .side-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); }' +
     '.tdf-side .side-user .av { width: 34px; height: 34px; border-radius: 50%; background: var(--hero-gradient); display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 15px; flex-shrink: 0; }' +
     '.tdf-side .side-user .utxt { min-width: 0; flex: 1; }' +
@@ -267,6 +318,72 @@
     );
     el.outerHTML = html;
   });
+
+  /* ----------------------------------------------------------------- */
+  /* 3b. Mobile topbar + sidebar drawer wiring                          */
+  /*                                                                    */
+  /* On viewports <720px the canonical sidebar is hidden. Inject a      */
+  /* sticky topbar with a hamburger button that opens the sidebar as a  */
+  /* full-screen centered modal sheet (per feedback_no_right_side_      */
+  /* drawers — modal pattern, not slide-in panel).                      */
+  /* ----------------------------------------------------------------- */
+  (function setupMobileSidebarDrawer() {
+    var sidebar = document.querySelector('aside.tdf-side');
+    if (!sidebar) return;
+
+    var HAMBURGER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+    var CLOSE_SVG     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+    var topbar = document.createElement('div');
+    topbar.className = 'tdf-mobile-topbar';
+    topbar.setAttribute('role', 'banner');
+    topbar.innerHTML =
+      '<button type="button" class="tdf-hamburger" aria-label="Open navigation" aria-controls="tdf-sidebar-drawer" aria-expanded="false">' + HAMBURGER_SVG + '</button>' +
+      '<button type="button" class="tdf-mobile-close" aria-label="Close navigation">' + CLOSE_SVG + '</button>' +
+      '<span class="tdf-mobile-brand">' +
+        '<span class="logo-mark" data-logo style="width:22px;height:22px"></span>' +
+        '<span class="wordmark" style="font-size:15px"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>' +
+      '</span>';
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'tdf-side-backdrop';
+    backdrop.setAttribute('aria-hidden', 'true');
+
+    /* Insert topbar at the very top of <body> so it stays sticky above content. */
+    document.body.insertBefore(topbar, document.body.firstChild);
+    document.body.appendChild(backdrop);
+    sidebar.id = sidebar.id || 'tdf-sidebar-drawer';
+
+    function openSidebar() {
+      sidebar.classList.add('is-open');
+      document.body.classList.add('tdf-side-open');
+      var btn = topbar.querySelector('.tdf-hamburger');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('is-open');
+      document.body.classList.remove('tdf-side-open');
+      var btn = topbar.querySelector('.tdf-hamburger');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    topbar.querySelector('.tdf-hamburger').addEventListener('click', openSidebar);
+    topbar.querySelector('.tdf-mobile-close').addEventListener('click', closeSidebar);
+    backdrop.addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('tdf-side-open')) closeSidebar();
+    });
+    /* Close drawer when user navigates within it (link clicks). */
+    sidebar.addEventListener('click', function (e) {
+      var t = e.target.closest('a, button.nav-item, button.nav-sub-item');
+      if (t && document.body.classList.contains('tdf-side-open')) closeSidebar();
+    });
+
+    /* Re-register logo orb in the just-injected mobile brand */
+    if (window.tadaifyTokens && typeof window.tadaifyTokens.renderLogo === 'function') {
+      try { window.tadaifyTokens.renderLogo(); } catch (e) {}
+    }
+  })();
 
   /* ----------------------------------------------------------------- */
   /* 4. Tier badge + tier-gate-modal (no-blur premium UX)              */

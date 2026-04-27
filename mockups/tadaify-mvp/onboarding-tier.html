@@ -218,6 +218,99 @@
       .addon-universal p { font-size: 13px; }
     }
   </style>
+
+<style data-source="responsive-tablet-tier">
+/* ==========================================================================
+   Responsive tablet-tier (600–1023px) + modal viewport clamp.
+   Auto-injected 2026-04-27 per feedback_tadaify_three_viewport_support.
+   Targets common cramped layouts at iPad-portrait widths and ensures
+   modals never overflow the viewport at any size.
+   ========================================================================== */
+@media (max-width: 1023px) and (min-width: 600px) {
+  /* Clamp 3+ column grids to 2 columns at tablet width */
+  .feed,
+  .related-grid,
+  .grid-3,
+  .grid-4,
+  .features-grid,
+  .three-col,
+  .four-col,
+  .cards-grid,
+  .links-grid,
+  .blocks-grid,
+  .shop-grid,
+  .testimonial-grid,
+  .pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  /* Reduce horizontal padding on common containers */
+  .container,
+  .wrap,
+  .page-wrap,
+  .public-wrap {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  /* Slightly smaller hero typography */
+  h1.hero-title, .hero h1 { font-size: clamp(28px, 5vw, 44px); }
+}
+
+@media (max-width: 599px) {
+  /* Mobile: single column, smaller padding, larger touch targets */
+  .feed,
+  .related-grid,
+  .grid-3,
+  .grid-4,
+  .features-grid,
+  .three-col,
+  .four-col,
+  .cards-grid,
+  .links-grid,
+  .blocks-grid,
+  .shop-grid,
+  .testimonial-grid,
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .container,
+  .wrap,
+  .page-wrap,
+  .public-wrap {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  /* Touch-target floor for buttons + nav links */
+  .btn, button.btn, a.btn,
+  .nav-links a {
+    min-height: 44px;
+  }
+}
+
+/* Modal viewport clamp — applies at every viewport. Only adds bounds if a
+   modal forgot them. Uses min() to keep desktop behavior when there's
+   already a max-width or width set inline. */
+.modal,
+.modal-card,
+.modal-dialog,
+.tdf-modal,
+.modal-content {
+  max-width: min(960px, calc(100vw - 32px));
+  max-height: min(92vh, 920px);
+  overflow-y: auto;
+}
+@media (max-width: 599px) {
+  .modal,
+  .modal-card,
+  .modal-dialog,
+  .tdf-modal,
+  .modal-content {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 32px);
+    border-radius: 14px;
+  }
+}
+</style>
 </head>
 <body>
   <div data-partial="nav"></div>
