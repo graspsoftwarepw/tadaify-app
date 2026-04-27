@@ -2300,3 +2300,842 @@
   editorWrap.addEventListener('input',  scheduleBroadcast);
   editorWrap.addEventListener('change', scheduleBroadcast);
 })();
+
+/* =========================================================================
+   LinkTarget — tabbed Pages / External URL picker (Fix #6 Sub-feature 6B)
+
+   Replaces plain URL input for click-through fields across the block
+   editor. Two tabs:
+     • Pages — searchable list of creator's published pages, blog posts,
+       portfolio projects, paid articles, booking types. Click a row to
+       fill the URL field with `tadaify.com/<handle>/<slug>` (or relative
+       `/<slug>` per the spec — stored as relative internally).
+     • External URL — plain `<input type="url">` with javascript: guard.
+
+   Default tab: "Pages" if creator has any non-Home page; otherwise
+   "External URL" (caller can override per field via `defaultTab`).
+
+   Public API:
+     window.LinkTarget.openPicker({
+       fieldId:        '...',         // optional, used as a logical key
+       fieldLabel:     'URL',         // shown in modal header
+       currentValue:   'https://...', // pre-populates input + selection
+       defaultTab:     'pages'|'external'|undefined,
+       onSelect:       function (value) { ... }     // called with chosen string
+     });
+
+   Anti-recursion: no-ops inside iframes (preview pane).
+   Centered modal only — never a right-side drawer per
+   feedback_no_right_side_drawers.
+
+   PR #98/99/101/102/103 IIFEs above are NOT touched by this block — this
+   IIFE appends a NEW window.LinkTarget global and a NEW <style> tag.
+   ========================================================================= */
+(function setupLinkTargetPicker() {
+  if (window !== window.top) return; /* skip inside iframes */
+
+  /* --------------------------------------------------------------- */
+  /* 1. Mock content directory (creator's published surfaces)        */
+  /* --------------------------------------------------------------- */
+  var CREATOR_HANDLE = 'alexandra';
+
+  /* "Pages" entries — every page type listed in the spec. Only ones
+     the creator has *published* show up. For the mockup we list a
+     realistic mix: Home + a handful of accepted page types. Legal +
+     Paid articles parents are present because the creator owns them
+     even if they're empty. */
+  var DIRECTORY = {
+    pages: [
+      { title: 'Home',              slug: '',                  type: 'page' },
+      { title: 'About',             slug: '/about',            type: 'page' },
+      { title: 'Blog',              slug: '/blog',             type: 'page' },
+      { title: 'Portfolio',         slug: '/portfolio',        type: 'page' },
+      { title: 'Newsletter',        slug: '/newsletter',       type: 'page' },
+      { title: 'Contact',           slug: '/contact',          type: 'page' },
+      { title: 'FAQ',               slug: '/faq',              type: 'page' },
+      { title: 'Schedule',          slug: '/schedule',         type: 'page' },
+      { title: 'Links archive',     slug: '/links',            type: 'page' },
+      { title: 'Paid articles',     slug: '/articles',         type: 'page' }
+    ],
+    blogPosts: [
+      { title: 'How I shipped tadaify',  slug: '/blog/how-i-shipped-tadaify' },
+      { title: '5 productivity tips',    slug: '/blog/5-productivity-tips'   },
+      { title: 'A year in review',       slug: '/blog/a-year-in-review'      }
+    ],
+    portfolio: [
+      { title: 'Spring Drops cover',     slug: '/portfolio/spring-drops'     },
+      { title: 'Summer EP artwork',      slug: '/portfolio/summer-ep'        }
+    ],
+    paidArticles: [
+      { title: 'Behind-the-scenes',      slug: '/article/behind-scenes'      },
+      { title: 'My pricing strategy',    slug: '/article/pricing-strategy'   }
+    ],
+    bookingTypes: [
+      { title: '30-min intro call',      slug: '/book/intro'                 },
+      { title: 'Coaching session',       slug: '/book/coaching'              }
+    ]
+  };
+
+  function hasNonHomePages() {
+    return DIRECTORY.pages.filter(function (p) { return p.slug !== ''; }).length > 0;
+  }
+
+  function fullUrl(slug) {
+    /* Stored as relative internally — display form for previews uses
+       the full handle URL. The caller receives the relative path. */
+    return slug === '' ? ('tadaify.com/' + CREATOR_HANDLE) : ('tadaify.com/' + CREATOR_HANDLE + slug);
+  }
+
+  /* --------------------------------------------------------------- */
+  /* 2. CSS                                                           */
+  /* --------------------------------------------------------------- */
+  var LT_CSS = '' +
+    '<style data-source="link-target-partial">' +
+    '.tdf-lt-backdrop {' +
+    '  position: fixed; inset: 0; z-index: 1060;' +
+    '  background: rgba(11,15,30,0.55);' +
+    '  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);' +
+    '  display: none; align-items: center; justify-content: center;' +
+    '  padding: 16px; opacity: 0; transition: opacity .16s ease;' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '}' +
+    '.tdf-lt-backdrop.is-open { display: flex; opacity: 1; }' +
+    '.tdf-lt {' +
+    '  background: var(--bg-elevated, #fff); color: var(--fg, #111);' +
+    '  border: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25);' +
+    '  width: min(720px, 96vw); max-height: 88vh;' +
+    '  display: flex; flex-direction: column; overflow: hidden;' +
+    '  transform: translateY(8px) scale(0.985);' +
+    '  transition: transform .16s ease;' +
+    '}' +
+    '.tdf-lt-backdrop.is-open .tdf-lt { transform: translateY(0) scale(1); }' +
+    '.tdf-lt-head {' +
+    '  padding: 16px 20px; border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  display: flex; align-items: center; gap: 10px; flex-shrink: 0;' +
+    '}' +
+    '.tdf-lt-head h3 {' +
+    '  font-family: var(--font-display, "Crimson Pro", serif);' +
+    '  font-size: 18px; font-weight: 600; flex: 1; margin: 0;' +
+    '  letter-spacing: -0.01em;' +
+    '}' +
+    '.tdf-lt-head h3 .accent { color: var(--brand-primary, #6366F1); }' +
+    '.tdf-lt-head .lt-x {' +
+    '  border: 0; background: transparent; cursor: pointer;' +
+    '  width: 32px; height: 32px; border-radius: 8px;' +
+    '  color: var(--fg-muted, #6B7280);' +
+    '  display: inline-flex; align-items: center; justify-content: center;' +
+    '  font-size: 18px; line-height: 1;' +
+    '}' +
+    '.tdf-lt-head .lt-x:hover { background: var(--bg-muted, #F9FAFB); color: var(--fg, #111); }' +
+    '.tdf-lt-tabs {' +
+    '  display: flex; gap: 4px; padding: 8px 16px 0;' +
+    '  border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  flex-shrink: 0; background: var(--bg-elevated, #fff);' +
+    '}' +
+    '.tdf-lt-tab {' +
+    '  border: 0; background: transparent; cursor: pointer;' +
+    '  padding: 9px 14px; font-size: 13px; font-weight: 600;' +
+    '  color: var(--fg-muted, #6B7280); font-family: inherit;' +
+    '  border-bottom: 2px solid transparent;' +
+    '  margin-bottom: -1px; border-radius: 6px 6px 0 0;' +
+    '  transition: color .12s ease, border-color .12s ease, background .12s ease;' +
+    '}' +
+    '.tdf-lt-tab:hover { color: var(--fg, #111); background: var(--bg-muted, #F9FAFB); }' +
+    '.tdf-lt-tab.is-active {' +
+    '  color: var(--brand-primary, #6366F1);' +
+    '  border-bottom-color: var(--brand-primary, #6366F1);' +
+    '  background: transparent;' +
+    '}' +
+    '.tdf-lt-body {' +
+    '  padding: 14px 16px 12px; overflow-y: auto;' +
+    '  display: flex; flex-direction: column; gap: 10px;' +
+    '  min-height: 320px;' +
+    '}' +
+    '.tdf-lt-search {' +
+    '  display: flex; align-items: center; gap: 8px;' +
+    '  padding: 9px 12px; background: var(--bg-muted, #F9FAFB);' +
+    '  border: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  border-radius: 10px; flex-shrink: 0;' +
+    '}' +
+    '.tdf-lt-search .ico { color: var(--fg-muted, #6B7280); font-size: 14px; flex-shrink: 0; }' +
+    '.tdf-lt-search input {' +
+    '  flex: 1; border: 0; outline: 0; background: transparent;' +
+    '  font-size: 13.5px; font-family: inherit; color: var(--fg, #111);' +
+    '  padding: 0;' +
+    '}' +
+    '.tdf-lt-section { display: flex; flex-direction: column; gap: 4px; }' +
+    '.tdf-lt-section-h {' +
+    '  display: flex; align-items: center; gap: 6px;' +
+    '  font-size: 11px; font-weight: 700; text-transform: uppercase;' +
+    '  letter-spacing: 0.06em; color: var(--fg-muted, #6B7280);' +
+    '  padding: 8px 6px 4px;' +
+    '}' +
+    '.tdf-lt-section-h .ico { font-size: 13px; }' +
+    '.tdf-lt-row {' +
+    '  display: flex; align-items: center; gap: 10px;' +
+    '  width: 100%; padding: 9px 10px;' +
+    '  background: transparent; border: 1px solid transparent;' +
+    '  border-radius: 8px; cursor: pointer; text-align: left;' +
+    '  font-family: inherit; font-size: 13px; color: var(--fg, #111);' +
+    '  transition: background .1s ease, border-color .1s ease;' +
+    '}' +
+    '.tdf-lt-row:hover { background: var(--bg-muted, #F9FAFB); }' +
+    '.tdf-lt-row.is-selected {' +
+    '  border-color: var(--brand-primary, #6366F1);' +
+    '  background: rgba(99,102,241,0.06);' +
+    '}' +
+    '.tdf-lt-row .title { flex: 1; min-width: 0; font-weight: 500; }' +
+    '.tdf-lt-row .url {' +
+    '  flex-shrink: 0; font-size: 11.5px; color: var(--fg-muted, #6B7280);' +
+    '  font-family: var(--font-mono, "JetBrains Mono", monospace);' +
+    '  max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' +
+    '}' +
+    '.tdf-lt-empty {' +
+    '  padding: 10px 12px; font-size: 12.5px; color: var(--fg-muted, #6B7280);' +
+    '  font-style: italic;' +
+    '}' +
+    '.tdf-lt-empty a { color: var(--brand-primary, #6366F1); text-decoration: none; font-style: normal; font-weight: 500; }' +
+    '.tdf-lt-empty a:hover { text-decoration: underline; }' +
+    '.tdf-lt-ext { display: flex; flex-direction: column; gap: 6px; }' +
+    '.tdf-lt-ext label {' +
+    '  font-size: 12px; font-weight: 600; color: var(--fg-muted, #6B7280);' +
+    '  text-transform: uppercase; letter-spacing: 0.05em;' +
+    '}' +
+    '.tdf-lt-ext input {' +
+    '  padding: 10px 12px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16));' +
+    '  border-radius: 10px; font-size: 14px; font-family: inherit;' +
+    '  background: var(--bg, #fff); color: var(--fg, #111);' +
+    '}' +
+    '.tdf-lt-ext input:focus { outline: 2px solid var(--brand-primary, #6366F1); outline-offset: 1px; }' +
+    '.tdf-lt-ext .err {' +
+    '  font-size: 12px; color: #B91C1C; padding-top: 2px;' +
+    '}' +
+    '.tdf-lt-ext .help {' +
+    '  font-size: 12px; color: var(--fg-muted, #6B7280); padding-top: 2px; line-height: 1.45;' +
+    '}' +
+    '.tdf-lt-foot {' +
+    '  padding: 12px 20px; border-top: 1px solid var(--border, rgba(0,0,0,0.08));' +
+    '  background: var(--bg-elevated, #fff);' +
+    '  display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0;' +
+    '}' +
+    '.tdf-lt-foot button {' +
+    '  padding: 9px 16px; font-size: 13px; font-weight: 600;' +
+    '  border-radius: 9px; cursor: pointer; font-family: inherit;' +
+    '  border: 1px solid var(--border-strong, rgba(0,0,0,0.16));' +
+    '  background: var(--bg-elevated, #fff); color: var(--fg, #111);' +
+    '}' +
+    '.tdf-lt-foot button.is-primary {' +
+    '  background: var(--brand-primary, #6366F1); color: #fff; border-color: transparent;' +
+    '}' +
+    '.tdf-lt-foot button.is-primary:disabled { opacity: 0.5; cursor: not-allowed; }' +
+    /* Inline preview chip rendered next to fields backed by link-target */
+    '.tdf-lt-field { display: flex; flex-direction: column; gap: 6px; }' +
+    '.tdf-lt-trigger {' +
+    '  display: flex; align-items: center; gap: 10px; width: 100%;' +
+    '  padding: 9px 12px; background: var(--bg, #fff);' +
+    '  border: 1px solid var(--border-strong, rgba(0,0,0,0.16));' +
+    '  border-radius: 10px; cursor: pointer; font-family: inherit;' +
+    '  font-size: 13.5px; color: var(--fg, #111); text-align: left;' +
+    '  transition: border-color .12s ease, background .12s ease;' +
+    '}' +
+    '.tdf-lt-trigger:hover { border-color: var(--brand-primary, #6366F1); }' +
+    '.tdf-lt-trigger .lt-kind {' +
+    '  flex-shrink: 0; padding: 2px 7px; border-radius: 99px;' +
+    '  font-size: 10px; font-weight: 700; text-transform: uppercase;' +
+    '  letter-spacing: 0.04em;' +
+    '  background: var(--bg-muted, #F9FAFB); color: var(--fg-muted, #6B7280);' +
+    '}' +
+    '.tdf-lt-trigger.is-internal .lt-kind {' +
+    '  background: rgba(99,102,241,0.12); color: var(--brand-primary, #6366F1);' +
+    '}' +
+    '.tdf-lt-trigger .lt-val { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
+    '.tdf-lt-trigger .lt-val.is-empty { color: var(--fg-muted, #6B7280); font-style: italic; }' +
+    '.tdf-lt-trigger .lt-edit { flex-shrink: 0; font-size: 12px; color: var(--brand-primary, #6366F1); font-weight: 600; }' +
+    '@media (prefers-reduced-motion: reduce) {' +
+    '  .tdf-lt-backdrop, .tdf-lt { transition: none !important; }' +
+    '}' +
+    '</style>';
+
+  var cssInjected = false;
+  function ensureLtCss() {
+    if (cssInjected) return;
+    document.head.insertAdjacentHTML('beforeend', LT_CSS);
+    cssInjected = true;
+  }
+
+  function escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function escHtml(s) { return escAttr(s); }
+
+  /* --------------------------------------------------------------- */
+  /* 3. Modal mount + state                                           */
+  /* --------------------------------------------------------------- */
+  var backdrop = null;
+  var pickerState = null; /* { fieldId, fieldLabel, currentValue, tab, query, selectedSlug, externalValue, onSelect } */
+  var lastTabKeyByField = {};
+
+  function getLastTabFor(fieldId, defaultTab) {
+    if (!fieldId) return defaultTab;
+    try {
+      var v = localStorage.getItem('tadaify_lt_tab_' + fieldId);
+      if (v === 'pages' || v === 'external') return v;
+    } catch (e) {}
+    return defaultTab;
+  }
+  function setLastTabFor(fieldId, tab) {
+    if (!fieldId) return;
+    try { localStorage.setItem('tadaify_lt_tab_' + fieldId, tab); } catch (e) {}
+  }
+
+  function ensureMount() {
+    ensureLtCss();
+    if (backdrop) return;
+    document.body.insertAdjacentHTML('beforeend',
+      '<div class="tdf-lt-backdrop" id="tdf-lt-backdrop" role="dialog" aria-modal="true" aria-label="Pick a link target">' +
+        '<div class="tdf-lt" id="tdf-lt"></div>' +
+      '</div>'
+    );
+    backdrop = document.getElementById('tdf-lt-backdrop');
+    backdrop.addEventListener('click', function (e) {
+      if (e.target === backdrop) closePicker();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!backdrop || !backdrop.classList.contains('is-open')) return;
+      if (e.key === 'Escape') { e.preventDefault(); closePicker(); }
+    });
+  }
+
+  function isExternalUrl(v) {
+    if (!v) return false;
+    return /^https?:\/\//i.test(v) || /^mailto:/i.test(v) || /^tel:/i.test(v);
+  }
+
+  function detectInitialTab(currentValue, defaultTab) {
+    if (defaultTab === 'pages' || defaultTab === 'external') return defaultTab;
+    if (isExternalUrl(currentValue)) return 'external';
+    if (currentValue && currentValue.charAt(0) === '/') return 'pages';
+    return hasNonHomePages() ? 'pages' : 'external';
+  }
+
+  function findSlug(value) {
+    if (!value) return null;
+    var all = []
+      .concat(DIRECTORY.pages)
+      .concat(DIRECTORY.blogPosts)
+      .concat(DIRECTORY.portfolio)
+      .concat(DIRECTORY.paidArticles)
+      .concat(DIRECTORY.bookingTypes);
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].slug === value) return all[i].slug;
+    }
+    return null;
+  }
+
+  /* --------------------------------------------------------------- */
+  /* 4. Render                                                        */
+  /* --------------------------------------------------------------- */
+  function renderModal() {
+    var s = pickerState;
+    var modal = document.getElementById('tdf-lt');
+    if (!modal || !s) return;
+    var pagesActive = s.tab === 'pages';
+    var canPick = pagesActive ? !!s.selectedSlug : (s.externalValue && !s.externalError);
+
+    modal.innerHTML =
+      '<div class="tdf-lt-head">' +
+        '<h3><span class="accent">🔗</span> Link target' +
+          (s.fieldLabel ? ' <span style="color:var(--fg-muted, #6B7280);font-weight:400;font-size:13px;margin-left:6px">— ' + escHtml(s.fieldLabel) + '</span>' : '') +
+        '</h3>' +
+        '<button type="button" class="lt-x" aria-label="Close" data-action="close">×</button>' +
+      '</div>' +
+      '<div class="tdf-lt-tabs" role="tablist">' +
+        '<button type="button" role="tab" class="tdf-lt-tab' + (pagesActive ? ' is-active' : '') + '" data-tab="pages" aria-selected="' + (pagesActive ? 'true' : 'false') + '">Pages</button>' +
+        '<button type="button" role="tab" class="tdf-lt-tab' + (!pagesActive ? ' is-active' : '') + '" data-tab="external" aria-selected="' + (!pagesActive ? 'true' : 'false') + '">External URL</button>' +
+      '</div>' +
+      '<div class="tdf-lt-body">' +
+        (pagesActive ? renderPagesTab() : renderExternalTab()) +
+      '</div>' +
+      '<div class="tdf-lt-foot">' +
+        '<button type="button" data-action="close">Cancel</button>' +
+        '<button type="button" class="is-primary" data-action="apply"' + (canPick ? '' : ' disabled') + '>Use this</button>' +
+      '</div>';
+
+    /* Wire actions */
+    modal.querySelectorAll('[data-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var act = btn.getAttribute('data-action');
+        if (act === 'close') closePicker();
+        if (act === 'apply') applyAndClose();
+      });
+    });
+    modal.querySelectorAll('.tdf-lt-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tab = btn.getAttribute('data-tab');
+        if (tab !== pickerState.tab) {
+          pickerState.tab = tab;
+          setLastTabFor(pickerState.fieldId, tab);
+          renderModal();
+          focusFirstControl();
+        }
+      });
+    });
+
+    if (pagesActive) {
+      var search = modal.querySelector('.tdf-lt-search input');
+      if (search) {
+        search.addEventListener('input', function () {
+          pickerState.query = search.value;
+          rerenderPagesList();
+        });
+      }
+      modal.querySelectorAll('.tdf-lt-row').forEach(function (row) {
+        row.addEventListener('click', function () {
+          pickerState.selectedSlug = row.getAttribute('data-slug');
+          renderModal();
+        });
+      });
+    } else {
+      var inp = modal.querySelector('.tdf-lt-ext input');
+      if (inp) {
+        inp.addEventListener('input', function () {
+          pickerState.externalValue = inp.value.trim();
+          pickerState.externalError = validateExternal(pickerState.externalValue);
+          var errEl = modal.querySelector('.tdf-lt-ext .err');
+          if (errEl) errEl.textContent = pickerState.externalError || '';
+          var apply = modal.querySelector('[data-action="apply"]');
+          if (apply) {
+            if (pickerState.externalValue && !pickerState.externalError) {
+              apply.removeAttribute('disabled');
+            } else {
+              apply.setAttribute('disabled', 'disabled');
+            }
+          }
+        });
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' && !pickerState.externalError && pickerState.externalValue) {
+            e.preventDefault();
+            applyAndClose();
+          }
+        });
+      }
+    }
+  }
+
+  function focusFirstControl() {
+    var modal = document.getElementById('tdf-lt');
+    if (!modal) return;
+    var t = pickerState.tab === 'pages'
+      ? modal.querySelector('.tdf-lt-search input')
+      : modal.querySelector('.tdf-lt-ext input');
+    if (t) {
+      try { t.focus(); } catch (e) {}
+      if (t.tagName === 'INPUT' && t.type !== 'url') {
+        try { t.select && t.select(); } catch (e) {}
+      }
+    }
+  }
+
+  function rerenderPagesList() {
+    var modal = document.getElementById('tdf-lt');
+    if (!modal) return;
+    var listMount = modal.querySelector('[data-lt-pages-list]');
+    if (listMount) listMount.innerHTML = renderPagesSections();
+    modal.querySelectorAll('.tdf-lt-row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        pickerState.selectedSlug = row.getAttribute('data-slug');
+        renderModal();
+      });
+    });
+  }
+
+  function matchesQuery(item) {
+    var q = (pickerState.query || '').trim().toLowerCase();
+    if (!q) return true;
+    return item.title.toLowerCase().indexOf(q) !== -1
+        || item.slug.toLowerCase().indexOf(q) !== -1;
+  }
+
+  function renderPagesTab() {
+    return '' +
+      '<div class="tdf-lt-search">' +
+        '<span class="ico">🔍</span>' +
+        '<input type="search" placeholder="Search your pages, posts, products…" value="' + escAttr(pickerState.query || '') + '" aria-label="Search link targets" />' +
+      '</div>' +
+      '<div data-lt-pages-list>' + renderPagesSections() + '</div>';
+  }
+
+  function renderSection(label, ico, items, emptyMsg) {
+    var rows = items.filter(matchesQuery).map(function (it) {
+      var sel = (pickerState.selectedSlug != null && pickerState.selectedSlug === it.slug);
+      return '<button type="button" class="tdf-lt-row' + (sel ? ' is-selected' : '') + '" data-slug="' + escAttr(it.slug) + '">' +
+               '<span class="title">' + escHtml(it.title) + '</span>' +
+               '<span class="url">' + escHtml(fullUrl(it.slug)) + '</span>' +
+             '</button>';
+    }).join('');
+    var body = rows || ('<div class="tdf-lt-empty">' + emptyMsg + '</div>');
+    return '<div class="tdf-lt-section">' +
+             '<div class="tdf-lt-section-h"><span class="ico">' + ico + '</span>' + escHtml(label) + '</div>' +
+             body +
+           '</div>';
+  }
+
+  function renderPagesSections() {
+    var html = '';
+    html += renderSection('Pages', '📄', DIRECTORY.pages, 'No pages match your search.');
+    html += renderSection('Blog posts', '📝', DIRECTORY.blogPosts,
+      'No posts yet · <a href="./app-admin-blog.html">Manage in Administration → Blog →</a>');
+    html += renderSection('Portfolio projects', '🎨', DIRECTORY.portfolio,
+      'No projects yet · <a href="./app-admin-portfolio.html">Manage in Administration → Portfolio →</a>');
+    html += renderSection('Paid articles', '💰', DIRECTORY.paidArticles,
+      'No paid articles yet · <a href="./app-admin-paid-articles.html">Manage in Administration → Paid articles →</a>');
+    html += renderSection('Booking types', '📅', DIRECTORY.bookingTypes,
+      'No booking types yet · <a href="./app-page-schedule.html">Set up in Pages → Schedule →</a>');
+    return html;
+  }
+
+  function renderExternalTab() {
+    var v = pickerState.externalValue || '';
+    var err = pickerState.externalError || '';
+    return '' +
+      '<div class="tdf-lt-ext">' +
+        '<label for="tdf-lt-ext-input">External URL</label>' +
+        '<input id="tdf-lt-ext-input" type="url" placeholder="https://example.com/path" value="' + escAttr(v) + '" autocomplete="off" />' +
+        (err ? '<div class="err">' + escHtml(err) + '</div>' : '') +
+        '<div class="help">Use https:// for the safest link. mailto: and tel: are also accepted.</div>' +
+      '</div>';
+  }
+
+  function validateExternal(v) {
+    if (!v) return '';
+    if (/^javascript:/i.test(v) || /^data:/i.test(v) || /^vbscript:/i.test(v)) {
+      return 'That scheme isn\'t allowed for safety reasons.';
+    }
+    if (!/^(https?:\/\/|mailto:|tel:)/i.test(v)) {
+      return 'Start with https:// (or mailto:/tel:) so the link works for visitors.';
+    }
+    return '';
+  }
+
+  /* --------------------------------------------------------------- */
+  /* 5. Open / close / apply                                          */
+  /* --------------------------------------------------------------- */
+  function openPicker(opts) {
+    if (window !== window.top) return;
+    opts = opts || {};
+    ensureMount();
+    var initialTab = detectInitialTab(opts.currentValue, getLastTabFor(opts.fieldId, opts.defaultTab));
+    var matchedSlug = findSlug(opts.currentValue);
+    pickerState = {
+      fieldId:        opts.fieldId || null,
+      fieldLabel:     opts.fieldLabel || '',
+      currentValue:   opts.currentValue || '',
+      tab:            initialTab,
+      query:          '',
+      selectedSlug:   initialTab === 'pages' ? matchedSlug : null,
+      externalValue:  initialTab === 'external' ? (opts.currentValue || '') : '',
+      externalError:  '',
+      onSelect:       typeof opts.onSelect === 'function' ? opts.onSelect : null
+    };
+    if (pickerState.externalValue) {
+      pickerState.externalError = validateExternal(pickerState.externalValue);
+    }
+    renderModal();
+    backdrop.classList.add('is-open');
+    setTimeout(focusFirstControl, 60);
+  }
+
+  function closePicker() {
+    if (!backdrop) return;
+    backdrop.classList.remove('is-open');
+    pickerState = null;
+  }
+
+  function applyAndClose() {
+    if (!pickerState) return;
+    var value = '';
+    if (pickerState.tab === 'pages') {
+      if (pickerState.selectedSlug == null) return;
+      value = pickerState.selectedSlug; /* '' for Home, '/about' etc */
+    } else {
+      if (!pickerState.externalValue || pickerState.externalError) return;
+      value = pickerState.externalValue;
+    }
+    var cb = pickerState.onSelect;
+    closePicker();
+    if (cb) cb(value);
+  }
+
+  /* --------------------------------------------------------------- */
+  /* 6. Public API                                                    */
+  /* --------------------------------------------------------------- */
+  window.LinkTarget = {
+    openPicker:   openPicker,
+    closePicker:  closePicker,
+    /* Helpers exposed for the block editor field renderer */
+    isExternalUrl: isExternalUrl,
+    fullUrl:       fullUrl,
+    findSlug:      findSlug,
+    hasNonHomePages: hasNonHomePages,
+    /* Test hooks */
+    _state:       function () { return pickerState; }
+  };
+})();
+
+/* =========================================================================
+   AutoLink — auto-add home button on new page creation (Fix #6 Sub-feature 6A)
+
+   When a creator creates a NEW page (Blog / About / Portfolio / etc), this
+   IIFE injects a friendly banner at the top of the page editor offering to
+   add a button on the home page that links to the new page. Click "Add" →
+   pushes a Link button block onto the (mocked) home state via localStorage,
+   shows a toast, dismisses the banner. Click "Skip" → dismisses + remembers
+   per-page-type via localStorage so it doesn't reappear.
+
+   New-page detection: URL query param `?new=1` (or sessionStorage flag
+   `tadaify_new_page=<page-type>` set by the "+ Add page" trigger when it
+   eventually exists). Page editor pages declare their type via a meta tag
+   `<meta name="tadaify-page-type" content="blog">` — when absent, the
+   banner stays dormant.
+
+   Anti-recursion: skipped inside iframes (preview pane).
+   ========================================================================= */
+(function setupAutoLinkPrompt() {
+  if (window !== window.top) return;
+
+  /* Per-page-type defaults — copy + icon used for the auto-added Link block */
+  var DEFAULTS = {
+    'blog':              { copy: 'Read my blog →',           icon: '📝' },
+    'about':             { copy: 'About me →',                icon: '👤' },
+    'portfolio':         { copy: 'View my portfolio →',       icon: '🎨' },
+    'newsletter-signup': { copy: 'Subscribe →',               icon: '✉️' },
+    'newsletter':        { copy: 'Subscribe →',               icon: '✉️' },
+    'contact':           { copy: 'Get in touch →',            icon: '💬' },
+    'faq':               { copy: 'FAQ →',                     icon: '❓' },
+    'schedule':          { copy: 'Book a session →',          icon: '📅' },
+    'custom':            { copy: null /* uses page title */,  icon: '🔗' },
+    'links-archive':     { copy: 'All my links →',            icon: '🗂' },
+    'paid-articles':     { copy: 'Read my paid articles →',   icon: '💰' }
+    /* 'legal' intentionally omitted — legal goes in footer not body */
+  };
+
+  /* Page-type → relative slug used as the link target */
+  var SLUG_BY_TYPE = {
+    'blog':              '/blog',
+    'about':             '/about',
+    'portfolio':         '/portfolio',
+    'newsletter-signup': '/newsletter',
+    'newsletter':        '/newsletter',
+    'contact':           '/contact',
+    'faq':               '/faq',
+    'schedule':          '/schedule',
+    'custom':            '/page',
+    'links-archive':     '/links',
+    'paid-articles':     '/articles'
+  };
+
+  function getPageType() {
+    var meta = document.querySelector('meta[name="tadaify-page-type"]');
+    return meta ? (meta.getAttribute('content') || '').toLowerCase() : '';
+  }
+
+  function isNewPage() {
+    /* Query param wins; sessionStorage flag is the fallback for a future
+       "+ Add page" flow that can't always rewrite the URL. The
+       fallback is one-shot: once consumed, we clear it. */
+    var qs = (location.search || '').toLowerCase();
+    if (/(^|[?&])new=1(&|$)/.test(qs)) return true;
+    try {
+      var flag = sessionStorage.getItem('tadaify_new_page');
+      if (flag && flag.toLowerCase() === getPageType()) {
+        sessionStorage.removeItem('tadaify_new_page');
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function isDismissed(pageType) {
+    try { return !!localStorage.getItem('tadaify_dismissed_homelink_' + pageType); }
+    catch (e) { return false; }
+  }
+  function markDismissed(pageType) {
+    try { localStorage.setItem('tadaify_dismissed_homelink_' + pageType, '1'); } catch (e) {}
+  }
+
+  /* Mocked home-state push — a real impl would diff against the home
+     page's block list in app state. For the mockup we stash the planned
+     addition under a localStorage key the home editor can read on next
+     load. Idempotent per page-type per session. */
+  function pushHomeLinkBlock(pageType, copy, icon) {
+    var slug = SLUG_BY_TYPE[pageType] || '/page';
+    var pending = [];
+    try {
+      var raw = localStorage.getItem('tadaify_home_pending_blocks');
+      pending = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(pending)) pending = [];
+    } catch (e) { pending = []; }
+    pending.push({
+      type: 'link',
+      label: copy,
+      icon: icon,
+      url: slug,
+      target: 'internal',
+      added_at: new Date().toISOString(),
+      source: 'auto-add-from-' + pageType
+    });
+    try {
+      localStorage.setItem('tadaify_home_pending_blocks', JSON.stringify(pending));
+    } catch (e) {}
+  }
+
+  function ensureCss() {
+    if (document.getElementById('tdf-autolink-css')) return;
+    var css = '' +
+      '<style id="tdf-autolink-css" data-source="autolink-partial">' +
+      '.tdf-autolink-banner {' +
+      '  margin: 16px auto; max-width: 720px;' +
+      '  border: 1.5px solid var(--brand-primary, #6366F1);' +
+      '  background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));' +
+      '  border-radius: 14px; padding: 16px 18px;' +
+      '  display: flex; gap: 14px; align-items: flex-start;' +
+      '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+      '  box-shadow: 0 4px 12px rgba(99,102,241,0.08);' +
+      '}' +
+      '.tdf-autolink-banner .al-ico {' +
+      '  flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;' +
+      '  background: var(--brand-primary, #6366F1); color: #fff;' +
+      '  display: inline-flex; align-items: center; justify-content: center;' +
+      '  font-size: 18px;' +
+      '}' +
+      '.tdf-autolink-banner .al-body { flex: 1; min-width: 0; }' +
+      '.tdf-autolink-banner h4 {' +
+      '  margin: 0 0 4px; font-size: 14px; font-weight: 600;' +
+      '  color: var(--fg, #111); letter-spacing: -0.005em;' +
+      '}' +
+      '.tdf-autolink-banner h4 .sparkle { color: var(--brand-warm, #F59E0B); margin-right: 4px; }' +
+      '.tdf-autolink-banner .al-sub {' +
+      '  font-size: 12.5px; color: var(--fg-muted, #6B7280); line-height: 1.45;' +
+      '  margin: 0 0 10px;' +
+      '}' +
+      '.tdf-autolink-banner .al-actions {' +
+      '  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;' +
+      '}' +
+      '.tdf-autolink-banner button {' +
+      '  font-family: inherit; font-size: 13px; font-weight: 600;' +
+      '  padding: 8px 14px; border-radius: 9px; cursor: pointer;' +
+      '  border: 1px solid var(--border-strong, rgba(0,0,0,0.16));' +
+      '  background: var(--bg-elevated, #fff); color: var(--fg, #111);' +
+      '}' +
+      '.tdf-autolink-banner button.is-primary {' +
+      '  background: var(--brand-primary, #6366F1); color: #fff; border-color: transparent;' +
+      '}' +
+      '.tdf-autolink-banner button.is-primary:hover { filter: brightness(1.05); }' +
+      '.tdf-autolink-banner .al-x {' +
+      '  flex-shrink: 0; border: 0; background: transparent; cursor: pointer;' +
+      '  width: 28px; height: 28px; border-radius: 7px; padding: 0;' +
+      '  color: var(--fg-muted, #6B7280); font-size: 16px; line-height: 1;' +
+      '}' +
+      '.tdf-autolink-banner .al-x:hover { background: rgba(0,0,0,0.04); color: var(--fg, #111); }' +
+      '@media (max-width: 720px) {' +
+      '  .tdf-autolink-banner { margin: 12px; }' +
+      '}' +
+      '</style>';
+    document.head.insertAdjacentHTML('beforeend', css);
+  }
+
+  function findMountPoint() {
+    /* Mount: above the first <main>, .editor-wrap, .container, or just
+       below the sidebar. We pick the first reasonable target so the
+       banner lands at the top of the visible editor surface. */
+    var candidates = [
+      'main .container',
+      'main',
+      '.editor-wrap',
+      '.tdf-app-shell',
+      '.app-main',
+      'body > .container'
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var el = document.querySelector(candidates[i]);
+      if (el) return el;
+    }
+    return document.body;
+  }
+
+  function showBanner() {
+    var pageType = getPageType();
+    if (!pageType || !DEFAULTS[pageType]) return;
+    if (isDismissed(pageType)) return;
+    if (document.getElementById('tdf-autolink-banner')) return;
+    ensureCss();
+
+    var def = DEFAULTS[pageType];
+    var label = def.copy || (document.title || 'My page').replace(/ — tadaify.*$/, '').replace(/\s+/g, ' ').trim() + ' →';
+    var pageTypeLabel = pageType.replace('-', ' ');
+
+    var banner = document.createElement('div');
+    banner.className = 'tdf-autolink-banner';
+    banner.id = 'tdf-autolink-banner';
+    banner.setAttribute('role', 'region');
+    banner.setAttribute('aria-label', 'Add a home page button for this new page');
+    banner.innerHTML =
+      '<div class="al-ico" aria-hidden="true">' + def.icon + '</div>' +
+      '<div class="al-body">' +
+        '<h4><span class="sparkle">✨</span>Add a button on your home page linking to this ' + pageTypeLabel + '?</h4>' +
+        '<p class="al-sub">You can always add it later from your home page editor.</p>' +
+        '<div class="al-actions">' +
+          '<button type="button" class="is-primary" data-al="add">+ Add &ldquo;' + label.replace(/"/g, '&quot;') + '&rdquo; button to home</button>' +
+          '<button type="button" data-al="skip">Skip</button>' +
+        '</div>' +
+      '</div>' +
+      '<button type="button" class="al-x" data-al="skip" aria-label="Dismiss">×</button>';
+
+    var mount = findMountPoint();
+    if (mount.firstChild) {
+      mount.insertBefore(banner, mount.firstChild);
+    } else {
+      mount.appendChild(banner);
+    }
+
+    banner.querySelectorAll('[data-al]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var act = btn.getAttribute('data-al');
+        if (act === 'add') {
+          pushHomeLinkBlock(pageType, label, def.icon);
+          if (window.TierGate && typeof window.TierGate.showToast === 'function') {
+            window.TierGate.showToast('Added "' + label + '" button to your home page');
+          }
+        } else {
+          markDismissed(pageType);
+        }
+        banner.remove();
+      });
+    });
+  }
+
+  function init() {
+    if (!isNewPage()) return;
+    showBanner();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  /* Public hooks for the eventual "+ Add page" trigger to use:
+     window.AutoLinkPrompt.markNewPage('blog') — call BEFORE navigating
+     to the new page editor; the banner picks it up after load. */
+  window.AutoLinkPrompt = {
+    markNewPage: function (pageType) {
+      try { sessionStorage.setItem('tadaify_new_page', String(pageType || '').toLowerCase()); } catch (e) {}
+    },
+    forceShow: function () { showBanner(); },
+    _defaults: DEFAULTS,
+    _slugByType: SLUG_BY_TYPE
+  };
+})();
