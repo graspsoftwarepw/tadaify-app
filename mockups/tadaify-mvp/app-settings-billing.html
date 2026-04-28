@@ -1438,12 +1438,12 @@
     function fmtMonthly(price) { return '$' + (Math.round(price * mul * 100) / 100) + (c === 'yearly' ? '/mo (billed yearly)' : '/mo'); }
     function fmtYearly(monthly) {
       if (c === 'monthly') return '$' + monthly + '/mo';
-      var yearly = (monthly * 10).toFixed(0);
+      var yearly = (monthly * 12).toFixed(0);
       return '$' + yearly + '/yr · save 2 months';
     }
 
-    document.getElementById('cmp-creator-price').textContent = fmtYearly(8);
-    document.getElementById('cmp-pro-price').textContent     = fmtYearly(19);
+    document.getElementById('cmp-creator-price').textContent = fmtYearly(7.99);
+    document.getElementById('cmp-pro-price').textContent     = fmtYearly(19.99);
     document.getElementById('cmp-biz-price').textContent     = fmtYearly(49);
 
     /* Update the plan card price too if it's a paid state */
