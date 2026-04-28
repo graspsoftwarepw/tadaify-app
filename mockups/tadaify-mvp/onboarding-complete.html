@@ -129,6 +129,44 @@
       max-width: 340px;
       margin-left: auto; margin-right: auto;
     }
+
+    /* TADA-BUG-004: prominent primary CTA "Go to Dashboard →".
+       Sits directly under the URL strip + above the phone preview so
+       creators land on it as the obvious next move after onboarding. */
+    .primary-cta-wrap {
+      margin-top: 32px;
+      display: flex; justify-content: center;
+    }
+    .primary-cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 18px 36px;
+      background: var(--brand-warm, #F59E0B);
+      color: #1F2937;
+      border-radius: 99px;
+      font-family: var(--font-sans, inherit);
+      font-size: clamp(16px, 2vw, 19px);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      box-shadow: 0 10px 30px rgba(245,158,11,0.35);
+      transition: transform .14s, box-shadow .14s, filter .14s;
+    }
+    .primary-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 36px rgba(245,158,11,0.45);
+      filter: brightness(1.02);
+    }
+    .primary-cta .arrow { font-size: 22px; line-height: 1; }
+    @media (prefers-reduced-motion: reduce) {
+      .primary-cta { transition: none; }
+      .primary-cta:hover { transform: none; }
+    }
+
+    /* Two-card secondary row replaces the previous 3-card row.
+       "Customize further" was removed because it competed with the new
+       primary CTA — both led to the dashboard. */
+    .next-steps.two-up { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 780px) { .next-steps.two-up { grid-template-columns: 1fr; } }
   </style>
 
 <style data-source="responsive-tablet-tier">
@@ -245,6 +283,15 @@
           <span>tadaify.com/<span id="live-handle">alexandra</span></span>
           <button class="copy-btn" id="copy-btn" onclick="copyUrl()">Copy</button>
         </div>
+
+        <!-- TADA-BUG-004: prominent primary CTA → Dashboard.
+             Single, big, brand-warm pill — the obvious next move. -->
+        <div class="primary-cta-wrap">
+          <a href="./app-dashboard.html" id="dashboard-cta" class="primary-cta">
+            Go to Dashboard
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
       </div>
 
       <!-- Phone preview -->
@@ -268,21 +315,17 @@
         </div>
       </div>
 
-      <!-- Next steps -->
-      <div class="next-steps">
+      <!-- Secondary actions (TADA-BUG-004: was 3-card row including
+           "Customize further" which duplicated the primary CTA above —
+           now 2 genuinely distinct cards). -->
+      <div class="next-steps two-up">
         <a href="#" id="preview-link" class="step-card">
           <div class="step-icon">👀</div>
           <h4 style="font-size:18px; margin-bottom:8px;">Preview your page</h4>
           <p class="text-muted text-sm">See what visitors see — including the desktop and mobile layouts.</p>
         </a>
 
-        <a href="#" id="editor-link" class="step-card">
-          <div class="step-icon">⚙️</div>
-          <h4 style="font-size:18px; margin-bottom:8px;">Customize further</h4>
-          <p class="text-muted text-sm">Reorder blocks, change colors, add products — go to your dashboard.</p>
-        </a>
-
-        <a href="./pricing.html" class="step-card warm">
+        <a href="./app-domain.html" class="step-card warm">
           <div class="step-icon">🌐</div>
           <h4 style="font-size:18px; margin-bottom:8px;">Add custom domain</h4>
           <p class="text-muted text-sm">Use your own domain (yoursite.com) for $2/mo. Free on Creator +.</p>
@@ -324,11 +367,13 @@
     document.getElementById('live-handle').textContent = handle;
     document.getElementById('phone-handle').textContent = handle;
 
-    // Wire next-steps links with handle
+    // Wire next-steps links with handle (TADA-BUG-004: editor-link card removed).
     document.getElementById('preview-link').href =
       './creator-public.html?handle=' + encodeURIComponent(handle);
-    document.getElementById('editor-link').href =
-      './app-dashboard.html?handle=' + encodeURIComponent(handle) + '&state=ready';
+    var dashboardCta = document.getElementById('dashboard-cta');
+    if (dashboardCta) {
+      dashboardCta.href = './app-dashboard.html?handle=' + encodeURIComponent(handle) + '&state=ready';
+    }
 
     function copyUrl() {
       var url = 'https://tadaify.com/' + handle;
