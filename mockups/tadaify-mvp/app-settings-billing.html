@@ -11,7 +11,7 @@
     plan card (with locked-for-life pill DEC-PRICELOCK-01)
     + recent invoices (read-only, Stripe-hosted PDFs)
     + Stripe Customer Portal CTAs (billing / payment_method_update / invoices)
-    + custom domain add-on line items ($2/mo per DEC-PRICELOCK-02)
+    + custom domain add-on line items ($1.99/mo per DEC-PRICELOCK-02)
     + cancel cross-link → Danger zone (canonical AP-010 path; portal cancel is DISABLED)
 
   Demo toolbar swaps subscription state:
@@ -26,7 +26,7 @@
   DEC trail:
     DEC-073                 hybrid Stripe-portal architecture
     DEC-PRICELOCK-01        price-lock-for-life amber pill on plan card
-    DEC-PRICELOCK-02        universal $2/mo custom-domain add-on as line items
+    DEC-PRICELOCK-02        universal $1.99/mo custom-domain add-on as line items
     AP-010                  one-click cancel canonical path = Danger zone (NOT portal)
     AP-029                  pages stay live during dunning / cancel grace period
     AP-031                  no sticky upsell banners — only the upgrade CTA card
@@ -808,7 +808,7 @@
           <span class="sb-ico" aria-hidden="true">⚠️</span>
           <div class="sb-body">
             <strong>Payment failed — update your card to keep your features</strong>
-            We tried to charge $8.00 on Apr 15, 2026 and the bank declined.
+            We tried to charge $7.99 on Apr 15, 2026 and the bank declined.
             Your pages stay live for 7 more days while we retry — update your card now to avoid interruption.
           </div>
           <div class="sb-actions">
@@ -833,7 +833,7 @@
           <span class="sb-ico" aria-hidden="true">🎁</span>
           <div class="sb-body">
             <strong>5 days left in your free Creator trial</strong>
-            Your card on file gets charged $8.00 on May 1, 2026 — cancel anytime before then in
+            Your card on file gets charged $7.99 on May 1, 2026 — cancel anytime before then in
             <button class="cl-link" style="color:#1E40AF" onclick="goDanger()">Danger zone</button>.
           </div>
         </div>
@@ -846,7 +846,7 @@
             Your pages stay live until then. Reactivate any time before that date and nothing changes.
           </div>
           <div class="sb-actions">
-            <button class="btn btn-primary btn-sm" onclick="reactivateSubscription()">Reactivate at $8/mo</button>
+            <button class="btn btn-primary btn-sm" onclick="reactivateSubscription()">Reactivate at $7.99/mo</button>
           </div>
         </div>
 
@@ -867,9 +867,9 @@
             <div class="plan-icon" id="plan-icon">✨</div>
             <div style="min-width:0">
               <div class="plan-name" id="plan-name">Creator</div>
-              <div class="plan-price" id="plan-price"><b>$8/mo</b> · renews <b>Dec 1, 2026</b></div>
+              <div class="plan-price" id="plan-price"><b>$7.99/mo</b> · renews <b>Dec 1, 2026</b></div>
               <div class="plan-badges" id="plan-badges">
-                <span class="chip locked-life">🔒 Locked for life at $8/mo</span>
+                <span class="chip locked-life">🔒 Locked for life at $7.99/mo</span>
                 <span class="chip success">Active</span>
               </div>
             </div>
@@ -883,7 +883,7 @@
           <div class="pricelock-note" id="pricelock-note">
             <span class="pn-ico" aria-hidden="true">🔒</span>
             <div>
-              Your <b>$8/mo</b> price is locked forever as long as your subscription stays active —
+              Your <b>$7.99/mo</b> price is locked forever as long as your subscription stays active —
               we never raise it. Read the
               <a href="./pricing.html#guarantee">price-lock-for-life guarantee</a>.
               Upgrading to a higher tier locks your new price.
@@ -910,7 +910,7 @@
 
             <div class="compare-card" data-plan="creator">
               <div class="cc-name">Creator ⭐</div>
-              <div class="cc-price"><b id="cmp-creator-price">$8/mo</b> · locked for life</div>
+              <div class="cc-price"><b id="cmp-creator-price">$7.99/mo</b> · locked for life</div>
               <ul class="cc-features">
                 <li>Everything in Free</li>
                 <li>Sell products + communities</li>
@@ -923,7 +923,7 @@
 
             <div class="compare-card" data-plan="pro">
               <div class="cc-name">Pro</div>
-              <div class="cc-price"><b id="cmp-pro-price">$19/mo</b> · locked for life</div>
+              <div class="cc-price"><b id="cmp-pro-price">$19.99/mo</b> · locked for life</div>
               <ul class="cc-features">
                 <li>Everything in Creator</li>
                 <li>Per-page custom domain</li>
@@ -1083,7 +1083,7 @@
             <a href="./app-domain.html" class="btn btn-ghost btn-sm">Manage domains →</a>
           </div>
           <p class="section-help">
-            Universal <b>$2/mo per domain</b> — every tier. Verified domains charge as a separate line item on your next invoice.
+            Universal <b>$1.99/mo per domain</b> — every tier. Verified domains charge as a separate line item on your next invoice.
           </p>
 
           <!-- Domain rows (state ≠ free + has domains) -->
@@ -1092,13 +1092,13 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <span class="da-name">alexandra.com</span>
               <span class="chip success">Active</span>
-              <span class="da-price">$2/mo</span>
+              <span class="da-price">$1.99/mo</span>
             </div>
             <div class="domain-addon-row">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <span class="da-name">silva.studio</span>
               <span class="chip success">Active</span>
-              <span class="da-price">$2/mo</span>
+              <span class="da-price">$1.99/mo</span>
             </div>
             <!-- Domain renewal failed (only visible in past-due state) -->
             <div class="domain-addon-row is-failed" id="domain-row-failed" hidden>
@@ -1111,7 +1111,7 @@
 
           <!-- No domains empty state -->
           <div id="domains-empty" class="domains-empty" hidden>
-            No domains yet — <a href="./app-domain.html">add one for $2/mo →</a>
+            No domains yet — <a href="./app-domain.html">add one for $1.99/mo →</a>
           </div>
         </div>
 
@@ -1198,11 +1198,11 @@
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">
         <span style="color:var(--fg-muted)">Current plan</span>
-        <span><b id="cp-current">Creator</b> · $8/mo</span>
+        <span><b id="cp-current">Creator</b> · $7.99/mo</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px">
         <span style="color:var(--fg-muted)">New plan</span>
-        <span><b id="cp-target">Pro</b> · <span id="cp-target-price">$19/mo</span></span>
+        <span><b id="cp-target">Pro</b> · <span id="cp-target-price">$19.99/mo</span></span>
       </div>
       <div style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:14px">
         <span style="font-weight:600">Charged today</span>
@@ -1213,7 +1213,7 @@
 
     <div class="pricelock-note" style="margin-top:0">
       <span class="pn-ico" aria-hidden="true">🔒</span>
-      <div>Your new <b id="cp-new-price-lock">$19/mo</b> price will be locked for life as long as your subscription stays active.</div>
+      <div>Your new <b id="cp-new-price-lock">$19.99/mo</b> price will be locked for life as long as your subscription stays active.</div>
     </div>
 
     <div class="modal-actions">
@@ -1246,7 +1246,7 @@
           <input type="radio" name="cancel-reason" value="too-expensive">
           <span class="ri-body">
             <span class="ri-title">Too expensive</span>
-            <span class="ri-sub">$8/mo isn't right for me right now</span>
+            <span class="ri-sub">$7.99/mo isn't right for me right now</span>
           </span>
         </label>
         <label class="reason-item">
@@ -1438,12 +1438,12 @@
     function fmtMonthly(price) { return '$' + (Math.round(price * mul * 100) / 100) + (c === 'yearly' ? '/mo (billed yearly)' : '/mo'); }
     function fmtYearly(monthly) {
       if (c === 'monthly') return '$' + monthly + '/mo';
-      var yearly = (monthly * 10).toFixed(0);
+      var yearly = (monthly * 12).toFixed(0);
       return '$' + yearly + '/yr · save 2 months';
     }
 
-    document.getElementById('cmp-creator-price').textContent = fmtYearly(8);
-    document.getElementById('cmp-pro-price').textContent     = fmtYearly(19);
+    document.getElementById('cmp-creator-price').textContent = fmtYearly(7.99);
+    document.getElementById('cmp-pro-price').textContent     = fmtYearly(19.99);
     document.getElementById('cmp-biz-price').textContent     = fmtYearly(49);
 
     /* Update the plan card price too if it's a paid state */
@@ -1467,7 +1467,7 @@
      ------------------------------------------------------------- */
   function openChangePlan(direction) {
     var target = direction === 'upgrade' ? 'Pro' : 'Free';
-    var price  = direction === 'upgrade' ? '$19/mo' : '$0';
+    var price  = direction === 'upgrade' ? '$19.99/mo' : '$0';
     document.getElementById('cp-target').textContent = target;
     document.getElementById('cp-target-name').textContent = target;
     document.getElementById('cp-target-price').textContent = price;
@@ -1476,7 +1476,7 @@
     openModal('change-plan-modal');
   }
   function selectPlan(plan) {
-    var price = ({ free: '$0', creator: '$8/mo', pro: '$19/mo', business: '$49/mo' })[plan];
+    var price = ({ free: '$0', creator: '$7.99/mo', pro: '$19.99/mo', business: '$49/mo' })[plan];
     document.getElementById('cp-target').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     document.getElementById('cp-target-name').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     document.getElementById('cp-target-price').textContent = price;
@@ -1601,8 +1601,8 @@
       case 'creator-active':
         icon.textContent = '✨';
         name.textContent = 'Creator';
-        price.innerHTML  = '<b>$8/mo</b> · renews <b>Dec 1, 2026</b>';
-        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $8/mo</span><span class="chip success">Active</span>';
+        price.innerHTML  = '<b>$7.99/mo</b> · renews <b>Dec 1, 2026</b>';
+        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $7.99/mo</span><span class="chip success">Active</span>';
         pricelock.hidden = false;
         btnChange.textContent = 'Change plan';
         renderInvoices('usd');
@@ -1611,8 +1611,8 @@
       case 'creator-trial':
         icon.textContent = '🎁';
         name.textContent = 'Creator (trial)';
-        price.innerHTML  = '<b>$8/mo</b> · trial ends <b>May 1, 2026</b>';
-        badges.innerHTML = '<span class="chip info">5 days left in trial</span><span class="chip locked-life">🔒 Will lock at $8/mo</span>';
+        price.innerHTML  = '<b>$7.99/mo</b> · trial ends <b>May 1, 2026</b>';
+        badges.innerHTML = '<span class="chip info">5 days left in trial</span><span class="chip locked-life">🔒 Will lock at $7.99/mo</span>';
         pricelock.hidden = false;
         show('banner-trial');
         renderInvoices('usd');
@@ -1621,8 +1621,8 @@
       case 'past-due':
         icon.textContent = '⚠️';
         name.textContent = 'Creator';
-        price.innerHTML  = '<b>$8/mo</b> · last attempt failed Apr 15, 2026';
-        badges.innerHTML = '<span class="chip danger">Past due</span><span class="chip locked-life">🔒 $8/mo locked</span>';
+        price.innerHTML  = '<b>$7.99/mo</b> · last attempt failed Apr 15, 2026';
+        badges.innerHTML = '<span class="chip danger">Past due</span><span class="chip locked-life">🔒 $7.99/mo locked</span>';
         pricelock.hidden = false;
         show('banner-past-due');
         show('domain-row-failed');
@@ -1632,7 +1632,7 @@
       case 'cancel-scheduled':
         icon.textContent = '🟠';
         name.textContent = 'Creator';
-        price.innerHTML  = '<b>$8/mo</b> · access ends <b>Dec 1, 2026</b>';
+        price.innerHTML  = '<b>$7.99/mo</b> · access ends <b>Dec 1, 2026</b>';
         badges.innerHTML = '<span class="chip warn">Active until Dec 1, 2026 (cancellation scheduled)</span>';
         pricelock.hidden = false;
         show('banner-cancel-scheduled');
@@ -1643,8 +1643,8 @@
       case 'card-expiring':
         icon.textContent = '✨';
         name.textContent = 'Creator';
-        price.innerHTML  = '<b>$8/mo</b> · renews <b>Dec 1, 2026</b>';
-        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $8/mo</span><span class="chip warn">Card expires soon</span>';
+        price.innerHTML  = '<b>$7.99/mo</b> · renews <b>Dec 1, 2026</b>';
+        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $7.99/mo</span><span class="chip warn">Card expires soon</span>';
         pricelock.hidden = false;
         show('banner-card-expiring');
         document.getElementById('pm-num').textContent = '•••• •••• •••• 4242';
@@ -1655,8 +1655,8 @@
       case 'zero-invoices':
         icon.textContent = '✨';
         name.textContent = 'Creator';
-        price.innerHTML  = '<b>$8/mo</b> · first charge on <b>May 1, 2026</b>';
-        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $8/mo</span><span class="chip success">Active</span>';
+        price.innerHTML  = '<b>$7.99/mo</b> · first charge on <b>May 1, 2026</b>';
+        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $7.99/mo</span><span class="chip success">Active</span>';
         pricelock.hidden = false;
         hide('invoices-table-wrap');
         document.getElementById('invoices-empty').innerHTML =
@@ -1677,9 +1677,9 @@
       case 'multi-sub-items':
         icon.textContent = '✨';
         name.textContent = 'Creator';
-        price.innerHTML  = '<b>$8/mo Creator</b> + <b>$25/mo Workshop add-on</b> · renews Dec 1, 2026';
+        price.innerHTML  = '<b>$7.99/mo Creator</b> + <b>$25/mo Workshop add-on</b> · renews Dec 1, 2026';
         badges.innerHTML =
-          '<span class="chip locked-life">🔒 Creator $8/mo locked</span>' +
+          '<span class="chip locked-life">🔒 Creator $7.99/mo locked</span>' +
           '<span class="chip info">+ Workshop add-on</span>' +
           '<span class="chip success">Active</span>';
         pricelock.hidden = false;
