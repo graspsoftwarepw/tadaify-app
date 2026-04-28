@@ -117,6 +117,11 @@
       border-radius: 24px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.22);
     }
+    /* TADA-BUG-001: this is a URL-preview surface, NOT a brand-lockup
+       surface. Letters may be coloured, but PUNCTUATION (./-) must stay
+       neutral and must NEVER be substituted with the brand "!" mark.
+       The preview reads "tadaify.com/<slug>" — a real URL the user could
+       type — never "tada!ify/<slug>" lockup. */
     .preview-wordmark {
       font-family: var(--font-display);
       font-weight: 600;
@@ -125,11 +130,10 @@
       line-height: 1.05;
       word-break: break-all;
     }
-    .preview-wordmark .ta  { color: #FFF; }
-    .preview-wordmark .da  { color: #FDE68A; }
-    .preview-wordmark .ify { color: #FFF; }
-    .preview-wordmark .slash  { color: rgba(255,255,255,0.55); margin: 0 0.04em; }
-    .preview-wordmark .handle { color: #FDE68A; }
+    .preview-wordmark .url-letters { color: #FFF; }
+    .preview-wordmark .url-tld     { color: #FFF; opacity: 0.78; }
+    .preview-wordmark .url-punct   { color: rgba(255,255,255,0.55); }
+    .preview-wordmark .handle      { color: #FDE68A; }
 
     .preview-url {
       margin-top: 24px;
@@ -586,8 +590,11 @@
           Live preview
         </p>
         <div class="preview-card">
-          <div class="preview-wordmark">
-            <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span><span class="slash">/</span><span class="handle" id="preview-handle">alexandra</span>
+          <!-- TADA-BUG-001: real URL string, NOT brand lockup.
+               Letters coloured for hierarchy, punctuation stays neutral,
+               no "!" anywhere. -->
+          <div class="preview-wordmark" aria-label="Live URL preview">
+            <span class="url-letters">tadaify</span><span class="url-punct">.</span><span class="url-tld">com</span><span class="url-punct">/</span><span class="handle" id="preview-handle">alexandra</span>
           </div>
         </div>
 

@@ -8,9 +8,18 @@
 
    Must run BEFORE tokens.js so logo orbs get registered + animated.
    Wordmark locked per DEC-WORDMARK-01 — no hyphen, ta / da! / ify color split.
-   Sidebar canon per CLAUDE.md "Sidebar canonical structure":
-     Pages parent (accordion) → Home + disabled Add page (DEC-MULTIPAGE-01)
-     Design / Domain / Insights / Shop / Settings / Help & docs
+   Sidebar canon per CLAUDE.md "Sidebar canonical structure"
+   (TADA-BUG-005, 2026-04-28 — IA restructure):
+     1. Pages parent (accordion) → Home + Add page (opens template picker, BUG-006)
+     2. Configuration parent (accordion, renamed from "Design") →
+          Theme / Profile / Background / Text / Buttons / Animations /
+          Colors / Footer / Domain (Domain folded in from top-level)
+     3. Insights (top-level)
+     4. Administration parent (accordion) → Shop / Blog / Schedule /
+          Portfolio / Paid articles (admin-* counterparts)
+     5. Settings
+     6. Help & docs
+     7. Feedback (NEW — bottom entry, → app-feedback.html)
    ========================================================================= */
 
 (function () {
@@ -94,7 +103,18 @@
     storeAdm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
     schedAdm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
     portAdm:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/></svg>',
-    paidAdm:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+    paidAdm:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    /* Configuration sub-icons (added TADA-BUG-005 — Configuration accordion) */
+    theme:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>',
+    profile:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    bgIcon:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+    textIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+    buttons:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="5" rx="2.5"/><rect x="2" y="14" width="20" height="5" rx="2.5"/></svg>',
+    anims:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>',
+    colors:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/></svg>',
+    footer:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>',
+    /* Feedback icon — speech bubble (added TADA-BUG-005) */
+    feedback: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
   };
 
   var SIDEBAR_CSS = '' +
@@ -227,14 +247,27 @@
     username = username || 'Alexandra Silva';
     /* adminActive: which Administration sub-item is current (when active==='admin').
        Values: 'blog' | 'store' | 'schedule' | 'portfolio' | 'paid-articles'.
-       If absent and active==='admin', no sub-item is highlighted. */
+       If absent and active==='admin', no sub-item is highlighted.
+
+       configActive: which Configuration sub-item is current (when active==='config' OR
+       active==='design' for back-compat). Values: 'theme' | 'profile' | 'background' |
+       'text' | 'buttons' | 'animations' | 'colors' | 'footer' | 'domain'.
+       (TADA-BUG-005 IA restructure — passed via data-config-active attribute.) */
     adminActive = (adminActive || '').toLowerCase();
+    var configActiveAttr = arguments[5] || '';
+    var configActive = (configActiveAttr || '').toLowerCase();
+    /* Back-compat: if caller still uses data-active="design", treat as Configuration. */
+    var isConfig = (active === 'config' || active === 'design');
+    /* Back-compat: data-active="domain" maps onto Configuration→Domain sub-item. */
+    if (active === 'domain') { isConfig = true; configActive = configActive || 'domain'; }
     var initial = (username || 'A').charAt(0).toUpperCase();
     var tierLabel = ({ free: 'Free', creator: 'Creator', pro: 'Pro', business: 'Business' })[tier] || 'Pro';
 
     function cls(name) { return active === name ? ' active' : ''; }
     function aria(name) { return active === name ? ' aria-current="page"' : ''; }
     function adminCls(name) { return (active === 'admin' && adminActive === name) ? ' is-current' : ''; }
+    function configCls(name) { return (isConfig && configActive === name) ? ' is-current' : ''; }
+    function configParentCls() { return isConfig ? ' active' : ''; }
 
     return '' +
       '<aside class="tdf-side side" aria-label="Primary navigation">' +
@@ -259,44 +292,74 @@
             '<a href="./app-dashboard.html?tab=page" class="nav-sub-item' + (active === 'pages' ? ' is-current' : '') + '" data-tip="Home">' +
               ICON.home + '<span>Home</span>' +
             '</a>' +
-            '<button type="button" class="nav-sub-item is-disabled" aria-disabled="true" title="Multi-page coming Q+1 — DEC-MULTIPAGE-01" onclick="event.preventDefault();event.stopPropagation();">' +
+            /* TADA-BUG-006: "Add page" opens the page-template picker modal.
+               Wired by setupAddPageModal() further down. Removed "soon" pill +
+               is-disabled state per BUG-006 spec. */
+            '<button type="button" class="nav-sub-item nav-add-page" data-tip="Add a new page" data-action="open-add-page-modal">' +
               ICON.plus + '<span>Add page</span>' +
-              '<span class="nav-sub-pill">soon</span>' +
             '</button>' +
           '</div>' +
         '</div>' +
 
         '<div class="nav-divider"></div>' +
 
-        /* GROUP 2 — Design + Domain */
+        /* GROUP 2 — Configuration parent (renamed from "Design" per TADA-BUG-005).
+           Workspace-level config: Theme, Profile, Background, Text, Buttons,
+           Animations, Colors, Footer, Domain (Domain folded in from top-level).
+           Click parent → Theme sub-section by default. Sub-items always
+           visible (accordion expanded by default for nav clarity). */
         '<div class="nav-group" style="padding-top:0">' +
-          '<a href="./app-dashboard.html?tab=design" class="nav-item' + cls('design') + '" data-tip="Design"' + aria('design') + '>' +
-            ICON.design + '<span class="label">Design</span>' +
+          '<a href="./app-dashboard.html?tab=design&sub=theme" class="nav-item nav-pages-parent' + configParentCls() + '" data-tip="Configuration"' + (isConfig ? ' aria-current="page"' : '') + '>' +
+            ICON.design +
+            '<span class="label">Configuration</span>' +
+            '<span class="nav-caret">' + ICON.caret + '</span>' +
           '</a>' +
-          '<a href="./app-domain.html" class="nav-item' + cls('domain') + '" data-tip="Custom domain"' + aria('domain') + '>' +
-            ICON.domain + '<span class="label">Domain</span>' +
-          '</a>' +
+          '<div class="nav-sub-list">' +
+            '<a href="./app-dashboard.html?tab=design&sub=theme" class="nav-sub-item' + configCls('theme') + '" data-tip="Theme">' +
+              ICON.theme + '<span>Theme</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=profile" class="nav-sub-item' + configCls('profile') + '" data-tip="Profile">' +
+              ICON.profile + '<span>Profile</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=background" class="nav-sub-item' + configCls('background') + '" data-tip="Background">' +
+              ICON.bgIcon + '<span>Background</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=text" class="nav-sub-item' + configCls('text') + '" data-tip="Text">' +
+              ICON.textIcon + '<span>Text</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=buttons" class="nav-sub-item' + configCls('buttons') + '" data-tip="Buttons">' +
+              ICON.buttons + '<span>Buttons</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=animations" class="nav-sub-item' + configCls('animations') + '" data-tip="Animations">' +
+              ICON.anims + '<span>Animations</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=colors" class="nav-sub-item' + configCls('colors') + '" data-tip="Colors">' +
+              ICON.colors + '<span>Colors</span>' +
+            '</a>' +
+            '<a href="./app-dashboard.html?tab=design&sub=footer" class="nav-sub-item' + configCls('footer') + '" data-tip="Footer">' +
+              ICON.footer + '<span>Footer</span>' +
+            '</a>' +
+            '<a href="./app-domain.html" class="nav-sub-item' + configCls('domain') + '" data-tip="Custom domain">' +
+              ICON.domain + '<span>Domain</span>' +
+            '</a>' +
+          '</div>' +
         '</div>' +
 
         '<div class="nav-divider"></div>' +
 
-        /* GROUP 3 — Insights only.
+        /* GROUP 3 — Insights + Affiliate (revenue program).
            FIX-SHOP-001: native Shop is deferred to v2 per
-           feedback_tadaify_no_shop_in_mvp. Sidebar Shop entry hidden in
-           MVP — restore the commented block once the v2 native-shop
-           epic ships. The Product *block* (in app-block-editor) is
-           still available; it just links to the creator's external
-           store (Shopify / Stripe / Etsy / Gumroad / etc.). */
+           feedback_tadaify_no_shop_in_mvp.
+           Affiliate added top-level (TADA-BUG-003) — own dashboard surface
+           (earnings + referrals) so it sits as a peer of Insights, not nested
+           under Settings. */
         '<div class="nav-group" style="padding-top:0">' +
           '<a href="./app-insights.html" class="nav-item' + cls('insights') + '" data-tip="Insights"' + aria('insights') + '>' +
             ICON.insights + '<span class="label">Insights</span>' +
           '</a>' +
-          /* MVP-hidden — v2 native shop:
-          '<button type="button" class="nav-item' + cls('shop') + '" data-tip="Shop — coming soon" onclick="alert(\'Mockup — Shop coming Q+1\')">' +
-            ICON.shop + '<span class="label">Shop</span>' +
-            '<span class="nav-count">0</span>' +
-          '</button>' +
-          */
+          '<a href="./app-affiliate.html" class="nav-item' + cls('affiliate') + '" data-tip="Affiliate program — earn 30% recurring"' + aria('affiliate') + '>' +
+            ICON.paidAdm + '<span class="label">Affiliate</span>' +
+          '</a>' +
         '</div>' +
 
         '<div class="nav-divider"></div>' +
@@ -334,7 +397,7 @@
 
         '<div class="nav-divider"></div>' +
 
-        /* GROUP 4 — Settings + Help */
+        /* GROUP 4 — Settings + Help + Feedback (Feedback added TADA-BUG-005). */
         '<div class="nav-group" style="padding-top:0">' +
           '<a href="./app-settings.html" class="nav-item' + cls('settings') + '" data-tip="Settings"' + aria('settings') + '>' +
             ICON.settings + '<span class="label">Settings</span>' +
@@ -343,6 +406,9 @@
           '<button type="button" class="nav-item' + cls('help') + '" data-tip="Help &amp; docs" onclick="alert(\'Mockup — Help &amp; docs coming Q+1\')">' +
             ICON.help + '<span class="label">Help &amp; docs</span>' +
           '</button>' +
+          '<a href="./app-feedback.html" class="nav-item' + cls('feedback') + '" data-tip="Send feedback to tadaify"' + aria('feedback') + '>' +
+            ICON.feedback + '<span class="label">Feedback</span>' +
+          '</a>' +
         '</div>' +
       '</aside>';
   }
@@ -360,7 +426,8 @@
       el.getAttribute('data-tier'),
       el.getAttribute('data-handle'),
       el.getAttribute('data-username'),
-      el.getAttribute('data-admin-active')
+      el.getAttribute('data-admin-active'),
+      el.getAttribute('data-config-active')
     );
     el.outerHTML = html;
   });
@@ -3138,4 +3205,232 @@
     _defaults: DEFAULTS,
     _slugByType: SLUG_BY_TYPE
   };
+})();
+
+/* =========================================================================
+   tadaify — Add Page modal (TADA-BUG-006, 2026-04-28)
+   Mirrors app-block-picker.html UX: centered modal 720px, search input,
+   category chips, grid of page-template cards. Click a card → navigate
+   to the corresponding app-page-<type>.html mockup (representing
+   "page now added, configure it"). Wired to any element with
+   data-action="open-add-page-modal" (typically the "+ Add page" button
+   in the sidebar's Pages group). Per feedback_no_right_side_drawers:
+   centered modal, NOT a slide-in drawer.
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  var TEMPLATES = [
+    /* Content category */
+    { id: 'blog',              cat: 'content',  ic: '📝', title: 'Blog',              desc: 'Long-form posts with tags, filtering, RSS.', href: './app-page-blog.html' },
+    { id: 'newsletter-signup', cat: 'content',  ic: '✉️', title: 'Newsletter signup', desc: 'Capture emails for Kit / Beehiiv / Mailchimp.', href: './app-page-newsletter-signup.html' },
+    { id: 'paid-articles',     cat: 'content',  ic: '🔒', title: 'Paid articles',     desc: 'Single-purchase or subscriber-only articles.', href: './app-page-paid-articles.html' },
+    { id: 'portfolio',         cat: 'content',  ic: '🎨', title: 'Portfolio',         desc: 'Project gallery — case studies, photos, work.', href: './app-page-portfolio.html' },
+
+    /* Commerce category */
+    { id: 'schedule',          cat: 'commerce', ic: '📅', title: 'Schedule / Booking',desc: 'Bookable time slots with payment + reminders.', href: './app-page-schedule.html' },
+
+    /* About + Info category */
+    { id: 'about',             cat: 'about',    ic: '👋', title: 'About',             desc: 'Bio, story, and what you do — long-form intro.', href: './app-page-about.html' },
+    { id: 'faq',               cat: 'about',    ic: '❓', title: 'FAQ',               desc: 'Accordion of common questions and answers.', href: './app-page-faq.html' },
+    { id: 'contact',           cat: 'about',    ic: '📨', title: 'Contact',           desc: 'Form that emails you (or webhooks on Pro+).', href: './app-page-contact.html' },
+    { id: 'legal',             cat: 'about',    ic: '⚖️', title: 'Legal',             desc: 'Terms, privacy, refund policy — pre-filled boilerplate.', href: './app-page-legal.html' },
+    { id: 'links-archive',     cat: 'about',    ic: '🗂', title: 'Links archive',     desc: 'Searchable archive of every link you have ever shared.', href: './app-page-links-archive.html' },
+
+    /* Custom — last for emphasis */
+    { id: 'custom',            cat: 'custom',   ic: '✨', title: 'Custom page',       desc: 'Blank canvas — compose only with blocks.', href: './app-page-custom.html' }
+  ];
+
+  var CATEGORIES = [
+    { id: 'all',      label: 'All' },
+    { id: 'content',  label: 'Content' },
+    { id: 'commerce', label: 'Commerce' },
+    { id: 'about',    label: 'About + Info' },
+    { id: 'custom',   label: 'Custom' }
+  ];
+
+  var CSS = '' +
+    '<style data-source="add-page-modal-partial">' +
+    '.tdf-addpage-backdrop {' +
+    '  position: fixed; inset: 0; z-index: 1200;' +
+    '  background: rgba(11,15,30,0.55); backdrop-filter: blur(3px);' +
+    '  display: flex; align-items: center; justify-content: center;' +
+    '  padding: 16px;' +
+    '  opacity: 0; pointer-events: none;' +
+    '  transition: opacity .22s ease;' +
+    '}' +
+    '.tdf-addpage-backdrop.is-open { opacity: 1; pointer-events: auto; }' +
+    '.tdf-addpage-modal {' +
+    '  background: var(--bg-elevated, #fff);' +
+    '  border: 1px solid var(--border, #E5E7EB);' +
+    '  border-radius: 18px;' +
+    '  box-shadow: var(--shadow-xl, 0 20px 60px rgba(11,15,30,0.25));' +
+    '  width: min(820px, 100%);' +
+    '  max-height: calc(100vh - 32px);' +
+    '  display: flex; flex-direction: column;' +
+    '  transform: translateY(8px) scale(0.98);' +
+    '  transition: transform .22s cubic-bezier(.22,.61,.36,1);' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '}' +
+    '.tdf-addpage-backdrop.is-open .tdf-addpage-modal { transform: translateY(0) scale(1); }' +
+    '@media (max-width: 720px) {' +
+    '  .tdf-addpage-backdrop { padding: 0; align-items: stretch; }' +
+    '  .tdf-addpage-modal { border-radius: 0; max-height: 100vh; height: 100vh; width: 100vw; }' +
+    '}' +
+    '.tdf-addpage-head { padding: 18px 22px; border-bottom: 1px solid var(--border, #E5E7EB); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }' +
+    '.tdf-addpage-head h2 { font-family: var(--font-display, inherit); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0; flex-shrink: 0; }' +
+    '.tdf-addpage-search-wrap { flex: 1; min-width: 200px; position: relative; }' +
+    '.tdf-addpage-search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--fg-subtle, #9CA3AF); }' +
+    '.tdf-addpage-search { width: 100%; padding: 9px 12px 9px 36px; font-size: 13.5px; border: 1px solid var(--border-strong, #D1D5DB); border-radius: 99px; background: var(--bg, #fff); color: var(--fg, #111827); font-family: inherit; outline: none; transition: border .14s, box-shadow .14s; }' +
+    '.tdf-addpage-search:focus { border-color: var(--border-focus, #6366F1); box-shadow: 0 0 0 3px rgba(99,102,241,0.14); }' +
+    '.tdf-addpage-close { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: transparent; border: 0; color: var(--fg-muted, #6B7280); cursor: pointer; flex-shrink: 0; }' +
+    '.tdf-addpage-close:hover { background: var(--bg-muted, #F3F4F6); color: var(--fg, #111827); }' +
+    '.tdf-addpage-cats { display: flex; gap: 6px; padding: 12px 22px 0; border-bottom: 1px solid var(--border, #E5E7EB); overflow-x: auto; flex-shrink: 0; }' +
+    '.tdf-addpage-cat { padding: 8px 14px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--fg-muted, #6B7280); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; transition: color .12s, border-color .12s; font-family: inherit; }' +
+    '.tdf-addpage-cat:hover { color: var(--fg, #111827); }' +
+    '.tdf-addpage-cat.is-active { color: var(--brand-primary, #6366F1); border-bottom-color: var(--brand-primary, #6366F1); }' +
+    '.tdf-addpage-body { flex: 1; overflow-y: auto; padding: 18px 22px; }' +
+    '.tdf-addpage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }' +
+    '@media (max-width: 760px) { .tdf-addpage-grid { grid-template-columns: repeat(2, 1fr); } }' +
+    '@media (max-width: 460px) { .tdf-addpage-grid { grid-template-columns: 1fr; } }' +
+    '.tdf-addpage-card { position: relative; background: var(--bg, #fff); border: 1.5px solid var(--border, #E5E7EB); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; text-align: left; color: inherit; text-decoration: none; transition: border .12s, transform .12s, box-shadow .12s; }' +
+    '.tdf-addpage-card:hover { border-color: var(--brand-primary, #6366F1); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,0.15); }' +
+    '.tdf-addpage-card .ic { width: 40px; height: 40px; border-radius: 10px; background: rgba(99,102,241,0.12); display: flex; align-items: center; justify-content: center; font-size: 20px; }' +
+    '.tdf-addpage-card[data-cat="commerce"] .ic { background: rgba(245,158,11,0.16); }' +
+    '.tdf-addpage-card[data-cat="about"]    .ic { background: rgba(16,185,129,0.16); }' +
+    '.tdf-addpage-card[data-cat="custom"]   .ic { background: rgba(139,92,246,0.16); }' +
+    '.tdf-addpage-card .ttl { font-size: 14px; font-weight: 600; color: var(--fg, #111827); }' +
+    '.tdf-addpage-card .desc { font-size: 12.5px; color: var(--fg-muted, #6B7280); line-height: 1.45; }' +
+    '.tdf-addpage-empty { grid-column: 1 / -1; padding: 32px 16px; text-align: center; color: var(--fg-muted, #6B7280); font-size: 13px; background: var(--bg-muted, #F3F4F6); border-radius: 12px; border: 1px dashed var(--border-strong, #D1D5DB); }' +
+    '.tdf-addpage-foot { padding: 14px 22px; border-top: 1px solid var(--border, #E5E7EB); font-size: 12px; color: var(--fg-muted, #6B7280); flex-shrink: 0; }' +
+    'body.dark-mode .tdf-addpage-modal { background: #141A2D; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-head, body.dark-mode .tdf-addpage-cats, body.dark-mode .tdf-addpage-foot { border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-search { background: #0B0F1E; color: #F3F4F6; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-card { background: #0B0F1E; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-card .ttl { color: #F3F4F6; }' +
+    'body.dark-mode .tdf-addpage-empty { background: #1F2937; border-color: #374151; color: #9CA3AF; }' +
+    '@media (prefers-reduced-motion: reduce) { .tdf-addpage-backdrop, .tdf-addpage-modal { transition: none !important; } }' +
+    '</style>';
+
+  var SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  var CLOSE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+  var modalEl, gridEl, searchEl, currentCat = 'all', currentQuery = '';
+
+  function buildModal() {
+    if (modalEl) return modalEl;
+    if (!document.head.querySelector('style[data-source="add-page-modal-partial"]')) {
+      var wrap = document.createElement('div');
+      wrap.innerHTML = CSS;
+      document.head.appendChild(wrap.querySelector('style'));
+    }
+    var backdrop = document.createElement('div');
+    backdrop.className = 'tdf-addpage-backdrop';
+    backdrop.setAttribute('role', 'dialog');
+    backdrop.setAttribute('aria-modal', 'true');
+    backdrop.setAttribute('aria-labelledby', 'tdf-addpage-h');
+    backdrop.innerHTML =
+      '<div class="tdf-addpage-modal" role="document">' +
+        '<header class="tdf-addpage-head">' +
+          '<h2 id="tdf-addpage-h">Add a page</h2>' +
+          '<div class="tdf-addpage-search-wrap">' +
+            SEARCH_SVG +
+            '<input type="text" class="tdf-addpage-search" placeholder="Find a page template…" autocomplete="off"/>' +
+          '</div>' +
+          '<button type="button" class="tdf-addpage-close" aria-label="Close (Esc)" title="Close (Esc)">' + CLOSE_SVG + '</button>' +
+        '</header>' +
+        '<nav class="tdf-addpage-cats" role="tablist" aria-label="Page template categories">' +
+          CATEGORIES.map(function (c) {
+            return '<button type="button" class="tdf-addpage-cat' + (c.id === 'all' ? ' is-active' : '') + '" data-cat="' + c.id + '" role="tab">' + c.label + '</button>';
+          }).join('') +
+        '</nav>' +
+        '<div class="tdf-addpage-body">' +
+          '<div class="tdf-addpage-grid" role="list"></div>' +
+        '</div>' +
+        '<footer class="tdf-addpage-foot">Tip: every page can be themed individually after creation. You can rename / reorder them anytime.</footer>' +
+      '</div>';
+
+    document.body.appendChild(backdrop);
+    modalEl  = backdrop;
+    gridEl   = backdrop.querySelector('.tdf-addpage-grid');
+    searchEl = backdrop.querySelector('.tdf-addpage-search');
+
+    /* Wire close + backdrop click */
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(); });
+    backdrop.querySelector('.tdf-addpage-close').addEventListener('click', close);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && backdrop.classList.contains('is-open')) close();
+    });
+
+    /* Wire category tabs */
+    backdrop.querySelectorAll('.tdf-addpage-cat').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        backdrop.querySelectorAll('.tdf-addpage-cat').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        currentCat = btn.getAttribute('data-cat');
+        renderGrid();
+      });
+    });
+
+    /* Wire search */
+    searchEl.addEventListener('input', function (e) {
+      currentQuery = (e.target.value || '').toLowerCase().trim();
+      renderGrid();
+    });
+
+    renderGrid();
+    return modalEl;
+  }
+
+  function renderGrid() {
+    var filtered = TEMPLATES.filter(function (t) {
+      if (currentCat !== 'all' && t.cat !== currentCat) return false;
+      if (currentQuery) {
+        var hay = (t.title + ' ' + t.desc + ' ' + t.id).toLowerCase();
+        if (hay.indexOf(currentQuery) === -1) return false;
+      }
+      return true;
+    });
+    if (!filtered.length) {
+      gridEl.innerHTML = '<div class="tdf-addpage-empty">No page templates match your search.</div>';
+      return;
+    }
+    gridEl.innerHTML = filtered.map(function (t) {
+      return '' +
+        '<a class="tdf-addpage-card" data-cat="' + t.cat + '" href="' + t.href + '" role="listitem">' +
+          '<div class="ic" aria-hidden="true">' + t.ic + '</div>' +
+          '<div class="ttl">' + t.title + '</div>' +
+          '<div class="desc">' + t.desc + '</div>' +
+        '</a>';
+    }).join('');
+  }
+
+  function open() {
+    buildModal();
+    modalEl.classList.add('is-open');
+    setTimeout(function () { if (searchEl) searchEl.focus(); }, 80);
+  }
+  function close() {
+    if (!modalEl) return;
+    modalEl.classList.remove('is-open');
+    if (searchEl) { searchEl.value = ''; currentQuery = ''; }
+    var firstCat = modalEl.querySelector('.tdf-addpage-cat[data-cat="all"]');
+    if (firstCat) {
+      modalEl.querySelectorAll('.tdf-addpage-cat').forEach(function (b) { b.classList.remove('is-active'); });
+      firstCat.classList.add('is-active');
+      currentCat = 'all';
+    }
+    renderGrid();
+  }
+
+  /* Global delegated click handler — works across sidebar / inline mocks. */
+  document.addEventListener('click', function (e) {
+    var trigger = e.target.closest && e.target.closest('[data-action="open-add-page-modal"]');
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    open();
+  });
+
+  window.AddPageModal = { open: open, close: close, _templates: TEMPLATES };
 })();

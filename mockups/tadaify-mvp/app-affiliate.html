@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<!--
+  Affiliate program — creator-side dashboard. Earn 30% recurring on
+  every paid creator you refer to tadaify. Wired from:
+   - sidebar (TADA-BUG-005 added top-level Affiliate entry next to Insights)
+   - onboarding-complete.html "Set up affiliate →" CTA (TADA-BUG-003)
+
+  Surfaces: auto-suggested affiliate code (handle-derived) + 30%
+  recurring tagline + earnings dashboard (lifetime / month / pending) +
+  share kit (sample tweet, IG copy, downloadable graphics) + recent
+  referrals table + Stripe Connect payout notice + opt-in TOS link.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Affiliate program — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+
+    .appbar {
+      position: sticky; top: 0; z-index: 30;
+      background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px; height: 54px;
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .appbar .brand .wm { font-size: 20px; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .appbar .brand .ta { color: var(--brand-primary); }
+    .appbar .brand .da { color: var(--brand-warm); }
+    .appbar .brand .ify { color: var(--fg); }
+    .appbar .spacer { flex: 1; }
+
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: clamp(20px, 3vw, 32px); min-width: 0; max-width: 1080px; }
+
+    .page-head h1 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.6vw, 40px);
+      letter-spacing: -0.02em;
+      margin: 0 0 6px;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 14.5px; max-width: 60ch; }
+    .page-head .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 99px;
+      background: rgba(245,158,11,0.16); color: #92400E;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+      margin-bottom: 8px;
+    }
+    body.dark-mode .page-head .badge { background: rgba(245,158,11,0.28); color: #FCD34D; }
+
+    /* HERO — referral link */
+    .ref-card {
+      margin-top: 28px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.08));
+      border: 1px dashed rgba(99,102,241,0.3);
+      border-radius: 16px; padding: 20px 22px;
+    }
+    .ref-card .ttl { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+    .ref-card .lead { color: var(--fg-muted); font-size: 13.5px; margin: 0 0 16px; }
+    .ref-link-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .ref-link {
+      flex: 1; min-width: 240px;
+      padding: 12px 16px; border-radius: 10px;
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--brand-primary);
+      font-family: var(--font-mono, "JetBrains Mono", monospace);
+      font-size: 14px; font-weight: 500; color: var(--brand-primary);
+      letter-spacing: 0.01em;
+      overflow-wrap: anywhere;
+    }
+    .copy-btn {
+      background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 10px;
+      padding: 12px 18px; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: background .12s;
+    }
+    .copy-btn:hover { filter: brightness(0.95); }
+    .copy-btn.copied { background: var(--success, #10B981); }
+
+    /* STATS */
+    .stats-grid {
+      margin-top: 28px;
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 760px) { .stats-grid { grid-template-columns: 1fr; } }
+    .stat-card {
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .stat-card .lbl {
+      font-size: 11.5px; font-weight: 700; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .stat-card .val { font-family: var(--font-display); font-size: 30px; font-weight: 600; letter-spacing: -0.02em; }
+    .stat-card .val .currency { color: var(--fg-muted); font-size: 18px; margin-right: 4px; }
+    .stat-card .delta { font-size: 12px; color: var(--success, #10B981); margin-top: 6px; font-weight: 600; }
+    .stat-card .delta.muted { color: var(--fg-muted); }
+
+    /* SHARE KIT */
+    .section { margin-top: 36px; }
+    .section h2 {
+      font-family: var(--font-display); font-size: 22px; font-weight: 600;
+      letter-spacing: -0.02em; margin: 0 0 4px;
+    }
+    .section .section-sub { color: var(--fg-muted); font-size: 13.5px; margin-bottom: 16px; }
+
+    .share-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 760px) { .share-grid { grid-template-columns: 1fr; } }
+    .share-card {
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .share-card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .share-card .head .ic { font-size: 22px; }
+    .share-card .head .ttl { font-weight: 600; font-size: 15px; }
+    .share-card pre {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px; line-height: 1.55;
+      white-space: pre-wrap; word-wrap: break-word;
+      margin: 0 0 10px;
+      color: var(--fg);
+    }
+    .share-card .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-sm {
+      padding: 7px 12px; border-radius: 8px;
+      font-size: 12.5px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--bg-elevated);
+      color: var(--fg); font-family: inherit;
+    }
+    .btn-sm:hover { background: var(--bg-muted); }
+    .btn-sm.primary { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .btn-sm.primary:hover { filter: brightness(0.95); }
+
+    .graphics-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 14px;
+    }
+    @media (max-width: 760px) { .graphics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 460px) { .graphics-grid { grid-template-columns: 1fr; } }
+    .gfx {
+      aspect-ratio: 1.91 / 1;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-size: 18px;
+      text-align: center; padding: 16px; position: relative;
+      cursor: pointer;
+      transition: transform .14s, box-shadow .14s;
+    }
+    .gfx:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.25); }
+    .gfx.warm { background: linear-gradient(135deg, #F59E0B, #EF4444); }
+    .gfx.green { background: linear-gradient(135deg, #10B981, #059669); }
+    .gfx .dl-ic {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+
+    /* REFERRALS TABLE */
+    .ref-table-wrap {
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .ref-table th, .ref-table td {
+      padding: 14px 16px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-table th {
+      font-size: 11.5px; font-weight: 700; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      background: var(--bg);
+    }
+    .ref-table tr:last-child td { border-bottom: 0; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 99px;
+      font-size: 11.5px; font-weight: 600;
+    }
+    .pill.tier-creator  { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+    .pill.tier-pro      { background: rgba(139,92,246,0.16); color: #6D28D9; }
+    .pill.tier-business { background: rgba(245,158,11,0.18); color: #92400E; }
+    .pill.status-active { background: rgba(16,185,129,0.16); color: #065F46; }
+    .pill.status-pending{ background: rgba(245,158,11,0.16); color: #92400E; }
+    .pill.status-churned{ background: rgba(107,114,128,0.18); color: var(--fg-muted); }
+
+    /* PAYOUT NOTICE */
+    .payout-notice {
+      margin-top: 28px;
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 18px 20px;
+      display: flex; gap: 16px; align-items: center;
+      flex-wrap: wrap;
+    }
+    .payout-notice .ic {
+      width: 44px; height: 44px; border-radius: 11px;
+      background: rgba(99,102,241,0.14);
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+      flex-shrink: 0;
+    }
+    .payout-notice .body { flex: 1; min-width: 220px; }
+    .payout-notice .body b { font-weight: 600; }
+    .payout-notice .body .muted { color: var(--fg-muted); font-size: 13px; margin-top: 4px; }
+    .payout-notice .actions { display: flex; gap: 8px; }
+
+    .tos-row {
+      margin-top: 20px; font-size: 12.5px; color: var(--fg-muted);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .tos-row a { color: var(--brand-primary); text-decoration: none; font-weight: 600; }
+    .tos-row a:hover { text-decoration: underline; }
+
+    /* DARK MODE */
+    body.dark-mode { background: var(--bg-dark); color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .stat-card,
+    body.dark-mode .share-card,
+    body.dark-mode .ref-table-wrap,
+    body.dark-mode .payout-notice { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .ref-table th { background: #0B0F1E; color: #9CA3AF; }
+    body.dark-mode .ref-table th, body.dark-mode .ref-table td { border-color: #1F2937; }
+    body.dark-mode .share-card pre { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .ref-link { background: #0B0F1E; color: #A5B4FC; }
+    body.dark-mode .btn-sm { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+  </style>
+</head>
+<body data-tier="creator">
+
+  <header class="appbar" role="banner">
+    <a href="./index.html" class="brand">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+    <a href="./creator-public.html" class="btn-sm" style="margin-left:10px;text-decoration:none">tadaify.com/<b>alexandra</b></a>
+    <div class="spacer"></div>
+  </header>
+
+  <div class="layout">
+    <div data-partial="app-sidebar" data-active="affiliate" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+    <main class="content">
+      <div class="page-head">
+        <span class="badge">⚡ 30% recurring</span>
+        <h1>Affiliate program</h1>
+        <p class="sub">Earn <b>30% of every monthly subscription</b> from creators you refer to tadaify — for as long as they stay paid. No cap, no expiry. Payouts via Stripe Connect.</p>
+      </div>
+
+      <!-- Hero: referral link -->
+      <section class="ref-card" aria-label="Your referral link">
+        <h3 class="ttl">Your referral link</h3>
+        <p class="lead">Auto-generated from your handle. Anyone who signs up via this link is locked to you for life.</p>
+        <div class="ref-link-row">
+          <code class="ref-link" id="ref-link">https://tadaify.com/?ref=alexandra</code>
+          <button class="copy-btn" id="copy-btn" onclick="copyRef()">Copy link</button>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="stats-grid" aria-label="Earnings dashboard">
+        <div class="stat-card">
+          <div class="lbl">Lifetime earnings</div>
+          <div class="val"><span class="currency">$</span>1,284<span class="currency" style="font-size:14px">.50</span></div>
+          <div class="delta">+ $128 last 30 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="lbl">This month</div>
+          <div class="val"><span class="currency">$</span>128<span class="currency" style="font-size:14px">.00</span></div>
+          <div class="delta">8 active subscribers</div>
+        </div>
+        <div class="stat-card">
+          <div class="lbl">Pending payout</div>
+          <div class="val"><span class="currency">$</span>92<span class="currency" style="font-size:14px">.00</span></div>
+          <div class="delta muted">Released on the 1st</div>
+        </div>
+      </section>
+
+      <!-- Share kit -->
+      <section class="section" aria-label="Share kit">
+        <h2>Share kit</h2>
+        <p class="section-sub">Pre-written copy + downloadable graphics. Tap any text to copy.</p>
+
+        <div class="share-grid">
+          <div class="share-card">
+            <div class="head"><span class="ic">𝕏</span><span class="ttl">Tweet / X post</span></div>
+            <pre id="copy-tweet">Just moved my links to @tadaify and the analytics are next-level. Got a referral link if you want a fair shake on signup → https://tadaify.com/?ref=alexandra</pre>
+            <div class="actions">
+              <button class="btn-sm" onclick="copyText('copy-tweet', this)">Copy</button>
+              <button class="btn-sm primary" onclick="shareTwitter()">Post to X →</button>
+            </div>
+          </div>
+
+          <div class="share-card">
+            <div class="head"><span class="ic">📸</span><span class="ttl">Instagram bio / story</span></div>
+            <pre id="copy-ig">my link-in-bio is now on tadaify ✨ better analytics, better payouts, free forever for the basics → tadaify.com/?ref=alexandra</pre>
+            <div class="actions">
+              <button class="btn-sm" onclick="copyText('copy-ig', this)">Copy</button>
+              <button class="btn-sm" onclick="alert('Mockup — would open IG-story deep link')">Open in IG →</button>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:22px;font-size:14px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.04em">Downloadable graphics</h3>
+        <div class="graphics-grid">
+          <div class="gfx" onclick="alert('Mockup — would download 1080×1080 PNG')">
+            Refer creators<br>Earn 30% recurring
+            <span class="dl-ic" aria-hidden="true">↓</span>
+          </div>
+          <div class="gfx warm" onclick="alert('Mockup — would download 1080×1920 IG story PNG')">
+            tadaify.com/?ref=alexandra
+            <span class="dl-ic" aria-hidden="true">↓</span>
+          </div>
+          <div class="gfx green" onclick="alert('Mockup — would download 1200×630 OG card')">
+            Switch to tadaify<br>+ get 30% off forever
+            <span class="dl-ic" aria-hidden="true">↓</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Referrals table -->
+      <section class="section" aria-label="Recent referrals">
+        <h2>Recent referrals</h2>
+        <p class="section-sub">Last 8 sign-ups via your link. Anonymized email shown until they opt-in to share.</p>
+
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead>
+              <tr>
+                <th>Referred</th>
+                <th>Tier</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th style="text-align:right">Your share</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>m••••@gmail.com</td><td><span class="pill tier-pro">Pro</span></td><td>Apr 22, 2026</td><td><span class="pill status-active">Active</span></td><td style="text-align:right">$4.50/mo</td></tr>
+              <tr><td>k••••@protonmail.com</td><td><span class="pill tier-creator">Creator</span></td><td>Apr 20, 2026</td><td><span class="pill status-active">Active</span></td><td style="text-align:right">$1.50/mo</td></tr>
+              <tr><td>j••••@hey.com</td><td><span class="pill tier-business">Business</span></td><td>Apr 14, 2026</td><td><span class="pill status-active">Active</span></td><td style="text-align:right">$14.70/mo</td></tr>
+              <tr><td>n••••@outlook.com</td><td><span class="pill tier-creator">Creator</span></td><td>Apr 10, 2026</td><td><span class="pill status-active">Active</span></td><td style="text-align:right">$1.50/mo</td></tr>
+              <tr><td>p••••@gmail.com</td><td><span class="pill tier-pro">Pro</span></td><td>Apr 02, 2026</td><td><span class="pill status-pending">Trial</span></td><td style="text-align:right">—</td></tr>
+              <tr><td>v••••@icloud.com</td><td><span class="pill tier-creator">Creator</span></td><td>Mar 28, 2026</td><td><span class="pill status-active">Active</span></td><td style="text-align:right">$1.50/mo</td></tr>
+              <tr><td>z••••@gmail.com</td><td><span class="pill tier-pro">Pro</span></td><td>Mar 12, 2026</td><td><span class="pill status-active">Active</span></td><td style="text-align:right">$4.50/mo</td></tr>
+              <tr><td>l••••@gmail.com</td><td><span class="pill tier-creator">Creator</span></td><td>Feb 24, 2026</td><td><span class="pill status-churned">Cancelled</span></td><td style="text-align:right">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Payout notice -->
+      <div class="payout-notice">
+        <div class="ic">💸</div>
+        <div class="body">
+          <b>Payouts via Stripe Connect</b>
+          <div class="muted">Connect your bank in 2 minutes. Payouts run on the 1st of each month for the previous month's earnings (USD, EUR, GBP supported).</div>
+        </div>
+        <div class="actions">
+          <button class="btn-sm primary" onclick="alert('Mockup — would open Stripe Connect onboarding')">Connect Stripe →</button>
+        </div>
+      </div>
+
+      <p class="tos-row">
+        By participating you agree to the
+        <a href="./app-settings-billing.html#affiliate-terms">Affiliate Terms of Service</a>
+        — fair-use, no spam, 90-day attribution window.
+      </p>
+    </main>
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'alexandra';
+    var refUrl = 'https://tadaify.com/?ref=' + handle;
+    var refLink = document.getElementById('ref-link');
+    if (refLink) refLink.textContent = refUrl;
+
+    function copyRef() {
+      var btn = document.getElementById('copy-btn');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(refUrl).then(function () {
+          btn.textContent = 'Copied ✓';
+          btn.classList.add('copied');
+          setTimeout(function () { btn.textContent = 'Copy link'; btn.classList.remove('copied'); }, 1800);
+        });
+      } else {
+        alert('Your link: ' + refUrl);
+      }
+    }
+    function copyText(id, btn) {
+      var t = document.getElementById(id).textContent;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(t).then(function () {
+          var prev = btn.textContent;
+          btn.textContent = 'Copied ✓';
+          setTimeout(function () { btn.textContent = prev; }, 1500);
+        });
+      }
+    }
+    function shareTwitter() {
+      var t = document.getElementById('copy-tweet').textContent;
+      window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(t), '_blank');
+    }
+    window.copyRef = copyRef;
+    window.copyText = copyText;
+    window.shareTwitter = shareTwitter;
+  </script>
+</body>
+</html>
