@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>tadaify wordmark — variant F (mix)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #6366F1;
+    --secondary: #8B5CF6;
+    --warm: #F59E0B;
+    --bg: #F9FAFB;
+    --fg: #111827;
+    --muted: #6B7280;
+    --border: rgba(17,24,39,0.08);
+    --font-serif: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    padding: 56px 48px;
+    line-height: 1.5;
+  }
+  header {
+    max-width: 1100px;
+    margin: 0 auto 56px;
+    text-align: center;
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 900;
+    font-size: 2.25rem;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 1rem;
+    margin: 0 auto;
+    max-width: 640px;
+  }
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 56px 32px 32px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .card.dark { background: #0B0F1E; color: #F9FAFB; border-color: transparent; }
+  .card.gradient { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-color: transparent; }
+  .card .label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+  .card.dark .label, .card.gradient .label { color: rgba(255,255,255,0.72); }
+
+  .wordmark {
+    font-family: var(--font-serif);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    user-select: none;
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .wordmark .ta  { color: var(--primary); }
+  .wordmark .da  { color: var(--warm); }
+  .wordmark .ify { color: var(--fg); }
+  .wordmark .sep-dash { color: rgba(17,24,39,0.3); font-weight: 900; margin: 0 0.06em; }
+
+  .card.dark .wordmark .ify, .card.gradient .wordmark .ify { color: #F9FAFB; }
+  .card.dark .wordmark .ta, .card.gradient .wordmark .ta { color: #A5B4FC; }
+  .card.dark .wordmark .sep-dash, .card.gradient .wordmark .sep-dash { color: rgba(255,255,255,0.45); }
+
+  .size-hero   { font-size: 5rem; }
+  .size-nav    { font-size: 1.5rem; }
+  .size-xl     { font-size: 6.5rem; }
+
+  .card .note {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 24px;
+  }
+  .card.dark .note, .card.gradient .note { color: rgba(255,255,255,0.72); }
+
+  .mini-row {
+    max-width: 1100px;
+    margin: 40px auto 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .mini-row .tile {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-align: center;
+  }
+  .mini-row .tile.dark { background: #0B0F1E; border-color: transparent; }
+  .mini-row .tile.gradient { background: linear-gradient(135deg, var(--primary), var(--secondary)); border-color: transparent; }
+  .mini-row .mini-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .mini-row .tile.dark .mini-label, .mini-row .tile.gradient .mini-label { color: rgba(255,255,255,0.7); }
+
+  .comparison-row {
+    max-width: 1100px;
+    margin: 56px auto 0;
+    padding: 32px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .comparison-row h2 {
+    font-family: var(--font-serif);
+    font-weight: 800;
+    font-size: 1.25rem;
+    margin: 0 0 24px;
+    text-align: center;
+  }
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .comparison-grid .variant {
+    text-align: center;
+  }
+  .comparison-grid .v-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .comparison-grid .v-hero {
+    font-size: 3rem;
+  }
+
+  footer {
+    max-width: 1100px;
+    margin: 48px auto 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+</style>
+</head>
+<body>
+
+<div style="background:#F59E0B;color:#111827;font-weight:700;text-align:center;padding:12px 16px;font-size:0.9rem;letter-spacing:0.02em;">
+  ⚠ SUPERSEDED 2026-04-24 — This file documents variant F (<code>tada!ify</code>, one muted hyphen). Final locked wordmark is <strong>tada!ify</strong> (zero separators, DEC-WORDMARK-01). See <code>brand-lock.md §3</code>.
+</div>
+
+<header>
+  <h1>Wordmark — variant F (mix) — SUPERSEDED</h1>
+  <p>Historical exploration. Final wordmark: <strong>tada!ify</strong> (no hyphen, locked via DEC-WORDMARK-01 on 2026-04-24).</p>
+</header>
+
+<div class="grid">
+
+  <div class="card">
+    <div class="label">F · hero 80 px (dominant)</div>
+    <div class="wordmark size-hero">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+    <div class="note">Hyphen between ta and da (muted). "ify" sits right after "da!" with zero gap.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">F · XL 104 px (landing hero)</div>
+    <div class="wordmark size-xl">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+    <div class="note">At full-width landing scale.</div>
+  </div>
+
+  <div class="card gradient">
+    <div class="label">F · on brand gradient hero</div>
+    <div class="wordmark size-hero">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+    <div class="note">Against `linear-gradient(135deg, primary → secondary)`. `ify` flips to light, `ta` lifts to `#A5B4FC`.</div>
+  </div>
+
+  <div class="card dark">
+    <div class="label">F · dark mode</div>
+    <div class="wordmark size-hero">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+    <div class="note">Dark canvas `#0B0F1E` — same colour rules as theme-tokens.</div>
+  </div>
+
+</div>
+
+<div class="mini-row">
+  <div class="tile">
+    <div class="mini-label">Nav (24 px)</div>
+    <div class="wordmark size-nav">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+  </div>
+  <div class="tile gradient">
+    <div class="mini-label">Nav · gradient</div>
+    <div class="wordmark size-nav">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+  </div>
+  <div class="tile dark">
+    <div class="mini-label">Nav · dark</div>
+    <div class="wordmark size-nav">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+  </div>
+</div>
+
+<div class="comparison-row">
+  <h2>Head-to-head — A vs E vs F</h2>
+  <div class="comparison-grid">
+    <div class="variant">
+      <div class="v-label">A · tada!ify (two hyphens, current)</div>
+      <div class="wordmark v-hero">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="v-label">E · ta · da! · ify (middle dots)</div>
+      <div class="wordmark v-hero">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </div>
+    </div>
+    <div class="variant">
+      <div class="v-label">F · tada!ify (mix — new)</div>
+      <div class="wordmark v-hero">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Variant F: one muted hyphen between `ta` and `da!`, no separator after `!` — `ify` reads as the tail of the reveal, not as a separate syllable. Locked palette (#6366F1 / #F59E0B / #111827).
+</footer>
+
+</body>
+</html>

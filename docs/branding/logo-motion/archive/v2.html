@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tada!ify — Logo Motion v2</title>
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --primary:       #6366F1;
+      --secondary:     #8B5CF6;
+      --warm:          #F59E0B;
+      --warm-soft:     #FDE68A;
+      --bg:            #F9FAFB;
+      --fg:            #111827;
+      --fg-inv:        #F9FAFB;
+      --hero-gradient: linear-gradient(135deg, #6366F1, #8B5CF6);
+
+      /* Font */
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-display: 'Georgia', 'Times New Roman', serif;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      padding: 48px 24px 80px;
+    }
+
+    h1 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #6B7280;
+      margin-bottom: 32px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+      margin-bottom: 20px;
+    }
+    hr.divider {
+      border: none;
+      border-top: 1px solid #E5E7EB;
+      margin: 56px 0;
+    }
+
+    /* ============================================================
+       PAGE HEADER
+    ============================================================ */
+    .page-header {
+      max-width: 860px;
+      margin: 0 auto 64px;
+    }
+    .page-header p {
+      font-size: 0.875rem;
+      color: #6B7280;
+      line-height: 1.6;
+      max-width: 540px;
+    }
+
+    /* ============================================================
+       WORDMARK
+    ============================================================ */
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      user-select: none;
+    }
+    .wordmark .ta   { color: var(--primary); }
+    .wordmark .da   { color: var(--warm); }
+    .wordmark .ify  { color: var(--fg); }
+    .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+    .dark-strip .sep-dash { color: rgba(255, 255, 255, 0.4); margin: 0 0.06em; }
+
+    /* ============================================================
+       LOGO MARK — THE ORB PAIR
+       The entire mark uses a single SVG per instance.
+       We inject the animation via CSS custom props on a wrapper.
+    ============================================================ */
+
+    /*
+      ANIMATION SPEC
+      ─────────────────────────────────────────────────────────────
+      Total cycle: 4.2s   loop: infinite
+
+      The warm orb starts and ends at CENTER (cx=50%, cy=50%) over
+      the large purple orb. It then travels to 4 greeting points
+      around the perimeter, pausing ~250ms at each, before returning
+      to center and pausing ~600ms.
+
+      Greeting points (angle from 12-o'clock, clockwise):
+        GP1  11 o'clock  (top-left)     — acknowledges the left balcony
+        GP2   1 o'clock  (top-right)    — acknowledges the right balcony
+        GP3   3 o'clock  (stage right)  — acknowledges the side stalls
+        GP4   6 o'clock  (front)        — acknowledges center front row
+
+      Return: travels back up to center via a short inward arc.
+
+      The path is defined as percentage of the parent SVG viewBox
+      so it scales cleanly at every size.
+
+      Easing:
+        - travel legs: cubic-bezier(0.45, 0, 0.55, 1.0)  (smooth ease-in-out)
+        - pauses: step-start (instant hold at keyframe position)
+        - return-to-center: ease-in (comes home with finality)
+
+      Accessibility: @media (prefers-reduced-motion) collapses
+      the animation to display:none on motion, leaving static orb.
+    ============================================================ */
+
+    .logo-mark {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    /* The warm orb is a <circle> inside an SVG.
+       We drive it with a CSS animation on the `transform` attribute
+       via a @keyframes on the SVG element's style. */
+
+    .orb-warm-animated {
+      transform-origin: 50% 50%;
+      transform-box: fill-box;
+      animation: greet-crowd 4.2s cubic-bezier(0.45, 0, 0.55, 1.0) infinite;
+    }
+
+    @keyframes greet-crowd {
+      /* ── REST at center ──────────────────────────────── 0% → 10% */
+      0%   { transform: translate(0, 0); }
+      10%  { transform: translate(0, 0); }
+
+      /* ── Move to GP1 — top-left (11 o'clock) ─────────── 16% */
+      16%  { transform: translate(-28%, -30%); }
+      /* pause at GP1 */
+      22%  { transform: translate(-28%, -30%); }
+
+      /* ── Move to GP2 — top-right (1 o'clock) ─────────── 29% */
+      29%  { transform: translate(28%, -30%); }
+      /* pause at GP2 */
+      35%  { transform: translate(28%, -30%); }
+
+      /* ── Move to GP3 — stage right (3 o'clock) ──────── 42% */
+      42%  { transform: translate(36%, 0%); }
+      /* pause at GP3 */
+      47%  { transform: translate(36%, 0%); }
+
+      /* ── Move to GP4 — center front (6 o'clock) ─────── 56% */
+      56%  { transform: translate(0%, 32%); }
+      /* pause at GP4 */
+      62%  { transform: translate(0%, 32%); }
+
+      /* ── Return arc through center-left ─────────────── 72% */
+      72%  { transform: translate(-14%, 8%); }
+
+      /* ── Land at center ──────────────────────────────── 78% → 100% */
+      78%  { transform: translate(0, 0); }
+      100% { transform: translate(0, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .orb-warm-animated {
+        animation: none;
+      }
+    }
+
+    /* ============================================================
+       SCALE DEMO — SIZES
+    ============================================================ */
+    .sizes-grid {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 64px;
+      flex-wrap: wrap;
+    }
+
+    .size-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .size-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+    }
+
+    /* HERO */
+    .logo-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+    .logo-hero .wordmark {
+      font-size: 3rem;
+    }
+
+    /* NAV */
+    .logo-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-nav .wordmark {
+      font-size: 1.25rem;
+    }
+
+    /* FAVICON */
+    .logo-favicon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .favicon-note {
+      font-size: 0.6875rem;
+      color: #9CA3AF;
+      text-align: center;
+      max-width: 80px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       STILLS STRIP
+    ============================================================ */
+    .stills-section {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .stills-strip {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .still-frame {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .still-frame .still-time {
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+    }
+    .still-frame .still-desc {
+      font-size: 0.625rem;
+      color: #D1D5DB;
+      text-align: center;
+      max-width: 80px;
+      line-height: 1.4;
+    }
+
+    /* ============================================================
+       DARK PREVIEW STRIP
+    ============================================================ */
+    .dark-strip {
+      background: #0B0F1E;
+      border-radius: 16px;
+      padding: 40px;
+      display: flex;
+      align-items: flex-end;
+      gap: 64px;
+      flex-wrap: wrap;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .dark-strip .wordmark .ify {
+      color: #F9FAFB;
+    }
+    .dark-strip .size-label {
+      color: #4B5563;
+    }
+    .dark-strip .favicon-note {
+      color: #4B5563;
+    }
+
+    /* ============================================================
+       SPEC TABLE
+    ============================================================ */
+    .spec-table {
+      max-width: 860px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.8125rem;
+    }
+    .spec-table th {
+      text-align: left;
+      font-weight: 600;
+      color: #6B7280;
+      font-size: 0.6875rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 8px 16px 8px 0;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .spec-table td {
+      padding: 10px 16px 10px 0;
+      border-bottom: 1px solid #F3F4F6;
+      color: var(--fg);
+      vertical-align: top;
+    }
+    .spec-table td:first-child {
+      font-weight: 600;
+      color: var(--primary);
+      white-space: nowrap;
+      width: 120px;
+    }
+    .spec-table td:nth-child(2) {
+      width: 100px;
+      font-variant-numeric: tabular-nums;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PAGE HEADER
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="page-header">
+    <h1>tada!ify — Logo Motion v2</h1>
+    <h2>One definitive animation · Three scale contexts · Freeze-frame strip</h2>
+    <p>
+      The warm orb always starts and ends at center — the static brand position.
+      It travels to 4 greeting points (top-left balcony, top-right balcony,
+      stage-right stalls, center front row), pauses briefly at each, then
+      returns home with a gentle arc. Total cycle: 4.2 s, loops indefinitely.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       LIVE ANIMATION — THREE SIZES
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="sizes-grid">
+
+    <!-- HERO SIZE — 240px orb -->
+    <div class="size-block">
+      <div class="logo-hero">
+        <!-- SVG mark at ~240px -->
+        <svg class="logo-mark" width="240" height="240" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tada!ify logo">
+          <defs>
+            <radialGradient id="purpleOrbHero" cx="40%" cy="38%" r="60%">
+              <stop offset="0%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+            <radialGradient id="warmOrbHero" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </radialGradient>
+            <filter id="shadowHero" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#6366F1" flood-opacity="0.35"/>
+            </filter>
+            <filter id="warmGlowHero" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#F59E0B" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+          <!-- Large purple orb -->
+          <circle cx="50" cy="50" r="40" fill="url(#purpleOrbHero)" filter="url(#shadowHero)"/>
+          <!-- Small warm orb — animated -->
+          <circle class="orb-warm-animated" cx="50" cy="50" r="12" fill="url(#warmOrbHero)" filter="url(#warmGlowHero)"/>
+        </svg>
+        <!-- Wordmark — does NOT animate -->
+        <span class="wordmark" style="font-size:3rem">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </span>
+      </div>
+      <span class="size-label">Hero · 240px</span>
+    </div>
+
+    <!-- NAV SIZE — 48px orb -->
+    <div class="size-block">
+      <div class="logo-nav">
+        <svg class="logo-mark" width="48" height="48" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tada!ify logo">
+          <defs>
+            <radialGradient id="purpleOrbNav" cx="40%" cy="38%" r="60%">
+              <stop offset="0%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+            <radialGradient id="warmOrbNav" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </radialGradient>
+            <filter id="shadowNav">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#6366F1" flood-opacity="0.3"/>
+            </filter>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#purpleOrbNav)" filter="url(#shadowNav)"/>
+          <circle class="orb-warm-animated" cx="50" cy="50" r="12" fill="url(#warmOrbNav)"/>
+        </svg>
+        <span class="wordmark" style="font-size:1.25rem">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </span>
+      </div>
+      <span class="size-label">Nav · 48px</span>
+    </div>
+
+    <!-- FAVICON SIZE — 24px orb (rendered at 24px) -->
+    <div class="size-block">
+      <div class="logo-favicon">
+        <svg class="logo-mark" width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tada!ify favicon">
+          <defs>
+            <radialGradient id="purpleOrbFav" cx="40%" cy="38%" r="60%">
+              <stop offset="0%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+            <radialGradient id="warmOrbFav" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </radialGradient>
+          </defs>
+          <!-- At favicon size the warm orb is STATIC (no animation class) -->
+          <circle cx="50" cy="50" r="40" fill="url(#purpleOrbFav)"/>
+          <circle cx="50" cy="50" r="12" fill="url(#warmOrbFav)"/>
+        </svg>
+        <svg class="logo-mark" width="16" height="16" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="tada!ify favicon 16px">
+          <circle cx="50" cy="50" r="40" fill="#6366F1"/>
+          <circle cx="50" cy="50" r="14" fill="#F59E0B"/>
+        </svg>
+        <span class="favicon-note">Static at 16–32px. Motion disabled.</span>
+      </div>
+      <span class="size-label">Favicon · 32px / 16px</span>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       DARK MODE PREVIEW
+  ═══════════════════════════════════════════════════════════════ -->
+  <div style="max-width:860px;margin:0 auto 16px;">
+    <p class="section-label">Dark mode verification</p>
+  </div>
+  <div class="dark-strip">
+
+    <!-- HERO dark -->
+    <div class="size-block">
+      <div class="logo-hero">
+        <svg class="logo-mark" width="160" height="160" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pOrbD" cx="40%" cy="38%" r="60%">
+              <stop offset="0%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+            <radialGradient id="wOrbD" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </radialGradient>
+            <filter id="sdD">
+              <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#818CF8" flood-opacity="0.45"/>
+            </filter>
+            <filter id="wgD">
+              <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#F59E0B" flood-opacity="0.6"/>
+            </filter>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pOrbD)" filter="url(#sdD)"/>
+          <circle class="orb-warm-animated" cx="50" cy="50" r="12" fill="url(#wOrbD)" filter="url(#wgD)"/>
+        </svg>
+        <span class="wordmark" style="font-size:2.25rem;--fg:#F9FAFB">
+          <span class="ta">ta</span><span class="da">da!</span><span style="color:#F9FAFB">ify</span>
+        </span>
+      </div>
+      <span class="size-label">Dark · Hero</span>
+    </div>
+
+    <!-- NAV dark -->
+    <div class="size-block">
+      <div class="logo-nav">
+        <svg class="logo-mark" width="48" height="48" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pOrbDN" cx="40%" cy="38%" r="60%">
+              <stop offset="0%" stop-color="#818CF8"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+            <radialGradient id="wOrbDN" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A"/>
+              <stop offset="100%" stop-color="#F59E0B"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pOrbDN)"/>
+          <circle class="orb-warm-animated" cx="50" cy="50" r="12" fill="url(#wOrbDN)"/>
+        </svg>
+        <span class="wordmark" style="font-size:1.25rem">
+          <span class="ta">ta</span><span class="da">da!</span><span style="color:#F9FAFB">ify</span>
+        </span>
+      </div>
+      <span class="size-label">Dark · Nav</span>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FREEZE-FRAME STILLS STRIP — 6 keyframes
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="stills-section">
+    <p class="section-label">Freeze-frames (t=0% · 22% · 35% · 47% · 62% · 78%)</p>
+    <div class="stills-strip">
+
+      <!-- t=0% — CENTER (start / rest) -->
+      <div class="still-frame">
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg0" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+            <radialGradient id="wg0" cx="38%" cy="35%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pg0)"/>
+          <!-- warm orb at center -->
+          <circle cx="50" cy="50" r="12" fill="url(#wg0)"/>
+        </svg>
+        <span class="still-time">t = 0%</span>
+        <span class="still-desc">Rest at center</span>
+      </div>
+
+      <!-- t=22% — GP1 top-left (11 o'clock) -->
+      <!-- translate(-28%,-30%) of orb at cx=50,cy=50 → relative px at 80px svg = translate(-22.4,-24) → new cx=50-14=36, cy=50-15=35 (approx at viewBox 100) -->
+      <div class="still-frame">
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg1" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+            <radialGradient id="wg1" cx="38%" cy="35%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pg1)"/>
+          <!-- GP1: top-left balcony. translate(-28%,-30%) of radius 12 orb at center 50,50 -->
+          <!-- In viewBox units: dx = -28/100*100 = -28 → but transform-origin is center of orb. We offset the orb cx,cy instead -->
+          <!-- The animation uses translate on the orb itself (transform-origin fill-box center). In still, we place orb at offset position. -->
+          <!-- orb center starts at 50,50. translate(-28%,-30%) of the 100-unit viewBox = (-28,-30) -->
+          <circle cx="22" cy="20" r="12" fill="url(#wg1)"/>
+        </svg>
+        <span class="still-time">t = 22%</span>
+        <span class="still-desc">GP1: top-left balcony</span>
+      </div>
+
+      <!-- t=35% — GP2 top-right (1 o'clock) translate(28%,-30%) -->
+      <div class="still-frame">
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg2" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+            <radialGradient id="wg2" cx="38%" cy="35%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pg2)"/>
+          <circle cx="78" cy="20" r="12" fill="url(#wg2)"/>
+        </svg>
+        <span class="still-time">t = 35%</span>
+        <span class="still-desc">GP2: top-right balcony</span>
+      </div>
+
+      <!-- t=47% — GP3 stage-right (3 o'clock) translate(36%,0%) -->
+      <div class="still-frame">
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg3" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+            <radialGradient id="wg3" cx="38%" cy="35%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pg3)"/>
+          <circle cx="86" cy="50" r="12" fill="url(#wg3)"/>
+        </svg>
+        <span class="still-time">t = 47%</span>
+        <span class="still-desc">GP3: stage-right stalls</span>
+      </div>
+
+      <!-- t=62% — GP4 front (6 o'clock) translate(0%,32%) -->
+      <div class="still-frame">
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg4" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+            <radialGradient id="wg4" cx="38%" cy="35%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pg4)"/>
+          <circle cx="50" cy="82" r="12" fill="url(#wg4)"/>
+        </svg>
+        <span class="still-time">t = 62%</span>
+        <span class="still-desc">GP4: center front row</span>
+      </div>
+
+      <!-- t=78% — CENTER (returned home) -->
+      <div class="still-frame">
+        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="pg5" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+            <radialGradient id="wg5" cx="38%" cy="35%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#pg5)"/>
+          <circle cx="50" cy="50" r="12" fill="url(#wg5)"/>
+        </svg>
+        <span class="still-time">t = 78%</span>
+        <span class="still-desc">Return home, rest</span>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TIMING SPEC TABLE
+  ═══════════════════════════════════════════════════════════════ -->
+  <div style="max-width:860px;margin:0 auto 16px;">
+    <p class="section-label">Timing specification</p>
+  </div>
+  <table class="spec-table">
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Keyframes</th>
+        <th>Duration</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Rest at center</td>
+        <td>0% → 10%</td>
+        <td>~420ms</td>
+        <td>Static brand position. Warm orb rests at center, logo is readable as a static mark.</td>
+      </tr>
+      <tr>
+        <td>Travel → GP1</td>
+        <td>10% → 16%</td>
+        <td>~252ms</td>
+        <td>Warm orb moves to top-left (11 o'clock). Left balcony greeting.</td>
+      </tr>
+      <tr>
+        <td>Pause at GP1</td>
+        <td>16% → 22%</td>
+        <td>~252ms</td>
+        <td>Brief dwell — as if nodding to the left side of the house.</td>
+      </tr>
+      <tr>
+        <td>Travel → GP2</td>
+        <td>22% → 29%</td>
+        <td>~294ms</td>
+        <td>Swings across the top to top-right (1 o'clock). Right balcony greeting.</td>
+      </tr>
+      <tr>
+        <td>Pause at GP2</td>
+        <td>29% → 35%</td>
+        <td>~252ms</td>
+        <td>Nodding to the right side.</td>
+      </tr>
+      <tr>
+        <td>Travel → GP3</td>
+        <td>35% → 42%</td>
+        <td>~294ms</td>
+        <td>Swings down to stage-right (3 o'clock). Side stalls greeting.</td>
+      </tr>
+      <tr>
+        <td>Pause at GP3</td>
+        <td>42% → 47%</td>
+        <td>~210ms</td>
+        <td>Slight pause — side of house acknowledged.</td>
+      </tr>
+      <tr>
+        <td>Travel → GP4</td>
+        <td>47% → 56%</td>
+        <td>~378ms</td>
+        <td>Arcs down to front-center (6 o'clock). Center front row greeting — the big moment.</td>
+      </tr>
+      <tr>
+        <td>Pause at GP4</td>
+        <td>56% → 62%</td>
+        <td>~252ms</td>
+        <td>Longest meaningful pause — front-row connection.</td>
+      </tr>
+      <tr>
+        <td>Return arc</td>
+        <td>62% → 72%</td>
+        <td>~420ms</td>
+        <td>Orb sweeps back through center-left on a gentle return arc. Feels deliberate.</td>
+      </tr>
+      <tr>
+        <td>Land at center</td>
+        <td>72% → 78%</td>
+        <td>~252ms</td>
+        <td>Arrives home cleanly. Back to the locked static brand position.</td>
+      </tr>
+      <tr>
+        <td>Long rest</td>
+        <td>78% → 100%</td>
+        <td>~924ms</td>
+        <td>~1 second rest. Lets the static logo breathe before next loop. Total cycle = 4.2s.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+</html>

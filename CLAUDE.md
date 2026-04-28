@@ -180,3 +180,26 @@ Remix + Supabase (auth via GoTrue) + Stripe (subscriptions) + AWS S3/CloudFront 
 - **Tests:** Playwright (e2e) + Vitest (unit) + pgTAP (RPC). Unit tests run in CI (MANDATORY). Playwright: local only (no CI).
 - **Mockups:** `mockups/tadaify-mvp/` — file:// loadable, no external dependencies.
 - **Never commit directly to main** — always feature branch + PR.
+
+---
+
+## Documentation map
+
+**Entry point for all product research, decisions, architecture, and branding:**
+
+```
+docs/INDEX.md
+```
+
+Open `docs/INDEX.md` first in any session that needs product context. It maps every doc in the tree.
+
+Key pointers:
+- **Canonical functional spec** (all features + locked decisions): `docs/specs/functional-spec.md`
+- **Decision lookup table** (50 DEC-* entries, line refs into spec): `docs/decisions/INDEX.md`
+- **Branding (canonical)**: `docs/branding/brand-lock.md` + `docs/branding/theme-tokens.html`
+- **Architecture**: `docs/architecture/infra-v2.md`
+- **Pricing model**: `docs/pricing/bandwidth-based-model-v2.md`
+
+> Migration note (2026-04-28): all tadaify research previously in
+> `~/git/claude-startup-ideas/full-research/tadaify/` was moved here.
+> `docs/INDEX.md` is the single source of truth from now on.
