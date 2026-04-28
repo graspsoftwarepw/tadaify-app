@@ -1,76 +1,85 @@
 # Decision Index — tadaify
 
-Every `DEC-*` from `specs/functional-spec.md`, indexed for fast lookup.
-Full rationale lives in the spec; this is the navigation table.
+Auto-generated from `docs/decisions/*.md` frontmatter. Sorted by numeric id.
 
-Also includes DEC-* cited in `architecture/infra-v2.md`, `architecture/infra-cost-analysis.md`,
-and `pricing/bandwidth-based-model-v2.md`.
+Each file contains: frontmatter (id, aliases, status, date, supersedes, superseded_by, topics)
++ body sections (Context, Decision, Alternatives, Consequences, Provenance).
 
----
-
-| ID | Status | Title | Spec ref |
-|---|---|---|---|
-| DEC-033 | locked | Self-referral block — F-125 is opt-in growth block, NOT "Powered by tadaify" watermark. AP-001 hard-locked. | `specs/functional-spec.md` L1486 |
-| DEC-035 | locked 2026-04-24 | Cloudflare-first architecture. Edge + custom domains + media + hot analytics = Cloudflare Workers, R2, Pages, Cloudflare-for-SaaS, Analytics Engine. Central brain = Supabase. AWS = S3 cold + Athena + Glue only. | `specs/functional-spec.md` L19, L1353 |
-| DEC-036 | locked 2026-04-24 | USD currency. All prices in USD. EU creators see local-currency display via F-073 but plan SKU is USD. | `specs/functional-spec.md` L20, L1354 |
-| DEC-037 | superseded by DEC-083 | 4-tier flat structure: Free $0 / Creator $5/mo / Pro $15/mo / Business $49/mo. 0% platform fees on every tier forever. Superseded by DEC-083 (2026-04-28). | `specs/functional-spec.md` L21, L1355 |
-| DEC-083 | superseded by DEC-279 (same-day 2026-04-28) | Pricing revised: Creator $8/mo / Pro $19/mo (supersedes DEC-037 $5/$15). Business $49/mo unchanged. Rationale: Phase-A landing flagship sections were already designed at $8/$19 (DEC-274 user answer); aligning canonical pricing avoids contradicting the rendered marketing surface. DEC-274 answer=2. **Superseded same-day by DEC-279 ($7.99/$19.99).** | `specs/functional-spec.md` §Pricing, `mockups/tadaify-mvp/landing.html` L1578 |
-| DEC-279 | locked 2026-04-28 | Pricing: Creator $7.99/mo, Pro $19.99/mo, extra-domain $1.99/mo (supersedes DEC-083 + DEC-PRICELOCK-02 domain price). User directive — final .99 pricing for landing/marketing alignment. Annual: Creator $95.88, Pro $239.88, Free+domain $23.88. | `specs/functional-spec.md` §DEC-279 |
-| DEC-038 | locked | Custom domain included in Creator tier (1 domain built per DEC-038). | `specs/functional-spec.md` L638 |
-| DEC-043 | locked 2026-04-24 | "Everything free" gating model. Every product feature is Free. Pricing differentiation: custom domain add-ons (~97% margin) + Pro power features + Business agency features. | `specs/functional-spec.md` L22, L1480 |
-| DEC-AI-FEATURES-ROADMAP-01 | locked 2026-04-25 | Text-only AI scope (answer A): theme matcher + bio rewrite (F-AI-BIO-REWRITE-001) + block copy suggest (F-AI-COPY-SUGGEST-001). Image generation deferred. | `specs/functional-spec.md` L1524 |
-| DEC-AI-QUOTA-LADDER-01 | locked 2026-04-25 | AI quota (answer B): Free 5/mo / Creator 20/mo / Pro 100/mo / Business unlimited. Unified shared bucket across all AI features. | `specs/functional-spec.md` L1523 |
-| DEC-ANIMATIONS-SPLIT-01 | locked 2026-04-25 | Animations sub-tab: 2 sections (answer A) — Entrance (page + block + hover, runs once) + Ambient (always-on overlay: 10 effects × density/speed/color). Third section: Accessibility footer. | `specs/functional-spec.md` L1525 |
-| DEC-ANTI-001 | locked | No "Powered by tadaify" footer on ANY tier. Not a paid unlock. Hard-locked. | `specs/functional-spec.md` L1491 |
-| DEC-ANTI-002 | locked | 0% platform fees contractually locked. Published on Trust Center. Cannot be raised mid-subscription. | `specs/functional-spec.md` L1492 |
-| DEC-ANTI-003 | locked | F-UPSELL-004 does NOT pre-select paid radio. Default stays Free. Badge-only recommendation. | `specs/functional-spec.md` L1493 |
-| DEC-ANTI-004 | locked | F-191a Plain-Language Content Policy + F-191b Creator Safeguard = both MVP. | `specs/functional-spec.md` L1494 |
-| DEC-ANTI-005 | locked | F-180a one-click cancel. No multi-step survey. No retention modal cascade. | `specs/functional-spec.md` L1495 |
-| DEC-ANTI-006 | locked | Trial revert NEVER deletes data. Trial mechanism removed entirely per DEC-TRIAL-01. | `specs/functional-spec.md` L1496 |
-| DEC-ANTI-007 | locked | T+14 days max payout SLA. Published on tadaify.com/trust/payouts. | `specs/functional-spec.md` L1497 |
-| DEC-ANTI-008 | locked | Creator page stays live during dunning. No public shame overlay. Ever. | `specs/functional-spec.md` L1498 |
-| DEC-ANTI-009 | locked | Feature-preservation: tier gates only move cheaper for existing users. Grandparent via `user_features`. | `specs/functional-spec.md` L1499 |
-| DEC-ANTI-010 | locked | "We never sell creator or visitor data; never share with LLMs for training." Published on Trust Center. | `specs/functional-spec.md` L1500 |
-| DEC-ANTI-011 | locked | F-PREVIEW-004 disclosure strip is TOP of preview page; mandatory; one-click remove form; admin cannot disable. | `specs/functional-spec.md` L1501 |
-| DEC-ANTI-012 | locked | F-058a EU visitor cookie consent banner. Granular (not bare "Got it"). MVP. | `specs/functional-spec.md` L1502 |
-| DEC-ANTI-013 | locked | Editor progressive disclosure: 6-block "Getting Started" default. F-020 §4a. | `specs/functional-spec.md` L1503 |
-| DEC-ANTI-014 | locked | Double-opt-in email mandatory. Inherited from linkofme subscribe/confirm stack. | `specs/functional-spec.md` L1504 |
-| DEC-ANTI-015 | locked | No persistent upgrade banner in editor chrome. F-UPSELL-003 chips = 1/session hard cap, dismissible, informational only. | `specs/functional-spec.md` L1505 |
-| DEC-APIPAGES-01 | locked 2026-04-25 | Platform OAuth import rejected (answer C). F-PRO-OAUTH-IMPORT permanently removed from roadmap. Creator API (F-PRO-CREATOR-API-001) is the better investment. | `specs/functional-spec.md` L1519 |
-| DEC-CREATOR-API-01 | locked 2026-04-25 | Creator API for Pro tier (answer A): OpenAPI 3.0, per-user keys, `@tadaify/mcp` npm MCP server, custom GPT template, agent-recipe gallery, rate limit 1000 req/h Pro. | `specs/functional-spec.md` L1127, L1520 |
-| DEC-CUSTOM-DOMAIN-NAV-01 | locked 2026-04-25 | Custom Domain as 6th sidebar item (answer A) after Settings. Globe SVG + "Domain" label + "soon" pill. Placeholder panel referencing $1.99/mo add-on per DEC-PRICELOCK-02/DEC-279. | `specs/functional-spec.md` L1529 |
-| DEC-DNS-01 | locked 2026-04-24 | Cloudflare authoritative DNS for `tadaify.com`. OVH holds registrar ownership; nameservers point to Cloudflare. Route 53 not used for `tadaify.com`. | `specs/functional-spec.md` L79, L1351 |
-| DEC-DOMAIN-01 | locked 2026-04-24 | Single-domain architecture: everything under `tadaify.com/`. Creator URL = `tadaify.com/<handle>`. Dashboard at `tadaify.com/app`. Admin at `tadaify.com/admin`. No subdomain variants. | `specs/functional-spec.md` L75, L1350 |
-| DEC-FRAMEWORK-01 | locked 2026-04-24 | Full-stack framework is Remix (React Router 7) on Cloudflare Workers runtime. SSR for public pages, CSR for authenticated dashboard. Native `@remix-run/cloudflare` adapter. | `specs/functional-spec.md` L77, L1352 |
-| DEC-INFRA-MINIMAL-01 | locked | AWS usage minimal (invisible backend only): S3 cold Parquet + Athena + Glue + SNS/SES. ~100-150 lines Terraform total (vs ~500 in standard template). | `specs/functional-spec.md` L1555 |
-| DEC-LAYOUT-01 | locked 2026-04-25 | Grid layout ships in MVP (answer A). `pages.layout_mode='stack'|'grid'`. `block_placements` table with col/row/span_cols/span_rows/mobile_order. All tiers. | `specs/functional-spec.md` L1108, L1508 |
-| DEC-MKT-B-v2 | locked | Preview generator is admin-only tool at `/admin/marketing/preview-generator`. Not a public endpoint. Generated previews served at `preview.tadaify.com/<slug>`. | `specs/functional-spec.md` L351, L1483 |
-| DEC-MKT-C | locked | Marketing language: EN-only at launch. PL copy, PL-culture template names, PL outreach deferred to Y2+. | `specs/functional-spec.md` L1484 |
-| DEC-MULTIPAGE-01 | locked 2026-04-25 | Multi-page accounts confirmed for post-MVP (Q+1, Creator-tier unlock). Tier ladder Free 1 / Creator 5 / Pro 20 / Business unlimited. MVP must be forward-compatible: blocks need `page_id` FK, URL routes use `/<handle>/<slug>`. | `specs/functional-spec.md` L128, L1094 |
-| DEC-PINNED-MSG-01 | locked 2026-04-25 | Pinned message: adopt primitive (answer A). Toggleable fading line above profile card on Page tab. Max 80 chars. Dismissible by visitor. | `specs/functional-spec.md` L1528 |
-| DEC-PRICELOCK-01 | locked 2026-04-25 | Price-lock-for-life (supersedes DEC-SYN-06). Paid subscription price locked forever for uninterrupted subscriptions. New prices apply only to new signups or re-subscribers after cancellation. Brand commitment. | `specs/functional-spec.md` L124, L1489 |
-| DEC-PRICELOCK-02 | locked 2026-04-25 (domain price superseded by DEC-279) | $1.99/mo domain add-on universal across all tiers (was $2/mo — superseded by DEC-279 2026-04-28). Pro tier simplified to 1 custom domain (was 3). Business: 10 included (was unlimited). Pro differentiator = 8 power features, not domain count. | `specs/functional-spec.md` L126, L1490 |
-| DEC-Q5-A | locked | Full Business tier at MVP. All 5 F-BIZ units ship MVP. No stripped-down beta. | `specs/functional-spec.md` L1044, L1360, L1485 |
-| DEC-Q5-C | locked | Preview parser: Linktree-only at MVP. Beacons/Stan/Bio.link parsers at M+0.5. | `specs/functional-spec.md` L353, L1361, L1486 |
-| DEC-SOCIAL-01 | locked 2026-04-24 | Social-import on onboarding switched from OAuth auto-import to handle-based link generation. F-004 rewritten, F-005 merged into F-004. OAuth deferred to F-PRO-OAUTH-IMPORT (Pro tier, §18.9). | `specs/functional-spec.md` L330, L1358 |
-| DEC-SYN-01 | locked | Progressive signup — no phone field at signup (AP-021 GREEN). | `specs/functional-spec.md` L1401 |
-| DEC-SYN-04 | locked | Hero layouts: 5 defaults, hero-first rendering (F-151). | `specs/functional-spec.md` L727 |
-| DEC-SYN-05 | locked | Creator Safeguard: 48h warning + human appeal + prepaid refund contract. Codified as F-191b. | `specs/functional-spec.md` L840, L1487 |
-| DEC-SYN-06 | superseded by DEC-PRICELOCK-01 | 3-year price lock at signup rate + fee lock. Codified as F-172a, F-TRUST-002/003/004. Superseded by DEC-PRICELOCK-01. | `specs/functional-spec.md` L133, L1488 |
-| DEC-TRIAL-01 | locked 2026-04-24 | No Pro trial mechanism. Replaced by: transparent feature preview with lock badge + 30-day money-back guarantee + subtle upsell (F-UPSELL-001..006). Removes AP-017. | `specs/functional-spec.md` L272, L1357, L1482 |
-| DEC-WALLPAPER-ANIM-01 | locked 2026-04-25 | Background stays static (Fill/Gradient/Blur/Pattern/Image/Video). All motion lives in Animations > Ambient (answer C). | `specs/functional-spec.md` L1526 |
+Full rationale lives in the per-file record. This table is the navigation layer.
 
 ---
 
-## Additional DEC-* from architecture / pricing docs
-
-| ID | File | Brief |
-|---|---|---|
-| DEC-035 | `architecture/infra-v2.md` | Cloudflare-first (cross-ref with spec) |
-| DEC-INFRA-MINIMAL-01 | `architecture/infra-v2.md` | Minimal AWS footprint for tadaify |
-| DEC-PRICELOCK-01/02 | `pricing/bandwidth-based-model-v2.md` | Domain add-on pricing + price-lock model |
+| ID (numeric) | Aliases | Status | Title | Topics | File |
+|---|---|---|---|---|---|
+| 0001 | DEC-DOMAIN-01 | accepted | Single-domain architecture: everything under `tadaify.com/` | [architecture, url, domain, routing] | [0001-single-domain-architecture.md](0001-single-domain-architecture.md) |
+| 0002 | DEC-DNS-01 | accepted | Cloudflare authoritative DNS for `tadaify.com` | [dns, cloudflare, infrastructure] | [0002-cloudflare-authoritative-dns.md](0002-cloudflare-authoritative-dns.md) |
+| 0003 | DEC-FRAMEWORK-01 | accepted | Remix (React Router 7) on Cloudflare Workers runtime | [framework, ssr, cloudflare, remix] | [0003-remix-cloudflare-workers-framework.md](0003-remix-cloudflare-workers-framework.md) |
+| 0004 | DEC-035 | accepted | Cloudflare-first architecture | [architecture, cloudflare, infrastructure] | [0004-cloudflare-first-architecture.md](0004-cloudflare-first-architecture.md) |
+| 0005 | DEC-036 | accepted | USD currency — all plan SKUs in USD | [pricing, currency, localization] | [0005-usd-currency.md](0005-usd-currency.md) |
+| 0006 | DEC-037 | **superseded** by 0009 | 4-tier structure: Free $0 / Creator $5 / Pro $15 / Business $49 | [pricing, tiers] | [0006-four-tier-structure.md](0006-four-tier-structure.md) |
+| 0007 | DEC-043 | accepted | "Everything free" gating model | [pricing, feature-gating, free-tier] | [0007-everything-free-gating.md](0007-everything-free-gating.md) |
+| 0008 | DEC-083 | **superseded** by 0009 | Pricing: Creator $8/mo, Pro $19/mo (interim) | [pricing, tiers] | [0008-pricing-interim-8-19.md](0008-pricing-interim-8-19.md) |
+| 0009 | DEC-279 | accepted | Final pricing: Creator $7.99/mo, Pro $19.99/mo, domain $1.99/mo | [pricing, tiers, domain-addon] | [0009-pricing-final-7.99-19.99.md](0009-pricing-final-7.99-19.99.md) |
+| 0010 | DEC-TRIAL-01 | accepted | No Pro trial — transparent preview + 30-day money-back | [onboarding, trials, ux] | [0010-no-pro-trial-mechanism.md](0010-no-pro-trial-mechanism.md) |
+| 0011 | DEC-SOCIAL-01 | accepted | Social-import: handle-based link generation (not OAuth) | [onboarding, social, oauth] | [0011-social-import-handle-based.md](0011-social-import-handle-based.md) |
+| 0012 | DEC-MKT-B-v2 | accepted | Preview generator is admin-only — not a public endpoint | [marketing, preview-generator] | [0012-preview-generator-admin-only.md](0012-preview-generator-admin-only.md) |
+| 0013 | DEC-MKT-C | accepted | EN-only marketing at launch; PL deferred to Y2+ | [marketing, localization] | [0013-en-only-marketing-at-launch.md](0013-en-only-marketing-at-launch.md) |
+| 0014 | DEC-Q5-A | accepted | Full Business tier at MVP — all 5 F-BIZ units | [business-tier, mvp-scope] | [0014-full-business-tier-at-mvp.md](0014-full-business-tier-at-mvp.md) |
+| 0015 | DEC-Q5-C | accepted | Linktree-only preview parser at MVP; others at M+0.5 | [preview-generator, mvp-scope] | [0015-linktree-only-preview-parser-mvp.md](0015-linktree-only-preview-parser-mvp.md) |
+| 0016 | DEC-033 | accepted | Self-referral block (F-125) is opt-in, NOT a watermark | [anti-patterns, branding, growth] | [0016-self-referral-block-not-watermark.md](0016-self-referral-block-not-watermark.md) |
+| 0017 | DEC-038 | accepted | Custom domain included in Creator tier (1 domain) | [custom-domain, creator-tier, pricing] | [0017-custom-domain-included-creator.md](0017-custom-domain-included-creator.md) |
+| 0018 | DEC-INFRA-MINIMAL-01 | accepted | Minimal AWS footprint — S3 cold analytics + Athena + Glue | [infrastructure, aws, terraform] | [0018-minimal-aws-footprint.md](0018-minimal-aws-footprint.md) |
+| 0019 | DEC-SYN-01 | accepted | Progressive signup — no phone field (AP-021) | [onboarding, signup] | [0019-progressive-signup-no-phone.md](0019-progressive-signup-no-phone.md) |
+| 0020 | DEC-SYN-04 | accepted | Hero layouts: 5 defaults, hero-first rendering | [customization, hero, theming] | [0020-hero-layouts-five-defaults.md](0020-hero-layouts-five-defaults.md) |
+| 0021 | DEC-SYN-05 | accepted | Creator Safeguard: 48h warning + human appeal + prepaid refund | [moderation, trust] | [0021-creator-safeguard-48h-warning.md](0021-creator-safeguard-48h-warning.md) |
+| 0022 | DEC-SYN-06 | **superseded** by 0027 | 3-year price lock at signup rate (superseded by lifetime lock) | [pricing, price-lock] | [0022-price-lock-3yr-superseded.md](0022-price-lock-3yr-superseded.md) |
+| 0023 | DEC-ANTI-001, DEC-ANTI-002, DEC-ANTI-003, DEC-ANTI-004, DEC-ANTI-005, DEC-ANTI-006, DEC-ANTI-007, DEC-ANTI-008, DEC-ANTI-009, DEC-ANTI-010, DEC-ANTI-011, DEC-ANTI-012, DEC-ANTI-013, DEC-ANTI-014, DEC-ANTI-015 | accepted | Anti-pattern platform trust commitments (15 hard locks) | [anti-patterns, trust, branding, pricing, ux] | [0023-anti-patterns-platform-trust.md](0023-anti-patterns-platform-trust.md) |
+| 0024 | DEC-MULTIPAGE-01 | accepted | Multi-page confirmed for Q+1; MVP is forward-compat | [multi-page, mvp-scope, pages] | [0024-multi-page-post-mvp.md](0024-multi-page-post-mvp.md) |
+| 0025 | DEC-LAYOUT-01 | accepted | Grid layout ships in MVP — `pages.layout_mode='stack'\|'grid'` | [editor, grid, layout] | [0025-grid-layout-ships-mvp.md](0025-grid-layout-ships-mvp.md) |
+| 0026 | DEC-APIPAGES-01 | accepted | Platform OAuth import permanently rejected — Creator API is better | [api, oauth, integrations] | [0026-platform-oauth-import-rejected.md](0026-platform-oauth-import-rejected.md) |
+| 0027 | DEC-PRICELOCK-01 | accepted | Price-lock-for-life — paid price locked forever for uninterrupted subs | [pricing, price-lock, trust] | [0027-price-lock-for-life.md](0027-price-lock-for-life.md) |
+| 0028 | DEC-PRICELOCK-02 | **superseded** by 0009 (domain price) | Universal $1.99/mo domain add-on across all tiers | [pricing, custom-domain, domain-addon] | [0028-domain-addon-pricing.md](0028-domain-addon-pricing.md) |
+| 0029 | DEC-CREATOR-API-01 | accepted | Creator API for Pro: OpenAPI 3.0 + `@tadaify/mcp` MCP server | [api, pro-tier, mcp, openapi] | [0029-creator-api-pro-tier.md](0029-creator-api-pro-tier.md) |
+| 0030 | DEC-AI-QUOTA-LADDER-01 | accepted | AI quota: unified bucket Free 5 / Creator 20 / Pro 100 / Biz unlimited | [ai, quota, pricing] | [0030-ai-quota-unified-ladder.md](0030-ai-quota-unified-ladder.md) |
+| 0031 | DEC-AI-FEATURES-ROADMAP-01 | accepted | Text-only AI scope: theme matcher + bio rewrite + copy suggest | [ai, mvp-scope, features] | [0031-ai-text-only-scope.md](0031-ai-text-only-scope.md) |
+| 0032 | DEC-ANIMATIONS-SPLIT-01 | accepted | Animations sub-tab: 2 sections — Entrance + Ambient | [animations, customization, ux] | [0032-animations-two-sections.md](0032-animations-two-sections.md) |
+| 0033 | DEC-WALLPAPER-ANIM-01 | accepted | Background stays static — all motion in Animations > Ambient | [animations, background] | [0033-background-stays-static.md](0033-background-stays-static.md) |
+| 0034 | DEC-PINNED-MSG-01 | accepted | Pinned message: toggleable fading line above profile card | [features, profile, ux] | [0034-pinned-message-primitive.md](0034-pinned-message-primitive.md) |
+| 0035 | DEC-CUSTOM-DOMAIN-NAV-01 | accepted | Custom Domain as 6th sidebar item — globe SVG + "Domain" + "soon" | [ux, navigation, custom-domain] | [0035-custom-domain-nav-6th-sidebar.md](0035-custom-domain-nav-6th-sidebar.md) |
+| 0036 | DEC-073 | accepted | Billing: hybrid in-app summary + Stripe Portal for invoices | [billing, stripe, ux] | [0036-billing-hybrid-stripe-portal.md](0036-billing-hybrid-stripe-portal.md) |
+| 0037 | DEC-074 | accepted | Handle rename: 30-day redirect to new handle URL | [url-routing, handles, ux] | [0037-handle-redirect-30day-grace.md](0037-handle-redirect-30day-grace.md) |
+| 0038 | DEC-075 | accepted | Cookieless unique visitors: daily salt (Plausible-style) — marketing pillar #1 | [analytics, privacy, insights] | [0038-cookieless-unique-visitor-daily-salt.md](0038-cookieless-unique-visitor-daily-salt.md) |
+| 0039 | DEC-076 | accepted | Insights gating: honest Cat A/B/C classification — no fake margin | [analytics, insights, gating] | [0039-insights-gating-honest-cat-abc.md](0039-insights-gating-honest-cat-abc.md) |
+| 0040 | DEC-077 | accepted | Click event coverage: every interaction at all tiers | [analytics, click-tracking] | [0040-click-event-coverage-all-tiers.md](0040-click-event-coverage-all-tiers.md) |
+| 0041 | DEC-078 | accepted | Retention windows: D1 rollups forever + UI gates query window by tier | [analytics, data-retention] | [0041-retention-windows-d1-rollups.md](0041-retention-windows-d1-rollups.md) |
+| 0042 | DEC-079 | accepted | Unique visitors: per-day with tooltip; aggregates show pageviews/sessions | [analytics, insights, ux, privacy] | [0042-unique-visitors-per-day-tooltip.md](0042-unique-visitors-per-day-tooltip.md) |
+| 0043 | DEC-080 | accepted | API access: Pro 100 req/h + Business 1000 req/h + Parquet R2 — marketing pillar #2 | [api, analytics, insights] | [0043-api-access-pro-100-business-1000.md](0043-api-access-pro-100-business-1000.md) |
+| 0044 | DEC-081 | accepted | Research SPIKE accepted — dispatch 4 insights mockup stories | [research, process] | [0044-research-spike-accepted.md](0044-research-spike-accepted.md) |
+| 0045 | DEC-082 | accepted | Polling architecture for Pro live-view — no Durable Objects push | [analytics, architecture, polling] | [0045-polling-architecture-no-do-for-pro.md](0045-polling-architecture-no-do-for-pro.md) |
+| 0046 | DEC-083-insights | **superseded** by 0009 (pricing values) | Pro $19/mo + Business $49/mo with 5 handles + 10 team members | [pricing, business-tier, insights] | [0046-insights-pro-business-tier-pricing.md](0046-insights-pro-business-tier-pricing.md) |
 
 ---
 
-*This index was auto-generated by grepping `specs/functional-spec.md`. Last updated: 2026-04-28.*
-*For full rationale on any decision, open the spec and search for the DEC-ID.*
+## Supersession chains
+
+| Chain | Files |
+|---|---|
+| Tier pricing | `0006` (DEC-037, $5/$15) → `0008` (DEC-083, $8/$19) → `0009` (DEC-279, $7.99/$19.99) |
+| Domain add-on price | `0028` (DEC-PRICELOCK-02, $2/mo) → `0009` (DEC-279, $1.99/mo) |
+| Price-lock scope | `0022` (DEC-SYN-06, 3-year) → `0027` (DEC-PRICELOCK-01, lifetime) |
+| Pro live-view architecture | `0039` DEC-076 Option 9 (originally DO+SSE) → corrected by `0045` DEC-082 (polling) |
+
+---
+
+## Notes
+
+- `docs/decisions/insights-2026-04.md` kept as historical log alongside per-file records;
+  it is the durable transcript of the 2026-04-26 insights decisions session.
+- DEC-DOC-01 through DEC-DOC-17 (research-derived orchestrator DECs) are NOT in tadaify
+  scope — they live in `orchestrator/` and `claude-reports/`.
+- DEC-274 is an orchestrator-side decision (user answered a pricing question); not a
+  tadaify-scoped DEC — omitted from this index.
+- DEC-OPT-BADGE is referenced in the spec but has no full body documented; it is a
+  minor implementation note about the optional support badge in footer — not a standalone DEC.
+
+*Last updated: 2026-04-28 — migrated from flat table to per-file MADR records per DEC-DOC-01 + DEC-DOC-02.*

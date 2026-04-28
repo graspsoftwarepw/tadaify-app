@@ -121,46 +121,15 @@ Pricing:
 | Pro | $19.99/mo | 1 custom domain included. Extra domains via universal $1.99/mo add-on. 8 power features (§18): unlimited analytics, **100 AI uses/mo**, A/B testing, Creator API + MCP server (OpenAPI 3.0 + `@tadaify/mcp` npm + custom GPT template), advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO tools; 365d analytics; 12h support. Pages: **20** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
 | Business | $49/mo | 10 custom domains included (agency — manage multiple client pages from one account). Extra domains via universal $1.99/mo add-on. Agency sub-accounts + white-label + 4h SLA; all-time analytics; **unlimited AI**. Pages: **unlimited** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
 
-> **2026-04-25 — DEC-PRICELOCK-01 applied:** price-lock-for-life is a brand commitment, not a promotion. The prior 3-year windowed lock (DEC-SYN-06 / F-172a) is superseded — the lock is now perpetual for uninterrupted subscriptions. Cancellation + re-subscription triggers then-current price. See `brand-lock.md §9 (Pricing commitments — locked)`.
+**DEC-PRICELOCK-01** (numeric 0027) — price-lock-for-life — see [docs/decisions/0027-price-lock-for-life.md](../decisions/0027-price-lock-for-life.md)
 
-> **2026-04-25 — DEC-PRICELOCK-02 applied:** $1.99/mo domain add-on universalised across all tiers (Free / Creator / Pro / Business) — never frame it as Free-tier-only. Pro tier simplified to 1 custom domain (was 3); multi-domain is a Business/agency need. Business changed from "Unlimited" to 10 domains (agency use). Pro-vs-Creator differentiator now: unlimited analytics retention, 200 AI/mo, A/B testing, advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO. See `F-DOMAIN-ADDON-001` and `brand-lock.md §9`. **Domain price revised to $1.99/mo by DEC-279 2026-04-28 (supersedes $2/mo).**
+**DEC-PRICELOCK-02** (numeric 0028, domain price superseded by DEC-279) — universal domain add-on — see [docs/decisions/0028-domain-addon-pricing.md](../decisions/0028-domain-addon-pricing.md)
 
-> **2026-04-25 — DEC-MULTIPAGE-01 applied:** multi-page accounts confirmed for post-MVP (Q+1, Creator-tier unlock). Tier ladder Free 1 / Creator 5 / Pro 20 / Business unlimited. MVP stories (F-LANDING-001, F-FULLFLOW-001) MUST be forward-compatible: blocks need a `page_id` FK, URL routes use `/<handle>/<slug>` pattern. See `F-MULTIPAGE-001` (§20) and `docs/research/multi-page-grid-and-templates.md`.
+**DEC-MULTIPAGE-01** (numeric 0024) — multi-page post-MVP, forward-compat MVP — see [docs/decisions/0024-multi-page-post-mvp.md](../decisions/0024-multi-page-post-mvp.md)
 
-### DEC-083 — Pricing: Creator $8/mo, Pro $19/mo (supersedes DEC-037) — **STATUS: superseded by DEC-279 same-day**
+**DEC-083** (numeric 0008) — superseded same-day — see [docs/decisions/0008-pricing-interim-8-19.md](../decisions/0008-pricing-interim-8-19.md)
 
-> **2026-04-28 — DEC-083 locked.** Pricing revised: Creator **$8/mo**, Pro **$19/mo**. Business $49/mo unchanged. Free $0 unchanged.
->
-> **Rationale (DEC-274 user answer, option 2):** The Phase-A landing flagship sections ("Most Generous Free", comparison tables) were already speculatively written and rendered at $8/$19 in `mockups/tadaify-mvp/landing.html` L1578. Reverting those to $5/$15 would require updating all Phase-A marketing copy AND the mockup, contradicting the approved visual surface. Aligning the canonical spec to the rendered mockup is the cheaper path with fewer user-facing inconsistencies. The competitive framing ("Linktree Premium on Free, forever") remains valid at $8/$19 — Linktree Pro is $12, Linktree Premium is $30; Creator $8 still undercuts the premium tier significantly.
->
-> **Supersedes:** DEC-037 (locked 2026-04-24, Creator $5/mo / Pro $15/mo). DEC-037 row in `docs/decisions/INDEX.md` marked `superseded by DEC-083`.
->
-> **Price-lock contract:** DEC-PRICELOCK-01 applies unchanged — anyone who subscribes at $8 or $19 after this lock date pays that price for life (uninterrupted subscriptions). Pre-DEC-083 subscribers (none exist yet — product not shipped) would be on $5/$15 forever.
->
-> **Affected files updated:** `mockups/tadaify-mvp/landing.html` (all pricing references), `docs/decisions/INDEX.md` (DEC-037 superseded + DEC-083 row added), this spec §1 tier table + §0 overview line.
->
-> **⚠️ SUPERSEDED same-day by DEC-279** — see paragraph below.
-
-### DEC-279 — Final pricing: Creator $7.99/mo, Pro $19.99/mo, extra-domain $1.99/mo (supersedes DEC-083 + DEC-PRICELOCK-02 domain price)
-
-> **2026-04-28 — DEC-279 locked (user directive, same-day supersession of DEC-083).** Final prices: Creator **$7.99/mo**, Pro **$19.99/mo**, custom-domain add-on **$1.99/mo**. Business $49/mo unchanged. Free $0 unchanged.
->
-> **Rationale:** User directive — .99 pricing aligns with landing/marketing conventions and Codex's correct recommendation on PR #116. DEC-083 ($8/$19) and DEC-PRICELOCK-02 (domain $2/mo) are both superseded by this decision for pricing values; the structural decisions (tier shape, domain universality, power features) remain valid.
->
-> **Same-day supersession chain:** DEC-037 ($5/$15) → DEC-083 ($8/$19, same date) → DEC-279 ($7.99/$19.99, same date). Domain: DEC-PRICELOCK-02 ($2/mo) → DEC-279 ($1.99/mo, same date).
->
-> **Annual figures (recomputed):**
-> - Creator annual: $7.99 × 12 = **$95.88** (was $96)
-> - Pro annual: $19.99 × 12 = **$239.88** (was $228 — increased because $19.99 > $19)
-> - Free + 1 domain add-on annual: $1.99 × 12 = **$23.88** (was $24)
-> - Creator + 1 extra domain monthly: $7.99 + $1.99 = **$9.98** (was $10)
-> - Creator + 1 extra domain annual: $9.98 × 12 = **$119.76** (was $120)
->
-> **$6 Creator premium math:** $7.99 − $1.99 = **$6.00** premium above the $1.99 domain add-on (same delta as before, just different decimal representation).
->
-> **Price-lock contract:** DEC-PRICELOCK-01 applies — subscribers at $7.99/$19.99 pay that price for life (uninterrupted subscriptions). No subscribers exist yet (product not shipped).
->
-> **Affected files:** `docs/specs/functional-spec.md` (§1 tier table, §6b Creator Tier Composition, §18 Pro-tier, §28 competitive table, §29 conversion table, all active pricing callouts), `docs/decisions/INDEX.md` (DEC-083 + DEC-PRICELOCK-02 domain part marked superseded; DEC-279 row added), all mockups with active pricing.
+**DEC-279** (numeric 0009) — final pricing $7.99/$19.99/$1.99 — see [docs/decisions/0009-pricing-final-7.99-19.99.md](../decisions/0009-pricing-final-7.99-19.99.md)
 
 ### 1.1 The five wedges (v2-locked)
 
@@ -362,7 +331,7 @@ TikTok handle entry is part of the unified F-004 multi-platform handle form. No 
 - **Summary:** On first login post-onboarding: split-screen "plain link list" → "your tadaify page" with entrance animation. (Previously described as "post-import" — updated per DEC-SOCIAL-01: there is no OAuth import; reveal fires after handle entry + template selection.)
 - **Eng effort:** **M** (1 week). **MVP**.
 
-> **2026-04-24 — DEC-SOCIAL-01 applied:** social-import on onboarding switched from OAuth to handle-input (F-004 rewritten). F-005 merged into F-004. F-UPSELL-001 follower-count collection changed from API scrape to direct question. OAuth deferred to F-PRO-OAUTH-IMPORT (Pro, §18.9).
+**DEC-SOCIAL-01** (numeric 0011) — social-import via handle-based link generation (not OAuth) — see [docs/decisions/0011-social-import-handle-based.md](../decisions/0011-social-import-handle-based.md)
 
 ### 3.8–3.19 — F-008..F-019 (shortened)
 
@@ -919,9 +888,9 @@ F-180 through F-191 as in v1 §13 (all ports from LinkOfMe).
 
 ## 15. AI Features
 
-> **2026-04-25 — DEC-AI-QUOTA-LADDER-01=B applied:** unified AI token bucket across all AI features. Quota ladder: Free **5 uses/mo** / Creator **20 uses/mo** / Pro **100 uses/mo** / Business **unlimited**. All uses (theme matcher, bio rewrite, copy suggest, product description) draw from the same pool. Prior per-feature quotas superseded.
->
-> **2026-04-25 — DEC-AI-FEATURES-ROADMAP-01=A applied:** text-only AI features at MVP and Y1. Image generation deferred (Satori/Canvas thumbnail gen remains but is pre-templated, not generative). Scope: theme matcher (existing) + bio rewrite (F-AI-BIO-REWRITE-001, new) + block copy suggest (F-AI-COPY-SUGGEST-001, new).
+**DEC-AI-QUOTA-LADDER-01** (numeric 0030) — unified AI quota: Free 5/Creator 20/Pro 100/Business unlimited — see [docs/decisions/0030-ai-quota-unified-ladder.md](../decisions/0030-ai-quota-unified-ladder.md)
+
+**DEC-AI-FEATURES-ROADMAP-01** (numeric 0031) — text-only AI scope: theme matcher + bio rewrite + copy suggest — see [docs/decisions/0031-ai-text-only-scope.md](../decisions/0031-ai-text-only-scope.md)
 
 | Unit | Quota (DEC-AI-QUOTA-LADDER-01=B) |
 |---|---|
@@ -1049,11 +1018,9 @@ Abandoned cart (checkout started but not completed → email 1h + 24h later), po
 
 **Eng effort:** **L** (2 weeks). **Y1 M+4**.
 
-### 18.9 — F-PRO-OAUTH-IMPORT · ~~OAuth-based auto-import of IG/TikTok bio + recent posts~~ **[SUPERSEDED — DEC-APIPAGES-01=C]**
+### 18.9 — F-PRO-OAUTH-IMPORT ~~[PERMANENTLY REMOVED — DEC-APIPAGES-01=C]~~
 
-> **2026-04-25 — DEC-APIPAGES-01=C applied:** Platform OAuth import (IG/TikTok/Spotify/YouTube) has been **permanently removed from the roadmap**. Rationale: Facebook app review 2-8 weeks; IG Basic Display API deprecated Dec 2024; Graph API requires Business accounts (most nano creators lack these); OAuth maintenance burden exceeds MVP value. The Creator API (F-PRO-CREATOR-API-001) is a better investment — it lets power users (and ChatGPT agents) manage their page programmatically, without platform-level dependencies. Anyone wanting social feed automation can do it themselves via the Creator API + MCP.
-
-~~- **Summary:** Pro creator connects their Instagram (Graph API with Business account) or TikTok (Display API) via OAuth. tadaify auto-imports: avatar, display name, bio, and up to 9 recent posts as auto-refreshing embed blocks. Blocks refresh on a 24h cron.~~
+**DEC-APIPAGES-01** (numeric 0026) — platform OAuth import permanently removed; Creator API is the better investment — see [docs/decisions/0026-platform-oauth-import-rejected.md](../decisions/0026-platform-oauth-import-rejected.md)
 
 ### 18.10 Pro-tier summary — "is $19.99 worth 2.5× Creator?"
 
@@ -1126,7 +1093,7 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
   - `blocks.page_id` FK NOT NULL (MUST be added in MVP F-FULLFLOW-001 even though only one page exists)
   - one-homepage-per-user partial unique index
 - **URL contract (MVP MUST honour):** `/<handle>` resolves to `is_homepage=true` page; `/<handle>/<slug>` resolves to slug. Implementer in MVP can hardcode slug='' but routing pattern must accept any slug.
-- **DEC trail:** DEC-MULTIPAGE-01 answered B (post-MVP) on 2026-04-25. See `docs/research/multi-page-grid-and-templates.md` (DEC trail + competitive landscape + architectural detail).
+- **DEC trail:** **DEC-MULTIPAGE-01** (numeric 0024) — see [docs/decisions/0024-multi-page-post-mvp.md](../decisions/0024-multi-page-post-mvp.md). See also `docs/research/multi-page-grid-and-templates.md`.
 - **Scope (out for MVP):** API-driven page templates (DEC-APIPAGES-01=C — platform OAuth import removed from roadmap entirely, see below). Grid layout per page ships in MVP per DEC-LAYOUT-01=A (see F-LAYOUT-001).
 
 ### F-LAYOUT-001 · Grid layout editor — drag-on-cell + col/row span (MVP per DEC-LAYOUT-01=A)
@@ -1140,7 +1107,7 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
 - **Drag-drop library:** `@dnd-kit/core` + `@dnd-kit/sortable` (already used for stack mode reorder; extend with grid sensor).
 - **Eng effort:** M (1-2 weeks editor + schema + rendering). **MVP**.
 - **Dependencies:** F-FULLFLOW-001 (block system), F-MULTIPAGE-001 schema forward-compat (page_id FK).
-- **DEC trail:** DEC-LAYOUT-01=A locked 2026-04-25. See GitHub issue F-LAYOUT-001.
+- **DEC trail:** **DEC-LAYOUT-01** (numeric 0025) — see [docs/decisions/0025-grid-layout-ships-mvp.md](../decisions/0025-grid-layout-ships-mvp.md). See also GitHub issue F-LAYOUT-001.
 
 ### F-PRO-CREATOR-API-001 · AI-friendly REST API for Pro tier (Creator API + MCP + custom GPT)
 
@@ -1159,7 +1126,7 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
 - **Rate limit:** 1000 req/h Pro (header `X-RateLimit-Remaining`). Business: 5000 req/h.
 - **Tier gating:** Pro $19.99/mo + Business $49/mo. Free/Creator see a teaser in settings with upgrade CTA.
 - **Eng effort:** L (2-3 weeks — API layer, key management, OpenAPI, MCP package, GPT template). **Y1 M+2**.
-- **DEC trail:** DEC-CREATOR-API-01=A locked 2026-04-25. DEC-APIPAGES-01=C confirms this replaces the OAuth import path. See GitHub issue F-PRO-CREATOR-API-001.
+- **DEC trail:** **DEC-CREATOR-API-01** (numeric 0029) — see [docs/decisions/0029-creator-api-pro-tier.md](../decisions/0029-creator-api-pro-tier.md). **DEC-APIPAGES-01** (numeric 0026) confirms this replaces OAuth import. See also GitHub issue F-PRO-CREATOR-API-001.
 
 ---
 
@@ -1502,7 +1469,10 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 
 ## §28. Locked DECs summary (product-relevant)
 
-One-line per DEC for quick reference. All listed as LOCKED / ANSWERED.
+> One-line per DEC for quick reference. All listed as LOCKED / ANSWERED.
+> **Full rationale, context, supersession chains, and provenance live in per-file MADR records:**
+> [`docs/decisions/INDEX.md`](../decisions/INDEX.md) — auto-generated table with numeric IDs, aliases, and links.
+> Per-file format: `docs/decisions/NNNN-<slug>.md`.
 
 | DEC-ID | Domain | Decision |
 |---|---|---|
