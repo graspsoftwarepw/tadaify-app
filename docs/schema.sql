@@ -1,0 +1,2 @@
+-- Consolidated DDL — auto-mirrors `supabase/migrations/`. Update on every migration.
+-- Last updated: Story 0 (scaffold) — no tables yet.
