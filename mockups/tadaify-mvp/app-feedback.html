@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!--
+  Feedback — creator-facing form to send feedback / bug reports to the
+  tadaify product team. Stub created TADA-BUG-005 (2026-04-28) — wired
+  from the new "Feedback" sidebar entry at the bottom of every dashboard.
+
+  Out of scope for this iteration: actual submission, attachments, public
+  roadmap voting. Mockup intent: prove the route exists + show shape of
+  the surface.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Feedback — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+    .appbar {
+      position: sticky; top: 0; z-index: 30;
+      background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px; height: 54px;
+    }
+    .appbar .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .appbar .brand .wm { font-size: 20px; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; }
+    .appbar .brand .ta { color: var(--brand-primary); }
+    .appbar .brand .da { color: var(--brand-warm); }
+    .appbar .brand .ify { color: var(--fg); }
+    .appbar .spacer { flex: 1; }
+
+    .layout { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 54px); }
+    @media (min-width: 720px)  { .layout { grid-template-columns: 72px 1fr; } }
+    @media (min-width: 1100px) { .layout { grid-template-columns: 240px 1fr; } }
+
+    main.content { padding: clamp(20px, 3vw, 32px); min-width: 0; }
+    .page-head h1 {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 3.4vw, 36px);
+      letter-spacing: -0.02em; margin: 0 0 6px;
+    }
+    .page-head .sub { color: var(--fg-muted); font-size: 14px; max-width: 60ch; }
+
+    .fb-grid {
+      display: grid; grid-template-columns: 1fr; gap: 14px;
+      margin-top: 22px; max-width: 920px;
+    }
+    @media (min-width: 760px) { .fb-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .fb-card {
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 20px; text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: 10px;
+      cursor: pointer; transition: border .12s, transform .12s, box-shadow .12s;
+    }
+    .fb-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,0.15); }
+    .fb-card .ic {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: rgba(99,102,241,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .fb-card.warm .ic { background: rgba(245,158,11,0.16); }
+    .fb-card.green .ic { background: rgba(16,185,129,0.16); }
+    .fb-card .ttl { font-size: 15px; font-weight: 600; color: var(--fg); }
+    .fb-card .desc { font-size: 13px; color: var(--fg-muted); line-height: 1.5; }
+
+    .form-card {
+      max-width: 720px; margin-top: 30px;
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 24px;
+    }
+    .form-card h3 { font-family: var(--font-display); font-size: 22px; margin: 0 0 6px; }
+    .form-card .form-sub { color: var(--fg-muted); font-size: 13px; margin-bottom: 18px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 12.5px; font-weight: 600; color: var(--fg); }
+    .field select, .field input, .field textarea {
+      font-family: var(--font-sans); font-size: 14px;
+      padding: 10px 12px; border: 1px solid var(--border-strong);
+      border-radius: 10px; background: var(--bg); color: var(--fg);
+      outline: none; transition: border .14s, box-shadow .14s;
+    }
+    .field select:focus, .field input:focus, .field textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+    }
+    .field textarea { min-height: 120px; resize: vertical; }
+    .field-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--fg-muted); }
+    .form-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 99px; font-weight: 600; font-size: 13.5px;
+      border: 0; cursor: pointer; text-decoration: none;
+      font-family: var(--font-sans);
+    }
+    .btn-primary { background: var(--brand-primary); color: #fff; }
+    .btn-primary:hover { background: var(--brand-primary-hover, var(--brand-primary)); filter: brightness(0.95); }
+    .btn-ghost { background: transparent; color: var(--fg-muted); }
+    .btn-ghost:hover { color: var(--fg); }
+
+    body.dark-mode { background: var(--bg-dark); color: #F3F4F6; }
+    body.dark-mode .appbar { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .fb-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .form-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .field input, body.dark-mode .field textarea, body.dark-mode .field select {
+      background: #0B0F1E; color: #F3F4F6; border-color: #1F2937;
+    }
+  </style>
+</head>
+<body data-tier="creator">
+
+  <header class="appbar" role="banner">
+    <a href="./index.html" class="brand">
+      <span class="logo-mark" data-logo style="width:28px;height:28px"></span>
+      <span class="wm" aria-label="tadaify">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </span>
+    </a>
+    <div class="spacer"></div>
+    <a href="./creator-public.html" class="btn btn-ghost" style="text-decoration:none">View your live page →</a>
+  </header>
+
+  <div class="layout">
+    <div data-partial="app-sidebar" data-active="feedback" data-tier="creator" data-handle="alexandra" data-username="Alexandra Silva"></div>
+
+    <main class="content">
+      <div class="page-head">
+        <h1>Feedback</h1>
+        <p class="sub">Tell us what's working, what isn't, and what you wish tadaify did. We read everything — read receipts ON.</p>
+      </div>
+
+      <div class="fb-grid">
+        <a class="fb-card" onclick="document.getElementById('topic').value='bug';scrollToForm()">
+          <div class="ic">🐞</div>
+          <div class="ttl">Report a bug</div>
+          <div class="desc">Something broken, slow, or visually off. Screenshot welcome.</div>
+        </a>
+        <a class="fb-card warm" onclick="document.getElementById('topic').value='idea';scrollToForm()">
+          <div class="ic">💡</div>
+          <div class="ttl">Suggest a feature</div>
+          <div class="desc">A block, integration, or workflow you wish existed.</div>
+        </a>
+        <a class="fb-card green" onclick="document.getElementById('topic').value='other';scrollToForm()">
+          <div class="ic">💬</div>
+          <div class="ttl">General feedback</div>
+          <div class="desc">Anything else — pricing, tone, docs, onboarding, vibe.</div>
+        </a>
+      </div>
+
+      <form class="form-card" id="fb-form" onsubmit="event.preventDefault();alert('Mockup — feedback would go to product@tadaify.com.');">
+        <h3>Send us feedback</h3>
+        <p class="form-sub">We aim to reply within 1 business day. For urgent issues, email <a href="mailto:support@tadaify.com">support@tadaify.com</a>.</p>
+
+        <div class="field">
+          <label for="topic">What is this about?</label>
+          <select id="topic" name="topic">
+            <option value="bug">🐞 Bug report</option>
+            <option value="idea">💡 Feature idea</option>
+            <option value="other">💬 General feedback</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="title">Short title</label>
+          <input type="text" id="title" name="title" placeholder="e.g. Schedule block fails on mobile Safari" required/>
+        </div>
+
+        <div class="field">
+          <label for="body">Tell us more</label>
+          <textarea id="body" name="body" placeholder="What were you trying to do? What happened? What did you expect?" required></textarea>
+        </div>
+
+        <div class="field-row">
+          <input type="checkbox" id="contact" name="contact" checked/>
+          <label for="contact" style="font-weight:500;font-size:13px">It's OK to email me back at my account address.</label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Send feedback</button>
+          <a href="./app-dashboard.html" class="btn btn-ghost" style="text-decoration:none">Cancel</a>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    function scrollToForm() {
+      var f = document.getElementById('fb-form');
+      if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    window.scrollToForm = scrollToForm;
+  </script>
+</body>
+</html>
