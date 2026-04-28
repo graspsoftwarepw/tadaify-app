@@ -18,7 +18,7 @@ This is the **canonical, merged functional specification** for tadaify. It super
 
 1. **Architecture (DEC-035) — LOCKED Cloudflare-first.** Edge + custom domains + media + hot analytics = Cloudflare (Workers, R2, Pages, Cloudflare-for-SaaS, Analytics Engine, DNS). Central brain = Supabase (Postgres, GoTrue, Edge Functions, Realtime). AWS = S3 (cold analytics Parquet) + Athena + Glue. No CloudFront, no Route53, no ACM, no Lambda by default.
 2. **Currency (DEC-036) — LOCKED USD.** All prices in USD. EU creators see local-currency display via `F-073` but plan SKU is USD.
-3. **Tier structure (DEC-037) — LOCKED 4-tier flat.** Free $0 / Creator $5/mo / Pro $15/mo / Business $49/mo. 0% platform fees on every tier forever (contractually locked per F-172a, F-TRUST-001..004, and ToS clause).
+3. **Tier structure (DEC-037, revised by DEC-083 → DEC-279 2026-04-28) — LOCKED 4-tier flat.** Free $0 / Creator $7.99/mo / Pro $19.99/mo / Business $49/mo. 0% platform fees on every tier forever (contractually locked per F-172a, F-TRUST-001..004, and ToS clause). [Pricing revised 2026-04-28 via DEC-083 → DEC-279 same-day chain: $5/$15 → $8/$19 → $7.99/$19.99. Domain add-on $2 → $1.99. DEC-037, DEC-083, and DEC-PRICELOCK-02 (domain price part) superseded. Rationale: DEC-279 user directive — final .99 pricing for landing/marketing copy alignment.]
 4. **Feature gating (DEC-043) — LOCKED "everything free".** Every product feature (commerce, analytics, email capture, scheduling, reviews, bundles, communities, upsells, discount codes, Przelewy24/BLIK) is Free. Pricing differentiation: custom domain add-ons (primary revenue, ~97% margin), Pro power features (§18), Business agency features (§19).
 
 ### 0.2 Anti-patterns resolved (from `anti-patterns-audit.md`)
@@ -116,22 +116,46 @@ Pricing:
 
 | Tier | USD | What's gated ON (not unlocked from below) |
 |---|---|---|
-| Free | $0 | Subdomain only (`tadaify.com/you`). Custom domain optional via universal $2/mo add-on (see F-DOMAIN-ADDON-001) — no plan upgrade required; 90d analytics; **5 AI uses/mo** (theme matcher + bio rewrite + copy suggest); 48h support. Pages: **1** (homepage only, post-MVP F-MULTIPAGE-001). |
-| Creator | $5/mo | 1 custom domain included. Extra domains via universal $2/mo add-on; 180d analytics; **20 AI uses/mo**; 24h priority support; custom favicon; scheduled publishing; verified creator badge; directory listing opt-in. Pages: **5** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
-| Pro | $15/mo | 1 custom domain included. Extra domains via universal $2/mo add-on. 8 power features (§18): unlimited analytics, **100 AI uses/mo**, A/B testing, Creator API + MCP server (OpenAPI 3.0 + `@tadaify/mcp` npm + custom GPT template), advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO tools; 365d analytics; 12h support. Pages: **20** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
-| Business | $49/mo | 10 custom domains included (agency — manage multiple client pages from one account). Extra domains via universal $2/mo add-on. Agency sub-accounts + white-label + 4h SLA; all-time analytics; **unlimited AI**. Pages: **unlimited** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
+| Free | $0 | Subdomain only (`tadaify.com/you`). Custom domain optional via universal $1.99/mo add-on (see F-DOMAIN-ADDON-001) — no plan upgrade required; 90d analytics; **5 AI uses/mo** (theme matcher + bio rewrite + copy suggest); 48h support. Pages: **1** (homepage only, post-MVP F-MULTIPAGE-001). |
+| Creator | $7.99/mo | 1 custom domain included. Extra domains via universal $1.99/mo add-on; 180d analytics; **20 AI uses/mo**; 24h priority support; custom favicon; scheduled publishing; verified creator badge; directory listing opt-in. Pages: **5** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
+| Pro | $19.99/mo | 1 custom domain included. Extra domains via universal $1.99/mo add-on. 8 power features (§18): unlimited analytics, **100 AI uses/mo**, A/B testing, Creator API + MCP server (OpenAPI 3.0 + `@tadaify/mcp` npm + custom GPT template), advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO tools; 365d analytics; 12h support. Pages: **20** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
+| Business | $49/mo | 10 custom domains included (agency — manage multiple client pages from one account). Extra domains via universal $1.99/mo add-on. Agency sub-accounts + white-label + 4h SLA; all-time analytics; **unlimited AI**. Pages: **unlimited** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
 
 > **2026-04-25 — DEC-PRICELOCK-01 applied:** price-lock-for-life is a brand commitment, not a promotion. The prior 3-year windowed lock (DEC-SYN-06 / F-172a) is superseded — the lock is now perpetual for uninterrupted subscriptions. Cancellation + re-subscription triggers then-current price. See `brand-lock.md §9 (Pricing commitments — locked)`.
 
-> **2026-04-25 — DEC-PRICELOCK-02 applied:** $2/mo domain add-on universalised across all tiers (Free / Creator / Pro / Business) — never frame it as Free-tier-only. Pro tier simplified to 1 custom domain (was 3); multi-domain is a Business/agency need. Business changed from "Unlimited" to 10 domains (agency use). Pro-vs-Creator differentiator now: unlimited analytics retention, 200 AI/mo, A/B testing, advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO. See `F-DOMAIN-ADDON-001` and `brand-lock.md §9`.
+> **2026-04-25 — DEC-PRICELOCK-02 applied:** $2/mo domain add-on universalised across all tiers (Free / Creator / Pro / Business) — never frame it as Free-tier-only. Pro tier simplified to 1 custom domain (was 3); multi-domain is a Business/agency need. Business changed from "Unlimited" to 10 domains (agency use). Pro-vs-Creator differentiator now: unlimited analytics retention, 200 AI/mo, A/B testing, advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO. See `F-DOMAIN-ADDON-001` and `brand-lock.md §9`. **[Domain price part superseded by DEC-279 2026-04-28: $2/mo → $1.99/mo.]**
 
 > **2026-04-25 — DEC-MULTIPAGE-01 applied:** multi-page accounts confirmed for post-MVP (Q+1, Creator-tier unlock). Tier ladder Free 1 / Creator 5 / Pro 20 / Business unlimited. MVP stories (F-LANDING-001, F-FULLFLOW-001) MUST be forward-compatible: blocks need a `page_id` FK, URL routes use `/<handle>/<slug>` pattern. See `F-MULTIPAGE-001` (§20) and `docs/research/multi-page-grid-and-templates.md`.
+
+### DEC-083 — Pricing: Creator $8/mo, Pro $19/mo (supersedes DEC-037) [superseded same-day by DEC-279]
+
+> **2026-04-28 — DEC-083 locked, then superseded same-day by DEC-279.** Pricing revised: Creator **$8/mo**, Pro **$19/mo**. Business $49/mo unchanged. Free $0 unchanged.
+>
+> **Rationale (DEC-274 user answer, option 2):** The Phase-A landing flagship sections were already speculatively written and rendered at $8/$19 in `mockups/tadaify-mvp/landing.html`. Aligning the canonical spec to the rendered mockup was the cheaper path with fewer user-facing inconsistencies.
+>
+> **Supersedes:** DEC-037 (locked 2026-04-24, Creator $5/mo / Pro $15/mo). **Superseded same-day by DEC-279** (final .99 pricing: Creator $7.99/mo / Pro $19.99/mo).
+
+### DEC-279 — Final pricing: Creator $7.99/mo, Pro $19.99/mo, extra-domain $1.99/mo (supersedes DEC-083 + DEC-PRICELOCK-02 domain price)
+
+> **2026-04-28 — DEC-279 locked.** Final pricing: Creator **$7.99/mo**, Pro **$19.99/mo**, extra-domain add-on **$1.99/mo**. Business $49/mo unchanged. Free $0 unchanged.
+>
+> **Rationale (user directive 2026-04-28):** Codex was right on PR #116 follow-up — .99 pricing aligns with landing/marketing copy conventions. Push-back was incorrect; user clarified and locked.
+>
+> **Annual figures (recomputed):**
+> - Creator annual: $7.99 × 12 = **$95.88/yr** (was $96)
+> - Pro annual: $19.99 × 12 = **$239.88/yr** (was $228 at $19/mo)
+> - Free + 1 domain annual: $1.99 × 12 = **$23.88/yr** (was $24)
+> - Creator + 1 extra domain: ($7.99 + $1.99) × 12 = **$119.76/yr** (was $120)
+>
+> **Supersedes:** DEC-083 (Creator $8/mo / Pro $19/mo, same-day chain 2026-04-28) and DEC-PRICELOCK-02 domain price part ($2/mo → $1.99/mo). DEC-037, DEC-083, and DEC-PRICELOCK-02 (domain price only) are all superseded.
+>
+> **Price-lock contract:** DEC-PRICELOCK-01 applies unchanged — anyone subscribing at $7.99 or $19.99 after this lock date pays that price for life (uninterrupted subscriptions).
 
 ### 1.1 The five wedges (v2-locked)
 
 1. **"Linktree Premium on Free, forever."** Not just Linktree Pro $12 — Linktree **Premium** $30. Every feature Linktree paywalls at any tier (custom themes, deep analytics 90d Free / 180d Creator / 365d Pro, email capture, scheduling, per-block CTA, full block library, no branding on any tier — AP-001 hard-locked, QR, entrance animations, featured/highlighted blocks, inline checkout, reviews, bundles, PL/EU payments) ships on Free or Creator. Anchor units: F-003 / F-023 / F-030 / F-050 / F-072 / F-077 / F-148.
 2. **0% platform fees at every tier, contractually locked. Published on Trust Center. Guaranteed for the Price Lock window (`F-172a`).** Linktree takes 12% on Free, 9% on Starter+Pro, 0% only on Premium $30. Beacons takes 9% on Free+Creator, 0% on Creator Plus $30. Stan takes 0% but has no Free. Tadaify takes 0% on every tier, forever — the commitment is published on `tadaify.com/trust/zero-fee`, bound by the Price Lock (DEC-SYN-06), and cannot be raised mid-subscription. A creator at $300/mo MRR keeps $300 on tadaify vs $273 on Linktree Pro.
-3. **Custom domain at $2/mo — the category's lowest entry point.** Lnk.bio sells it at $39.99/year ≈ $3.33/mo and makes you upgrade first; we sell it at $2/mo as a universal add-on on any tier (no plan upgrade required ever), OR include it free with Creator/Pro ($5/$15 bundle). Positioning: domain is a commitment signal, not a revenue gate. "Need extra domains? Add $2/mo per custom domain to any plan — Free included. No upgrade needed." `F-CUSTOM-DOMAIN-001..003`, `F-DOMAIN-ADDON-001`.
+3. **Custom domain at $1.99/mo — the category's lowest entry point.** Lnk.bio sells it at $39.99/year ≈ $3.33/mo and makes you upgrade first; we sell it at $1.99/mo as a universal add-on on any tier (no plan upgrade required ever), OR include it free with Creator/Pro ($7.99/$19.99 bundle). Positioning: domain is a commitment signal, not a revenue gate. "Need extra domains? Add $1.99/mo per custom domain to any plan — Free included. No upgrade needed." `F-CUSTOM-DOMAIN-001..003`, `F-DOMAIN-ADDON-001`.
 4. **EU/PL regulatory + payment wedge** — VAT OSS, Przelewy24 + BLIK + SEPA, EU payment methods native in checkout. None of the 7 audited competitors ship even one of these. PL creator directory, PL-culture templates, and native PL copy are deferred to Y2+ per DEC-MKT-C (EN-only marketing at launch). `F-074 / F-085 / F-127 / F-165 / F-230-F-239`.
 5. **Preview-generator acquisition flywheel** — admin-only marketing tool at `/admin/marketing/preview-generator`. Admin pastes a target creator's Linktree URL (MVP), system fetches + parses, admin customizes, system generates a private `preview.tadaify.com/<slug>?ref=<hash>` URL, admin sends it privately. If the target signs up via `?ref=<hash>`, onboarding is pre-populated. Admin-only, never public. At MVP: Linktree parser only (DEC-Q5-C). Beacons, Stan, Bio.link parsers follow at M+0.5. `F-PREVIEW-001..007` (MVP) + `F-PREVIEW-010..012` (M+0.5).
 
@@ -166,7 +190,7 @@ Domain `tadaify.com`, slug `tadaify`, wordmark `tada!ify` variant F, palette Ind
 
 - Time from landing → live public page with one block: ≤ **60 seconds**.
 - Free-tier D30 retention: ≥ **45%**.
-- **Custom domain attach rate at D30:** ≥ **8%** of Free creators attach a custom domain via the universal $2/mo add-on OR upgrade to Creator $5 (primary revenue metric).
+- **Custom domain attach rate at D30:** ≥ **8%** of Free creators attach a custom domain via the universal $1.99/mo add-on OR upgrade to Creator $7.99 (primary revenue metric).
 - **Free → Pro conversion at D60:** ≥ **1.5%**.
 - Preview-generator conversion: ≥ **3% of sent preview URLs convert to signup within 7 days** (admin-only 1-to-1 outreach; private, never indexed).
 - SLA adherence published + met: Free 48h / Creator 24h / Pro 12h / Business 4h (per Trust Center live dashboard `F-172`).
@@ -195,7 +219,7 @@ Domain `tadaify.com`, slug `tadaify`, wordmark `tada!ify` variant F, palette Ind
 | AI Features | `F-220..229` | 5 | 4 | Free 20/mo / Creator 40/mo / Pro 200/mo / Business ∞ |
 | EU/PL Localization | `F-230..244` | 8 | 8 | DEC-MKT-C: EN-only at launch; PL deferred Y2+ |
 | Marketing Surfaces | `F-245..264` | 10 | 10 | Copy updated to reflect 4-tier pricing |
-| **Pro-tier Power Features** | `F-PRO-001..008` | **8** | **5 MVP** + 3 Y1 | Justifies $15 vs $5 gap |
+| **Pro-tier Power Features** | `F-PRO-001..008` | **8** | **5 MVP** + 3 Y1 | Justifies $19.99 vs $7.99 gap |
 | **Business-tier Features** | `F-BIZ-001..005` | **5** | **5 MVP (DEC-Q5-A)** | Full Business tier at MVP |
 
 **Total feature-unit count: ~157.** MVP subset: ~127 units.
@@ -269,10 +293,10 @@ DEC-MULTIPAGE-01 (post-MVP multi-page) + DEC-LAYOUT-01 (grid in MVP) + DEC-CREAT
 
 F-001 through F-019 ship as written in v1 §3 with the following updates:
 
-- **F-012 — REMOVED per DEC-TRIAL-01 (2026-04-24).** Rationale: every Pro feature is sticky (team seats, custom CSS, API integrations, email campaigns, 365-day analytics). Reverting after 7 days creates data-loss UX + creator frustration + chargeback risk. Replaced by: (1) **Transparent feature preview in admin** — each Pro feature shown with `🔒 Pro $15/mo` pill + one-click pricing modal. (2) **30-day money-back guarantee** on Pro upgrade — full refund if creator upgrades and doesn't find value; zero data-loss revert pain. (3) **Subtle upsell F-UPSELL-001..006** covers discovery without time-bombed trial. Pattern AP-017 eliminated by removing the mechanism entirely.
-- **F-015 (onboarding checklist)** — gets a new row: "Buy your custom domain for $2/mo" as item 5.
-- Every reference to "€2–€3/mo" domain → **$2/mo** (DEC-036 USD).
-- "Pro" in v1 text → "Pro $15" in this spec.
+- **F-012 — REMOVED per DEC-TRIAL-01 (2026-04-24).** Rationale: every Pro feature is sticky (team seats, custom CSS, API integrations, email campaigns, 365-day analytics). Reverting after 7 days creates data-loss UX + creator frustration + chargeback risk. Replaced by: (1) **Transparent feature preview in admin** — each Pro feature shown with `🔒 Pro $19.99/mo` pill + one-click pricing modal. (2) **30-day money-back guarantee** on Pro upgrade — full refund if creator upgrades and doesn't find value; zero data-loss revert pain. (3) **Subtle upsell F-UPSELL-001..006** covers discovery without time-bombed trial. Pattern AP-017 eliminated by removing the mechanism entirely.
+- **F-015 (onboarding checklist)** — gets a new row: "Buy your custom domain for $1.99/mo" as item 5.
+- Every reference to "€2–€3/mo" domain → **$1.99/mo** (DEC-036 USD currency; DEC-279 final price).
+- "Pro" in v1 text → "Pro $19.99" in this spec.
 
 ### 3.1 — F-001 · Guest-mode editor (build before signup)
 
@@ -338,7 +362,7 @@ TikTok handle entry is part of the unified F-004 multi-platform handle form. No 
 - ~~**F-012** 7-day Pro trial — **REMOVED per DEC-TRIAL-01**. See §3 header.~~
 - **F-013** Handle-locale suggestions (PL vs EN). **S**, **MVP**.
 - **F-014** Progress bar during signup (3 steps). **S**, **MVP**.
-- **F-015** Onboarding checklist (5 items including "Buy your custom domain $2/mo"). **M**, **MVP**.
+- **F-015** Onboarding checklist (5 items including "Buy your custom domain $1.99/mo"). **M**, **MVP**.
 - **F-016** Email onboarding sequence (7 emails over 30 days via Resend). **M**, **Y1**.
 - **F-017** Skip-for-now path everywhere. **S**, **MVP**.
 - **F-018** Registration limit / invite-gate (admin-toggleable). **S**, **MVP-early**.
@@ -437,7 +461,7 @@ Creator enters `yourdomain.com` → UI shows DNS instructions (registrar-specifi
 
 **Data model:** `custom_domains(id uuid pk, user_id fk, domain text unique, status text, cloudflare_custom_hostname_id text, ssl_status text, verified_at, last_error text, created_at, updated_at)`.
 
-**Tier gating:** Free: 0 included (add 1 @ $2/mo via universal add-on). Creator $5: 1 included. Pro $15: 1 included. Business $49: 10 included (agency). Extra domains on any tier: $2/mo each via F-DOMAIN-ADDON-001.
+**Tier gating:** Free: 0 included (add 1 @ $1.99/mo via universal add-on). Creator $7.99: 1 included. Pro $19.99: 1 included. Business $49: 10 included (agency). Extra domains on any tier: $1.99/mo each via F-DOMAIN-ADDON-001.
 
 **Eng effort:** **M** (1.5 weeks). **MVP — Week 6-8**.
 
@@ -451,7 +475,7 @@ Supabase Edge Function wraps Cloudflare Custom Hostnames API. On create: POST cu
 
 ### 3b.3 — F-CUSTOM-DOMAIN-003 · Stripe metered billing integration
 
-$2/mo per add-on domain beyond tier quota. Stripe product `custom_domain_addon`, metered by quantity. UI shows "This will add $2/mo to your subscription. Confirm?" On remove: proration credit.
+$1.99/mo per add-on domain beyond tier quota. Stripe product `custom_domain_addon`, metered by quantity. UI shows "This will add $1.99/mo to your subscription. Confirm?" On remove: proration credit.
 
 **Eng effort:** **M** (1 week). **MVP — Week 8-9**.
 
@@ -629,9 +653,9 @@ When analytics detect a viral moment (>3× 30-day rolling average views), show s
 
 ---
 
-## 6b. Creator Tier Composition ($5/mo — anti-patterns-audit-2026-04-24)
+## 6b. Creator Tier Composition ($7.99/mo — anti-patterns-audit-2026-04-24)
 
-Creator at $5/mo earns its $2 premium above the $3 domain add-on through 8 concrete features — NONE involving "Powered by tadaify removal" or any AP-001 variant.
+Creator at $7.99/mo earns its $6 premium above the $1.99 domain add-on through 8 concrete features — NONE involving "Powered by tadaify removal" or any AP-001 variant.
 
 | Feature | Tier | Eng effort |
 |---|---|---|
@@ -758,14 +782,14 @@ F-171 through F-179 stand from v1. F-170 "custom domain billing" replaced by `F-
 - **Implementation note:** Enforced at Stripe subscription level via `price_id` anchoring — each subscription is tied to the price object at the time of signup. New public prices are new Stripe price objects; existing subs keep their original `price_id` forever. `price_locked_until` DB field is replaced by a `lifetime_lock: true` flag; `fee_locked_until` remains for the 0%-fee guarantee.
 - **Justification:** Competitive differentiator vs Linktree/Beacons (which have raised prices multiple times on existing subscribers). Removes one of the biggest creator fears: "if I build here, will the price go up next year?" Builds long-term trust and lowers churn risk. Brand commitment, not a promotion — must appear on pricing page, onboarding tier step, and public marketing.
 - **Copy (canonical):** "Price locked for life" / "Your price is locked for life — we never raise the price on active subscribers."
-- **Universal custom-domain add-on note (DEC-PRICELOCK-02):** The $2/mo custom-domain add-on is available on **every tier** (Free / Creator / Pro / Business) — never frame it as a Free-tier-only perk. Creator/Pro each include 1 domain in the plan price; Business includes 10 (agency). Extra domains cost $2/mo each regardless of tier. Free + add-on = $2/mo all-in. Copy: "Need extra domains? Add $2/mo per custom domain to any plan — Free included. No upgrade needed." Implemented as F-DOMAIN-ADDON-001 (Stripe metered add-on, cancel anytime per domain).
+- **Universal custom-domain add-on note (DEC-PRICELOCK-02, domain price superseded by DEC-279):** The $1.99/mo custom-domain add-on is available on **every tier** (Free / Creator / Pro / Business) — never frame it as a Free-tier-only perk. Creator/Pro each include 1 domain in the plan price; Business includes 10 (agency). Extra domains cost $1.99/mo each regardless of tier. Free + add-on = $1.99/mo all-in. Copy: "Need extra domains? Add $1.99/mo per custom domain to any plan — Free included. No upgrade needed." Implemented as F-DOMAIN-ADDON-001 (Stripe metered add-on, cancel anytime per domain).
 - **Tier gating:** All paid tiers. **Eng effort:** XS (Stripe `price_id` anchoring is built-in). **MVP**.
 - **See also:** `brand-lock.md §9 (Pricing commitments — locked)`.
 
-### 12a-iii — F-DOMAIN-ADDON-001 · Universal $2/mo custom-domain add-on (DEC-PRICELOCK-02)
+### 12a-iii — F-DOMAIN-ADDON-001 · Universal $1.99/mo custom-domain add-on (DEC-PRICELOCK-02, price superseded by DEC-279)
 
-- **Summary:** Any user on any tier (Free / Creator / Pro / Business) can attach one or more custom domains at $2/mo per domain, in addition to the domains included in their base plan (Free: 0 included; Creator/Pro: 1 included; Business: 10 included). The add-on is universal — not a Free-tier-only perk and not gated behind a plan upgrade.
-- **Copy (canonical):** "Need extra domains? Add $2/mo per custom domain to any plan — Free included. No upgrade needed."
+- **Summary:** Any user on any tier (Free / Creator / Pro / Business) can attach one or more custom domains at $1.99/mo per domain, in addition to the domains included in their base plan (Free: 0 included; Creator/Pro: 1 included; Business: 10 included). The add-on is universal — not a Free-tier-only perk and not gated behind a plan upgrade.
+- **Copy (canonical):** "Need extra domains? Add $1.99/mo per custom domain to any plan — Free included. No upgrade needed."
 - **Implementation:** Stripe metered add-on product `custom_domain_addon` bound to the main subscription; cancel anytime per domain; proration credit on removal. See `F-CUSTOM-DOMAIN-003` for the Stripe integration spec.
 - **Presentation rules:** Never frame as "Free tier perk". Always present as universal. Surfaced on: pricing page, onboarding domain step, domain settings page, viral-moment upsell (F-UPSELL-*).
 - **Tier gating:** All tiers. **Eng effort:** XS (extends existing F-CUSTOM-DOMAIN-003 metered billing; quota config only). **MVP**.
@@ -942,9 +966,9 @@ All MVP. Copy updated to reflect 4-tier USD pricing. All routes under `tadaify.c
 
 ---
 
-## 18. Pro-tier Power Features (§N+9 — justifies $15 vs $5)
+## 18. Pro-tier Power Features (§N+9 — justifies $19.99 vs $7.99)
 
-**This section justifies $15/mo Pro (3× Creator $5).** Eight features, each useful for creators with real audience, each expensive to build, each NOT available on Free, each competitive vs Linktree Premium $30.
+**This section justifies $19.99/mo Pro (~2.5× Creator $7.99).** Eight features, each useful for creators with real audience, each expensive to build, each NOT available on Free, each competitive vs Linktree Premium $30.
 
 ### 18.1 — F-PRO-001 · Analytics retention 365d + all-time dashboard + cohort analysis (MVP)
 
@@ -966,7 +990,7 @@ Free exports last 90d as CSV. Pro exports all-time + Google Sheets live sync (ho
 
 Invite up to 2 additional editors (Pro: 3 total seats). Role-based: Editor / Admin / Owner. Audit log: every action timestamped + author. Invite via magic-link email.
 
-**Why worth $10/mo:** Linktree Premium $30 ships "Add Admins" — we match at Pro $15 (half the price).
+**Why worth $10/mo:** Linktree Premium $30 ships "Add Admins" — we match at Pro $19.99 (33% cheaper).
 
 **Data model:** `team_memberships(id, owner_user_id, member_user_id, role, invited_at, accepted_at, revoked_at)`, `team_audit_log(...)`.
 
@@ -984,7 +1008,7 @@ Free 100 req/hr + 3 webhooks. Pro 1000 req/hr + 10 webhooks + multi-scope API ke
 
 Free: 1k sends/mo via `noreply@tadaify.com`, simple broadcast. Pro: 10k sends/mo via custom domain (SPF/DKIM auto-configured on Cloudflare SaaS domain), automations (trigger → delay → email OR branch), segmentation (country / purchase history / subscription status / custom tag). Business: 100k sends/mo.
 
-**Why worth $10/mo:** Beacons Creator Plus $30 = unlimited sends — we match at Pro $15.
+**Why worth $10/mo:** Beacons Creator Plus $30 = unlimited sends — we match at Pro $19.99.
 
 **Eng effort:** **XL** (3-4 weeks — workflow engine + sender domain verification + segmentation). **MVP**.
 
@@ -994,7 +1018,7 @@ Pro unlocks "Custom code" panel: sandboxed CSS + limited HTML + script tag white
 
 **Note: tadaify branding is NOT present on any tier's public pages — there is no "remove branding" toggle because there is no branding to remove (AP-001 hard-locked).** F-BIZ-002 is white-label for agencies who want "Powered by [AgencyName]" branding on their dashboard + emails — not removal of creator-page watermarks (which don't exist).
 
-**Why worth $10/mo:** Linktree Premium $30 ships custom code (we match at Pro $15).
+**Why worth $10/mo:** Linktree Premium $30 ships custom code (we match at Pro $19.99).
 
 **Eng effort:** **L** (2-3 weeks — sanitization + sandbox + R2 font serve + CSP review). **MVP**.
 
@@ -1002,7 +1026,7 @@ Pro unlocks "Custom code" panel: sandboxed CSS + limited HTML + script tag white
 
 Pro creators set up A/B test on any block (50/50 split) → auto-promote winner at >95% Bayesian confidence. Funnel analytics: visitors → block click → checkout → purchase → review with drop-off visualization.
 
-**Why worth $10/mo:** Linktree Premium $30 ships "Experiments" — we match at Pro $15.
+**Why worth $10/mo:** Linktree Premium $30 ships "Experiments" — we match at Pro $19.99.
 
 **Eng effort:** **XL** (3 weeks). **Y1 M+3**.
 
@@ -1020,9 +1044,9 @@ Abandoned cart (checkout started but not completed → email 1h + 24h later), po
 
 ~~- **Summary:** Pro creator connects their Instagram (Graph API with Business account) or TikTok (Display API) via OAuth. tadaify auto-imports: avatar, display name, bio, and up to 9 recent posts as auto-refreshing embed blocks. Blocks refresh on a 24h cron.~~
 
-### 18.10 Pro-tier summary — "is $15 worth 3× Creator?"
+### 18.10 Pro-tier summary — "is $19.99 worth 2.5× Creator?"
 
-> "I'm on Creator $5 for my domain. I've grown to 5k monthly visitors. Pro at $15 unlocks:
+> "I'm on Creator $7.99 for my domain. I've grown to 5k monthly visitors. Pro at $19.99 unlocks:
 > 1. Full-year analytics + cohort retention charts
 > 2. Live Google Sheets sync of my analytics
 > 3. My social media manager gets her own editor seat
@@ -1047,7 +1071,7 @@ Business tier at $49/mo targets social media managers + small agencies running 3
 
 Owner account manages N child creator pages under one dashboard. Each child has own handle + theme + blocks + commerce. Owner sees all children; can bulk-edit (apply theme to N children); context-switch instantly.
 
-Billing: Owner pays single Business $49 + $2/mo per sub-account beyond the first 3 included.
+Billing: Owner pays single Business $49 + $1.99/mo per sub-account beyond the first 3 included.
 
 **Data model:** `profiles.agency_parent_id uuid fk → profiles.user_id`; RLS policies let parent SELECT/UPDATE child pages.
 
@@ -1122,7 +1146,7 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
 - **Custom GPT template:** published in `/app/settings/api-keys` as a JSON-downloadable "instructions" file for ChatGPT custom GPT. Includes auth setup + recommended actions.
 - **Agent-recipe gallery:** 3 starter recipes (Daily YT refresh / Pinned message from Notion / Reorder by click analytics) — linked from settings page.
 - **Rate limit:** 1000 req/h Pro (header `X-RateLimit-Remaining`). Business: 5000 req/h.
-- **Tier gating:** Pro $15/mo + Business $49/mo. Free/Creator see a teaser in settings with upgrade CTA.
+- **Tier gating:** Pro $19.99/mo + Business $49/mo. Free/Creator see a teaser in settings with upgrade CTA.
 - **Eng effort:** L (2-3 weeks — API layer, key management, OpenAPI, MCP package, GPT template). **Y1 M+2**.
 - **DEC trail:** DEC-CREATOR-API-01=A locked 2026-04-25. DEC-APIPAGES-01=C confirms this replaces the OAuth import path. See GitHub issue F-PRO-CREATOR-API-001.
 
@@ -1233,9 +1257,9 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
 
 | Tier | Conversion | Basis |
 |---|---|---|
-| Any tier → tier-plus-domain-addon ($2/mo) | 8% | universal domain attach rate target (Free as primary cohort) |
-| Free → Creator ($5) | 4% | mid-tier signal |
-| Free → Pro ($15) | 1.5% | Linktree free→paid baseline |
+| Any tier → tier-plus-domain-addon ($1.99/mo) | 8% | universal domain attach rate target (Free as primary cohort) |
+| Free → Creator ($7.99) | 4% | mid-tier signal |
+| Free → Pro ($19.99) | 1.5% | Linktree free→paid baseline |
 | Free → Business ($49) | 0.2% | agency niche |
 
 ### ARPU by tier
@@ -1243,10 +1267,10 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
 | Tier | Monthly | Annual ARPU |
 |---|---|---|
 | Free | $0 | $0 |
-| Free + 1 domain addon | $3 | $36 |
-| Creator | $5 | $60 |
-| Creator + 1 extra domain | $8 | $96 |
-| Pro | $15 | $180 |
+| Free + 1 domain addon | $1.99 | $23.88 |
+| Creator | $7.99 | $95.88 |
+| Creator + 1 extra domain | $9.98 | $119.76 |
+| Pro | $19.99 | $239.88 |
 | Business (3 sub-accounts included) | $49 | $588 |
 
 **Blended ARPU at 10k MAU ≈ $0.78/MAU/mo → $7,800/mo ≈ $94k/yr.**
@@ -1278,8 +1302,8 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 | F-NNN | Driver | Notes |
 |---|---|---|
 | F-220..F-222 AI features | OpenAI per-token | ~$0.005/gen. Free 20/mo × 10k × 0.3 = $300/mo baseline. Cache aggressive + gpt-4o-mini for first draft. |
-| F-CUSTOM-DOMAIN-* custom domains | Cloudflare for SaaS | ~$0.10/domain/mo beyond 100 included. At 10k domains = $990/mo. Revenue at $2/mo = $30k/mo. Margin 97%. |
-| F-PRO-001 analytics 365d | Athena scans | ~$0.50-2/mo per active Pro creator. Revenue $15/mo. Margin 90%. |
+| F-CUSTOM-DOMAIN-* custom domains | Cloudflare for SaaS | ~$0.10/domain/mo beyond 100 included. At 10k domains = $990/mo. Revenue at $1.99/mo = $19,900/mo. Margin 95%. |
+| F-PRO-001 analytics 365d | Athena scans | ~$0.50-2/mo per active Pro creator. Revenue $19.99/mo. Margin 90%. |
 | F-PRO-005 email marketing | Resend per-email | $0.001/email × 10k/mo per Pro creator = $10/mo at MAX. Margin 33% at max quota; safety via hard cap. |
 | F-PREVIEW-001..007 (MVP) | Edge Function CPU + preview serving | Volume = 100-500 admin-generated previews/mo. Cost negligible (<$5/mo). |
 
@@ -1297,29 +1321,29 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 
 > **"Everything Linktree charges for is free on tadaify. Even commerce. Even analytics. Even custom themes. Even PL payments.**
 >
-> **Pay only for what actually scales with you: your own domain ($2/mo), or Pro power features ($15/mo) once you have a real audience.**
+> **Pay only for what actually scales with you: your own domain ($1.99/mo), or Pro power features ($19.99/mo) once you have a real audience.**
 >
 > **0% platform fees at every tier. Always. No seller-fee ladder. No gotchas."**
 
 ### Per-tier anchors
 
 - **Free:** "Everything Linktree Pro locks behind $12. Every block type. Every theme. Every analytics chart. 90-day retention. Email capture. Commerce at 0% fees. BLIK + Przelewy24 for Polish creators. Forever free."
-- **Creator $5:** "Your own domain included. 180-day analytics memory. 40 AI credits/month (twice Free). 24h priority support. Custom favicon. Scheduled publishing. Verified creator badge. Directory listing. The $2 delta above the $3 domain delivers real creator tools, not just a URL."
-- **Pro $15:** "The 8 power features serious creators actually need: 365-day analytics + team seats + custom CSS + high-volume email + advanced API + A/B testing + abandoned cart recovery + Sheets sync. 1 domain included (extras $2/mo). Linktree Premium is $30 for less."
-- **Business $49:** "Agency sub-accounts + white-label + 4-hour SLA. 10 custom domains included — manage multiple client pages from one account. Extras $2/mo each."
+- **Creator $7.99:** "Your own domain included. 180-day analytics memory. 4× the AI credits (20/mo vs Free 5/mo). 24h priority support. Custom favicon. Scheduled publishing. Verified creator badge. Directory listing. The $6 delta above the $1.99 domain add-on delivers real creator tools, not just a URL."
+- **Pro $19.99:** "The 8 power features serious creators actually need: 365-day analytics + team seats + custom CSS + high-volume email + advanced API + A/B testing + abandoned cart recovery + Sheets sync. 1 domain included (extras $1.99/mo). Linktree Premium is $30 for less."
+- **Business $49:** "Agency sub-accounts + white-label + 4-hour SLA. 10 custom domains included — manage multiple client pages from one account. Extras $1.99/mo each."
 
 ### vs competitors pricing-page comparison
 
 | Feature | Linktree | Beacons | Stan | **Tadaify** |
 |---|---|---|---|---|
 | Free plan | Yes (12% fee) | Yes (9% fee) | No (trial only) | **Yes (0% fee)** |
-| Custom domain | $12/mo (Pro) | $30/mo (CP) | $29/mo (Creator) | **$2/mo add-on OR $5/mo Creator** |
-| 365-day analytics | $12/mo (Pro) | Included CP $30 | $99/mo (Pro) | **$15/mo (Pro)** |
+| Custom domain | $12/mo (Pro) | $30/mo (CP) | $29/mo (Creator) | **$1.99/mo add-on OR $7.99/mo Creator** |
+| 365-day analytics | $12/mo (Pro) | Included CP $30 | $99/mo (Pro) | **$19.99/mo (Pro)** |
 | Email campaigns | Integrations only | Unlimited CP $30 | $99/mo (Pro) | **Free 1k/mo / Pro 10k/mo** |
 | Inline checkout | 9-12% fee (tiered) | 9% → 0% at CP | 0% (Creator+) | **Free 0%** |
-| A/B testing | $30/mo (Premium) | No | No | **$15/mo (Pro)** |
-| Custom CSS | $30/mo (Premium) | Yes (CP) | No | **$15/mo (Pro)** |
-| Team seats | $30/mo (Premium) | No | No | **$15/mo (Pro)** |
+| A/B testing | $30/mo (Premium) | No | No | **$19.99/mo (Pro)** |
+| Custom CSS | $30/mo (Premium) | Yes (CP) | No | **$19.99/mo (Pro)** |
+| Team seats | $30/mo (Premium) | No | No | **$19.99/mo (Pro)** |
 | Public API | Partner-only | No | No | **Free tier + Pro quotas** |
 | Polish payments | No | No | No | **Free** |
 | EU VAT auto-calc | No | No | No | **Free** |
@@ -1341,9 +1365,9 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 - **Verified Buyer badge** — auto-attached to reviews when reviewer has a matching Stripe payment intent.
 - **SLA adherence** — tadaify's public dashboard of real-time support ticket response times per tier.
 - **Preview generator** — admin-only marketing tool at `/admin/marketing/preview-generator`. Admin pastes a target creator's Linktree URL (MVP), customizes preview visually, generates private `preview.tadaify.com/<slug>?ref=<hash>` URL to send 1-to-1. Not a public endpoint. `F-PREVIEW-001..007` (MVP) + `F-PREVIEW-010..012` (M+0.5).
-- **Power features** — the 8 Pro-tier features justifying $15/mo over Creator $5. `F-PRO-001..008`.
+- **Power features** — the 8 Pro-tier features justifying $19.99/mo over Creator $7.99. `F-PRO-001..008`.
 - **Agency sub-account** — Business-tier feature where Owner manages N child creator pages. `F-BIZ-001`.
-- **Custom domain add-on** — $2/mo metered Stripe billing for each custom domain beyond tier quota. `F-CUSTOM-DOMAIN-003`.
+- **Custom domain add-on** — $1.99/mo metered Stripe billing for each custom domain beyond tier quota. `F-CUSTOM-DOMAIN-003`.
 - **Cloudflare for SaaS** — Cloudflare's multi-tenant custom-hostname + SSL provisioning product.
 - **Price-lock guarantee** — tadaify's 3-year price commitment at signup. `F-172a`, `F-TRUST-003`.
 - **Creator Safeguard** — tadaify's 48h-warning moderation policy with human-review appeals + prepaid refund. `F-191b`.
@@ -1373,7 +1397,7 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 |---|---|---|---|
 | **AP-001** | "Powered by [platform]" footer/watermark as a paid tier's "removal bonus" | Critical | GREEN — AP-001 hard-locked; no branding on ANY tier; not a paid unlock |
 | **AP-002** | Watermark injected into exported analytics / CSV / invoice | High | GREEN — none in spec |
-| **AP-003** | Hard-locked platform URL (no custom domain on any tier) | High | GREEN — F-CUSTOM-DOMAIN-001..003 + F-DOMAIN-ADDON-001: universal $2/mo add-on on every tier; Creator/Pro include 1 domain; Business includes 10 |
+| **AP-003** | Hard-locked platform URL (no custom domain on any tier) | High | GREEN — F-CUSTOM-DOMAIN-001..003 + F-DOMAIN-ADDON-001: universal $1.99/mo add-on on every tier; Creator/Pro include 1 domain; Business includes 10 |
 | **AP-004** | Platform interstitials / ads on creator pages | High | GREEN — F-PREVIEW-004 disclosure on preview pages ONLY (not actual creator pages) |
 
 **Domain: Moderation / bans**
@@ -1476,7 +1500,7 @@ One-line per DEC for quick reference. All listed as LOCKED / ANSWERED.
 | **DEC-FRAMEWORK-01** | Framework | Remix (React Router 7) on Cloudflare Workers runtime. File-based routing for all paths. SSR public + CSR dashboard. |
 | **DEC-035** | Architecture | Cloudflare-first (Workers, R2, Pages, Cloudflare-for-SaaS, Analytics Engine). No CloudFront/Route53/ACM/Lambda by default. |
 | **DEC-036** | Currency | USD. EU creators see local-currency display but plan SKU is USD. |
-| **DEC-037** | Tier structure | 4-tier flat: Free $0 / Creator $5 / Pro $15 / Business $49. |
+| **DEC-037** | Tier structure (superseded by DEC-083 → DEC-279) | 4-tier flat: Free $0 / Creator $5 / Pro $15 / Business $49. [Superseded: DEC-083 $8/$19, then DEC-279 $7.99/$19.99.] |
 | **DEC-043** | Feature gating | "Everything free." Commerce, analytics, email, all product features are Free. |
 | **DEC-TRIAL-01** | Trials | No Pro trial mechanism. Replaced by transparent feature preview + 30-day money-back guarantee + subtle upsell. |
 | **DEC-MKT-B-v2** | Preview generator | Admin-only tool at `/admin/marketing/preview-generator`. Not a public endpoint. |
@@ -1487,7 +1511,7 @@ One-line per DEC for quick reference. All listed as LOCKED / ANSWERED.
 | **DEC-SYN-05** | Creator Safeguard | 48h warning + human appeal + prepaid refund contract. Codified as F-191b. |
 | **DEC-SYN-06** | Price lock (superseded) | 3-year price lock at signup rate + fee lock. Codified as F-172a, F-TRUST-002/003/004. **Superseded by DEC-PRICELOCK-01.** |
 | **DEC-PRICELOCK-01** | Price-lock-for-life | Paid subscription price is locked **forever** (not 3 years) for uninterrupted subscriptions. New prices apply only to new signups or re-subscribers after cancellation. Brand commitment, not a promotion. Codified as F-PRICELOCK-001. Applied 2026-04-25. |
-| **DEC-PRICELOCK-02** | Domain add-on + Pro tier | $2/mo custom-domain add-on is **universal** (all tiers). Pro tier simplified to 1 custom domain (was 3) — multi-domain is Business/agency. Business: 10 included (was unlimited). Pro differentiator = 8 power features, not domain count. Codified as F-DOMAIN-ADDON-001. Applied 2026-04-25. |
+| **DEC-PRICELOCK-02** | Domain add-on + Pro tier | $2/mo custom-domain add-on is **universal** (all tiers). Pro tier simplified to 1 custom domain (was 3) — multi-domain is Business/agency. Business: 10 included (was unlimited). Pro differentiator = 8 power features, not domain count. Codified as F-DOMAIN-ADDON-001. Applied 2026-04-25. **[Domain price part superseded by DEC-279: $2/mo → $1.99/mo.]** |
 | **DEC-ANTI-001** | AP-001 | No "Powered by tadaify" footer on ANY tier. Not a paid unlock. Hard-locked. |
 | **DEC-ANTI-002** | AP-018/046 | 0% platform fees contractually locked. Published on Trust Center. Cannot be raised mid-subscription. |
 | **DEC-ANTI-003** | AP-047 | F-UPSELL-004 DOES NOT pre-select paid radio. Default stays Free. Badge-only recommendation. |
@@ -1511,7 +1535,9 @@ One-line per DEC for quick reference. All listed as LOCKED / ANSWERED.
 | **DEC-ANIMATIONS-SPLIT-01** | Animations sub-tab | 2 sections (answer A): Entrance (page + block + hover, runs once) + Ambient (always-on overlay: 10 effects × density/speed/color). Third section: Accessibility footer. Applied 2026-04-25. |
 | **DEC-WALLPAPER-ANIM-01** | Wallpaper/Background motion | Rejected (answer C). Background stays static (Fill/Gradient/Blur/Pattern/Image/Video). All motion lives in Animations > Ambient. Applied 2026-04-25. |
 | **DEC-PINNED-MSG-01** | Pinned message | Adopt primitive (answer A). Toggleable fading line above profile card on Page tab. Max 80 chars. Dismissible by visitor. tadaify-only differentiator. Applied 2026-04-25. |
-| **DEC-CUSTOM-DOMAIN-NAV-01** | Custom Domain sidebar | 6th sidebar item (answer A) after Settings. Globe SVG icon + "Domain" label + "soon" pill. Mobile bottom-tabs unchanged (5 max). Placeholder panel: "Coming soon — universal $2/mo add-on per DEC-PRICELOCK-02." Applied 2026-04-25. |
+| **DEC-CUSTOM-DOMAIN-NAV-01** | Custom Domain sidebar | 6th sidebar item (answer A) after Settings. Globe SVG icon + "Domain" label + "soon" pill. Mobile bottom-tabs unchanged (5 max). Placeholder panel: "Coming soon — universal $1.99/mo add-on per DEC-PRICELOCK-02 / DEC-279." Applied 2026-04-25. |
+| **DEC-083** | Pricing (superseded by DEC-279 same-day) | Creator $8/mo, Pro $19/mo. Superseded DEC-037 ($5/$15). Superseded same-day by DEC-279 ($7.99/$19.99). Applied and superseded 2026-04-28. |
+| **DEC-279** | Final pricing | Creator $7.99/mo, Pro $19.99/mo, extra-domain add-on $1.99/mo. Supersedes DEC-083 + DEC-PRICELOCK-02 (domain price part). User-locked 2026-04-28. |
 
 > **2026-04-25 second wave changelog:** DEC-LAYOUT-01=A grid in MVP; DEC-APIPAGES-01=C reject OAuth integrations; DEC-CREATOR-API-01=A Pro pillar; DEC-AI-QUOTA-LADDER-01=B 5/20/100/∞; DEC-AI-FEATURES-ROADMAP-01=A text-only; DEC-ANIMATIONS-SPLIT-01=A 2 sections; DEC-WALLPAPER-ANIM-01=C static background; DEC-PINNED-MSG-01=A primitive; DEC-CUSTOM-DOMAIN-NAV-01=A 6th sidebar item.
 
