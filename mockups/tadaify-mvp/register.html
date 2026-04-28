@@ -760,7 +760,7 @@
     }
     function togglePw() {
       var el = document.getElementById('pw-field');
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      el.style.display = getComputedStyle(el).display === 'none' ? 'block' : 'none';
     }
     function togglePwVis() {
       var inp = document.getElementById('pw-input');
@@ -773,7 +773,7 @@
        magic-link self-confirms via GoTrue redirect — skips B2. */
     function isPwPath() {
       var pwField = document.getElementById('pw-field');
-      return pwField.style.display !== '' && pwField.style.display !== 'none';
+      return getComputedStyle(pwField).display !== 'none';
     }
 
     // B2 navigation
