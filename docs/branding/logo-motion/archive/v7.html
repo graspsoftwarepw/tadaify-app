@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>tadaify — Logo motion v7 (Continuous Gentle Sway)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     DESIGN TOKENS — Indigo Serif palette (locked brand-lock.md §2)
+  ============================================================ */
+  :root {
+    --primary:              #6366F1;
+    --primary-soft:         #8B5CF6;
+    --warm:                 #F59E0B;
+    --bg:                   #F9FAFB;
+    --surface:              #ffffff;
+    --fg:                   #111827;
+    --muted:                #6B7280;
+    --border:               #E5E7EB;
+    --callout-fix:          #EFF6FF;
+    --callout-fix-border:   #BFDBFE;
+    --callout-warn:         #FFFBEB;
+    --callout-warn-border:  #FDE68A;
+    --callout-info:         #F0FDF4;
+    --callout-info-border:  #BBF7D0;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--fg); }
+  body {
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 0 120px;
+  }
+
+  /* ---- layout ---- */
+  .wrap { max-width: 920px; margin: 0 auto; padding: 56px 24px 0; }
+
+  /* ---- header ---- */
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 16px;
+  }
+  .lede {
+    font-size: 16px;
+    color: #374151;
+    max-width: 680px;
+    line-height: 1.65;
+  }
+
+  /* ---- sections ---- */
+  section { margin-top: 56px; }
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 9px;
+  }
+
+  /* ---- stage (hero container) ---- */
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 56px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  /* ---- wordmark ---- */
+  .wordmark {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    user-select: none;
+  }
+  .wm-hero { font-size: 36px; }
+  .wm-nav  { font-size: 16px; }
+  .wm .ta  { color: var(--primary); }
+  .wm .da  { color: var(--warm); }
+  .wm .ify { color: var(--fg); }
+  .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+
+  /* ---- SVG sizing ---- */
+  .logo { display: block; }
+  .logo-240 { width: 240px; height: 240px; }
+  .logo-48  { width: 48px;  height: 48px;  }
+  .logo-32  { width: 32px;  height: 32px;  }
+  .logo-16  { width: 16px;  height: 16px;  }
+
+  /* ============================================================
+     v7 MOTION — "Continuous Gentle Sway"
+
+     SVG viewBox: 0 0 100 100
+     Large orb:   cx=50 cy=50 r=40
+     Warm orb:    cx=50 cy=50 r=20 (= large orb RADIUS, per brand-lock §4)
+
+     Amplitude: ±8 SVG units = 20% of large orb radius (r=40)
+     → warm orb travels between x=42 (full left) and x=58 (full right)
+     → at x=58: warm orb right edge = 58+20 = 78; large orb right edge = 90. Safe.
+     → at x=42: warm orb left edge  = 42-20 = 22; large orb left edge  = 10. Safe.
+
+     Cycle: 5.5s total — L→R→C continuous sway
+     Keyframe breakdown (percentages of 5.5s):
+       0%      = center   (0.0s)  — brief rest starts here (loops back to this)
+       7.3%    = center   (0.4s)  — rest ends, begin glide LEFT
+       30.9%   = full left (1.7s) — hold at left (200ms beat)
+       34.5%   = full left (1.9s) — begin glide RIGHT (passes center ~50%)
+       65.5%   = full right(3.6s) — hold at right (200ms beat)
+       69.1%   = full right(3.8s) — begin glide back to CENTER
+       92.7%   = center   (5.1s)  — rest begins
+       100%    = center   (5.5s)  — loop
+
+     Timing breakdown:
+       0.0 → 0.4s  : rest at center        = 0.4s
+       0.4 → 1.7s  : glide center→left     = 1.3s   ease-in-out
+       1.7 → 1.9s  : hold at left          = 0.2s
+       1.9 → 3.6s  : glide left→right      = 1.7s   ease-in-out (through center)
+       3.6 → 3.8s  : hold at right         = 0.2s
+       3.8 → 5.1s  : glide right→center    = 1.3s   ease-in-out
+       5.1 → 5.5s  : rest at center        = 0.4s   (continuation of 0.0–0.4s rest)
+       TOTAL: 5.5s
+
+     Why single keyframe set works:
+     The left→right glide passes through center organically — no keyframe
+     needed at center during that transit. ease-in-out on the full 1.7s arc
+     naturally decelerates as it exits left, accelerates through the middle,
+     and decelerates arriving at right. This is the "gentle" in "gentle sway".
+
+     NOTE: We use a SINGLE warm orb (not two stacked orbs like v6).
+     v6 needed two orbs to alternate right/left because its pattern was
+     one-direction-per-cycle. v7's pattern is L→R→C in one cycle, so
+     a single orb handles it cleanly.
+  ============================================================ */
+  @keyframes orbSway {
+    /*  rest: center  */
+    0%    { transform: translateX(0px); }       /* 0.0s — loop point */
+    7.3%  { transform: translateX(0px); }       /* 0.4s — rest ends */
+    /* glide center → left */
+    30.9% { transform: translateX(-8px); }      /* 1.7s — full left */
+    /* hold at left: 1.7s → 1.9s = 200ms = 3.6% of 5.5s */
+    34.5% { transform: translateX(-8px); }      /* 1.9s — left hold ends */
+    /* glide left → right (through center, no stop) */
+    65.5% { transform: translateX(8px); }       /* 3.6s — full right */
+    /* hold at right: 3.6s → 3.8s = 200ms = 3.6% */
+    69.1% { transform: translateX(8px); }       /* 3.8s — right hold ends */
+    /* glide right → center */
+    92.7% { transform: translateX(0px); }       /* 5.1s — back at center */
+    /* rest: center continues to 5.5s → loops at 0% */
+    100%  { transform: translateX(0px); }       /* 5.5s — same as 0% */
+  }
+
+  .orb-warm {
+    animation: orbSway 5.5s ease-in-out infinite;
+    transform-origin: 50px 50px;
+  }
+
+  /* static contexts: favicons and reduced-motion */
+  .static .orb-warm {
+    animation: none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .orb-warm { animation: none !important; }
+  }
+
+  /* ---- size cascade row ---- */
+  .sizes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .size-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .size-cell .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .size-cell .caption {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* ---- stills strip ---- */
+  .stills {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .still {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .still svg { width: 80px; height: 80px; display: block; }
+  .still .t {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .still .d {
+    font-size: 11px;
+    color: #374151;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* ---- timing table ---- */
+  .timing {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  .timing table { width: 100%; border-collapse: collapse; }
+  .timing th, .timing td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .timing th {
+    background: #F3F4F6;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .timing tr:last-child td { border-bottom: none; }
+  .timing td:first-child { font-weight: 500; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: #F3F4F6;
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 5px;
+  }
+
+  /* ---- callouts ---- */
+  .callout {
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-top: 14px;
+  }
+  .callout.fix  { background: var(--callout-fix);  border: 1px solid var(--callout-fix-border); }
+  .callout.warn { background: var(--callout-warn); border: 1px solid var(--callout-warn-border); }
+  .callout.good { background: var(--callout-info); border: 1px solid var(--callout-info-border); }
+  .callout h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin: 0 0 10px;
+    font-weight: 700;
+    color: #1E40AF;
+  }
+  .callout.warn h3 { color: #92400E; }
+  .callout.good h3 { color: #065F46; }
+  .callout p, .callout li {
+    font-size: 14px;
+    color: #1F2937;
+    line-height: 1.6;
+  }
+  .callout ul { margin: 6px 0 0; padding-left: 20px; }
+  .callout li { margin: 5px 0; }
+
+  /* ---- change table ---- */
+  .change-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  .change-table table { width: 100%; border-collapse: collapse; }
+  .change-table th, .change-table td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .change-table th {
+    background: #F3F4F6;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .change-table tr:last-child td { border-bottom: none; }
+  .change-table .old { color: #DC2626; text-decoration: line-through; }
+  .change-table .new { color: #065F46; font-weight: 600; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ========== HEADER ========== -->
+  <header>
+    <div class="eyebrow">tadaify / brand / motion v7</div>
+    <h1>Logo motion v7 — continuous gentle sway</h1>
+    <p class="lede">
+      v5 was too slow (9s cycle, 2.25s rest). v6 was too still ("galareta" — 70% stillness, 9.7s long rest). v7 halves the cycle to 5.5s and trims each rest to under 0.5s — the warm orb is always in motion on any casual glance, but moves with the same ease-in-out restraint as before.
+    </p>
+  </header>
+
+  <!-- ========== HERO ========== -->
+  <section>
+    <h2>Hero preview <span class="tag">240 px · in motion</span></h2>
+    <div class="stage">
+
+      <!-- 240px hero — SINGLE warm orb, single keyframe L→R→C -->
+      <svg class="logo logo-240" viewBox="0 0 100 100" role="img" aria-label="tadaify logo animated">
+        <defs>
+          <radialGradient id="stageGrad" cx="50%" cy="45%" r="60%">
+            <stop offset="0%"  stop-color="#8B5CF6"/>
+            <stop offset="100%" stop-color="#6366F1"/>
+          </radialGradient>
+        </defs>
+        <!-- large purple orb: r=40, fills stage -->
+        <circle cx="50" cy="50" r="40" fill="url(#stageGrad)" />
+        <!-- warm orb: r=20 = large orb radius; animated class -->
+        <circle class="orb-warm" cx="50" cy="50" r="20" fill="#F59E0B" />
+      </svg>
+
+      <div class="wordmark wm wm-hero">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== SIZE CASCADE ========== -->
+  <section>
+    <h2>Size cascade <span class="tag">nav · favicon</span></h2>
+    <div class="sizes">
+
+      <!-- nav 48px: motion preserved -->
+      <div class="size-cell">
+        <svg class="logo logo-48" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)" />
+          <circle class="orb-warm" cx="50" cy="50" r="20" fill="#F59E0B" />
+        </svg>
+        <div class="label">nav · 48 px</div>
+        <div class="caption">Motion preserved — sway legible at this scale</div>
+      </div>
+
+      <!-- favicon 32px: static -->
+      <div class="size-cell">
+        <svg class="logo logo-32 static" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)" />
+          <circle cx="50" cy="50" r="20" fill="#F59E0B" />
+        </svg>
+        <div class="label">favicon · 32 px</div>
+        <div class="caption">Static only — motion too small to read cleanly</div>
+      </div>
+
+      <!-- favicon 16px: static -->
+      <div class="size-cell">
+        <svg class="logo logo-16 static" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)" />
+          <circle cx="50" cy="50" r="20" fill="#F59E0B" />
+        </svg>
+        <div class="label">favicon · 16 px</div>
+        <div class="caption">Static — would read as jitter</div>
+      </div>
+
+      <!-- wordmark: never animates -->
+      <div class="size-cell">
+        <div class="wordmark wm wm-nav" style="margin-top:10px">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </div>
+        <div class="label">wordmark</div>
+        <div class="caption">Never animates at any size</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== STILLS STRIP ========== -->
+  <section>
+    <h2>Stills strip <span class="tag">5 keyframes · 5.5 s cycle</span></h2>
+    <div class="stills">
+
+      <!-- frame 1: center, rest -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)"/>
+          <circle cx="50" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">0.0 s</div>
+        <div class="d">Center. Brief rest (0.4 s).</div>
+      </div>
+
+      <!-- frame 2: mid-glide to left -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)"/>
+          <circle cx="46" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">1.0 s</div>
+        <div class="d">Mid-glide left — still decelerating.</div>
+      </div>
+
+      <!-- frame 3: full left hold -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)"/>
+          <circle cx="42" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">1.7 s</div>
+        <div class="d">Full left. Brief beat (0.2 s).</div>
+      </div>
+
+      <!-- frame 4: full right hold -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)"/>
+          <circle cx="58" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">3.6 s</div>
+        <div class="d">Full right. Brief beat (0.2 s).</div>
+      </div>
+
+      <!-- frame 5: returning to center -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad)"/>
+          <circle cx="54" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">4.5 s</div>
+        <div class="d">Mid-glide back. Decelerating to rest.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== TIMING TABLE ========== -->
+  <section>
+    <h2>Full timing table</h2>
+    <div class="timing">
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Time range</th>
+            <th>Duration</th>
+            <th>Displacement</th>
+            <th>Easing</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Rest at center</td>
+            <td>0.0 s → 0.4 s</td>
+            <td>0.4 s</td>
+            <td>0</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Glide center → left</td>
+            <td>0.4 s → 1.7 s</td>
+            <td>1.3 s</td>
+            <td>0 → −8 px</td>
+            <td>ease-in-out</td>
+          </tr>
+          <tr>
+            <td>Hold at left</td>
+            <td>1.7 s → 1.9 s</td>
+            <td>0.2 s</td>
+            <td>−8 px</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Glide left → right</td>
+            <td>1.9 s → 3.6 s</td>
+            <td>1.7 s</td>
+            <td>−8 → +8 px</td>
+            <td>ease-in-out (through center)</td>
+          </tr>
+          <tr>
+            <td>Hold at right</td>
+            <td>3.6 s → 3.8 s</td>
+            <td>0.2 s</td>
+            <td>+8 px</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Glide right → center</td>
+            <td>3.8 s → 5.1 s</td>
+            <td>1.3 s</td>
+            <td>+8 → 0 px</td>
+            <td>ease-in-out</td>
+          </tr>
+          <tr>
+            <td>Rest at center (tail)</td>
+            <td>5.1 s → 5.5 s</td>
+            <td>0.4 s</td>
+            <td>0</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Total cycle</strong></td>
+            <td>—</td>
+            <td><strong>5.5 s</strong></td>
+            <td>±8 px (20 % of r=40)</td>
+            <td><code>animation: orbSway 5.5s ease-in-out infinite</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout fix" style="margin-top:20px">
+      <h3>Implementation note</h3>
+      <p>
+        Single <code>@keyframes orbSway</code> on one <code>&lt;circle&gt;</code> element.
+        <code>animation-timing-function: ease-in-out</code> is set on the animation shorthand —
+        this applies to each keyframe-to-keyframe segment individually, so every glide (left,
+        L→R sweep, return) decelerates smoothly at both ends. No JS. No spring. No overshoot.
+        <code>transform-origin: 50px 50px</code> (SVG viewBox coords, not percent) keeps
+        the orb anchored to the large orb's centre plane.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== WHAT CHANGED ========== -->
+  <section>
+    <h2>What changed vs v5 and v6</h2>
+
+    <div class="change-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>v5 (Sonnet)</th>
+            <th>v6 (Opus)</th>
+            <th>v7 (this)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>User feedback</td>
+            <td class="old">"za wolno" (too slow)</td>
+            <td class="old">"galareta" (jelly — too still)</td>
+            <td class="new">—</td>
+          </tr>
+          <tr>
+            <td>Cycle duration</td>
+            <td class="old">9.0 s</td>
+            <td class="old">14.0 s (28 s symmetry)</td>
+            <td class="new">5.5 s</td>
+          </tr>
+          <tr>
+            <td>Rest at center</td>
+            <td class="old">2.25 s</td>
+            <td class="old">9.7 s (long)</td>
+            <td class="new">0.4 s (head) + 0.4 s (tail) = 0.8 s total per cycle</td>
+          </tr>
+          <tr>
+            <td>Hold at extremes</td>
+            <td class="old">None (single-axis ±sway, no hold)</td>
+            <td class="old">2.2 s (the "greeting beat")</td>
+            <td class="new">0.2 s each side — "beat" not "hold"</td>
+          </tr>
+          <tr>
+            <td>Motion time per cycle</td>
+            <td>~6.75 s / 9 s = 75%</td>
+            <td class="old">~4.3 s / 14 s = 31%</td>
+            <td class="new">~4.7 s / 5.5 s = 85%</td>
+          </tr>
+          <tr>
+            <td>Sway pattern</td>
+            <td>Single axis ±20% — pendulum</td>
+            <td>One-direction step-and-return, alternating sides per cycle</td>
+            <td class="new">L → R → C in one cycle (per user's verbatim: "lewo, prawo, środek")</td>
+          </tr>
+          <tr>
+            <td>Amplitude</td>
+            <td>±8 px (20% of r=40)</td>
+            <td>±6 px (15% of r=40)</td>
+            <td class="new">±8 px (20% of r=40)</td>
+          </tr>
+          <tr>
+            <td>Warm orb count</td>
+            <td>1</td>
+            <td>2 (stacked, opposite phase offset)</td>
+            <td class="new">1 (single orb, single keyframe)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good" style="margin-top: 20px">
+      <h3>Why v7 should work</h3>
+      <ul>
+        <li><strong>No more "za wolno".</strong> At 5.5s, any 3-second glance catches at least one full sway — the orb is visibly moving no matter when you look.</li>
+        <li><strong>No more "galareta".</strong> Stillness is only 0.8s per cycle (15%) vs. v6's 10+ seconds (70%+). The orb reads as alive from moment one.</li>
+        <li><strong>Matches user's exact request.</strong> Pattern is literally left → right → center (lewo → prawo → środek) with brief beats, not pendulum ping-pong and not a step-and-stare.</li>
+        <li><strong>Still premium.</strong> 0.2s beats at extremes (not instant reversal) preserve the "present" feel. ease-in-out on all segments — no bounce, spring, or overshoot.</li>
+        <li><strong>No new axes.</strong> Pure <code>translateX</code> only. No rotation, scale, opacity, or colour change.</li>
+      </ul>
+    </div>
+
+    <div class="callout warn" style="margin-top: 14px">
+      <h3>Honest tradeoffs</h3>
+      <ul>
+        <li><strong>Tempo vs. premium tension.</strong> 5.5s is noticeably more active than v6. On pages with competing fast motion (video autoplay, animated illustrations) it may feel less premium. On clean product pages it should read as "alive and confident".</li>
+        <li><strong>0.8s total rest per cycle.</strong> Just enough for the logo-at-rest moment to register; not long enough to feel frozen. If user wants more stillness, 700ms rest (vs 400ms) would push the ratio without tipping back toward "galareta".</li>
+      </ul>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+</body>
+</html>

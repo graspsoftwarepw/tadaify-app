@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>tadaify — Logo motion v8 (Orbit the Stage)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #6366F1;
+    --primary-soft: #8B5CF6;
+    --warm: #F59E0B;
+    --bg: #F9FAFB;
+    --surface: #ffffff;
+    --fg: #111827;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --callout-good: #ECFDF5;
+    --callout-good-border: #A7F3D0;
+    --callout-warn: #FFFBEB;
+    --callout-warn-border: #FDE68A;
+    --callout-blue: #EFF6FF;
+    --callout-blue-border: #BFDBFE;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 56px 24px 120px;
+  }
+  header h1 {
+    font-size: 34px;
+    line-height: 1.15;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  header .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  header .lede {
+    font-size: 17px;
+    color: #374151;
+    margin: 14px 0 0;
+    max-width: 700px;
+    line-height: 1.6;
+  }
+  section {
+    margin-top: 56px;
+  }
+  section h2 {
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    margin: 0 0 18px;
+  }
+  section h2 .tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- LOGO STAGE ---------- */
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 56px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+  .wordmark {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .wm-hero { font-size: 36px; }
+  .wm-nav  { font-size: 16px; }
+  .wm .ta   { color: var(--primary); }
+  .wm .da   { color: var(--warm); }
+  .wm .ify  { color: var(--fg); }
+  .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+
+  /* SVG sizing */
+  .logo { display: block; }
+  .logo-240 { width: 240px; height: 240px; }
+  .logo-48  { width: 48px;  height: 48px;  }
+  .logo-32  { width: 32px;  height: 32px;  }
+  .logo-16  { width: 16px;  height: 16px;  }
+
+  /*
+   * =====================================================
+   * v8 MOTION — "ORBIT THE STAGE"
+   * =====================================================
+   *
+   * Geometry (SVG 100×100 viewBox):
+   *   Large orb:   cx=50 cy=50 r=40       (R = 40)
+   *   Warm orb:    r=20                   (= R/2)
+   *   Orbit radius: 18.4 SVG units        (= R/2 × 0.92, 8% inner padding)
+   *     → warm orb outer edge reaches 18.4+20 = 38.4 = 96% of R (stays inside)
+   *   Starting point: 3 o'clock  → (68.4, 50)  [center + orbit-r, 0]
+   *   Direction: CLOCKWISE (0° = 3oc → 90° = 6oc → 180° = 9oc → 270° = 12oc → 360° = 3oc)
+   *
+   * Phases per cycle (total 8.2s):
+   *   Phase 1 — Center → 3oc glide:   0.9s   ease-out
+   *   Phase 2 — Full 360° orbit:      5.6s   linear base + radial sway overlay
+   *   Phase 3 — 3oc → Center glide:   0.9s   ease-in
+   *   Phase 4 — Rest at center:        0.8s   still
+   *
+   * Implementation: CSS custom properties + JS-driven orbit.
+   *   The orbit path is a full circle — using JS requestAnimationFrame
+   *   gives precise circular path with radial sway layered on top.
+   *   CSS-only offset-path approach listed as alternative below.
+   * =====================================================
+   */
+
+  /* Reduced-motion override — all animations killed */
+  @media (prefers-reduced-motion: reduce) {
+    .orb-warm { animation: none !important; }
+  }
+
+  /* ---------- size row ---------- */
+  .sizes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .size-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .size-cell .label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .size-cell .caption {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ---------- stills strip ---------- */
+  .stills {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .still {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .still svg { width: 80px; height: 80px; display: block; }
+  .still .t {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .still .d {
+    font-size: 11px;
+    color: #374151;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-top: 14px;
+  }
+  .callout.good { background: var(--callout-good); border: 1px solid var(--callout-good-border); }
+  .callout.warn { background: var(--callout-warn); border: 1px solid var(--callout-warn-border); }
+  .callout.blue { background: var(--callout-blue); border: 1px solid var(--callout-blue-border); }
+  .callout h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 10px;
+    font-weight: 700;
+    color: #065F46;
+  }
+  .callout.warn h3 { color: #92400E; }
+  .callout.blue h3 { color: #1E40AF; }
+  .callout ul { margin: 0; padding-left: 20px; }
+  .callout li { margin: 6px 0; font-size: 14px; color: #1F2937; }
+  .callout p  { margin: 0 0 8px; font-size: 14px; color: #1F2937; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ---------- timing table ---------- */
+  .timing {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  .timing table { width: 100%; border-collapse: collapse; }
+  .timing th, .timing td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .timing th {
+    background: #F3F4F6;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .timing tr:last-child td { border-bottom: none; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: #F3F4F6;
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+  pre code {
+    display: block;
+    padding: 14px 16px;
+    background: #1F2937;
+    color: #F9FAFB;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">tadaify / brand / motion v8</div>
+    <h1>Logo motion v8 — <em>Orbit the Stage</em></h1>
+    <p class="lede">
+      The creator (warm amber orb) starts centred on the stage, glides to the right edge, walks a full 360° clockwise around the perimeter — breathing gently in and out along the way — then returns home for a brief pause before the next lap.
+      The metaphor: every creator on tadaify makes a full, confident circuit of their stage before stepping back to rest.
+    </p>
+  </header>
+
+  <section>
+    <h2>Hero preview <span class="tag">240 px · in motion</span></h2>
+    <div class="stage">
+
+      <!-- 240 px animated hero -->
+      <svg id="logo-hero" class="logo logo-240" viewBox="0 0 100 100" role="img" aria-label="tadaify logo — creator orbiting the stage">
+        <defs>
+          <radialGradient id="stageGrad" cx="50%" cy="45%" r="60%">
+            <stop offset="0%"  stop-color="#8B5CF6"/>
+            <stop offset="100%" stop-color="#6366F1"/>
+          </radialGradient>
+        </defs>
+        <!-- Large purple stage orb -->
+        <circle cx="50" cy="50" r="40" fill="url(#stageGrad)" />
+        <!-- Warm creator orb — position driven by JS orbit engine -->
+        <circle id="orb-hero" class="orb-warm" cx="50" cy="50" r="20" fill="#F59E0B" />
+      </svg>
+
+      <div class="wordmark wm wm-hero">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Size cascade</h2>
+    <div class="sizes">
+      <!-- 48px nav — animated -->
+      <div class="size-cell">
+        <svg id="logo-48" class="logo logo-48" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <radialGradient id="stageGrad48" cx="50%" cy="45%" r="60%">
+              <stop offset="0%"  stop-color="#8B5CF6"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad48)" />
+          <circle id="orb-48" class="orb-warm" cx="50" cy="50" r="20" fill="#F59E0B" />
+        </svg>
+        <div class="label">nav · 48 px</div>
+        <div class="caption">Orbit legible — orbit arc visible</div>
+      </div>
+
+      <!-- 32px favicon — static -->
+      <div class="size-cell">
+        <svg class="logo logo-32 static" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <radialGradient id="stageGrad32" cx="50%" cy="45%" r="60%">
+              <stop offset="0%"  stop-color="#8B5CF6"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad32)" />
+          <circle cx="50" cy="50" r="20" fill="#F59E0B" />
+        </svg>
+        <div class="label">favicon · 32 px</div>
+        <div class="caption">Static — orb centred</div>
+      </div>
+
+      <!-- 16px favicon — static -->
+      <div class="size-cell">
+        <svg class="logo logo-16 static" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <radialGradient id="stageGrad16" cx="50%" cy="45%" r="60%">
+              <stop offset="0%"  stop-color="#8B5CF6"/>
+              <stop offset="100%" stop-color="#6366F1"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#stageGrad16)" />
+          <circle cx="50" cy="50" r="20" fill="#F59E0B" />
+        </svg>
+        <div class="label">favicon · 16 px</div>
+        <div class="caption">Static — centred</div>
+      </div>
+
+      <!-- wordmark nav row -->
+      <div class="size-cell" style="justify-content: center;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg id="logo-nav" class="logo logo-48" viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <radialGradient id="stageGradNav" cx="50%" cy="45%" r="60%">
+                <stop offset="0%"  stop-color="#8B5CF6"/>
+                <stop offset="100%" stop-color="#6366F1"/>
+              </radialGradient>
+            </defs>
+            <circle cx="50" cy="50" r="40" fill="url(#stageGradNav)" />
+            <circle id="orb-nav" class="orb-warm" cx="50" cy="50" r="20" fill="#F59E0B" />
+          </svg>
+          <div class="wordmark wm wm-nav">
+            <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+          </div>
+        </div>
+        <div class="label">nav lockup</div>
+        <div class="caption">Icon + wordmark at 48 px</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Orbit narrative — stills strip <span class="tag">keyframes at 0°, 90°, 180°, 270°, 360° + phases</span></h2>
+    <div class="stills">
+
+      <!-- Still 1: center / rest -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg1" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg1)"/>
+          <circle cx="50" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">① CENTER</div>
+        <div class="d">Rest / start position</div>
+      </div>
+
+      <!-- Still 2: gliding to 3oc (mid-travel) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg2" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg2)"/>
+          <!-- mid-glide to right: x=50+9=59, y=50 -->
+          <circle cx="59.2" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">② GLIDE →</div>
+        <div class="d">Travelling to 3 o'clock</div>
+      </div>
+
+      <!-- Still 3: at 3oc (0° / start of orbit) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg3" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg3)"/>
+          <!-- 3oc: cx=50+18.4=68.4, cy=50 -->
+          <circle cx="68.4" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">③ 3 O'CLOCK</div>
+        <div class="d">Orbit start · right edge</div>
+      </div>
+
+      <!-- Still 4: at 6oc (90° clockwise, bottom) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg4" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg4)"/>
+          <!-- 6oc: cx=50, cy=50+18.4=68.4 -->
+          <circle cx="50" cy="68.4" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">④ 6 O'CLOCK</div>
+        <div class="d">Bottom of orbit · ¼ done</div>
+      </div>
+
+      <!-- Still 5: at 9oc (180°, left) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg5" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg5)"/>
+          <!-- 9oc: cx=50-18.4=31.6, cy=50 -->
+          <circle cx="31.6" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">⑤ 9 O'CLOCK</div>
+        <div class="d">Left edge · halfway</div>
+      </div>
+
+      <!-- Still 6: at 12oc (270°, top) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg6" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg6)"/>
+          <!-- 12oc: cx=50, cy=50-18.4=31.6 -->
+          <circle cx="50" cy="31.6" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">⑥ 12 O'CLOCK</div>
+        <div class="d">Top of orbit · ¾ done</div>
+      </div>
+
+      <!-- Still 7: back at 3oc (360°, orbit complete) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg7" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg7)"/>
+          <!-- back at 3oc same as still 3 -->
+          <circle cx="68.4" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">⑦ 360° DONE</div>
+        <div class="d">Back at 3 o'clock · full lap</div>
+      </div>
+
+      <!-- Still 8: gliding home (mid-return) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg8" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg8)"/>
+          <!-- mid-return: x≈59, y=50 -->
+          <circle cx="59.2" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">⑧ RETURN ←</div>
+        <div class="d">Gliding home to centre</div>
+      </div>
+
+      <!-- Still 9: rest at center again -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs><radialGradient id="sg9" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#6366F1"/></radialGradient></defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sg9)"/>
+          <circle cx="50" cy="50" r="20" fill="#F59E0B"/>
+        </svg>
+        <div class="t">⑨ REST</div>
+        <div class="d">Home · brief pause</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>What changed vs v5 / v6 / v7 <span class="tag">delta</span></h2>
+
+    <div class="callout good">
+      <h3>v8 introduces: full 360° orbit</h3>
+      <ul>
+        <li><strong>Full orbit (new):</strong> creator travels the complete perimeter — none of v1-v7 had orbital motion. It's now genuinely <em>going around</em> the stage.</li>
+        <li><strong>Still subtle:</strong> 5.6 s orbit duration feels deliberate and confident, not rushed. The sway on top (±3% radial breathing) is ornament — the orbit is the star.</li>
+        <li><strong>Addresses the continuous-but-visible requirement:</strong> the entire 360° sweep is the "continuous" part; the gentle sway within it is the "present on stage" part.</li>
+        <li><strong>v5 was "too slow"</strong> — v8 moves continuously for most of its cycle (6.4s out of 8.2s). Only 0.8s of stillness.</li>
+        <li><strong>v6 was "too static"</strong> — v8 never pauses at the edge; it keeps walking the circle.</li>
+        <li><strong>v7 was continuous L↔R sway</strong> — v8 replaces that linear pendulum with a circular orbit. The direction of travel is always changing → reads as circular, not back-and-forth.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Timing breakdown</h2>
+    <div class="timing">
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Duration</th>
+            <th>Easing</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 — Center → 3oc glide</td>
+            <td>0.9 s</td>
+            <td><code>ease-out</code></td>
+            <td>Warm orb moves rightward from (50,50) to (68.4,50)</td>
+          </tr>
+          <tr>
+            <td>2 — 360° clockwise orbit</td>
+            <td>5.6 s</td>
+            <td>Linear + radial sway overlay</td>
+            <td>3oc → 6oc → 9oc → 12oc → 3oc. Radial breathing ±3% amplitude, 4 cycles</td>
+          </tr>
+          <tr>
+            <td>3 — 3oc → Center return</td>
+            <td>0.9 s</td>
+            <td><code>ease-in</code></td>
+            <td>Warm orb glides back from (68.4,50) to (50,50)</td>
+          </tr>
+          <tr>
+            <td>4 — Rest at center</td>
+            <td>0.8 s</td>
+            <td>—</td>
+            <td>Static brand mark. Short enough not to feel stalled</td>
+          </tr>
+          <tr>
+            <td><strong>Total cycle</strong></td>
+            <td><strong>8.2 s</strong></td>
+            <td>—</td>
+            <td>Loop repeats</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sway details <span class="tag">Option A — radial breathing</span></h2>
+    <div class="callout blue">
+      <h3>Option A: Radial sway (selected)</h3>
+      <p>During the orbit, the warm orb's distance from the stage center pulses ±3% of the orbit radius (18.4 SVG units). That's ±0.55 SVG units — barely perceptible, like a slow breath.</p>
+      <p>4 sway cycles per full 360° orbit. At 5.6 s for the orbit, one sway cycle = 1.4 s. Frequency ≈ 0.7 Hz — slow and gentle, well below the threshold for visual noise.</p>
+      <p>Analogy: an Apple Siri breathing orb that also happens to be walking in a circle. The sway says "I'm alive and present"; the orbit says "I'm making my rounds".</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Accessibility</h2>
+    <div class="callout good" style="margin-top:0;">
+      <h3>Reduced-motion support</h3>
+      <ul>
+        <li><code>@media (prefers-reduced-motion: reduce)</code> — all animation paused, warm orb stays centred.</li>
+        <li>Favicon sizes (32 px, 16 px) are always static — orbit is too small to read.</li>
+        <li>SVG has <code>aria-label</code> on animated logos; decorative ones use <code>aria-hidden="true"</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Open question for review</h2>
+    <div class="callout warn">
+      <h3>A/B: Orbit direction</h3>
+      <p><strong>Current (v8):</strong> Clockwise — right → down → left → up. Natural reading direction for LTR audiences; "going forward".</p>
+      <p><strong>Alternative:</strong> Counter-clockwise — right → up → left → down. Slightly more theatrical / less corporate.</p>
+      <p>The orbit duration (5.6 s) feels comfortable but can be tightened to 4.4 s if you want a snappier feel, or loosened to 7 s for a more meditative pace. Current 5.6 s is the middle ground.</p>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<!--
+  =========================================================
+  ORBIT ENGINE — JavaScript-driven smooth circular path
+  =========================================================
+  Uses requestAnimationFrame for precise circular geometry.
+  A pure CSS offset-path approach would work too (see .md),
+  but JS gives us easy radial sway as a second parameter.
+
+  Orbit parameters:
+    ORBIT_R   = 18.4   (orbit radius in SVG units, = R/2 × 0.92)
+    STAGE_CX  = 50     (stage center x)
+    STAGE_CY  = 50     (stage center y)
+    CYCLE     = 8200   (ms for full loop)
+    GLIDE_IN  = 900    (ms, phase 1: center → 3oc)
+    ORBIT_DUR = 5600   (ms, phase 2: 360° orbit)
+    GLIDE_OUT = 900    (ms, phase 3: 3oc → center)
+    REST      = 800    (ms, phase 4: still)
+    SWAY_AMP  = 0.55   (SVG units, = 3% of 18.4)
+    SWAY_FREQ = 4      (cycles per full orbit)
+-->
+<script>
+(function () {
+  // Guard: respect prefers-reduced-motion
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const ORBIT_R    = 18.4;
+  const CX         = 50;
+  const CY         = 50;
+  const GLIDE_IN   = 900;
+  const ORBIT_DUR  = 5600;
+  const GLIDE_OUT  = 900;
+  const REST       = 800;
+  const CYCLE      = GLIDE_IN + ORBIT_DUR + GLIDE_OUT + REST; // 8200 ms
+  const SWAY_AMP   = 0.55;   // ±0.55 SVG units ≈ ±3% of ORBIT_R
+  const SWAY_FREQ  = 4;       // cycles during full orbit
+
+  // Ease-out cubic: starts fast, decelerates
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  // Ease-in cubic: starts slow, accelerates
+  function easeIn(t)  { return Math.pow(t, 3); }
+
+  // Clamp t to [0, 1]
+  function clamp(t) { return Math.max(0, Math.min(1, t)); }
+
+  // Set SVG circle cx/cy attributes
+  function setPos(el, x, y) {
+    el.setAttribute('cx', x.toFixed(3));
+    el.setAttribute('cy', y.toFixed(3));
+  }
+
+  // Compute position at a given timestamp within a cycle
+  function getPos(t) {
+    // t: time within cycle [0, CYCLE) in ms
+
+    if (t < GLIDE_IN) {
+      // Phase 1: glide from center to 3oc (rightward, y stays 50)
+      const p = easeOut(clamp(t / GLIDE_IN));
+      const x = CX + ORBIT_R * p;
+      return { x, y: CY };
+
+    } else if (t < GLIDE_IN + ORBIT_DUR) {
+      // Phase 2: full clockwise 360° orbit with radial sway
+      const elapsed = t - GLIDE_IN;
+      const frac = elapsed / ORBIT_DUR;
+
+      // Clockwise: angle starts at 0° (3oc = east) and increases
+      // In SVG coordinates: x = CX + r*cos(angle), y = CY + r*sin(angle)
+      // Clockwise in screen coords = angle increases positively
+      const angle = 2 * Math.PI * frac; // 0 → 2π
+
+      // Radial sway: gentle sine breathing, SWAY_FREQ cycles per full orbit
+      const sway = SWAY_AMP * Math.sin(SWAY_FREQ * angle);
+      const r = ORBIT_R + sway;
+
+      const x = CX + r * Math.cos(angle);
+      const y = CY + r * Math.sin(angle);
+      return { x, y };
+
+    } else if (t < GLIDE_IN + ORBIT_DUR + GLIDE_OUT) {
+      // Phase 3: glide from 3oc back to center
+      const elapsed = t - GLIDE_IN - ORBIT_DUR;
+      const p = easeIn(clamp(elapsed / GLIDE_OUT));
+      const x = CX + ORBIT_R * (1 - p);
+      return { x, y: CY };
+
+    } else {
+      // Phase 4: rest at center
+      return { x: CX, y: CY };
+    }
+  }
+
+  // Animate a list of orb elements in sync
+  const orbs = [
+    document.getElementById('orb-hero'),
+    document.getElementById('orb-48'),
+    document.getElementById('orb-nav'),
+  ].filter(Boolean);
+
+  let startTime = null;
+
+  function frame(now) {
+    if (!startTime) startTime = now;
+    const elapsed = now - startTime;
+    const t = elapsed % CYCLE;
+
+    const pos = getPos(t);
+    orbs.forEach(orb => setPos(orb, pos.x, pos.y));
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

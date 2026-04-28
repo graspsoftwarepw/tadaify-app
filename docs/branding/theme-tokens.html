@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tada!ify — Theme Tokens</title>
+  <style>
+    /* ============================================================
+       FULL TOKEN SYSTEM — LIGHT + DARK
+       Light mode: [data-theme="light"] (default)
+       Dark mode:  [data-theme="dark"]
+    ============================================================ */
+
+    /* ── LIGHT MODE ─────────────────────────────────────────── */
+    [data-theme="light"] {
+      /* Surface */
+      --background:       #F9FAFB;
+      --surface:          #FFFFFF;
+      --surface-elevated: #FFFFFF;
+      --border-subtle:    #E5E7EB;
+      --border-strong:    #D1D5DB;
+
+      /* Foreground */
+      --text-primary:     #111827;
+      --text-secondary:   #374151;
+      --text-muted:       #6B7280;
+      --text-inverse:     #F9FAFB;
+
+      /* Brand */
+      --brand-primary:         #6366F1;
+      --brand-primary-hover:   #4F46E5;
+      --brand-primary-pressed: #4338CA;
+      --brand-secondary:       #8B5CF6;
+      --brand-warm:            #F59E0B;
+
+      /* Semantic */
+      --success:  #10B981;
+      --warning:  #F59E0B;
+      --danger:   #EF4444;
+      --info:     #3B82F6;
+
+      /* Semantic backgrounds (subtle fills) */
+      --success-bg:  #D1FAE5;
+      --warning-bg:  #FEF3C7;
+      --danger-bg:   #FEE2E2;
+      --info-bg:     #DBEAFE;
+
+      /* Semantic text (on white bg) */
+      --success-text:  #065F46;
+      --warning-text:  #92400E;
+      --danger-text:   #991B1B;
+      --info-text:     #1E40AF;
+
+      /* Gradients */
+      --hero-gradient:      linear-gradient(135deg, #6366F1, #8B5CF6);
+      --warm-glow-gradient: linear-gradient(135deg, #F59E0B, #FDE68A);
+
+      /* Component helpers */
+      --shadow-sm:  0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md:  0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+      --shadow-lg:  0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+      --radius-pill: 9999px;
+
+      /* Input specifics */
+      --input-bg:       #FFFFFF;
+      --input-border:   #D1D5DB;
+      --input-focus:    #6366F1;
+      --input-error-bg: #FFF1F2;
+      --input-error-border: #EF4444;
+
+      /* Link block (product UI) */
+      --link-block-bg:        #FFFFFF;
+      --link-block-bg-hover:  #F9FAFB;
+      --link-block-border:    #E5E7EB;
+      --link-block-accent:    #6366F1;
+    }
+
+    /* ── DARK MODE ──────────────────────────────────────────── */
+    [data-theme="dark"] {
+      /* Surface — cool desaturated navy, NOT pure black */
+      --background:       #0B0F1E;
+      --surface:          #141828;
+      --surface-elevated: #1E2338;
+      --border-subtle:    #252A3D;
+      --border-strong:    #323754;
+
+      /* Foreground */
+      --text-primary:     #F1F5F9;
+      --text-secondary:   #CBD5E1;
+      --text-muted:       #64748B;
+      --text-inverse:     #111827;
+
+      /* Brand — lifted for contrast on dark canvas */
+      --brand-primary:         #818CF8;  /* lifted from #6366F1; contrast 4.7:1 on #0B0F1E */
+      --brand-primary-hover:   #A5B4FC;
+      --brand-primary-pressed: #6366F1;
+      --brand-secondary:       #A78BFA;  /* lifted from #8B5CF6 */
+      --brand-warm:            #FCD34D;  /* lifted from #F59E0B; contrast 9.1:1 on #0B0F1E */
+
+      /* Semantic */
+      --success:  #34D399;
+      --warning:  #FCD34D;
+      --danger:   #F87171;
+      --info:     #60A5FA;
+
+      /* Semantic backgrounds (dark fills) */
+      --success-bg:  #064E3B;
+      --warning-bg:  #451A03;
+      --danger-bg:   #450A0A;
+      --info-bg:     #1E3A5F;
+
+      /* Semantic text (on dark semantic bg) */
+      --success-text:  #6EE7B7;
+      --warning-text:  #FDE68A;
+      --danger-text:   #FCA5A5;
+      --info-text:     #BFDBFE;
+
+      /* Gradients — same hues, slightly lifted */
+      --hero-gradient:      linear-gradient(135deg, #6366F1, #7C3AED);
+      --warm-glow-gradient: linear-gradient(135deg, #F59E0B, #FDE68A);
+
+      /* Component helpers */
+      --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md:  0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg:  0 10px 30px rgba(0,0,0,0.5);
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+      --radius-pill: 9999px;
+
+      /* Input specifics */
+      --input-bg:       #141828;
+      --input-border:   #323754;
+      --input-focus:    #818CF8;
+      --input-error-bg: #2D0A0A;
+      --input-error-border: #F87171;
+
+      /* Link block */
+      --link-block-bg:        #141828;
+      --link-block-bg-hover:  #1E2338;
+      --link-block-border:    #252A3D;
+      --link-block-accent:    #818CF8;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--background);
+      color: var(--text-primary);
+      transition: background 0.25s, color 0.25s;
+    }
+
+    /* ============================================================
+       STICKY TOGGLE HEADER
+    ============================================================ */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+    .sticky-header .logo-inline {
+      font-family: 'Georgia', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .sticky-header .logo-inline .ta  { color: var(--brand-primary); }
+    .sticky-header .logo-inline .da  { color: var(--brand-warm); }
+    .sticky-header .logo-inline .ify { color: var(--text-primary); }
+    .sticky-header .logo-inline .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .toggle-btn:hover { background: var(--surface-elevated); color: var(--text-primary); }
+    .toggle-btn:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+
+    /* ============================================================
+       PAGE SECTIONS
+    ============================================================ */
+    .page-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    .section-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* ============================================================
+       SWATCH SHEET
+    ============================================================ */
+    .swatch-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+    .swatch-col-header {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+    }
+    .swatch-col-header.light { background: #F3F4F6; color: #374151; }
+    .swatch-col-header.dark  { background: #1E2338; color: #CBD5E1; }
+
+    .swatch-group { margin-bottom: 24px; }
+    .swatch-group-title {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .swatch-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .swatch-row:last-child { border-bottom: none; }
+    .swatch-chip {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.08);
+      flex-shrink: 0;
+    }
+    .swatch-info { flex: 1; min-width: 0; }
+    .swatch-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: 'Courier New', monospace;
+    }
+    .swatch-hex {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+    }
+    .swatch-usage {
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      max-width: 180px;
+    }
+
+    /* ============================================================
+       LIGHT HALF — component previews on light bg
+    ============================================================ */
+    .preview-half-light {
+      background: #F9FAFB;
+      padding: 40px 24px 56px;
+      border-top: 2px solid #E5E7EB;
+    }
+    .preview-half-dark {
+      background: #0B0F1E;
+      padding: 40px 24px 56px;
+      border-top: 2px solid #252A3D;
+    }
+
+    .preview-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .preview-card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .preview-card-title {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* ── BUTTONS ─────────────────────────────────────────────── */
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .btn:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+
+    .btn-primary {
+      background: var(--brand-primary);
+      color: var(--text-inverse);
+    }
+    .btn-primary:hover   { background: var(--brand-primary-hover); }
+    .btn-primary:active  { background: var(--brand-primary-pressed); }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1.5px solid var(--brand-primary);
+      color: var(--brand-primary);
+    }
+    .btn-secondary:hover  { background: rgba(99,102,241,0.08); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1.5px solid var(--border-strong);
+    }
+    .btn-ghost:hover { background: var(--surface-elevated); color: var(--text-primary); }
+
+    /* ── INPUTS ──────────────────────────────────────────────── */
+    .input-stack { display: flex; flex-direction: column; gap: 10px; }
+    .input-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .input-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .input {
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+    .input::placeholder { color: var(--text-muted); }
+    .input.focused {
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .input.error {
+      background: var(--input-error-bg);
+      border-color: var(--input-error-border);
+    }
+    .input-error-msg {
+      font-size: 0.6875rem;
+      color: var(--danger);
+      font-weight: 500;
+    }
+
+    /* ── CARD ────────────────────────────────────────────────── */
+    .user-card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+    .user-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+    .user-card-name { font-size: 0.9375rem; font-weight: 700; color: var(--text-primary); }
+    .user-card-handle { font-size: 0.75rem; color: var(--text-muted); }
+    .user-card-body { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+
+    /* ── LINK BLOCK (product UI) ─────────────────────────────── */
+    .link-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--link-block-bg);
+      border: 1.5px solid var(--link-block-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+    .link-block:hover {
+      background: var(--link-block-bg-hover);
+      border-color: var(--link-block-accent);
+      box-shadow: var(--shadow-md);
+    }
+    .link-block:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+    .link-block-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(99,102,241,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      flex-shrink: 0;
+    }
+    .link-block-text { flex: 1; min-width: 0; }
+    .link-block-title { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+    .link-block-sub   { font-size: 0.75rem; color: var(--text-muted); }
+    .link-block-arrow { color: var(--text-muted); font-size: 1rem; }
+
+    /* ── TOASTS ──────────────────────────────────────────────── */
+    .toast-stack { display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+    .toast-icon { font-size: 1rem; flex-shrink: 0; line-height: 1.4; }
+    .toast-body { flex: 1; }
+    .toast-title { font-weight: 700; margin-bottom: 2px; }
+    .toast-msg { font-weight: 400; line-height: 1.4; }
+
+    .toast-success { background: var(--success-bg); border-color: var(--success); color: var(--success-text); }
+    .toast-warning { background: var(--warning-bg); border-color: var(--warning); color: var(--warning-text); }
+    .toast-danger  { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger-text); }
+
+    /* ── TEXT HIERARCHY ──────────────────────────────────────── */
+    .text-hierarchy { display: flex; flex-direction: column; gap: 10px; }
+    .t-h1 { font-size: 1.75rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.03em; line-height: 1.2; }
+    .t-h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.3; }
+    .t-h3 { font-size: 1rem;    font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; line-height: 1.4; }
+    .t-body { font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.6; }
+    .t-muted { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+    .t-code { font-family: 'Courier New', monospace; font-size: 0.8125rem; background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 1px 6px; color: var(--brand-primary); }
+
+    /* ── WORDMARK (both modes) ───────────────────────────────── */
+    .wordmark-demos { display: flex; flex-direction: column; gap: 12px; }
+    .wm {
+      font-family: 'Georgia', serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .wm .ta  { color: var(--brand-primary); }
+    .wm .da  { color: var(--brand-warm); }
+    .wm .ify { color: var(--text-primary); }
+    /* dark override for ify — handled by --text-primary token */
+    .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+    [data-theme="dark"] .sep-dash { color: rgba(255, 255, 255, 0.4); margin: 0 0.06em; }
+
+    /* ============================================================
+       CODE BLOCKS
+    ============================================================ */
+    .code-section { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+    .code-block {
+      background: #0B0F1E;
+      color: #E2E8F0;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      border: 1px solid #1E2338;
+    }
+    .code-block .token-name   { color: #818CF8; }
+    .code-block .token-value  { color: #6EE7B7; }
+    .code-block .token-comment{ color: #4B5563; }
+    .code-block .token-key    { color: #FCD34D; }
+
+    /* ============================================================
+       SECTION SEPARATORS
+    ============================================================ */
+    .half-label {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 24px 4px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .half-badge {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+    }
+    .half-badge.light { background: #E5E7EB; color: #374151; }
+    .half-badge.dark  { background: #1E2338; color: #CBD5E1; }
+    .half-badge-desc { font-size: 0.8125rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       STICKY HEADER + TOGGLE
+  ═══════════════════════════════════════════════════════════════ -->
+  <header class="sticky-header">
+    <span class="logo-inline"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span> — Theme Tokens</span>
+    <div class="toggle-group">
+      <span class="toggle-label">Mode:</span>
+      <button class="toggle-btn" id="themeToggle" onclick="toggleTheme()">☀ Light</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SWATCH SHEET — side-by-side LIGHT | DARK
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="page-section">
+    <p class="section-title">Token Swatch Sheet — Light vs Dark</p>
+    <div class="swatch-cols">
+
+      <!-- LIGHT COLUMN -->
+      <div>
+        <span class="swatch-col-header light">Light Mode</span>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title">Surface</p>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#F9FAFB;border:1px solid #E5E7EB"></div>
+            <div class="swatch-info"><p class="swatch-name">--background</p><p class="swatch-hex">#F9FAFB</p></div>
+            <p class="swatch-usage">App canvas — the base layer everything sits on</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#FFFFFF"></div>
+            <div class="swatch-info"><p class="swatch-name">--surface</p><p class="swatch-hex">#FFFFFF</p></div>
+            <p class="swatch-usage">Cards, modals — one level above canvas</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#FFFFFF;border:1px solid #D1D5DB"></div>
+            <div class="swatch-info"><p class="swatch-name">--surface-elevated</p><p class="swatch-hex">#FFFFFF + shadow</p></div>
+            <p class="swatch-usage">Dropdowns, popovers — same color, higher shadow</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#E5E7EB"></div>
+            <div class="swatch-info"><p class="swatch-name">--border-subtle</p><p class="swatch-hex">#E5E7EB</p></div>
+            <p class="swatch-usage">Dividers, inactive borders</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#D1D5DB"></div>
+            <div class="swatch-info"><p class="swatch-name">--border-strong</p><p class="swatch-hex">#D1D5DB</p></div>
+            <p class="swatch-usage">Active borders, input outlines</p>
+          </div>
+        </div>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title">Foreground</p>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#111827"></div>
+            <div class="swatch-info"><p class="swatch-name">--text-primary</p><p class="swatch-hex">#111827</p></div>
+            <p class="swatch-usage">Headings, labels, strong copy</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#374151"></div>
+            <div class="swatch-info"><p class="swatch-name">--text-secondary</p><p class="swatch-hex">#374151</p></div>
+            <p class="swatch-usage">Body copy, descriptive text</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#6B7280"></div>
+            <div class="swatch-info"><p class="swatch-name">--text-muted</p><p class="swatch-hex">#6B7280</p></div>
+            <p class="swatch-usage">Timestamps, metadata, hints</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#F9FAFB;border:1px solid #E5E7EB"></div>
+            <div class="swatch-info"><p class="swatch-name">--text-inverse</p><p class="swatch-hex">#F9FAFB</p></div>
+            <p class="swatch-usage">Text on colored fills (buttons)</p>
+          </div>
+        </div>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title">Brand</p>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#6366F1"></div>
+            <div class="swatch-info"><p class="swatch-name">--brand-primary</p><p class="swatch-hex">#6366F1</p></div>
+            <p class="swatch-usage">CTAs, links, active states — LOCKED</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#4F46E5"></div>
+            <div class="swatch-info"><p class="swatch-name">--brand-primary-hover</p><p class="swatch-hex">#4F46E5</p></div>
+            <p class="swatch-usage">Hover state</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#4338CA"></div>
+            <div class="swatch-info"><p class="swatch-name">--brand-primary-pressed</p><p class="swatch-hex">#4338CA</p></div>
+            <p class="swatch-usage">Active / pressed state</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#8B5CF6"></div>
+            <div class="swatch-info"><p class="swatch-name">--brand-secondary</p><p class="swatch-hex">#8B5CF6</p></div>
+            <p class="swatch-usage">Gradient partner, accents</p>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#F59E0B"></div>
+            <div class="swatch-info"><p class="swatch-name">--brand-warm</p><p class="swatch-hex">#F59E0B</p></div>
+            <p class="swatch-usage">Wordmark -da!, warm orb — LOCKED</p>
+          </div>
+        </div>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title">Semantic</p>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#10B981"></div>
+            <div class="swatch-info"><p class="swatch-name">--success</p><p class="swatch-hex">#10B981</p></div>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#F59E0B"></div>
+            <div class="swatch-info"><p class="swatch-name">--warning</p><p class="swatch-hex">#F59E0B</p></div>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#EF4444"></div>
+            <div class="swatch-info"><p class="swatch-name">--danger</p><p class="swatch-hex">#EF4444</p></div>
+          </div>
+          <div class="swatch-row">
+            <div class="swatch-chip" style="background:#3B82F6"></div>
+            <div class="swatch-info"><p class="swatch-name">--info</p><p class="swatch-hex">#3B82F6</p></div>
+          </div>
+        </div>
+      </div><!-- end light col -->
+
+      <!-- DARK COLUMN -->
+      <div style="background:#0B0F1E;border-radius:12px;padding:20px">
+        <span class="swatch-col-header dark">Dark Mode</span>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title" style="color:#4B5563">Surface</p>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#0B0F1E;border:1px solid #252A3D"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--background</p><p class="swatch-hex">#0B0F1E</p></div>
+            <p class="swatch-usage" style="color:#4B5563">Cool navy canvas — not pure black</p>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#141828;border:1px solid #252A3D"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--surface</p><p class="swatch-hex">#141828</p></div>
+            <p class="swatch-usage" style="color:#4B5563">Cards, modals</p>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#1E2338;border:1px solid #323754"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--surface-elevated</p><p class="swatch-hex">#1E2338</p></div>
+            <p class="swatch-usage" style="color:#4B5563">Dropdowns, popovers</p>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#252A3D"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--border-subtle</p><p class="swatch-hex">#252A3D</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#323754"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--border-strong</p><p class="swatch-hex">#323754</p></div>
+          </div>
+        </div>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title" style="color:#4B5563">Foreground</p>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#F1F5F9"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--text-primary</p><p class="swatch-hex">#F1F5F9</p></div>
+            <p class="swatch-usage" style="color:#4B5563">Headings, labels</p>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#CBD5E1"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--text-secondary</p><p class="swatch-hex">#CBD5E1</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#64748B"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--text-muted</p><p class="swatch-hex">#64748B</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#111827"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--text-inverse</p><p class="swatch-hex">#111827</p></div>
+          </div>
+        </div>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title" style="color:#4B5563">Brand</p>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#818CF8"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--brand-primary</p><p class="swatch-hex">#818CF8</p></div>
+            <p class="swatch-usage" style="color:#4B5563">Lifted from #6366F1 for contrast</p>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#A5B4FC"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--brand-primary-hover</p><p class="swatch-hex">#A5B4FC</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#6366F1"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--brand-primary-pressed</p><p class="swatch-hex">#6366F1</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#A78BFA"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--brand-secondary</p><p class="swatch-hex">#A78BFA</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#FCD34D"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--brand-warm</p><p class="swatch-hex">#FCD34D</p></div>
+            <p class="swatch-usage" style="color:#4B5563">Lifted from #F59E0B; 9.1:1 on canvas</p>
+          </div>
+        </div>
+
+        <div class="swatch-group">
+          <p class="swatch-group-title" style="color:#4B5563">Semantic</p>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#34D399"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--success</p><p class="swatch-hex">#34D399</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#FCD34D"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--warning</p><p class="swatch-hex">#FCD34D</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#F87171"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--danger</p><p class="swatch-hex">#F87171</p></div>
+          </div>
+          <div class="swatch-row" style="border-bottom-color:#252A3D">
+            <div class="swatch-chip" style="background:#60A5FA"></div>
+            <div class="swatch-info"><p class="swatch-name" style="color:#F1F5F9">--info</p><p class="swatch-hex">#60A5FA</p></div>
+          </div>
+        </div>
+
+      </div><!-- end dark col -->
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CSS CUSTOM PROPERTIES CODE BLOCK
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="code-section">
+    <p class="section-title" style="color:var(--text-muted);font-size:0.6875rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid var(--border-subtle);margin-bottom:24px">CSS Custom Properties</p>
+    <div class="code-block"><pre><span class="token-comment">/* Light mode (default) */</span>
+<span class="token-name">:root</span>, <span class="token-name">[data-theme="light"]</span> {
+  <span class="token-comment">/* Surface */</span>
+  <span class="token-name">--background</span>:          <span class="token-value">#F9FAFB</span>;
+  <span class="token-name">--surface</span>:             <span class="token-value">#FFFFFF</span>;
+  <span class="token-name">--surface-elevated</span>:   <span class="token-value">#FFFFFF</span>;  <span class="token-comment">/* differentiate via shadow-md */</span>
+  <span class="token-name">--border-subtle</span>:       <span class="token-value">#E5E7EB</span>;
+  <span class="token-name">--border-strong</span>:       <span class="token-value">#D1D5DB</span>;
+
+  <span class="token-comment">/* Foreground */</span>
+  <span class="token-name">--text-primary</span>:        <span class="token-value">#111827</span>;
+  <span class="token-name">--text-secondary</span>:      <span class="token-value">#374151</span>;
+  <span class="token-name">--text-muted</span>:          <span class="token-value">#6B7280</span>;
+  <span class="token-name">--text-inverse</span>:        <span class="token-value">#F9FAFB</span>;
+
+  <span class="token-comment">/* Brand */</span>
+  <span class="token-name">--brand-primary</span>:         <span class="token-value">#6366F1</span>;
+  <span class="token-name">--brand-primary-hover</span>:   <span class="token-value">#4F46E5</span>;
+  <span class="token-name">--brand-primary-pressed</span>: <span class="token-value">#4338CA</span>;
+  <span class="token-name">--brand-secondary</span>:       <span class="token-value">#8B5CF6</span>;
+  <span class="token-name">--brand-warm</span>:            <span class="token-value">#F59E0B</span>;
+
+  <span class="token-comment">/* Semantic */</span>
+  <span class="token-name">--success</span>:  <span class="token-value">#10B981</span>;  <span class="token-name">--success-bg</span>: <span class="token-value">#D1FAE5</span>;  <span class="token-name">--success-text</span>: <span class="token-value">#065F46</span>;
+  <span class="token-name">--warning</span>:  <span class="token-value">#F59E0B</span>;  <span class="token-name">--warning-bg</span>: <span class="token-value">#FEF3C7</span>;  <span class="token-name">--warning-text</span>: <span class="token-value">#92400E</span>;
+  <span class="token-name">--danger</span>:   <span class="token-value">#EF4444</span>;  <span class="token-name">--danger-bg</span>:  <span class="token-value">#FEE2E2</span>;  <span class="token-name">--danger-text</span>:  <span class="token-value">#991B1B</span>;
+  <span class="token-name">--info</span>:     <span class="token-value">#3B82F6</span>;  <span class="token-name">--info-bg</span>:    <span class="token-value">#DBEAFE</span>;  <span class="token-name">--info-text</span>:    <span class="token-value">#1E40AF</span>;
+
+  <span class="token-comment">/* Gradients */</span>
+  <span class="token-name">--hero-gradient</span>:      <span class="token-value">linear-gradient(135deg, #6366F1, #8B5CF6)</span>;
+  <span class="token-name">--warm-glow-gradient</span>: <span class="token-value">linear-gradient(135deg, #F59E0B, #FDE68A)</span>;
+}
+
+<span class="token-comment">/* Dark mode */</span>
+<span class="token-name">[data-theme="dark"]</span> {
+  <span class="token-comment">/* Surface — cool desaturated navy */</span>
+  <span class="token-name">--background</span>:          <span class="token-value">#0B0F1E</span>;
+  <span class="token-name">--surface</span>:             <span class="token-value">#141828</span>;
+  <span class="token-name">--surface-elevated</span>:   <span class="token-value">#1E2338</span>;
+  <span class="token-name">--border-subtle</span>:       <span class="token-value">#252A3D</span>;
+  <span class="token-name">--border-strong</span>:       <span class="token-value">#323754</span>;
+
+  <span class="token-name">--text-primary</span>:        <span class="token-value">#F1F5F9</span>;
+  <span class="token-name">--text-secondary</span>:      <span class="token-value">#CBD5E1</span>;
+  <span class="token-name">--text-muted</span>:          <span class="token-value">#64748B</span>;
+  <span class="token-name">--text-inverse</span>:        <span class="token-value">#111827</span>;
+
+  <span class="token-comment">/* Brand — lifted for WCAG AA on dark canvas */</span>
+  <span class="token-name">--brand-primary</span>:         <span class="token-value">#818CF8</span>;  <span class="token-comment">/* 4.7:1 on #0B0F1E */</span>
+  <span class="token-name">--brand-primary-hover</span>:   <span class="token-value">#A5B4FC</span>;
+  <span class="token-name">--brand-primary-pressed</span>: <span class="token-value">#6366F1</span>;
+  <span class="token-name">--brand-secondary</span>:       <span class="token-value">#A78BFA</span>;
+  <span class="token-name">--brand-warm</span>:            <span class="token-value">#FCD34D</span>;  <span class="token-comment">/* 9.1:1 on #0B0F1E */</span>
+
+  <span class="token-name">--success</span>:  <span class="token-value">#34D399</span>;  <span class="token-name">--success-bg</span>: <span class="token-value">#064E3B</span>;  <span class="token-name">--success-text</span>: <span class="token-value">#6EE7B7</span>;
+  <span class="token-name">--warning</span>:  <span class="token-value">#FCD34D</span>;  <span class="token-name">--warning-bg</span>: <span class="token-value">#451A03</span>;  <span class="token-name">--warning-text</span>: <span class="token-value">#FDE68A</span>;
+  <span class="token-name">--danger</span>:   <span class="token-value">#F87171</span>;  <span class="token-name">--danger-bg</span>:  <span class="token-value">#450A0A</span>;  <span class="token-name">--danger-text</span>:  <span class="token-value">#FCA5A5</span>;
+  <span class="token-name">--info</span>:     <span class="token-value">#60A5FA</span>;  <span class="token-name">--info-bg</span>:    <span class="token-value">#1E3A5F</span>;  <span class="token-name">--info-text</span>:    <span class="token-value">#BFDBFE</span>;
+
+  <span class="token-name">--hero-gradient</span>:      <span class="token-value">linear-gradient(135deg, #6366F1, #7C3AED)</span>;
+  <span class="token-name">--warm-glow-gradient</span>: <span class="token-value">linear-gradient(135deg, #F59E0B, #FDE68A)</span>;
+}</pre></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       COMPONENT PREVIEWS — LIGHT HALF
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="half-label">
+    <span class="half-badge light">Light mode</span>
+    <span class="half-badge-desc">Components rendered on #F9FAFB</span>
+  </div>
+  <div class="preview-half-light">
+    <div class="preview-grid">
+
+      <!-- Buttons -->
+      <div class="preview-card">
+        <p class="preview-card-title">Buttons</p>
+        <div class="btn-row">
+          <button class="btn btn-primary">Get started</button>
+          <button class="btn btn-secondary">Learn more</button>
+          <button class="btn btn-ghost">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Inputs -->
+      <div class="preview-card">
+        <p class="preview-card-title">Inputs</p>
+        <div class="input-stack">
+          <div class="input-field">
+            <label class="input-label">Page title</label>
+            <input class="input" type="text" placeholder="My creative links">
+          </div>
+          <div class="input-field">
+            <label class="input-label">Username (focused)</label>
+            <input class="input focused" type="text" value="@janka_creates">
+          </div>
+          <div class="input-field">
+            <label class="input-label">Email (error)</label>
+            <input class="input error" type="email" value="not-an-email">
+            <span class="input-error-msg">Please enter a valid email address.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card -->
+      <div class="preview-card">
+        <p class="preview-card-title">Profile card</p>
+        <div class="user-card">
+          <div class="user-card-header">
+            <div class="avatar">JK</div>
+            <div>
+              <p class="user-card-name">Janka Kowalska</p>
+              <p class="user-card-handle">@janka_creates · 14k followers</p>
+            </div>
+          </div>
+          <p class="user-card-body">Illustrator &amp; motion designer. I make things that move people — literally.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" style="font-size:0.8125rem;padding:7px 14px">Follow</button>
+            <button class="btn btn-ghost" style="font-size:0.8125rem;padding:7px 14px">Share page</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Link block -->
+      <div class="preview-card">
+        <p class="preview-card-title">Link block (product UI)</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a class="link-block" href="#">
+            <div class="link-block-icon">🎨</div>
+            <div class="link-block-text">
+              <p class="link-block-title">My Procreate brushes</p>
+              <p class="link-block-sub">gumroad.com · 4.2k downloads</p>
+            </div>
+            <span class="link-block-arrow">›</span>
+          </a>
+          <a class="link-block" href="#">
+            <div class="link-block-icon">📺</div>
+            <div class="link-block-text">
+              <p class="link-block-title">Latest YouTube video</p>
+              <p class="link-block-sub">youtube.com · Animation basics</p>
+            </div>
+            <span class="link-block-arrow">›</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Toasts -->
+      <div class="preview-card">
+        <p class="preview-card-title">Toasts / banners</p>
+        <div class="toast-stack">
+          <div class="toast toast-success">
+            <span class="toast-icon">✓</span>
+            <div class="toast-body">
+              <p class="toast-title">Page published!</p>
+              <p class="toast-msg">Your tada!ify page is live.</p>
+            </div>
+          </div>
+          <div class="toast toast-warning">
+            <span class="toast-icon">⚠</span>
+            <div class="toast-body">
+              <p class="toast-title">Free plan limit</p>
+              <p class="toast-msg">You've used 8 of 10 links. Upgrade to add more.</p>
+            </div>
+          </div>
+          <div class="toast toast-danger">
+            <span class="toast-icon">✕</span>
+            <div class="toast-body">
+              <p class="toast-title">Could not save</p>
+              <p class="toast-msg">Check your connection and try again.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text hierarchy + wordmark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Type hierarchy + wordmark</p>
+        <div class="text-hierarchy">
+          <p class="t-h1">Your page,<br>ta-da.</p>
+          <p class="t-h2">Build in minutes.</p>
+          <p class="t-h3">Add links, socials &amp; more</p>
+          <p class="t-body">Everything your audience needs, in one place. No design skills required.</p>
+          <p class="t-muted">Last updated 2 hours ago · 1,204 visits this week</p>
+          <p>Powered by <span class="t-code">tadaify.com</span></p>
+          <hr style="border:none;border-top:1px solid var(--border-subtle);margin:4px 0">
+          <div class="wordmark-demos">
+            <span class="wm" style="font-size:2rem"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+            <span class="wm" style="font-size:1.25rem"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+            <span class="wm" style="font-size:0.875rem"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       COMPONENT PREVIEWS — DARK HALF
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="half-label" style="background:#0B0F1E;margin:0">
+    <span class="half-badge dark">Dark mode</span>
+    <span class="half-badge-desc" style="color:#4B5563">Components rendered on #0B0F1E</span>
+  </div>
+  <div data-theme="dark">
+  <div class="preview-half-dark">
+    <div class="preview-grid">
+
+      <!-- Buttons dark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Buttons</p>
+        <div class="btn-row">
+          <button class="btn btn-primary">Get started</button>
+          <button class="btn btn-secondary">Learn more</button>
+          <button class="btn btn-ghost">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Inputs dark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Inputs</p>
+        <div class="input-stack">
+          <div class="input-field">
+            <label class="input-label">Page title</label>
+            <input class="input" type="text" placeholder="My creative links">
+          </div>
+          <div class="input-field">
+            <label class="input-label">Username (focused)</label>
+            <input class="input focused" type="text" value="@janka_creates">
+          </div>
+          <div class="input-field">
+            <label class="input-label">Email (error)</label>
+            <input class="input error" type="email" value="not-an-email">
+            <span class="input-error-msg">Please enter a valid email address.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card dark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Profile card</p>
+        <div class="user-card">
+          <div class="user-card-header">
+            <div class="avatar">JK</div>
+            <div>
+              <p class="user-card-name">Janka Kowalska</p>
+              <p class="user-card-handle">@janka_creates · 14k followers</p>
+            </div>
+          </div>
+          <p class="user-card-body">Illustrator &amp; motion designer. I make things that move people — literally.</p>
+          <div class="btn-row">
+            <button class="btn btn-primary" style="font-size:0.8125rem;padding:7px 14px">Follow</button>
+            <button class="btn btn-ghost" style="font-size:0.8125rem;padding:7px 14px">Share page</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Link block dark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Link block (product UI)</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a class="link-block" href="#">
+            <div class="link-block-icon">🎨</div>
+            <div class="link-block-text">
+              <p class="link-block-title">My Procreate brushes</p>
+              <p class="link-block-sub">gumroad.com · 4.2k downloads</p>
+            </div>
+            <span class="link-block-arrow">›</span>
+          </a>
+          <a class="link-block" href="#">
+            <div class="link-block-icon">📺</div>
+            <div class="link-block-text">
+              <p class="link-block-title">Latest YouTube video</p>
+              <p class="link-block-sub">youtube.com · Animation basics</p>
+            </div>
+            <span class="link-block-arrow">›</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Toasts dark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Toasts / banners</p>
+        <div class="toast-stack">
+          <div class="toast toast-success">
+            <span class="toast-icon">✓</span>
+            <div class="toast-body">
+              <p class="toast-title">Page published!</p>
+              <p class="toast-msg">Your tada!ify page is live.</p>
+            </div>
+          </div>
+          <div class="toast toast-warning">
+            <span class="toast-icon">⚠</span>
+            <div class="toast-body">
+              <p class="toast-title">Free plan limit</p>
+              <p class="toast-msg">You've used 8 of 10 links. Upgrade to add more.</p>
+            </div>
+          </div>
+          <div class="toast toast-danger">
+            <span class="toast-icon">✕</span>
+            <div class="toast-body">
+              <p class="toast-title">Could not save</p>
+              <p class="toast-msg">Check your connection and try again.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text hierarchy + wordmark dark -->
+      <div class="preview-card">
+        <p class="preview-card-title">Type hierarchy + wordmark</p>
+        <div class="text-hierarchy">
+          <p class="t-h1">Your page,<br>ta-da.</p>
+          <p class="t-h2">Build in minutes.</p>
+          <p class="t-h3">Add links, socials &amp; more</p>
+          <p class="t-body">Everything your audience needs, in one place. No design skills required.</p>
+          <p class="t-muted">Last updated 2 hours ago · 1,204 visits this week</p>
+          <p style="color:var(--text-secondary)">Powered by <span class="t-code">tadaify.com</span></p>
+          <hr style="border:none;border-top:1px solid var(--border-subtle);margin:4px 0">
+          <!-- Wordmark in dark: ify uses --text-primary which is #F1F5F9 in dark -->
+          <div class="wordmark-demos">
+            <span class="wm" style="font-size:2rem"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+            <span class="wm" style="font-size:1.25rem"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+            <span class="wm" style="font-size:0.875rem"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </div><!-- end data-theme=dark wrapper -->
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TOGGLE SCRIPT
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeToggle');
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      btn.textContent = isDark ? '☀ Light' : '☾ Dark';
+    }
+  </script>
+
+</body>
+</html>

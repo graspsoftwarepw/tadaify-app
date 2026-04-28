@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>tadaify wordmark — hyphen variants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #6366F1;
+    --secondary: #8B5CF6;
+    --warm: #F59E0B;
+    --bg: #F9FAFB;
+    --fg: #111827;
+    --muted: #6B7280;
+    --border: rgba(17,24,39,0.08);
+    --font-serif: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    padding: 64px 48px;
+    line-height: 1.5;
+  }
+  header {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 900;
+    font-size: 2.25rem;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 1rem;
+    margin: 0;
+  }
+  .grid {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 32px 32px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .card .label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+  .card .wordmark {
+    font-family: var(--font-serif);
+    font-weight: 900;
+    font-size: 5rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    user-select: none;
+  }
+  .card .note {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 24px;
+  }
+  .ta { color: var(--primary); }
+  .da { color: var(--warm); }
+  .ify { color: var(--fg); }
+  .sep-dim { color: rgba(17,24,39,0.3); font-weight: 700; }
+  .mini-row {
+    max-width: 900px;
+    margin: 48px auto 0;
+    padding: 32px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    text-align: center;
+    color: white;
+  }
+  .mini-row .mini-label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; margin-bottom: 8px; }
+  .mini-row .mini-wm {
+    font-family: var(--font-serif);
+    font-weight: 900;
+    font-size: 1.5rem;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .mini-row .mini-wm .ta { color: white; opacity: 0.92; }
+  .mini-row .mini-wm .da { color: var(--warm); }
+  .mini-row .mini-wm .ify { color: white; }
+  footer {
+    max-width: 900px;
+    margin: 48px auto 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Wordmark — hyphen variants</h1>
+  <p>Locked palette. Same font (Playfair Display 900). Only the separators change.</p>
+</header>
+
+<div class="grid">
+
+  <div class="card">
+    <div class="label">A · current, with hyphens (reference)</div>
+    <div class="wordmark"><span class="ta">ta</span><span class="sep-dim">-</span><span class="da">da!</span><span class="sep-dim">-</span><span class="ify">ify</span></div>
+    <div class="note">ta = primary · <span style="color:var(--warm)">da!</span> = warm · ify = foreground · hyphens muted</div>
+  </div>
+
+  <div class="card">
+    <div class="label">B · no hyphens, no separators</div>
+    <div class="wordmark"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></div>
+    <div class="note">Pure colour split carries the syllables. Cleanest, most modern.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">C · no hyphens, remove exclamation too</div>
+    <div class="wordmark"><span class="ta">ta</span><span class="da">da</span><span class="ify">ify</span></div>
+    <div class="note">Same as the URL slug. Calmest read — loses the "ta-da!" beat.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">D · thin space separators (hair space · hair space)</div>
+    <div class="wordmark"><span class="ta">ta</span><span style="display:inline-block; width:0.08em"></span><span class="da">da!</span><span style="display:inline-block; width:0.08em"></span><span class="ify">ify</span></div>
+    <div class="note">Micro-gap between syllables — readable as three beats without any punctuation.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">E · middle-dot separator</div>
+    <div class="wordmark"><span class="ta">ta</span><span class="sep-dim">·</span><span class="da">da!</span><span class="sep-dim">·</span><span class="ify">ify</span></div>
+    <div class="note">Geometric dot — more premium, less cartoony than hyphen.</div>
+  </div>
+
+</div>
+
+<div class="mini-row">
+  <div>
+    <div class="mini-label">B (no hyphens) in hero</div>
+    <div class="mini-wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></div>
+  </div>
+  <div>
+    <div class="mini-label">C (no hyphens, no !) in hero</div>
+    <div class="mini-wm"><span class="ta">ta</span><span class="da">da</span><span class="ify">ify</span></div>
+  </div>
+  <div>
+    <div class="mini-label">E (middle dots) in hero</div>
+    <div class="mini-wm"><span class="ta">ta</span><span style="color:rgba(255,255,255,0.4)">·</span><span class="da">da!</span><span style="color:rgba(255,255,255,0.4)">·</span><span class="ify">ify</span></div>
+  </div>
+</div>
+
+<footer>
+  Variants A–E use the locked Indigo Serif palette (primary #6366F1, warm #F59E0B, foreground #111827) and same Playfair Display 900. Pick a variant by letter.
+</footer>
+
+</body>
+</html>

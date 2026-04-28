@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tadaify — MVP Features Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #6366F1;
+    --warm: #F59E0B;
+    --bg: #F9FAFB;
+    --surface: #ffffff;
+    --fg: #111827;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --free: #10B981;
+    --creator: #3B82F6;
+    --pro: #6366F1;
+    --biz: #F59E0B;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px 120px; }
+  header h1 {
+    font-size: 32px;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  header .lede {
+    font-size: 16px;
+    color: #374151;
+    margin: 8px 0 0;
+  }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .metric {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .metric .num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 4px;
+  }
+  .metric .lbl {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 12px;
+  }
+  .area summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+    padding: 4px 0;
+  }
+  .area summary::-webkit-details-marker { display: none; }
+  .area summary .title {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .area summary .stats {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+  }
+  .area summary .stats span strong { color: var(--fg); }
+  .area summary .chev {
+    color: var(--muted);
+    transition: transform 0.15s;
+  }
+  .area[open] summary .chev { transform: rotate(90deg); }
+  .area .body {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .area .body ul {
+    margin: 0;
+    padding-left: 22px;
+  }
+  .area .body li {
+    margin: 6px 0;
+    font-size: 14px;
+    color: #1F2937;
+  }
+  .area .body li .id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: #F3F4F6;
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-right: 8px;
+    color: var(--primary);
+  }
+  .pill {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .pill.free { background: #D1FAE5; color: #065F46; }
+  .pill.creator { background: #DBEAFE; color: #1E40AF; }
+  .pill.pro { background: #E0E7FF; color: #3730A3; }
+  .pill.biz { background: #FEF3C7; color: #92400E; }
+  .pill.mvp { background: #FECACA; color: #991B1B; }
+  .pill.y1 { background: #F3F4F6; color: #4B5563; }
+  .section-h {
+    margin-top: 40px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .legend {
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .legend .group { display: flex; align-items: center; gap: 8px; }
+  .link-strip {
+    margin-top: 32px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .link-strip h3 { margin: 0 0 10px; font-size: 15px; }
+  .link-strip ul { margin: 0; padding-left: 22px; font-size: 14px; }
+  .link-strip li { margin: 4px 0; }
+  .link-strip code {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    background: #F3F4F6;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Tadaify — MVP Features Index</h1>
+    <p class="lede">26 feature areas · 126 MVP units · ~134 agent-weeks of work · anti-patterns-audit-2026-04-24 applied · DEC-DOMAIN-01/DNS-01/FRAMEWORK-01 locked 2026-04-24</p>
+    <p class="lede" style="font-size:13px;color:#6B7280;margin-top:4px;">Single-domain: every route under <code>tadaify.com/</code> — creator URL = <code>tadaify.com/&lt;handle&gt;</code> · Dashboard = <code>tadaify.com/app</code> · Admin = <code>tadaify.com/admin</code> · Remix on Cloudflare Workers · Cloudflare DNS (OVH registrar)</p>
+  </header>
+
+  <div class="metrics">
+    <div class="metric"><div class="num">126</div><div class="lbl">MVP features</div></div>
+    <div class="metric"><div class="num">25</div><div class="lbl">Feature areas</div></div>
+    <div class="metric"><div class="num">5 tyg</div><div class="lbl">Launch target</div></div>
+    <div class="metric"><div class="num">&lt;$2k</div><div class="lbl">Launch cost</div></div>
+  </div>
+
+  <div class="legend">
+    <div class="group">Tier gating:</div>
+    <div class="group"><span class="pill free">FREE</span> wszystkie core features darmowe</div>
+    <div class="group"><span class="pill creator">CREATOR $5/mo</span> + 1 custom domain + 180d analytics + 40 AI/mo + 24h support + favicon + scheduling + badge + directory</div>
+    <div class="group"><span class="pill pro">PRO $15/mo</span> + power features</div>
+    <div class="group"><span class="pill biz">BUSINESS $49/mo</span> + agency</div>
+  </div>
+
+  <div class="section-h">Feature areas — kliknij żeby rozwinąć</div>
+
+  <details class="area" open>
+    <summary>
+      <span class="title">3. Onboarding &amp; Identity</span>
+      <span class="stats"><span>MVP <strong>13</strong></span><span>eng <strong>7 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><span class="id">F-001</span> Guest-mode editor (<code>tadaify.com/try</code> — build before signup, migrate on claim) <span class="pill free">free</span></li>
+        <li><span class="id">F-002</span> Progressive username-first signup (handle → Next → credentials) z live <code>tada!ify</code> wordmark preview <span class="pill free">free</span></li>
+        <li><span class="id">F-003..F-005</span> Google + Apple SSO + Instagram OAuth (optional) day 1, email + password, magic links <span class="pill free">free</span></li>
+        <li><span class="id">F-006..F-011</span> Handle availability + 3 smart alternatives (locale-aware), IP-geo country default, email verification, password reset, phone <em>only</em> at Stripe-time (not signup — anti-AP-013) <span class="pill free">free</span></li>
+        <li><span class="id">F-012</span> <strong>NO trial</strong> per DEC-TRIAL-01 — replaced by: transparent feature preview (🔒 Pro $15/mo pill) + 30-day money-back guarantee on upgrade + F-UPSELL-001..006 subtle discovery <span class="pill free">free</span></li>
+        <li><span class="id">F-015</span> Onboarding checklist + "Buy custom domain $2/mo" step 5 <span class="pill free">free</span></li>
+        <li><span class="id">F-017</span> Data-preservation guarantee on downgrade (custom CSS preserved, analytics in cold S3) <span class="pill free">free</span></li>
+        <li><span class="id">F-019</span> Unsaved-changes guard (anti-data-loss UX) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">3a. Preview Generator (admin marketing tool)</span>
+      <span class="stats"><span>MVP <strong>7</strong></span><span>eng <strong>6-7 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><span class="id">F-PREVIEW-001</span> Admin preview-generator UI (paste Linktree URL → render tadaify preview) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-002</span> Customization engine (theme/animation/layout/CTA/hero/palette) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-003</span> Linktree HTML parser <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-004</span> Preview renderer + slug management (preview.tadaify.com/slug) — top disclosure strip mandatory + remove-on-request form at /remove/&lt;slug&gt; (AP-029-adjacent fix) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-005</span> Hash-based referral + onboarding inheritance (targeted creator signs up → page pre-configured) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-006</span> Admin preview dashboard (conversion tracking per preview) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-007</span> Admin outreach workflow (generate DM copy + log sends) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PREVIEW-010..012</span> Beacons + Stan + Bio.link parsers (M+0.5, week +2 post-launch) <span class="pill y1">M+0.5</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">3b. Custom Domain System</span>
+      <span class="stats"><span>MVP <strong>3</strong></span><span>eng <strong>3.5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><span class="id">F-CUSTOM-DOMAIN-001</span> CNAME verification + DNS instructions UX (creator dashboard) <span class="pill creator">creator</span></li>
+        <li><span class="id">F-CUSTOM-DOMAIN-002</span> Cloudflare for SaaS API integration (add/remove tenant, SSL auto-provision) <span class="pill creator">creator</span></li>
+        <li><span class="id">F-CUSTOM-DOMAIN-003</span> Stripe metered billing $2/mo per additional domain <span class="pill creator">creator</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">4. Editor &amp; Block System</span>
+      <span class="stats"><span>MVP <strong>15</strong></span><span>eng <strong>12 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>7 block types day 1: <strong>product</strong>, <strong>community (subscription)</strong>, <strong>lead-magnet</strong>, <strong>affiliate-link</strong>, <strong>external-link</strong>, <strong>section-header</strong>, <strong>bundle</strong> <span class="pill free">free</span></li>
+        <li>Custom CTA label per block (not "Buy now" — creator's voice) <span class="pill free">free</span></li>
+        <li>Block drag-reorder, show/hide, delete, duplicate <span class="pill free">free</span></li>
+        <li>Rich-text description per product (markdown editor z bold/italic/bullets) <span class="pill free">free</span></li>
+        <li>Hero banner per product (separate from thumbnail) <span class="pill free">free</span></li>
+        <li>Images, video, audio embeds <span class="pill free">free</span></li>
+        <li>Schedule publish + expire per block <span class="pill free">free</span></li>
+        <li>QR code generator (shareable + downloadable PNG) <span class="pill free">free</span></li>
+        <li>Social icon auto-detection (24 platforms) <span class="pill free">free</span></li>
+        <li>Undo/redo + autosave <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">5. Public Page Rendering</span>
+      <span class="stats"><span>MVP <strong>13</strong></span><span>eng <strong>9 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Per-product vanity URLs <code>tadaify.com/&lt;handle&gt;/p/&lt;slug&gt;</code> (SSR via Cloudflare Workers) <span class="pill free">free</span></li>
+        <li>Desktop 2-col (sticky creator left, product drawer right) / mobile single-col <span class="pill free">free</span></li>
+        <li>Hero-first default layout (not Linktree stacked-list) <span class="pill free">free</span></li>
+        <li>Entrance animations library (10 starter animations) <span class="pill free">free</span></li>
+        <li>OpenGraph + Schema.org Product/Review markup per page <span class="pill free">free</span></li>
+        <li>Cloudflare Cache + edge SSR &lt;100ms globally <span class="pill free">free</span></li>
+        <li>Responsive images (WebP + lazy load for bandwidth economy) <span class="pill free">free</span></li>
+        <li><span class="id">F-058a</span> Creator-page visitor cookie consent (EU auto-detect via cf-ipcountry; granular Accept/Reject/Customize — AP-036/037 fix) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">6. Commerce &amp; Checkout</span>
+      <span class="stats"><span>MVP <strong>15</strong></span><span>eng <strong>11 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Inline Stripe Elements checkout (name + email + promo + ToS + PURCHASE on product page) <span class="pill free">free</span></li>
+        <li>Stripe Connect (creator onboarding, 1-day payouts) <span class="pill free">free</span></li>
+        <li>Stripe Tax (EU VAT OSS auto-calc) <span class="pill free">free</span></li>
+        <li>0% platform fees on ALL sales (Stripe passthrough only) <span class="pill free">free</span></li>
+        <li>Order-bump upsell checkbox (default unchecked) <span class="pill free">free</span></li>
+        <li>Per-product reviews with verified-buyer badge <span class="pill free">free</span></li>
+        <li>Discount code input visible at checkout <span class="pill free">free</span></li>
+        <li>Multi-currency (USD default, per-creator override) <span class="pill free">free</span></li>
+        <li>Przelewy24 + BLIK payment methods (PL) <span class="pill free">free</span></li>
+        <li>Apple Pay + Google Pay on mobile <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">6b. Creator Tier Composition ($5/mo — anti-patterns-audit-2026-04-24)</span>
+      <span class="stats"><span>MVP <strong>8</strong></span><span>eng <strong>1.5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>1 custom domain included (no add-on needed) <span class="pill creator">creator</span></li>
+        <li>Analytics retention 180d (vs Free 90d; Pro 365d) — tiered retention without depth paywall <span class="pill creator">creator</span></li>
+        <li>AI generations 40/mo (vs Free 20; Pro 200; Business ∞) <span class="pill creator">creator</span></li>
+        <li>Priority support 24h SLA (vs Free 48h; Pro 12h; Business 4h) <span class="pill creator">creator</span></li>
+        <li>Custom favicon upload (1d eng) <span class="pill creator">creator</span></li>
+        <li>Scheduled block publishing — cron + editor UI (4-5d eng) <span class="pill creator">creator</span></li>
+        <li>Verified creator badge — 2FA + ≥1 social OAuth; NOT purchase-gated (2d eng; AP-048 guard) <span class="pill creator">creator</span></li>
+        <li>Directory listing opt-in at tadaify.com/directory <span class="pill creator">creator</span></li>
+        <li>Seamless Free+domain-add-on → Creator upgrade (same DB row, zero DNS re-setup — ORIGINATE polish) <span class="pill creator">creator</span></li>
+      </ul>
+      <p style="font-size:13px;color:#6B7280;margin-top:12px;">No AP-001 (no branding removal — branding never exists on any tier). No AP-047 (no default pre-select). $2 of creator delight above the $3 domain cost.</p>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">6a. Subtle Contextual Upsell System</span>
+      <span class="stats"><span>MVP <strong>5</strong></span><span>eng <strong>5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><span class="id">F-UPSELL-001</span> Social signal collection during onboarding (follower count, niche) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-UPSELL-002</span> Tier recommendation engine (Free &lt;10k, Creator 10-500k, Pro 500k-5M, Biz &gt;5M) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-UPSELL-003</span> Contextual tier hints scattered in dashboard (💡 chips, dismissible) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-UPSELL-004</span> Signup form recommended-tier badge (💡 badge next to Creator for &gt;100k followers; default radio stays Free — AP-047 fixed) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-UPSELL-006</span> Post-viral moment awareness (celebratory banner + upgrade nudge) <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-UPSELL-005</span> Peer-creator benchmarking (Y1 — needs user base for valid cohorts) <span class="pill y1">y1</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">7. Analytics &amp; Insights</span>
+      <span class="stats"><span>MVP <strong>7</strong></span><span>eng <strong>5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Real-time dashboard (views, clicks, conversions, &lt;50ms latency via Cloudflare Analytics Engine) <span class="pill free">free</span></li>
+        <li>Geo breakdown (country + city, Cloudflare free enrichment) <span class="pill free">free</span></li>
+        <li>Device + browser + network breakdown <span class="pill free">free</span></li>
+        <li>Referrer + UTM tracking <span class="pill free">free</span></li>
+        <li>Per-block + per-product click analytics <span class="pill free">free</span></li>
+        <li>Analytics retention tiered: 90d Free / 180d Creator / 365d Pro / all-time Business <span class="pill free">90d</span> / <span class="pill creator">180d</span> / <span class="pill pro">365d</span></li>
+        <li>Bot filtering (Cloudflare Bot Management) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">8. Email &amp; Audience</span>
+      <span class="stats"><span>MVP <strong>5</strong></span><span>eng <strong>5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Email capture block (double-opt-in via Resend) <span class="pill free">free</span></li>
+        <li>Subscriber list management <span class="pill free">free</span></li>
+        <li>Email campaign builder (simple, up to 1k sends/mo free) <span class="pill free">free</span></li>
+        <li>Mailchimp / ConvertKit / Kit OAuth sync <span class="pill free">free</span></li>
+        <li>Unsubscribe + GDPR compliance <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">9. Growth Loops</span>
+      <span class="stats"><span>MVP <strong>7</strong></span><span>eng <strong>5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Referral link growth loop — creator's referral code embedded in share flows (NOT as a forced footer/watermark on creator pages per AP-001; instead, optional "Built with tadaify" share card in social share flows + referral dashboard) <span class="pill free">free</span></li>
+        <li>Affiliate program (tiered 50% first-10 → 30% recurring lifetime) <span class="pill free">free</span></li>
+        <li>Referral dashboard for creators <span class="pill free">free</span></li>
+        <li>"Ask AI about tadaify" footer prompts (ChatGPT/Claude/Gemini/Perplexity/Grok) <span class="pill free">free</span></li>
+        <li>Public creator directory with niche filter <span class="pill free">free</span></li>
+        <li>Zapier integration day 1 <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">10. Customization &amp; Theming</span>
+      <span class="stats"><span>MVP <strong>12</strong></span><span>eng <strong>7 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Custom themes + palette overrides <span class="pill free">free</span></li>
+        <li>Custom fonts (Google Fonts library) <span class="pill free">free</span></li>
+        <li>Hero banner + avatar + background customization <span class="pill free">free</span></li>
+        <li>Dark mode for public pages <span class="pill free">free</span></li>
+        <li>Custom favicon <span class="pill free">free</span></li>
+        <li>Password-protected pages <span class="pill free">free</span></li>
+        <li>Animation library + entrance effects <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">11. Templates &amp; Starters</span>
+      <span class="stats"><span>MVP <strong>4</strong></span><span>eng <strong>3 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>8-12 templates (niches: Kreator / Fitness / Moda / Muzyk / SMB / Sport) <span class="pill free">free</span></li>
+        <li>Public template previews (<code>tadaify.com/t/&lt;name&gt;</code> without login) <span class="pill free">free</span></li>
+        <li>Template gallery with category filter <span class="pill free">free</span></li>
+        <li>One-click apply to new account <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">12-13. Trust / Admin / Platform</span>
+      <span class="stats"><span>MVP <strong>23</strong></span><span>eng <strong>9 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Trust Center + uptime page + incident log <span class="pill free">free</span></li>
+        <li>Published SLA adherence (Free 48h, Creator 24h, Pro 12h, Biz 4h) <span class="pill free">free</span></li>
+        <li>Maintenance mode (admin-triggered) <span class="pill free">free</span></li>
+        <li>GDPR export + delete RPCs <span class="pill free">free</span></li>
+        <li>Admin user management (ports from linkofme) <span class="pill free">free</span></li>
+        <li>Admin moderation queue + appeals <span class="pill free">free</span></li>
+        <li>Rate limiting infrastructure <span class="pill free">free</span></li>
+        <li>3-year price-lock guarantee <span class="pill free">free</span></li>
+        <li>Content policy + Creator Safeguard page <span class="pill free">free</span></li>
+        <li>Transparent moderation (48h warning before action) <span class="pill free">free</span></li>
+        <li><span class="id">F-TRUST-001</span> /trust page — 0% fee commitment + price-lock + SLA actuals (AP-018/012 fix) <span class="pill free">free</span></li>
+        <li><span class="id">F-TRUST-002</span> <code>profiles.fee_locked_until</code> DB column + billing webhook guard (AP-018 contractual) <span class="pill free">free</span></li>
+        <li><span class="id">F-TRUST-003</span> <code>profiles.price_locked_until</code> DB column + Stripe subscription guard (DEC-SYN-06 enforcement) <span class="pill free">free</span></li>
+        <li><span class="id">F-TRUST-004</span> ToS clause — 3-year price-lock + 0% fees forever (linked from /trust) <span class="pill free">free</span></li>
+        <li><span class="id">F-191a</span> Plain-Language Content Policy page — real examples, borderline verdicts, changelog (AP-026 fix) <span class="pill free">free</span></li>
+        <li><span class="id">F-191b</span> Creator Safeguard contract — 48h warning + human appeal + prepaid refund on ban (AP-005/027/028 fix) <span class="pill free">free</span></li>
+        <li><span class="id">F-172a</span> Published zero-fee + price-lock contract page at trust.tadaify.com/price-lock (AP-012/018 fix) <span class="pill free">free</span></li>
+        <li><span class="id">F-175a</span> Creator page stays live during dunning — no platform-shame overlay (AP-029 fix) <span class="pill free">free</span></li>
+        <li><span class="id">F-180a</span> One-click subscription cancel — single optional reason dropdown, no survey cascade (AP-010 fix) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">14. Integrations &amp; API</span>
+      <span class="stats"><span>MVP <strong>8</strong></span><span>eng <strong>7 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Public self-serve REST API + webhooks day 1 (ORIGINATE vs category) <span class="pill free">free</span></li>
+        <li>OpenAPI 3.1 spec + developer docs portal <span class="pill free">free</span></li>
+        <li>API keys self-serve in dashboard <span class="pill free">free</span></li>
+        <li>Link Apps (native embed blocks: Spotify, YouTube, TikTok, IG, Twitch...) <span class="pill free">free</span></li>
+        <li>Zapier integration (5000+ apps accessible day 1) <span class="pill free">free</span></li>
+        <li>Meta Basic Display + TikTok Display API <span class="pill free">free</span></li>
+        <li>Google Analytics + Meta Pixel embed <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">15. AI Features</span>
+      <span class="stats"><span>MVP <strong>4</strong></span><span>eng <strong>2.5 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>AI product description generator (from title + niche + price) <span class="pill free">free 20/mo</span> <span class="pill creator">creator 40/mo</span> <span class="pill pro">pro 200/mo</span></li>
+        <li>AI page copy (headline + intro from handle + niche) <span class="pill free">free 10/mo</span> <span class="pill creator">creator 20/mo</span> <span class="pill pro">pro 100/mo</span></li>
+        <li>AI image thumbnail (gradient + typography composition) <span class="pill free">free 10/mo</span> <span class="pill creator">creator 20/mo</span> <span class="pill pro">pro 100/mo</span></li>
+        <li>AI diff-approval UX (before → after with approve/regenerate/edit) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">16. EU/PL Localization</span>
+      <span class="stats"><span>MVP <strong>8</strong></span><span>eng <strong>4 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>EU VAT OSS auto-calculation via Stripe Tax <span class="pill free">free</span></li>
+        <li>Przelewy24 + BLIK + SEPA payment methods <span class="pill free">free</span></li>
+        <li>GDPR Article 20 (data export) + Article 17 (right to delete) <span class="pill free">free</span></li>
+        <li>Granular cookie consent (Accept all / Reject non-necessary) <span class="pill free">free</span></li>
+        <li>EU-region Supabase (data residency) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">17. Marketing Surfaces</span>
+      <span class="stats"><span>MVP <strong>10</strong></span><span>eng <strong>6 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li>Landing page (hero + 3 value-props + pricing + FAQ + final CTA) <span class="pill free">free</span></li>
+        <li>Pricing page (Free/Creator/Pro/Business + annual toggle 2 months free) <span class="pill free">free</span></li>
+        <li>11 vs-pages (<code>/vs/linktree</code>, <code>/vs/beacons</code>, etc.) <span class="pill free">free</span></li>
+        <li>5 niche landing pages (creators / fitness / coaches / musicians / photographers) <span class="pill free">free</span></li>
+        <li>Audience-persona tabs in hero (Creators / Educators / Services / Stores) <span class="pill free">free</span></li>
+        <li>Blog foundation (EN-only) <span class="pill free">free</span></li>
+        <li>Trust Center + legal pages (ToS, Privacy, Cookie, DPA) <span class="pill free">free</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">18. Pro-tier Power Features</span>
+      <span class="stats"><span>MVP <strong>5 of 8</strong></span><span>eng <strong>10 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><span class="id">F-PRO-001</span> Analytics 365-day retention + cohort + funnel <span class="pill pro">pro</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PRO-003</span> Team seats (3 collaborators) + roles + audit log <span class="pill pro">pro</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PRO-004</span> API 1k req/hr + 10 webhooks + multi-scope keys <span class="pill pro">pro</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PRO-005</span> Email marketing automations 10k sends/mo + custom sender + segmentation <span class="pill pro">pro</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PRO-006</span> Custom CSS/HTML/JS + custom font upload + white-label <span class="pill pro">pro</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-PRO-002</span> CSV all-time export + Google Sheets live sync <span class="pill pro">pro</span> <span class="pill y1">y1</span></li>
+        <li><span class="id">F-PRO-007</span> A/B testing per block + Bayesian auto-promote <span class="pill pro">pro</span> <span class="pill y1">y1</span></li>
+        <li><span class="id">F-PRO-008</span> Abandoned cart + upsell + dunning <span class="pill pro">pro</span> <span class="pill y1">y1</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="area">
+    <summary>
+      <span class="title">19. Business-tier Features</span>
+      <span class="stats"><span>MVP <strong>5 of 5</strong></span><span>eng <strong>12 wk</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><span class="id">F-BIZ-001</span> Agency sub-accounts (master manages N creator pages) <span class="pill biz">biz</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-BIZ-002</span> White-label domain + co-branded emails + custom ToS <span class="pill biz">biz</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-BIZ-003</span> Priority support + 4h SLA + dedicated CSM <span class="pill biz">biz</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-BIZ-004</span> Bulk product + block management across sub-accounts <span class="pill biz">biz</span> <span class="pill mvp">mvp</span></li>
+        <li><span class="id">F-BIZ-005</span> Agency revenue reporting + client billing <span class="pill biz">biz</span> <span class="pill mvp">mvp</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="section-h">§30. Infrastructure Architecture (locked 2026-04-24)</div>
+
+  <details class="area">
+    <summary>
+      <span class="title">§30. Infrastructure Architecture (DEC-DOMAIN-01 / DEC-DNS-01 / DEC-FRAMEWORK-01 / DEC-INFRA-MINIMAL-01)</span>
+      <span class="stats"><span>locked <strong>2026-04-24</strong></span><span class="chev">▸</span></span>
+    </summary>
+    <div class="body">
+      <ul>
+        <li><strong>URL routing (DEC-DOMAIN-01):</strong> everything under <code>tadaify.com/</code> — <code>tadaify.com/&lt;handle&gt;</code> creator hub · <code>tadaify.com/&lt;handle&gt;/p/&lt;slug&gt;</code> product · <code>tadaify.com/app</code> dashboard · <code>tadaify.com/admin</code> admin · <code>tadaify.com/try</code> guest editor · <code>tadaify.com/pricing</code> · <code>tadaify.com/trust</code> Trust Center · <code>tadaify.com/t/&lt;name&gt;</code> template preview · <code>tadaify.com/vs/&lt;competitor&gt;</code> · <code>tadaify.com/for/&lt;niche&gt;</code></li>
+        <li><strong>Subdomains (separate concerns only):</strong> <code>preview.tadaify.com</code> (preview generator, no handle collision) · <code>developers.tadaify.com</code> (API docs) · <code>status.tadaify.com</code> (uptime, 3rd-party) · <code>mail.tadaify.com</code> (Resend SPF/DKIM)</li>
+        <li><strong>DNS (DEC-DNS-01):</strong> Cloudflare authoritative — OVH registrar → Cloudflare nameservers. Route 53 NOT used. Cloudflare for SaaS handles creator custom domains separately.</li>
+        <li><strong>Framework (DEC-FRAMEWORK-01):</strong> Remix (React Router 7) on Cloudflare Workers runtime. File-based routing. SSR for public pages · CSR for dashboard/admin after first load. Deploy: <code>deploy-cloudflare-pages.yml</code> via Wrangler. <code>main</code> → prod · <code>develop</code> → dev.</li>
+        <li><strong>Backend:</strong> Supabase (EU Frankfurt) — Postgres + GoTrue + Edge Functions + Realtime. All user data, billing, Stripe Connect, email subscribers.</li>
+        <li><strong>AWS — minimal only (DEC-INFRA-MINIMAL-01):</strong> S3 <code>tdfy-analytics-{env}</code> (Parquet cold analytics) · Athena workgroup · Glue catalog · IAM OIDC role for CI/CD. ~100-150 lines Terraform. NO CloudFront · NO Route 53 · NO ACM · NO Lambda by default.</li>
+        <li><strong>External:</strong> Stripe (billing + commerce + Connect + Tax) · Resend (<code>mail.tadaify.com</code>) · OpenAI (AI features via backend proxy)</li>
+        <li><strong>Cloudflare services used:</strong> Pages (app hosting) · Workers (SSR + API routes) · R2 (media, zero egress) · Analytics Engine (hot analytics 90d) · for SaaS (creator custom domains) · DNS (authoritative) · Bot Management</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="link-strip">
+    <h3>Powiązane dokumenty (pełne specs)</h3>
+    <ul>
+      <li><code>functional-spec-final.md</code> — <strong>CANONICAL spec</strong> (supersedes v1+v2; includes §30 Infrastructure Architecture + locked DECs DEC-DOMAIN-01/DNS-01/FRAMEWORK-01)</li>
+      <li><code>functional-spec-v2.md</code> — v2 (superseded by final; kept for reference)</li>
+      <li><code>infra-architecture-v2.md</code> — Cloudflare + Supabase + minimal AWS architecture</li>
+      <li><code>execution-roadmap.md</code> — 5-week day-by-day plan, agent dispatches, decision gates</li>
+      <li><code>marketing-strategy.md</code> — 5 marketing tracks, 10 outreach templates, week-by-week timeline</li>
+      <li><code>competitors/_synthesis/patterns-library.md</code> — 78 competitor patterns identified</li>
+      <li><code>competitors/_synthesis/tadaify-feature-mix.md</code> — 10-section decision doc</li>
+      <li><code>tadaify-research-synthesis.md</code> — 50 DEC-SYN decisions + post-audit alignment</li>
+    </ul>
+  </div>
+
+  <p class="note">
+    Ten plik to szybki index. Pełne specyfikacje (data model, API, dependencies, test surface)
+    znajdują się w <code>functional-spec-v2.md</code>. Kliknij "Feature areas" powyżej aby rozwinąć sekcje.
+  </p>
+
+</div>
+</body>
+</html>
+</parameter>
+</invoke>

@@ -1,0 +1,927 @@
+<!--
+type: branding
+project: tadaify
+title: Tadaify Logo Motion v9 — v8 orbit + v1/v2 gradient orbs
+created_at: 2026-04-24
+author: orchestrator-sonnet-motion-v9
+status: draft
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>tadaify — Logo motion v9 (Orbit + Gradient Orbs)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --primary: #6366F1;
+    --primary-soft: #8B5CF6;
+    --warm: #F59E0B;
+    --bg: #F9FAFB;
+    --surface: #ffffff;
+    --fg: #111827;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --callout-good: #ECFDF5;
+    --callout-good-border: #A7F3D0;
+    --callout-warn: #FFFBEB;
+    --callout-warn-border: #FDE68A;
+    --callout-blue: #EFF6FF;
+    --callout-blue-border: #BFDBFE;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 56px 24px 120px;
+  }
+  header h1 {
+    font-size: 34px;
+    line-height: 1.15;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  header .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  header .lede {
+    font-size: 17px;
+    color: #374151;
+    margin: 14px 0 0;
+    max-width: 700px;
+    line-height: 1.6;
+  }
+  section {
+    margin-top: 56px;
+  }
+  section h2 {
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    margin: 0 0 18px;
+  }
+  section h2 .tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- LOGO STAGE ---------- */
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 56px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+  .wordmark {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .wm-hero { font-size: 36px; }
+  .wm-nav  { font-size: 16px; }
+  .wm .ta   { color: var(--primary); }
+  .wm .da   { color: var(--warm); }
+  .wm .ify  { color: var(--fg); }
+  .wm .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+
+  /* SVG sizing */
+  .logo { display: block; }
+  .logo-240 { width: 240px; height: 240px; }
+  .logo-48  { width: 48px;  height: 48px;  }
+  .logo-32  { width: 32px;  height: 32px;  }
+  .logo-16  { width: 16px;  height: 16px;  }
+
+  /*
+   * =====================================================
+   * v9 MOTION — IDENTICAL TO v8 "ORBIT THE STAGE"
+   * =====================================================
+   * (All motion parameters copied verbatim from v8 — zero drift)
+   *
+   * Geometry (SVG 100×100 viewBox):
+   *   Large orb:   cx=50 cy=50 r=40
+   *   Warm orb:    r=20
+   *   Orbit radius: 18.4 SVG units
+   *   Starting point: 3 o'clock → (68.4, 50)
+   *   Direction: CLOCKWISE
+   *
+   * Phases per cycle (total 8.2s):
+   *   Phase 1 — Center → 3oc glide:   0.9s   ease-out
+   *   Phase 2 — Full 360° orbit:      5.6s   linear + radial sway ±0.55 SVG units @ 4 cycles
+   *   Phase 3 — 3oc → Center glide:   0.9s   ease-in
+   *   Phase 4 — Rest at center:        0.8s   still
+   *
+   * v9 CHANGE (orbs only):
+   *   Large purple orb: SVG radialGradient + linearGradient layered
+   *     → bright inner highlight (top-left rim light) + cooler inky edge
+   *     → drop-shadow filter for glow
+   *   Warm creator orb: SVG linearGradient from warm light-yellow → amber → dark-amber rim
+   *     → drop-shadow filter for warm glow
+   *   Both orbs feel like polished spheres (from v1 mockup / brand-exploration)
+   * =====================================================
+   */
+
+  /* Reduced-motion override */
+  @media (prefers-reduced-motion: reduce) {
+    .orb-warm { animation: none !important; }
+  }
+
+  /* ---------- size row ---------- */
+  .sizes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+  }
+  .size-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .size-cell .label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .size-cell .caption {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ---------- stills strip ---------- */
+  .stills {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .still {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .still svg { width: 80px; height: 80px; display: block; }
+  .still .t {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .still .d {
+    font-size: 11px;
+    color: #374151;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-top: 14px;
+  }
+  .callout.good { background: var(--callout-good); border: 1px solid var(--callout-good-border); }
+  .callout.warn { background: var(--callout-warn); border: 1px solid var(--callout-warn-border); }
+  .callout.blue { background: var(--callout-blue); border: 1px solid var(--callout-blue-border); }
+  .callout h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 10px;
+    font-weight: 700;
+    color: #065F46;
+  }
+  .callout.warn h3 { color: #92400E; }
+  .callout.blue h3 { color: #1E40AF; }
+  .callout ul { margin: 0; padding-left: 20px; }
+  .callout li { margin: 6px 0; font-size: 14px; color: #1F2937; }
+  .callout p  { margin: 0 0 8px; font-size: 14px; color: #1F2937; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ---------- timing table ---------- */
+  .timing {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  .timing table { width: 100%; border-collapse: collapse; }
+  .timing th, .timing td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .timing th {
+    background: #F3F4F6;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .timing tr:last-child td { border-bottom: none; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: #F3F4F6;
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+  pre code {
+    display: block;
+    padding: 14px 16px;
+    background: #1F2937;
+    color: #F9FAFB;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">tadaify / brand / motion v9</div>
+    <h1>Logo motion v9 — <em>v8 orbit + v1/v2 gradient orbs</em></h1>
+    <p class="lede">
+      Motion kept intact from v8 (360° orbit, radial breathing, 8.2s cycle). Orb visual style
+      restored from the v1 motion mockup and brand exploration: dimensional gradient fills,
+      inner rim highlights, and soft glow drop-shadows — replacing the flat/uniform fills
+      that shipped in v8.
+    </p>
+  </header>
+
+  <section>
+    <h2>Hero preview <span class="tag">240 px · in motion</span></h2>
+    <div class="stage">
+
+      <!-- 240 px animated hero — v8 motion, v1 gradient orbs -->
+      <svg id="logo-hero" class="logo logo-240" viewBox="0 0 100 100" role="img" aria-label="tadaify logo — creator orbiting the stage">
+        <defs>
+          <!-- ── Purple stage orb: layered gradients for sphere depth ── -->
+          <!-- Base: cool indigo linear from upper-left bright to deep edge -->
+          <linearGradient id="stageLinear-h" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="#7C78FF"/>
+            <stop offset="58%"  stop-color="#5B56E8"/>
+            <stop offset="100%" stop-color="#4F46E5"/>
+          </linearGradient>
+          <!-- Top-left rim highlight: soft white catchlight -->
+          <radialGradient id="stageHighlight-h" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="rgba(255,255,255,0.36)"/>
+            <stop offset="60%"  stop-color="rgba(255,255,255,0.10)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+          </radialGradient>
+          <!-- Bottom-right subtle secondary light bounce -->
+          <radialGradient id="stageBounce-h" cx="72%" cy="78%" r="28%" gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="rgba(255,255,255,0.12)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+          </radialGradient>
+          <!-- Glow filter for purple orb -->
+          <filter id="stageGlow-h" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="rgba(79,70,229,0.25)" flood-opacity="1"/>
+          </filter>
+
+          <!-- ── Warm creator orb: golden sphere with amber rim ── -->
+          <!-- Base: warm linear, light golden highlight → amber → dark amber rim -->
+          <linearGradient id="warmLinear-h" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="#FFD36A"/>
+            <stop offset="58%"  stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#D97706"/>
+          </linearGradient>
+          <!-- Top-left inner highlight for warm orb -->
+          <radialGradient id="warmHighlight-h" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox">
+            <stop offset="0%"   stop-color="rgba(255,255,255,0.42)"/>
+            <stop offset="55%"  stop-color="rgba(255,255,255,0.12)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+          </radialGradient>
+          <!-- Warm glow filter -->
+          <filter id="warmGlow-h" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="rgba(245,158,11,0.28)" flood-opacity="1"/>
+          </filter>
+        </defs>
+
+        <!-- Purple stage orb: linear base + rim highlight + glow -->
+        <g filter="url(#stageGlow-h)">
+          <circle cx="50" cy="50" r="40" fill="url(#stageLinear-h)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#stageHighlight-h)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#stageBounce-h)"/>
+          <!-- Subtle inner-rim white ring for glass depth -->
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="3.5"/>
+        </g>
+
+        <!-- Warm creator orb: golden gradient + highlight layer, driven by JS orbit engine -->
+        <g id="warm-group-hero" filter="url(#warmGlow-h)">
+          <circle id="orb-hero-base" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmLinear-h)"/>
+          <circle id="orb-hero-light" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmHighlight-h)"/>
+        </g>
+      </svg>
+
+      <div class="wordmark wm wm-hero">
+        <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Size cascade</h2>
+    <div class="sizes">
+      <!-- 48px nav — animated -->
+      <div class="size-cell">
+        <svg id="logo-48" class="logo logo-48" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="stageLinear-48" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#7C78FF"/>
+              <stop offset="58%"  stop-color="#5B56E8"/>
+              <stop offset="100%" stop-color="#4F46E5"/>
+            </linearGradient>
+            <radialGradient id="stageHL-48" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.36)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+            </radialGradient>
+            <linearGradient id="warmLinear-48" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#FFD36A"/>
+              <stop offset="58%"  stop-color="#F59E0B"/>
+              <stop offset="100%" stop-color="#D97706"/>
+            </linearGradient>
+            <radialGradient id="warmHL-48" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.42)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+            </radialGradient>
+            <filter id="stageGlow-48" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="rgba(79,70,229,0.22)" flood-opacity="1"/>
+            </filter>
+            <filter id="warmGlow-48" x="-25%" y="-25%" width="150%" height="150%">
+              <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="rgba(245,158,11,0.28)" flood-opacity="1"/>
+            </filter>
+          </defs>
+          <g filter="url(#stageGlow-48)">
+            <circle cx="50" cy="50" r="40" fill="url(#stageLinear-48)"/>
+            <circle cx="50" cy="50" r="40" fill="url(#stageHL-48)"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          </g>
+          <g id="warm-group-48" filter="url(#warmGlow-48)">
+            <circle id="orb-48-base" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmLinear-48)"/>
+            <circle id="orb-48" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmHL-48)"/>
+          </g>
+        </svg>
+        <div class="label">nav · 48 px</div>
+        <div class="caption">Orbit legible — gradient orb visible</div>
+      </div>
+
+      <!-- 32px favicon — static -->
+      <div class="size-cell">
+        <svg class="logo logo-32 static" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="stageLinear-32" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#7C78FF"/>
+              <stop offset="58%"  stop-color="#5B56E8"/>
+              <stop offset="100%" stop-color="#4F46E5"/>
+            </linearGradient>
+            <radialGradient id="stageHL-32" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.36)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+            </radialGradient>
+            <linearGradient id="warmLinear-32" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#FFD36A"/>
+              <stop offset="58%"  stop-color="#F59E0B"/>
+              <stop offset="100%" stop-color="#D97706"/>
+            </linearGradient>
+            <radialGradient id="warmHL-32" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="rgba(255,255,255,0.42)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#stageLinear-32)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#stageHL-32)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="50" cy="50" r="20" fill="url(#warmLinear-32)"/>
+          <circle cx="50" cy="50" r="20" fill="url(#warmHL-32)"/>
+        </svg>
+        <div class="label">favicon · 32 px</div>
+        <div class="caption">Static — orb centred, gradients legible</div>
+      </div>
+
+      <!-- 16px favicon — static -->
+      <div class="size-cell">
+        <svg class="logo logo-16 static" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="stageLinear-16" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#7C78FF"/>
+              <stop offset="58%"  stop-color="#5B56E8"/>
+              <stop offset="100%" stop-color="#4F46E5"/>
+            </linearGradient>
+            <linearGradient id="warmLinear-16" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+              <stop offset="0%"   stop-color="#FFD36A"/>
+              <stop offset="58%"  stop-color="#F59E0B"/>
+              <stop offset="100%" stop-color="#D97706"/>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#stageLinear-16)"/>
+          <circle cx="50" cy="50" r="20" fill="url(#warmLinear-16)"/>
+        </svg>
+        <div class="label">favicon · 16 px</div>
+        <div class="caption">Static — simplified, gradient preserved</div>
+      </div>
+
+      <!-- wordmark nav row -->
+      <div class="size-cell" style="justify-content: center;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg id="logo-nav" class="logo logo-48" viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <linearGradient id="stageLinear-nav" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="#7C78FF"/>
+                <stop offset="58%"  stop-color="#5B56E8"/>
+                <stop offset="100%" stop-color="#4F46E5"/>
+              </linearGradient>
+              <radialGradient id="stageHL-nav" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(255,255,255,0.36)"/>
+                <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+              </radialGradient>
+              <linearGradient id="warmLinear-nav" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="#FFD36A"/>
+                <stop offset="58%"  stop-color="#F59E0B"/>
+                <stop offset="100%" stop-color="#D97706"/>
+              </linearGradient>
+              <radialGradient id="warmHL-nav" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox">
+                <stop offset="0%"   stop-color="rgba(255,255,255,0.42)"/>
+                <stop offset="100%" stop-color="rgba(255,255,255,0.00)"/>
+              </radialGradient>
+              <filter id="stageGlow-nav" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="rgba(79,70,229,0.22)" flood-opacity="1"/>
+              </filter>
+              <filter id="warmGlow-nav" x="-25%" y="-25%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="rgba(245,158,11,0.28)" flood-opacity="1"/>
+              </filter>
+            </defs>
+            <g filter="url(#stageGlow-nav)">
+              <circle cx="50" cy="50" r="40" fill="url(#stageLinear-nav)"/>
+              <circle cx="50" cy="50" r="40" fill="url(#stageHL-nav)"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+            </g>
+            <g id="warm-group-nav" filter="url(#warmGlow-nav)">
+              <circle id="orb-nav-base" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmLinear-nav)"/>
+              <circle id="orb-nav" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmHL-nav)"/>
+            </g>
+          </svg>
+          <div class="wordmark wm wm-nav">
+            <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+          </div>
+        </div>
+        <div class="label">nav lockup</div>
+        <div class="caption">Icon + wordmark at 48 px</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Orbit narrative — stills strip <span class="tag">keyframes at 0°, 90°, 180°, 270°, 360° + phases</span></h2>
+    <div class="stills">
+
+      <!-- Still 1: center / rest -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl1" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh1" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl1" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh1" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl1)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh1)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="50" cy="50" r="20" fill="url(#wl1)"/>
+          <circle cx="50" cy="50" r="20" fill="url(#wh1)"/>
+        </svg>
+        <div class="t">① CENTER</div>
+        <div class="d">Rest / start position</div>
+      </div>
+
+      <!-- Still 2: gliding to 3oc (mid-travel) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl2" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh2" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl2" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh2" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl2)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh2)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="59.2" cy="50" r="20" fill="url(#wl2)"/>
+          <circle cx="59.2" cy="50" r="20" fill="url(#wh2)"/>
+        </svg>
+        <div class="t">② GLIDE →</div>
+        <div class="d">Travelling to 3 o'clock</div>
+      </div>
+
+      <!-- Still 3: at 3oc (0° / start of orbit) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl3" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh3" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl3" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh3" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl3)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh3)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="68.4" cy="50" r="20" fill="url(#wl3)"/>
+          <circle cx="68.4" cy="50" r="20" fill="url(#wh3)"/>
+        </svg>
+        <div class="t">③ 3 O'CLOCK</div>
+        <div class="d">Orbit start · right edge</div>
+      </div>
+
+      <!-- Still 4: at 6oc (90° clockwise, bottom) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl4" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh4" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl4" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh4" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl4)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh4)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="50" cy="68.4" r="20" fill="url(#wl4)"/>
+          <circle cx="50" cy="68.4" r="20" fill="url(#wh4)"/>
+        </svg>
+        <div class="t">④ 6 O'CLOCK</div>
+        <div class="d">Bottom of orbit · ¼ done</div>
+      </div>
+
+      <!-- Still 5: at 9oc (180°, left) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl5" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh5" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl5" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh5" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl5)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh5)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="31.6" cy="50" r="20" fill="url(#wl5)"/>
+          <circle cx="31.6" cy="50" r="20" fill="url(#wh5)"/>
+        </svg>
+        <div class="t">⑤ 9 O'CLOCK</div>
+        <div class="d">Left edge · halfway</div>
+      </div>
+
+      <!-- Still 6: at 12oc (270°, top) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl6" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh6" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl6" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh6" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl6)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh6)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="50" cy="31.6" r="20" fill="url(#wl6)"/>
+          <circle cx="50" cy="31.6" r="20" fill="url(#wh6)"/>
+        </svg>
+        <div class="t">⑥ 12 O'CLOCK</div>
+        <div class="d">Top of orbit · ¾ done</div>
+      </div>
+
+      <!-- Still 7: back at 3oc (360°, orbit complete) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl7" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh7" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl7" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh7" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl7)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh7)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="68.4" cy="50" r="20" fill="url(#wl7)"/>
+          <circle cx="68.4" cy="50" r="20" fill="url(#wh7)"/>
+        </svg>
+        <div class="t">⑦ 360° DONE</div>
+        <div class="d">Back at 3 o'clock · full lap</div>
+      </div>
+
+      <!-- Still 8: gliding home (mid-return) -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl8" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh8" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl8" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh8" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl8)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh8)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="59.2" cy="50" r="20" fill="url(#wl8)"/>
+          <circle cx="59.2" cy="50" r="20" fill="url(#wh8)"/>
+        </svg>
+        <div class="t">⑧ RETURN ←</div>
+        <div class="d">Gliding home to centre</div>
+      </div>
+
+      <!-- Still 9: rest at center again -->
+      <div class="still">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="sl9" x1="30%" y1="20%" x2="80%" y2="85%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#7C78FF"/><stop offset="58%" stop-color="#5B56E8"/><stop offset="100%" stop-color="#4F46E5"/></linearGradient>
+            <radialGradient id="sh9" cx="32%" cy="24%" r="30%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.36)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+            <linearGradient id="wl9" x1="20%" y1="15%" x2="80%" y2="88%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="#FFD36A"/><stop offset="58%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+            <radialGradient id="wh9" cx="28%" cy="22%" r="38%" gradientUnits="objectBoundingBox"><stop offset="0%" stop-color="rgba(255,255,255,0.42)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#sl9)"/>
+          <circle cx="50" cy="50" r="40" fill="url(#sh9)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="3.5"/>
+          <circle cx="50" cy="50" r="20" fill="url(#wl9)"/>
+          <circle cx="50" cy="50" r="20" fill="url(#wh9)"/>
+        </svg>
+        <div class="t">⑨ REST</div>
+        <div class="d">Home · brief pause</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>What changed vs v8 <span class="tag">delta</span></h2>
+
+    <div class="callout good">
+      <h3>v9 changes (orb rendering only)</h3>
+      <ul>
+        <li>
+          <strong>Orb visual style:</strong> gradient fills + inner rim highlights + soft glow drop-shadows,
+          ported from <code>brand-exploration.html</code> / <code>tadaify-logo-motion-mockup.html</code> (v1 mockup).
+          Purple orb: <code>linear-gradient(145deg, #7C78FF, #5B56E8 58%, #4F46E5)</code> + top-left
+          white radial highlight + inner-rim white stroke + <code>rgba(79,70,229,0.25)</code> drop-shadow.
+          Warm orb: <code>linear-gradient(145deg, #FFD36A, #F59E0B 58%, #D97706)</code> + top-left
+          white radial highlight + <code>rgba(245,158,11,0.28)</code> warm drop-shadow.
+        </li>
+        <li>
+          <strong>Motion:</strong> UNCHANGED from v8 — same 360° clockwise orbit, same radial breathing
+          (±0.55 SVG units, 4 cycles/orbit), same glide durations (0.9s in / 0.9s out), same rest
+          (0.8s), same total cycle (8.2s). JS engine copied verbatim — zero drift.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>A/B question for review</h2>
+    <div class="callout warn">
+      <h3>Drop-shadow intensity</h3>
+      <p>
+        Current v9 uses the same glow opacity as the original v1 mockup
+        (<code>rgba(79,70,229, 0.25)</code> purple, <code>rgba(245,158,11, 0.28)</code> warm).
+        These feel present but not heavy — closer to the "polished sphere" look than "glowing element".
+      </p>
+      <p>
+        <strong>Option A — subtle (default, current):</strong> Purple glow 0.25 opacity, warm glow 0.28 opacity.
+        Reads as dimensional; well-suited for logo use on any background.
+      </p>
+      <p>
+        <strong>Option B — richer:</strong> Purple glow 0.40 opacity, warm glow 0.42 opacity.
+        More "stage spotlight" energy — both orbs feel more lit. Risk: can feel heavy on light backgrounds.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Timing breakdown <span class="tag">identical to v8</span></h2>
+    <div class="timing">
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Duration</th>
+            <th>Easing</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 — Center → 3oc glide</td>
+            <td>0.9 s</td>
+            <td><code>ease-out</code></td>
+            <td>Warm orb moves rightward from (50,50) to (68.4,50)</td>
+          </tr>
+          <tr>
+            <td>2 — 360° clockwise orbit</td>
+            <td>5.6 s</td>
+            <td>Linear + radial sway overlay</td>
+            <td>3oc → 6oc → 9oc → 12oc → 3oc. Radial breathing ±3% amplitude, 4 cycles</td>
+          </tr>
+          <tr>
+            <td>3 — 3oc → Center return</td>
+            <td>0.9 s</td>
+            <td><code>ease-in</code></td>
+            <td>Warm orb glides back from (68.4,50) to (50,50)</td>
+          </tr>
+          <tr>
+            <td>4 — Rest at center</td>
+            <td>0.8 s</td>
+            <td>—</td>
+            <td>Static brand mark. Short enough not to feel stalled</td>
+          </tr>
+          <tr>
+            <td><strong>Total cycle</strong></td>
+            <td><strong>8.2 s</strong></td>
+            <td>—</td>
+            <td>Loop repeats</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Accessibility</h2>
+    <div class="callout good" style="margin-top:0;">
+      <h3>Reduced-motion support</h3>
+      <ul>
+        <li><code>@media (prefers-reduced-motion: reduce)</code> — all animation paused, warm orb stays centred (inherited from v8).</li>
+        <li>Favicon sizes (32 px, 16 px) are always static.</li>
+        <li>SVG has <code>aria-label</code> on animated logos; decorative ones use <code>aria-hidden="true"</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<!--
+  =========================================================
+  ORBIT ENGINE — verbatim copy from v8 (zero motion drift)
+  =========================================================
+  All parameters identical:
+    ORBIT_R   = 18.4
+    STAGE_CX  = 50
+    STAGE_CY  = 50
+    CYCLE     = 8200 ms
+    GLIDE_IN  = 900 ms
+    ORBIT_DUR = 5600 ms
+    GLIDE_OUT = 900 ms
+    REST      = 800 ms
+    SWAY_AMP  = 0.55
+    SWAY_FREQ = 4
+
+  v9 only change: the orbit engine now syncs PAIRS of circles
+  (base gradient + highlight layer) that make up each orb.
+-->
+<script>
+(function () {
+  // Guard: respect prefers-reduced-motion
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // ── Motion constants (identical to v8) ──
+  const ORBIT_R    = 18.4;
+  const CX         = 50;
+  const CY         = 50;
+  const GLIDE_IN   = 900;
+  const ORBIT_DUR  = 5600;
+  const GLIDE_OUT  = 900;
+  const REST       = 800;
+  const CYCLE      = GLIDE_IN + ORBIT_DUR + GLIDE_OUT + REST; // 8200 ms
+  const SWAY_AMP   = 0.55;   // ±0.55 SVG units ≈ ±3% of ORBIT_R
+  const SWAY_FREQ  = 4;       // cycles during full orbit
+
+  // Ease-out cubic: starts fast, decelerates
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  // Ease-in cubic: starts slow, accelerates
+  function easeIn(t)  { return Math.pow(t, 3); }
+
+  // Clamp t to [0, 1]
+  function clamp(t) { return Math.max(0, Math.min(1, t)); }
+
+  // Set SVG circle cx/cy attributes
+  function setPos(el, x, y) {
+    if (!el) return;
+    el.setAttribute('cx', x.toFixed(3));
+    el.setAttribute('cy', y.toFixed(3));
+  }
+
+  // Compute position at a given timestamp within a cycle (verbatim from v8)
+  function getPos(t) {
+    if (t < GLIDE_IN) {
+      const p = easeOut(clamp(t / GLIDE_IN));
+      const x = CX + ORBIT_R * p;
+      return { x, y: CY };
+
+    } else if (t < GLIDE_IN + ORBIT_DUR) {
+      const elapsed = t - GLIDE_IN;
+      const frac = elapsed / ORBIT_DUR;
+      const angle = 2 * Math.PI * frac;
+      const sway = SWAY_AMP * Math.sin(SWAY_FREQ * angle);
+      const r = ORBIT_R + sway;
+      const x = CX + r * Math.cos(angle);
+      const y = CY + r * Math.sin(angle);
+      return { x, y };
+
+    } else if (t < GLIDE_IN + ORBIT_DUR + GLIDE_OUT) {
+      const elapsed = t - GLIDE_IN - ORBIT_DUR;
+      const p = easeIn(clamp(elapsed / GLIDE_OUT));
+      const x = CX + ORBIT_R * (1 - p);
+      return { x, y: CY };
+
+    } else {
+      return { x: CX, y: CY };
+    }
+  }
+
+  // v9: each orb is a PAIR (base + highlight layer) — both must move in sync
+  // Group format: [base circle, highlight circle, optional group element for filter]
+  const orbPairs = [
+    // Hero
+    [
+      document.getElementById('orb-hero-base'),
+      document.getElementById('orb-hero-light'),
+    ],
+    // 48px nav
+    [
+      document.getElementById('orb-48-base'),
+      document.getElementById('orb-48'),
+    ],
+    // Nav lockup
+    [
+      document.getElementById('orb-nav-base'),
+      document.getElementById('orb-nav'),
+    ],
+  ];
+
+  let startTime = null;
+
+  function frame(now) {
+    if (!startTime) startTime = now;
+    const elapsed = now - startTime;
+    const t = elapsed % CYCLE;
+
+    const pos = getPos(t);
+
+    orbPairs.forEach(function(pair) {
+      pair.forEach(function(el) {
+        setPos(el, pos.x, pos.y);
+      });
+    });
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

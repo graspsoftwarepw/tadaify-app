@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tada!ify — Logo Motion v4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       DESIGN TOKENS — Indigo Serif palette (locked brand-lock.md §2)
+    ============================================================ */
+    :root {
+      --primary:       #6366F1;
+      --secondary:     #8B5CF6;
+      --warm:          #F59E0B;
+      --warm-soft:     #FDE68A;
+      --bg:            #F9FAFB;
+      --fg:            #111827;
+      --fg-inv:        #F9FAFB;
+      --hero-gradient: linear-gradient(135deg, #6366F1, #8B5CF6);
+      --muted:         #6B7280;
+      --border:        #E5E7EB;
+      --label:         #9CA3AF;
+      --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+      --font-display: 'Georgia', 'Times New Roman', serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      padding: 48px 24px 96px;
+      line-height: 1.5;
+    }
+
+    h1 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 6px; }
+    h2 { font-size: 0.8125rem; font-weight: 500; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 32px; }
+
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--label);
+      margin-bottom: 20px;
+    }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 56px 0;
+    }
+
+    .page-header { max-width: 860px; margin: 0 auto 56px; }
+    .page-header p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; max-width: 560px; margin-top: 10px; }
+
+    .version-badge {
+      display: inline-block;
+      background: #FEF3C7;
+      color: #92400E;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 14px;
+    }
+
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      user-select: none;
+    }
+    .wordmark .ta  { color: var(--primary); }
+    .wordmark .da  { color: var(--warm); }
+    .wordmark .ify { color: var(--fg); }
+    .sep-dash { color: rgba(17, 24, 39, 0.3); font-weight: 900; margin: 0 0.06em; }
+
+    /*
+     ============================================================
+     ORB MARK — SIZING CONTRACT (locked brand-lock.md §4):
+       viewBox: 0 0 100 100
+       Large orb:  cx=50, cy=50, r=40  (fills 80% of canvas)
+       Warm orb:   r=20                 (exactly ½ of large orb r=40)
+
+     STATIC POSITION:
+       cx=50, cy=50  — warm orb centered on large orb
+
+     TRAVEL DISTANCE (no overshoot in v4 — purposeful walk, not a bounce):
+       Edge position of warm orb center = large orb r - warm orb r = 40 - 20 = 20 units
+       Translate from center: ±20 units in radius direction
+
+     WAVE GESTURE (v4's new motion star):
+       Perpendicular oscillation at the edge point:
+       North edge: orb rocks ±10px in X (East-West sway)
+       East  edge: orb rocks ±10px in Y (North-South sway)
+       South edge: orb rocks ±10px in X (East-West sway)
+       West  edge: orb rocks ±10px in Y (North-South sway)
+       3 full cycles, 280ms per cycle → 840ms wave total
+       Sway amplitude = 10 SVG units = 25% of large orb diameter
+       (warm hand-wave, not a tremor — deliberately readable at 240px)
+
+     IMPLEMENTATION:
+       Web Animations API (WAAPI) — compound animations via JS.
+       CSS @keyframes would require two simultaneous independent keyframe
+       tracks (radius direction + perpendicular direction) which cannot be
+       expressed cleanly without CSS animation-composition: add (not universally
+       supported). WAAPI gives deterministic sequential + parallel control.
+    ============================================================
+    */
+
+    /* Warm orb base — JS adds animation via WAAPI */
+    .orb-warm { }
+
+    /* Static fallback for reduced-motion (set via JS) */
+    .orb-warm-static { /* no transform — stays at cx=50,cy=50 */ }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    .logo-hero { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .logo-hero .wordmark { font-size: 3rem; }
+
+    .logo-nav { display: flex; align-items: center; gap: 10px; }
+    .logo-nav .wordmark { font-size: 1.125rem; }
+
+    .logo-favicon { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .favicon-note { font-size: 0.625rem; color: var(--label); text-align: center; max-width: 80px; line-height: 1.5; }
+
+    .sizes-row { display: flex; align-items: flex-end; gap: 56px; flex-wrap: wrap; }
+    .size-block { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .size-label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label); }
+
+    /* ============================================================
+       STILLS STRIP
+    ============================================================ */
+    .stills-strip { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; margin-top: 8px; }
+    .still-frame { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .still-time { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--label); }
+    .still-desc { font-size: 0.5625rem; color: #D1D5DB; text-align: center; max-width: 72px; line-height: 1.35; }
+    .still-phase { font-size: 0.5625rem; font-weight: 600; color: var(--warm); text-align: center; max-width: 72px; letter-spacing: 0.03em; }
+
+    /* ============================================================
+       WHAT CHANGED callout
+    ============================================================ */
+    .callout {
+      background: #FEF3C7;
+      border: 1px solid #FDE68A;
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .callout h3 { font-size: 0.875rem; font-weight: 600; color: #78350F; margin-bottom: 14px; }
+    .callout ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .callout li { font-size: 0.8125rem; color: #92400E; line-height: 1.5; padding-left: 22px; position: relative; }
+    .callout li::before { content: "→"; position: absolute; left: 0; color: var(--warm); font-weight: 700; }
+
+    /* Phase callout (inline diagram) */
+    .phase-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 8px; }
+    .phase-table th { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    .phase-table td { padding: 6px 10px; color: var(--fg); border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+    .phase-table tr:last-child td { border-bottom: none; }
+    .phase-table .phase-name { font-weight: 500; color: #4338CA; }
+    .phase-table .phase-wave { font-weight: 600; color: #D97706; }
+
+    @media (max-width: 600px) {
+      .sizes-row { gap: 32px; }
+      .stills-strip { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header container">
+  <span class="version-badge">Motion v4 — wave-at-edges</span>
+  <h1>Logo motion v4 — wave-at-edges (creator greeting the stage)</h1>
+  <h2>tadaify brand system · 2026-04-24</h2>
+  <p>
+    Yellow orb = the creator, purple orb = the stage. The creator walks to each edge,
+    waves to the audience (rocking side-to-side), returns to center. Repeats around
+    the stage clockwise (N → E → S → W), then rests at center before looping.
+  </p>
+</div>
+
+<!-- ============================================================
+     HERO — 240px (animated via WAAPI)
+============================================================ -->
+<div class="container" style="margin-bottom: 72px;">
+  <p class="section-label">Hero — 240px (animated)</p>
+  <div class="logo-hero">
+    <svg
+      id="logo-hero-svg"
+      width="240"
+      height="240"
+      viewBox="0 0 100 100"
+      aria-label="tada!ify logo"
+      role="img"
+    >
+      <defs>
+        <radialGradient id="largeOrbGradHero" cx="42%" cy="38%" r="58%">
+          <stop offset="0%" stop-color="#818CF8" />
+          <stop offset="100%" stop-color="#6366F1" />
+        </radialGradient>
+        <radialGradient id="warmOrbGradHero" cx="38%" cy="34%" r="60%">
+          <stop offset="0%" stop-color="#FDE68A" />
+          <stop offset="100%" stop-color="#F59E0B" />
+        </radialGradient>
+        <filter id="warmGlowHero" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <!-- Large orb — stage -->
+      <circle cx="50" cy="50" r="40" fill="url(#largeOrbGradHero)" />
+
+      <!-- Warm orb — creator, animated via WAAPI -->
+      <circle
+        id="warm-orb-hero"
+        class="orb-warm"
+        cx="50" cy="50" r="20"
+        fill="url(#warmOrbGradHero)"
+        filter="url(#warmGlowHero)"
+      />
+    </svg>
+
+    <div class="wordmark" style="font-size: 3rem;">
+      <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" style="max-width:860px; margin-left:auto; margin-right:auto;">
+
+<!-- ============================================================
+     PHASE TIMING TABLE
+============================================================ -->
+<div class="container" style="margin-bottom: 72px;">
+  <p class="section-label">Motion cycle timing — one full loop ≈ 11.6s</p>
+  <table class="phase-table">
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Duration</th>
+        <th>Description</th>
+        <th>Easing</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="phase-name">Long center rest</td><td>1 800ms</td><td>Static lock state — brand mark at rest</td><td>—</td></tr>
+      <tr><td class="phase-name">Travel to North</td><td>580ms</td><td>Smooth walk to top edge, no overshoot</td><td>ease-out</td></tr>
+      <tr><td class="phase-wave">Wave at North (3×)</td><td>900ms</td><td>Rock ±10px in X (East↔West), 3 cycles × 300ms</td><td>ease-in-out each half</td></tr>
+      <tr><td class="phase-name">Return to center</td><td>480ms</td><td>Smooth return from North</td><td>ease-in-out</td></tr>
+      <tr><td class="phase-name">Center pause</td><td>280ms</td><td>Brief gather before next greeting</td><td>—</td></tr>
+      <tr><td class="phase-name">Travel to East</td><td>580ms</td><td>Walk to right edge</td><td>ease-out</td></tr>
+      <tr><td class="phase-wave">Wave at East (3×)</td><td>900ms</td><td>Rock ±10px in Y (North↔South), 3 cycles</td><td>ease-in-out each half</td></tr>
+      <tr><td class="phase-name">Return to center</td><td>480ms</td><td>Smooth return from East</td><td>ease-in-out</td></tr>
+      <tr><td class="phase-name">Center pause</td><td>280ms</td><td>—</td><td>—</td></tr>
+      <tr><td class="phase-name">Travel to South</td><td>580ms</td><td>Walk to bottom edge</td><td>ease-out</td></tr>
+      <tr><td class="phase-wave">Wave at South (3×)</td><td>900ms</td><td>Rock ±10px in X (East↔West), 3 cycles</td><td>ease-in-out each half</td></tr>
+      <tr><td class="phase-name">Return to center</td><td>480ms</td><td>Smooth return from South</td><td>ease-in-out</td></tr>
+      <tr><td class="phase-name">Center pause</td><td>280ms</td><td>—</td><td>—</td></tr>
+      <tr><td class="phase-name">Travel to West</td><td>580ms</td><td>Walk to left edge</td><td>ease-out</td></tr>
+      <tr><td class="phase-wave">Wave at West (3×)</td><td>900ms</td><td>Rock ±10px in Y (North↔South), 3 cycles</td><td>ease-in-out each half</td></tr>
+      <tr><td class="phase-name">Return to center</td><td>480ms</td><td>Smooth return from West</td><td>ease-in-out</td></tr>
+      <tr><td style="font-weight:600;color:var(--fg)">Total cycle</td><td style="font-weight:600">≈ 11 580ms</td><td colspan="2" style="color:var(--muted)">Loops infinitely with long rest as natural breathing point</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider" style="max-width:860px; margin-left:auto; margin-right:auto;">
+
+<!-- ============================================================
+     NAV + FAVICON SIZES
+============================================================ -->
+<div class="container" style="margin-bottom: 72px;">
+  <p class="section-label">Scale — nav 48px · favicon 32px · favicon 16px</p>
+  <div class="sizes-row">
+
+    <!-- NAV: 48px mark + wordmark (animated) -->
+    <div class="size-block">
+      <div class="size-label">Nav · 48px</div>
+      <div class="logo-nav">
+        <svg
+          id="logo-nav-svg"
+          width="48" height="48"
+          viewBox="0 0 100 100"
+          aria-label="tada!ify logo" role="img"
+        >
+          <defs>
+            <radialGradient id="largeOrbGradNav" cx="42%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#818CF8" />
+              <stop offset="100%" stop-color="#6366F1" />
+            </radialGradient>
+            <radialGradient id="warmOrbGradNav" cx="38%" cy="34%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A" />
+              <stop offset="100%" stop-color="#F59E0B" />
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#largeOrbGradNav)" />
+          <circle id="warm-orb-nav" class="orb-warm" cx="50" cy="50" r="20" fill="url(#warmOrbGradNav)" />
+        </svg>
+        <div class="wordmark" style="font-size: 1.125rem;">
+          <span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAVICON 32px — static only -->
+    <div class="size-block">
+      <div class="size-label">Favicon · 32px</div>
+      <div class="logo-favicon">
+        <svg width="32" height="32" viewBox="0 0 100 100" aria-label="tada!ify favicon" role="img">
+          <defs>
+            <radialGradient id="largeOrbGrad32" cx="42%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#818CF8" />
+              <stop offset="100%" stop-color="#6366F1" />
+            </radialGradient>
+            <radialGradient id="warmOrbGrad32" cx="38%" cy="34%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A" />
+              <stop offset="100%" stop-color="#F59E0B" />
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#largeOrbGrad32)" />
+          <circle cx="50" cy="50" r="20" fill="url(#warmOrbGrad32)" />
+        </svg>
+        <div class="favicon-note">Static only — motion illegible at this size</div>
+      </div>
+    </div>
+
+    <!-- FAVICON 16px — static only -->
+    <div class="size-block">
+      <div class="size-label">Favicon · 16px</div>
+      <div class="logo-favicon">
+        <svg width="16" height="16" viewBox="0 0 100 100" aria-label="tada!ify favicon 16" role="img">
+          <defs>
+            <radialGradient id="largeOrbGrad16" cx="42%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#818CF8" />
+              <stop offset="100%" stop-color="#6366F1" />
+            </radialGradient>
+            <radialGradient id="warmOrbGrad16" cx="38%" cy="34%" r="60%">
+              <stop offset="0%" stop-color="#FDE68A" />
+              <stop offset="100%" stop-color="#F59E0B" />
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="40" fill="url(#largeOrbGrad16)" />
+          <circle cx="50" cy="50" r="20" fill="url(#warmOrbGrad16)" />
+        </svg>
+        <div class="favicon-note">Static only — motion illegible at this size</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider" style="max-width:860px; margin-left:auto; margin-right:auto;">
+
+<!-- ============================================================
+     STILLS STRIP — 10 keyframes showing the full wave cycle
+     Key positions in SVG user-space (0-100 grid, center = 50,50):
+       Center:     cx=50,  cy=50   (translate 0, 0)
+       North edge: cx=50,  cy=30   (translate 0, -20)
+       North wave peak L: cx=40, cy=30   (translate -10, -20)
+       North wave peak R: cx=60, cy=30   (translate +10, -20)
+       East  edge: cx=70,  cy=50   (translate +20, 0)
+       East  wave peak U: cx=70, cy=40   (translate +20, -10)
+       East  wave peak D: cx=70, cy=60   (translate +20, +10)
+       South edge: cx=50,  cy=70   (translate 0, +20)
+       West  edge: cx=30,  cy=50   (translate -20, 0)
+============================================================ -->
+<div class="container" style="margin-bottom: 72px;">
+  <p class="section-label">Stills strip — 10 keyframes (static)</p>
+  <p style="font-size:0.75rem; color:var(--muted); margin-bottom:20px; line-height:1.5;">
+    Captures the essential moments that make the wave gesture legible at a glance.
+    Yellow labels mark wave-phase frames — these are the motion's stars.
+  </p>
+  <div class="stills-strip">
+
+    <!-- Frame 1: Center lock (long rest) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s1a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s1b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s1a)"/>
+        <circle cx="50" cy="50" r="20" fill="url(#s1b)"/>
+      </svg>
+      <span class="still-time">0s</span>
+      <span class="still-desc">Center lock state</span>
+    </div>
+
+    <!-- Frame 2: Arriving at North edge -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s2a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s2b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s2a)"/>
+        <!-- North edge: warm orb center at cy=30, outer edge flush with large orb top -->
+        <circle cx="50" cy="30" r="20" fill="url(#s2b)" filter="url(#glow2)"/>
+      </svg>
+      <span class="still-time">1.8s</span>
+      <span class="still-desc">Arrive North edge</span>
+    </div>
+
+    <!-- Frame 3: Wave at North — peak LEFT (cx=40, cy=30) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s3a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s3b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow3" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s3a)"/>
+        <!-- Wave peak left: -10px in X from North edge -->
+        <circle cx="40" cy="30" r="20" fill="url(#s3b)" filter="url(#glow3)"/>
+      </svg>
+      <span class="still-time">~2.5s</span>
+      <span class="still-phase">WAVE ← left</span>
+    </div>
+
+    <!-- Frame 4: Wave at North — peak RIGHT (cx=60, cy=30) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s4a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s4b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s4a)"/>
+        <!-- Wave peak right: +10px in X from North edge -->
+        <circle cx="60" cy="30" r="20" fill="url(#s4b)" filter="url(#glow4)"/>
+      </svg>
+      <span class="still-time">~2.65s</span>
+      <span class="still-phase">WAVE → right</span>
+    </div>
+
+    <!-- Frame 5: Returned to center (post-North) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s5a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s5b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s5a)"/>
+        <circle cx="50" cy="50" r="20" fill="url(#s5b)"/>
+      </svg>
+      <span class="still-time">~4.0s</span>
+      <span class="still-desc">Center pause #1</span>
+    </div>
+
+    <!-- Frame 6: Arrive East edge (cx=70, cy=50) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s6a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s6b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow6" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s6a)"/>
+        <circle cx="70" cy="50" r="20" fill="url(#s6b)" filter="url(#glow6)"/>
+      </svg>
+      <span class="still-time">~4.9s</span>
+      <span class="still-desc">Arrive East edge</span>
+    </div>
+
+    <!-- Frame 7: Wave at East — peak UP (cx=70, cy=40) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s7a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s7b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow7" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s7a)"/>
+        <!-- Wave peak up: -10px in Y from East edge -->
+        <circle cx="70" cy="40" r="20" fill="url(#s7b)" filter="url(#glow7)"/>
+      </svg>
+      <span class="still-time">~5.4s</span>
+      <span class="still-phase">WAVE ↑ up</span>
+    </div>
+
+    <!-- Frame 8: Wave at East — peak DOWN (cx=70, cy=60) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s8a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s8b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow8" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s8a)"/>
+        <!-- Wave peak down: +10px in Y from East edge -->
+        <circle cx="70" cy="60" r="20" fill="url(#s8b)" filter="url(#glow8)"/>
+      </svg>
+      <span class="still-time">~5.55s</span>
+      <span class="still-phase">WAVE ↓ down</span>
+    </div>
+
+    <!-- Frame 9: South edge peek (cx=50, cy=70) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s9a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s9b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow9" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s9a)"/>
+        <circle cx="50" cy="70" r="20" fill="url(#s9b)" filter="url(#glow9)"/>
+      </svg>
+      <span class="still-time">~7.8s</span>
+      <span class="still-desc">South edge wave</span>
+    </div>
+
+    <!-- Frame 10: West edge peek (cx=30, cy=50) -->
+    <div class="still-frame">
+      <svg width="72" height="72" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="s10a" cx="42%" cy="38%" r="58%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#6366F1"/></radialGradient>
+          <radialGradient id="s10b" cx="38%" cy="34%" r="60%"><stop offset="0%" stop-color="#FDE68A"/><stop offset="100%" stop-color="#F59E0B"/></radialGradient>
+          <filter id="glow10" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <circle cx="50" cy="50" r="40" fill="url(#s10a)"/>
+        <circle cx="30" cy="50" r="20" fill="url(#s10b)" filter="url(#glow10)"/>
+      </svg>
+      <span class="still-time">~9.8s</span>
+      <span class="still-desc">West edge wave</span>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider" style="max-width:860px; margin-left:auto; margin-right:auto;">
+
+<!-- ============================================================
+     WHAT CHANGED vs v3
+============================================================ -->
+<div class="container" style="margin-bottom: 72px;">
+  <p class="section-label">What changed vs v3</p>
+  <div class="callout">
+    <h3>Three deliberate changes from v3 → v4</h3>
+    <ul>
+      <li>
+        <strong>Wave is now rocking side-to-side, not overshoot-pop</strong> — v3's warm orb
+        arrived at the edge point with a spring overshoot (travel past the edge then snap back),
+        which read as a "bounce" or "pop" rather than a greeting gesture. v4 replaces the
+        overshoot with a dedicated wave beat: 3 cycles of perpendicular oscillation (±10 SVG units)
+        while the orb stays at the edge. The wave motion is entirely separate from the travel motion.
+      </li>
+      <li>
+        <strong>Slower, more deliberate tempo (~11.6s vs ~6.4s)</strong> — adding the wave beat at
+        each of the 4 edge points adds ~1.48s per greeting. The creator is now "present" at each
+        edge for nearly a second, which matches the "greeting the audience" metaphor — not urgent,
+        not a loading spinner, but a warm acknowledgement.
+      </li>
+      <li>
+        <strong>Metaphor cemented: creator on stage greeting the audience</strong> — yellow circle
+        = the creator (the person who owns the page), purple circle = the stage. The creator walks
+        to each edge, waves hello to the audience on that side, returns to center, repeats. The
+        long rest at center is the "brand mark" state — both presence and readiness.
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================
+     ACCESSIBILITY NOTE
+============================================================ -->
+<div class="container" style="margin-bottom: 72px;">
+  <p class="section-label">Accessibility</p>
+  <p style="font-size: 0.8125rem; color: var(--muted); max-width: 560px; line-height: 1.6;">
+    The warm orb animation is suppressed via
+    <code style="font-size: 0.75rem; background:#E5E7EB; padding:1px 5px; border-radius:4px;">prefers-reduced-motion: reduce</code>.
+    When detected, all Web Animations API instances are not started and the warm orb
+    remains statically centered on the large orb — the fully legible brand mark with no movement.
+    Favicon sizes (16px, 32px) always render static regardless of preference,
+    as the wave motion is illegible below ~40px.
+  </p>
+</div>
+
+<!-- ============================================================
+     WEB ANIMATIONS API — MOTION ENGINE
+
+     Strategy:
+       We use a recursive async function (runGreetingLoop) to sequence phases.
+       Each "greeting" at an edge has three stages:
+         1. Travel out (translateX/Y to edge position)  — single keyframe animation
+         2. Wave in place (perpendicular oscillation)    — 3 × back-and-forth keyframes
+         3. Return to center                             — single keyframe animation
+
+       Between greetings: brief center pause (setTimeout).
+       After all 4 greetings: long rest at center before looping.
+
+       The wave oscillation uses a helper that produces smooth sinusoidal rocking via
+       a 7-keyframe sequence per wave beat group (start, -peak, center, +peak, center,
+       -peak, center, +peak — which gives 3 full left-right-left cycles with ease-in-out).
+
+       SVG coordinate space: viewBox 0 0 100 100, center at (50, 50).
+       Warm orb radius = 20.  Large orb radius = 40.
+       Edge travel = 20 units along radius direction.
+       Wave amplitude = 10 units perpendicular to radius direction.
+
+       Timing:
+         TRAVEL_MS   = 580   (smooth purposeful walk, ease-out)
+         WAVE_MS     = 900   (3 cycles × 300ms, ease-in-out per half-cycle)
+         RETURN_MS   = 480   (slightly faster return, ease-in-out)
+         PAUSE_MS    = 280   (brief gathering pause at center)
+         LONG_REST   = 1800  (static brand mark breathing state)
+
+       Total per greeting:  580 + 900 + 480 + 280 = 2 240ms
+       Total 4 greetings:   4 × 2 240ms            = 8 960ms
+       Long rest:           1 800ms
+       Full cycle total:    10 760ms  ≈ 10.8s
+
+       (Matches spec target of 10–14s)
+============================================================ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ---- Reduced motion check ------------------------------------ */
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReduced) return;  /* leave orbs statically centered */
+
+  /* ---- Timing constants (ms) ----------------------------------- */
+  const TRAVEL_MS   = 580;   /* out-trip travel */
+  const WAVE_MS     = 900;   /* 3 full wave cycles total */
+  const RETURN_MS   = 480;   /* return to center */
+  const PAUSE_MS    = 280;   /* center gathering pause */
+  const LONG_REST   = 1800;  /* static lock state */
+
+  /* ---- Easing -------------------------------------------------- */
+  const EASE_OUT     = 'cubic-bezier(0.0, 0.0, 0.2, 1.0)';  /* purposeful outbound walk */
+  const EASE_IN_OUT  = 'cubic-bezier(0.4, 0.0, 0.2, 1.0)';  /* smooth return */
+  const EASE_WAVE    = 'cubic-bezier(0.45, 0, 0.55, 1)';     /* gentle sine-like wave rock */
+
+  /* ---- Direction definitions ----------------------------------- */
+  /*
+    Each direction has:
+      edge: {x, y}  — translate of warm orb center at the stage edge
+      wave_axis: 'x' or 'y'  — which axis the wave rocks along
+      wave_sign: +1 or -1  — first direction of the wave (cosmetic, for variety)
+  */
+  const DIRECTIONS = [
+    /* North: creator at top of stage, waves East↔West */
+    { name: 'north', edge: { x:  0, y: -20 }, wave_axis: 'x', wave_sign: -1 },
+    /* East:  creator at right of stage, waves North↔South */
+    { name: 'east',  edge: { x: 20, y:   0 }, wave_axis: 'y', wave_sign: -1 },
+    /* South: creator at bottom of stage, waves East↔West */
+    { name: 'south', edge: { x:  0, y:  20 }, wave_axis: 'x', wave_sign:  1 },
+    /* West:  creator at left of stage, waves North↔South */
+    { name: 'west',  edge: { x: -20, y:  0 }, wave_axis: 'y', wave_sign:  1 },
+  ];
+
+  const WAVE_AMPLITUDE = 10; /* SVG units — 10/80 = 12.5% of orb diameter, readable wave */
+
+  /* ---- Promise-based animation helper -------------------------- */
+  function animateEl(el, keyframes, options) {
+    return new Promise((resolve) => {
+      const anim = el.animate(keyframes, options);
+      anim.onfinish = () => {
+        /* Commit final state so there's no snap-back on finish */
+        anim.commitStyles();
+        anim.cancel();
+        resolve();
+      };
+    });
+  }
+
+  /* ---- Pause helper -------------------------------------------- */
+  function pause(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /* ---- Build wave keyframes ------------------------------------ */
+  /*
+    Produces 3 full left-right-left cycles as a 7-keyframe sequence.
+    The orb is already at the edge (edgeX, edgeY) when this starts.
+    Perpendicular oscillation ±WAVE_AMPLITUDE on wave_axis.
+
+    Keyframe plan (0%, 16.7%, 33.3%, 50%, 66.7%, 83.3%, 100%):
+      0%:    edge center (no wave displacement yet — orb just arrived)
+      ~8%:   peak in wave_sign direction
+      ~25%:  edge center (cross)
+      ~42%:  peak in opposite direction
+      ~50%:  edge center (cross) = midpoint
+      ~67%:  peak wave_sign again
+      ~75%:  edge center (cross)
+      ~92%:  peak opposite
+      100%:  edge center (settle before return)
+
+    Using 7 keyframes at 0, 1/6, 2/6, 3/6, 4/6, 5/6, 1 for 3 cycles.
+    Each half-cycle = 1/6 of total (150ms at 900ms total).
+  */
+  function buildWaveKeyframes(edgeX, edgeY, wave_axis, wave_sign) {
+    const amp = WAVE_AMPLITUDE;
+    const frames = [];
+
+    /* 3 full cycles = 6 half-cycles = 7 control points */
+    for (let i = 0; i <= 6; i++) {
+      let wx = edgeX;
+      let wy = edgeY;
+      if (i > 0) {
+        /* Half-cycle i: alternates direction (+sign, -sign, +sign...) */
+        const direction = (i % 2 === 1) ? wave_sign : -wave_sign;
+        const displacement = amp * direction;
+        if (wave_axis === 'x') wx += displacement;
+        else                    wy += displacement;
+      }
+      frames.push({ transform: `translate(${wx}px, ${wy}px)` });
+    }
+    return frames;
+  }
+
+  /* ---- Single greeting sequence -------------------------------- */
+  async function doGreeting(el, dir) {
+    const { edge, wave_axis, wave_sign } = dir;
+
+    /* Phase 1: Travel to edge (smooth walk, no overshoot) */
+    await animateEl(el,
+      [
+        { transform: 'translate(0px, 0px)' },
+        { transform: `translate(${edge.x}px, ${edge.y}px)` }
+      ],
+      { duration: TRAVEL_MS, easing: EASE_OUT, fill: 'forwards' }
+    );
+
+    /* Phase 2: Wave at edge — 3 rocking cycles perpendicular to radius */
+    const waveFrames = buildWaveKeyframes(edge.x, edge.y, wave_axis, wave_sign);
+    await animateEl(el,
+      waveFrames,
+      { duration: WAVE_MS, easing: EASE_WAVE, fill: 'forwards' }
+    );
+
+    /* Phase 3: Return to center (smooth ease-in-out, slightly faster than outbound) */
+    await animateEl(el,
+      [
+        { transform: `translate(${edge.x}px, ${edge.y}px)` },
+        { transform: 'translate(0px, 0px)' }
+      ],
+      { duration: RETURN_MS, easing: EASE_IN_OUT, fill: 'forwards' }
+    );
+  }
+
+  /* ---- Full loop ---------------------------------------------- */
+  async function runGreetingLoop(el) {
+    while (true) {
+      /* Long rest at center — brand mark "breathing" state */
+      await pause(LONG_REST);
+
+      /* Four greetings: N → E → S → W */
+      for (const dir of DIRECTIONS) {
+        await doGreeting(el, dir);
+        /* Brief center pause between greetings */
+        await pause(PAUSE_MS);
+      }
+    }
+  }
+
+  /* ---- Wire up orbs ------------------------------------------- */
+  const heroOrb = document.getElementById('warm-orb-hero');
+  const navOrb  = document.getElementById('warm-orb-nav');
+
+  if (heroOrb) runGreetingLoop(heroOrb);
+
+  /* Nav orb runs slightly offset so the two aren't perfectly in sync
+     (prevents the page from feeling like a robot grid) */
+  if (navOrb) {
+    setTimeout(() => runGreetingLoop(navOrb), 400);
+  }
+
+})();
+</script>
+
+</body>
+</html>
