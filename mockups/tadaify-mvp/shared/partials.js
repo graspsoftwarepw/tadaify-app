@@ -3206,3 +3206,231 @@
     _slugByType: SLUG_BY_TYPE
   };
 })();
+
+/* =========================================================================
+   tadaify — Add Page modal (TADA-BUG-006, 2026-04-28)
+   Mirrors app-block-picker.html UX: centered modal 720px, search input,
+   category chips, grid of page-template cards. Click a card → navigate
+   to the corresponding app-page-<type>.html mockup (representing
+   "page now added, configure it"). Wired to any element with
+   data-action="open-add-page-modal" (typically the "+ Add page" button
+   in the sidebar's Pages group). Per feedback_no_right_side_drawers:
+   centered modal, NOT a slide-in drawer.
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  var TEMPLATES = [
+    /* Content category */
+    { id: 'blog',              cat: 'content',  ic: '📝', title: 'Blog',              desc: 'Long-form posts with tags, filtering, RSS.', href: './app-page-blog.html' },
+    { id: 'newsletter-signup', cat: 'content',  ic: '✉️', title: 'Newsletter signup', desc: 'Capture emails for Kit / Beehiiv / Mailchimp.', href: './app-page-newsletter-signup.html' },
+    { id: 'paid-articles',     cat: 'content',  ic: '🔒', title: 'Paid articles',     desc: 'Single-purchase or subscriber-only articles.', href: './app-page-paid-articles.html' },
+    { id: 'portfolio',         cat: 'content',  ic: '🎨', title: 'Portfolio',         desc: 'Project gallery — case studies, photos, work.', href: './app-page-portfolio.html' },
+
+    /* Commerce category */
+    { id: 'schedule',          cat: 'commerce', ic: '📅', title: 'Schedule / Booking',desc: 'Bookable time slots with payment + reminders.', href: './app-page-schedule.html' },
+
+    /* About + Info category */
+    { id: 'about',             cat: 'about',    ic: '👋', title: 'About',             desc: 'Bio, story, and what you do — long-form intro.', href: './app-page-about.html' },
+    { id: 'faq',               cat: 'about',    ic: '❓', title: 'FAQ',               desc: 'Accordion of common questions and answers.', href: './app-page-faq.html' },
+    { id: 'contact',           cat: 'about',    ic: '📨', title: 'Contact',           desc: 'Form that emails you (or webhooks on Pro+).', href: './app-page-contact.html' },
+    { id: 'legal',             cat: 'about',    ic: '⚖️', title: 'Legal',             desc: 'Terms, privacy, refund policy — pre-filled boilerplate.', href: './app-page-legal.html' },
+    { id: 'links-archive',     cat: 'about',    ic: '🗂', title: 'Links archive',     desc: 'Searchable archive of every link you have ever shared.', href: './app-page-links-archive.html' },
+
+    /* Custom — last for emphasis */
+    { id: 'custom',            cat: 'custom',   ic: '✨', title: 'Custom page',       desc: 'Blank canvas — compose only with blocks.', href: './app-page-custom.html' }
+  ];
+
+  var CATEGORIES = [
+    { id: 'all',      label: 'All' },
+    { id: 'content',  label: 'Content' },
+    { id: 'commerce', label: 'Commerce' },
+    { id: 'about',    label: 'About + Info' },
+    { id: 'custom',   label: 'Custom' }
+  ];
+
+  var CSS = '' +
+    '<style data-source="add-page-modal-partial">' +
+    '.tdf-addpage-backdrop {' +
+    '  position: fixed; inset: 0; z-index: 1200;' +
+    '  background: rgba(11,15,30,0.55); backdrop-filter: blur(3px);' +
+    '  display: flex; align-items: center; justify-content: center;' +
+    '  padding: 16px;' +
+    '  opacity: 0; pointer-events: none;' +
+    '  transition: opacity .22s ease;' +
+    '}' +
+    '.tdf-addpage-backdrop.is-open { opacity: 1; pointer-events: auto; }' +
+    '.tdf-addpage-modal {' +
+    '  background: var(--bg-elevated, #fff);' +
+    '  border: 1px solid var(--border, #E5E7EB);' +
+    '  border-radius: 18px;' +
+    '  box-shadow: var(--shadow-xl, 0 20px 60px rgba(11,15,30,0.25));' +
+    '  width: min(820px, 100%);' +
+    '  max-height: calc(100vh - 32px);' +
+    '  display: flex; flex-direction: column;' +
+    '  transform: translateY(8px) scale(0.98);' +
+    '  transition: transform .22s cubic-bezier(.22,.61,.36,1);' +
+    '  font-family: var(--font-sans, Inter, system-ui, sans-serif);' +
+    '}' +
+    '.tdf-addpage-backdrop.is-open .tdf-addpage-modal { transform: translateY(0) scale(1); }' +
+    '@media (max-width: 720px) {' +
+    '  .tdf-addpage-backdrop { padding: 0; align-items: stretch; }' +
+    '  .tdf-addpage-modal { border-radius: 0; max-height: 100vh; height: 100vh; width: 100vw; }' +
+    '}' +
+    '.tdf-addpage-head { padding: 18px 22px; border-bottom: 1px solid var(--border, #E5E7EB); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }' +
+    '.tdf-addpage-head h2 { font-family: var(--font-display, inherit); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0; flex-shrink: 0; }' +
+    '.tdf-addpage-search-wrap { flex: 1; min-width: 200px; position: relative; }' +
+    '.tdf-addpage-search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--fg-subtle, #9CA3AF); }' +
+    '.tdf-addpage-search { width: 100%; padding: 9px 12px 9px 36px; font-size: 13.5px; border: 1px solid var(--border-strong, #D1D5DB); border-radius: 99px; background: var(--bg, #fff); color: var(--fg, #111827); font-family: inherit; outline: none; transition: border .14s, box-shadow .14s; }' +
+    '.tdf-addpage-search:focus { border-color: var(--border-focus, #6366F1); box-shadow: 0 0 0 3px rgba(99,102,241,0.14); }' +
+    '.tdf-addpage-close { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: transparent; border: 0; color: var(--fg-muted, #6B7280); cursor: pointer; flex-shrink: 0; }' +
+    '.tdf-addpage-close:hover { background: var(--bg-muted, #F3F4F6); color: var(--fg, #111827); }' +
+    '.tdf-addpage-cats { display: flex; gap: 6px; padding: 12px 22px 0; border-bottom: 1px solid var(--border, #E5E7EB); overflow-x: auto; flex-shrink: 0; }' +
+    '.tdf-addpage-cat { padding: 8px 14px; border: 0; background: transparent; font-size: 13px; font-weight: 600; color: var(--fg-muted, #6B7280); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; transition: color .12s, border-color .12s; font-family: inherit; }' +
+    '.tdf-addpage-cat:hover { color: var(--fg, #111827); }' +
+    '.tdf-addpage-cat.is-active { color: var(--brand-primary, #6366F1); border-bottom-color: var(--brand-primary, #6366F1); }' +
+    '.tdf-addpage-body { flex: 1; overflow-y: auto; padding: 18px 22px; }' +
+    '.tdf-addpage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }' +
+    '@media (max-width: 760px) { .tdf-addpage-grid { grid-template-columns: repeat(2, 1fr); } }' +
+    '@media (max-width: 460px) { .tdf-addpage-grid { grid-template-columns: 1fr; } }' +
+    '.tdf-addpage-card { position: relative; background: var(--bg, #fff); border: 1.5px solid var(--border, #E5E7EB); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; text-align: left; color: inherit; text-decoration: none; transition: border .12s, transform .12s, box-shadow .12s; }' +
+    '.tdf-addpage-card:hover { border-color: var(--brand-primary, #6366F1); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,0.15); }' +
+    '.tdf-addpage-card .ic { width: 40px; height: 40px; border-radius: 10px; background: rgba(99,102,241,0.12); display: flex; align-items: center; justify-content: center; font-size: 20px; }' +
+    '.tdf-addpage-card[data-cat="commerce"] .ic { background: rgba(245,158,11,0.16); }' +
+    '.tdf-addpage-card[data-cat="about"]    .ic { background: rgba(16,185,129,0.16); }' +
+    '.tdf-addpage-card[data-cat="custom"]   .ic { background: rgba(139,92,246,0.16); }' +
+    '.tdf-addpage-card .ttl { font-size: 14px; font-weight: 600; color: var(--fg, #111827); }' +
+    '.tdf-addpage-card .desc { font-size: 12.5px; color: var(--fg-muted, #6B7280); line-height: 1.45; }' +
+    '.tdf-addpage-empty { grid-column: 1 / -1; padding: 32px 16px; text-align: center; color: var(--fg-muted, #6B7280); font-size: 13px; background: var(--bg-muted, #F3F4F6); border-radius: 12px; border: 1px dashed var(--border-strong, #D1D5DB); }' +
+    '.tdf-addpage-foot { padding: 14px 22px; border-top: 1px solid var(--border, #E5E7EB); font-size: 12px; color: var(--fg-muted, #6B7280); flex-shrink: 0; }' +
+    'body.dark-mode .tdf-addpage-modal { background: #141A2D; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-head, body.dark-mode .tdf-addpage-cats, body.dark-mode .tdf-addpage-foot { border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-search { background: #0B0F1E; color: #F3F4F6; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-card { background: #0B0F1E; border-color: #1F2937; }' +
+    'body.dark-mode .tdf-addpage-card .ttl { color: #F3F4F6; }' +
+    'body.dark-mode .tdf-addpage-empty { background: #1F2937; border-color: #374151; color: #9CA3AF; }' +
+    '@media (prefers-reduced-motion: reduce) { .tdf-addpage-backdrop, .tdf-addpage-modal { transition: none !important; } }' +
+    '</style>';
+
+  var SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  var CLOSE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+  var modalEl, gridEl, searchEl, currentCat = 'all', currentQuery = '';
+
+  function buildModal() {
+    if (modalEl) return modalEl;
+    if (!document.head.querySelector('style[data-source="add-page-modal-partial"]')) {
+      var wrap = document.createElement('div');
+      wrap.innerHTML = CSS;
+      document.head.appendChild(wrap.querySelector('style'));
+    }
+    var backdrop = document.createElement('div');
+    backdrop.className = 'tdf-addpage-backdrop';
+    backdrop.setAttribute('role', 'dialog');
+    backdrop.setAttribute('aria-modal', 'true');
+    backdrop.setAttribute('aria-labelledby', 'tdf-addpage-h');
+    backdrop.innerHTML =
+      '<div class="tdf-addpage-modal" role="document">' +
+        '<header class="tdf-addpage-head">' +
+          '<h2 id="tdf-addpage-h">Add a page</h2>' +
+          '<div class="tdf-addpage-search-wrap">' +
+            SEARCH_SVG +
+            '<input type="text" class="tdf-addpage-search" placeholder="Find a page template…" autocomplete="off"/>' +
+          '</div>' +
+          '<button type="button" class="tdf-addpage-close" aria-label="Close (Esc)" title="Close (Esc)">' + CLOSE_SVG + '</button>' +
+        '</header>' +
+        '<nav class="tdf-addpage-cats" role="tablist" aria-label="Page template categories">' +
+          CATEGORIES.map(function (c) {
+            return '<button type="button" class="tdf-addpage-cat' + (c.id === 'all' ? ' is-active' : '') + '" data-cat="' + c.id + '" role="tab">' + c.label + '</button>';
+          }).join('') +
+        '</nav>' +
+        '<div class="tdf-addpage-body">' +
+          '<div class="tdf-addpage-grid" role="list"></div>' +
+        '</div>' +
+        '<footer class="tdf-addpage-foot">Tip: every page can be themed individually after creation. You can rename / reorder them anytime.</footer>' +
+      '</div>';
+
+    document.body.appendChild(backdrop);
+    modalEl  = backdrop;
+    gridEl   = backdrop.querySelector('.tdf-addpage-grid');
+    searchEl = backdrop.querySelector('.tdf-addpage-search');
+
+    /* Wire close + backdrop click */
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(); });
+    backdrop.querySelector('.tdf-addpage-close').addEventListener('click', close);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && backdrop.classList.contains('is-open')) close();
+    });
+
+    /* Wire category tabs */
+    backdrop.querySelectorAll('.tdf-addpage-cat').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        backdrop.querySelectorAll('.tdf-addpage-cat').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        currentCat = btn.getAttribute('data-cat');
+        renderGrid();
+      });
+    });
+
+    /* Wire search */
+    searchEl.addEventListener('input', function (e) {
+      currentQuery = (e.target.value || '').toLowerCase().trim();
+      renderGrid();
+    });
+
+    renderGrid();
+    return modalEl;
+  }
+
+  function renderGrid() {
+    var filtered = TEMPLATES.filter(function (t) {
+      if (currentCat !== 'all' && t.cat !== currentCat) return false;
+      if (currentQuery) {
+        var hay = (t.title + ' ' + t.desc + ' ' + t.id).toLowerCase();
+        if (hay.indexOf(currentQuery) === -1) return false;
+      }
+      return true;
+    });
+    if (!filtered.length) {
+      gridEl.innerHTML = '<div class="tdf-addpage-empty">No page templates match your search.</div>';
+      return;
+    }
+    gridEl.innerHTML = filtered.map(function (t) {
+      return '' +
+        '<a class="tdf-addpage-card" data-cat="' + t.cat + '" href="' + t.href + '" role="listitem">' +
+          '<div class="ic" aria-hidden="true">' + t.ic + '</div>' +
+          '<div class="ttl">' + t.title + '</div>' +
+          '<div class="desc">' + t.desc + '</div>' +
+        '</a>';
+    }).join('');
+  }
+
+  function open() {
+    buildModal();
+    modalEl.classList.add('is-open');
+    setTimeout(function () { if (searchEl) searchEl.focus(); }, 80);
+  }
+  function close() {
+    if (!modalEl) return;
+    modalEl.classList.remove('is-open');
+    if (searchEl) { searchEl.value = ''; currentQuery = ''; }
+    var firstCat = modalEl.querySelector('.tdf-addpage-cat[data-cat="all"]');
+    if (firstCat) {
+      modalEl.querySelectorAll('.tdf-addpage-cat').forEach(function (b) { b.classList.remove('is-active'); });
+      firstCat.classList.add('is-active');
+      currentCat = 'all';
+    }
+    renderGrid();
+  }
+
+  /* Global delegated click handler — works across sidebar / inline mocks. */
+  document.addEventListener('click', function (e) {
+    var trigger = e.target.closest && e.target.closest('[data-action="open-add-page-modal"]');
+    if (!trigger) return;
+    e.preventDefault();
+    e.stopPropagation();
+    open();
+  });
+
+  window.AddPageModal = { open: open, close: close, _templates: TEMPLATES };
+})();
