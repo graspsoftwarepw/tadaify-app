@@ -318,10 +318,8 @@
   <main class="onboarding-shell">
     <div class="onboarding-shell-inner">
 
-      <!-- Progress bar -->
+      <!-- Progress bar (TADA-BUG-002: 5 → 4 steps; tier is now the 4th + final) -->
       <div class="progress-bar">
-        <div class="progress-step done"><span class="progress-dot"></span></div>
-        <div class="progress-line done"></div>
         <div class="progress-step done"><span class="progress-dot"></span></div>
         <div class="progress-line done"></div>
         <div class="progress-step done"><span class="progress-dot"></span></div>
@@ -330,7 +328,7 @@
         <div class="progress-line done"></div>
         <div class="progress-step active"><span class="progress-dot"></span></div>
       </div>
-      <p class="progress-label">Step 5 of 5 · Your plan</p>
+      <p class="progress-label">Step 4 of 4 · Your plan</p>
 
       <div style="text-align:center; margin-top: 40px;">
         <h1>Start free. Upgrade only if you want.</h1>
@@ -474,11 +472,10 @@
     var blocks = params.get('blocks') || '0';
     var imported = params.get('imported') === '1';
 
-    // Propagate handle to back link
+    // TADA-BUG-002: blocks step removed; back link now → template.
     document.getElementById('back-link').href =
-      './onboarding-blocks.html?handle=' + encodeURIComponent(handle) +
+      './onboarding-template.html?handle=' + encodeURIComponent(handle) +
       '&tpl=' + encodeURIComponent(tpl) +
-      '&blocks=' + encodeURIComponent(blocks) +
       (imported ? '&imported=1' : '');
 
     var billing = 'annual';

@@ -223,7 +223,7 @@
   <main class="onboarding-shell">
     <div class="onboarding-shell-inner">
 
-      <!-- Progress bar -->
+      <!-- Progress bar (TADA-BUG-002: 5 → 4 steps) -->
       <div class="progress-bar">
         <div class="progress-step done"><span class="progress-dot"></span></div>
         <div class="progress-line done"></div>
@@ -232,10 +232,8 @@
         <div class="progress-step active"><span class="progress-dot"></span></div>
         <div class="progress-line"></div>
         <div class="progress-step"><span class="progress-dot"></span></div>
-        <div class="progress-line"></div>
-        <div class="progress-step"><span class="progress-dot"></span></div>
       </div>
-      <p class="progress-label">Step 3 of 5 · Template</p>
+      <p class="progress-label">Step 3 of 4 · Template</p>
 
       <div style="text-align:center; margin-top: 40px;">
         <h1>Pick a template that feels like you</h1>
@@ -371,9 +369,10 @@
       document.getElementById('selected-name').textContent = name;
     }
     function goNext() {
+      // TADA-BUG-002: blocks step removed — go straight to tier.
       var q = 'handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(selected);
       if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
-      window.location.href = './onboarding-blocks.html?' + q;
+      window.location.href = './onboarding-tier.html?' + q;
     }
     window.select = select;
     window.goNext = goNext;
