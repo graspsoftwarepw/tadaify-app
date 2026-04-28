@@ -559,6 +559,36 @@
           </div>
         </section>
 
+        <!-- SECTION B2 — CHECK YOUR EMAIL (password path only, DEC-276) -->
+        <!-- Shown after "Create account" submit on email+password path.
+             Magic-link path skips this — GoTrue self-confirms via the link.
+             On resend: button disabled for 60s (cooldown enforced in JS). -->
+        <section id="section-b2" class="reg-section">
+          <div style="text-align:center; padding: 40px 0 32px;">
+            <div style="font-size:52px; margin-bottom:20px;">📬</div>
+            <h2 style="font-size: clamp(22px,3.5vw,30px); margin-bottom:12px;">Check your email</h2>
+            <p style="font-size:15px; color: var(--fg-muted); line-height:1.6; margin-bottom:24px;">
+              We sent a confirmation link to<br/>
+              <strong id="confirm-email-display" style="color: var(--brand-primary);">you@example.com</strong><br/>
+              Click it to continue → your handle is held for 15 minutes.
+            </p>
+
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 380px; margin: 0 auto 20px; text-align:left;">
+              <p style="font-size:13px; color: var(--fg-muted); margin:0 0 12px;">Didn't arrive? Check your spam folder first, then:</p>
+              <button id="resend-btn" class="btn btn-secondary" style="width:100%; min-height:44px;" onclick="resendConfirmation()">
+                Resend confirmation email
+              </button>
+              <p id="resend-cooldown" style="font-size:12px; color: var(--fg-muted); margin-top:8px; text-align:center; display:none;">
+                Resend available in <span id="resend-countdown">60</span>s
+              </p>
+            </div>
+
+            <a href="#" onclick="event.preventDefault(); backToB()" style="font-size:13px; color: var(--fg-muted);">
+              ← wrong email? go back
+            </a>
+          </div>
+        </section>
+
         <!-- SECTION C — SUCCESS TRANSITION -->
         <section id="section-c" class="reg-section">
           <div class="success-burst">
@@ -634,7 +664,7 @@
     // ----------------------------------------------------------------
     var TAKEN = { 'john': 1, 'alex': 1, 'jane': 1, 'mike': 1, 'sarah': 1 };
     var RESERVED = ['admin','tadaify','support','pricing','login','register','api','help','about','blog','terms','privacy'];
-    var MIN_LEN = 3, MAX_LEN = 24;
+    var MIN_LEN = 3, MAX_LEN = 30;  /* DEC-275: 30 chars — matches spec regex + landing.html (was 24, a mockup oversight) */
 
     function localePrefix() {
       var lang = (navigator.language || 'en').toLowerCase();
@@ -723,6 +753,7 @@
     }
     function backToA() {
       document.getElementById('section-b').classList.remove('revealed');
+      document.getElementById('section-b2').classList.remove('revealed');
       document.getElementById('section-c').classList.remove('revealed');
       document.getElementById('mobile-cta-a').style.display = '';
       document.getElementById('section-a').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -738,10 +769,66 @@
       else { inp.type = 'password'; btn.textContent = 'Show'; }
     }
 
+    /* DEC-276 (locked 2026-04-28): interstitial only on password path;
+       magic-link self-confirms via GoTrue redirect — skips B2. */
+    function isPwPath() {
+      var pwField = document.getElementById('pw-field');
+      return pwField.style.display !== '' && pwField.style.display !== 'none';
+    }
+
+    // B2 navigation
+    function revealB2() {
+      // Populate email display from what user typed
+      var emailVal = (document.getElementById('email-input').value || '').trim() || 'you@example.com';
+      document.getElementById('confirm-email-display').textContent = emailVal;
+
+      document.getElementById('section-b').classList.remove('revealed');
+      document.getElementById('section-b2').classList.add('revealed');
+      setTimeout(function() {
+        document.getElementById('section-b2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
+
+    function backToB() {
+      document.getElementById('section-b2').classList.remove('revealed');
+      document.getElementById('section-b').classList.add('revealed');
+      setTimeout(function() {
+        document.getElementById('section-b').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('email-input').focus();
+      }, 200);
+    }
+
+    var resendTimer = null;
+    function resendConfirmation() {
+      var btn = document.getElementById('resend-btn');
+      var cooldownEl = document.getElementById('resend-cooldown');
+      var countdownEl = document.getElementById('resend-countdown');
+      btn.disabled = true;
+      var secs = 60;
+      countdownEl.textContent = secs;
+      cooldownEl.style.display = 'block';
+      alert('Resent (mockup) — in real flow Supabase GoTrue sends a new confirmation email.');
+      resendTimer = setInterval(function() {
+        secs--;
+        countdownEl.textContent = secs;
+        if (secs <= 0) {
+          clearInterval(resendTimer);
+          btn.disabled = false;
+          cooldownEl.style.display = 'none';
+        }
+      }, 1000);
+    }
+
     var countdownTimer = null;
     function finishAuth() {
       if (!document.getElementById('tos').checked) {
         alert('Please accept the Terms to continue.'); return;
+      }
+      // DEC-276: password path → show "Check your email" interstitial (B2).
+      // Magic-link path → skip B2, go straight to success burst (C).
+      if (isPwPath()) {
+        revealB2();
+        return;
       }
       document.getElementById('section-c').classList.add('revealed');
       setTimeout(function() {
@@ -761,11 +848,13 @@
     nextBtn.addEventListener('click', function() { if (!nextBtn.disabled) revealB(); });
     mobileBtn.addEventListener('click', function() { if (!mobileBtn.disabled) revealB(); });
 
-    window.backToA     = backToA;
-    window.togglePw    = togglePw;
-    window.togglePwVis = togglePwVis;
-    window.finishAuth  = finishAuth;
-    window.currentHandle = currentHandle;
+    window.backToA            = backToA;
+    window.backToB            = backToB;
+    window.togglePw           = togglePw;
+    window.togglePwVis        = togglePwVis;
+    window.finishAuth         = finishAuth;
+    window.resendConfirmation = resendConfirmation;
+    window.currentHandle      = currentHandle;
 
     // ----------------------------------------------------------------
     // Theme toggle — mirrors dashboard pattern

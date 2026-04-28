@@ -18,7 +18,7 @@ This is the **canonical, merged functional specification** for tadaify. It super
 
 1. **Architecture (DEC-035) — LOCKED Cloudflare-first.** Edge + custom domains + media + hot analytics = Cloudflare (Workers, R2, Pages, Cloudflare-for-SaaS, Analytics Engine, DNS). Central brain = Supabase (Postgres, GoTrue, Edge Functions, Realtime). AWS = S3 (cold analytics Parquet) + Athena + Glue. No CloudFront, no Route53, no ACM, no Lambda by default.
 2. **Currency (DEC-036) — LOCKED USD.** All prices in USD. EU creators see local-currency display via `F-073` but plan SKU is USD.
-3. **Tier structure (DEC-037) — LOCKED 4-tier flat.** Free $0 / Creator $5/mo / Pro $15/mo / Business $49/mo. 0% platform fees on every tier forever (contractually locked per F-172a, F-TRUST-001..004, and ToS clause).
+3. **Tier structure (DEC-037, revised by DEC-083 2026-04-28) — LOCKED 4-tier flat.** Free $0 / Creator $8/mo / Pro $19/mo / Business $49/mo. 0% platform fees on every tier forever (contractually locked per F-172a, F-TRUST-001..004, and ToS clause). [Pricing revised 2026-04-28 via DEC-083: $5/$15 → $8/$19. Original DEC-037 superseded. Rationale: DEC-274 user answer — Phase-A landing flagship sections were already speculatively designed at $8/$19; aligning canonical pricing with the rendered marketing surface beats the alternative of restoring $5/$15 across all marketing copy.]
 4. **Feature gating (DEC-043) — LOCKED "everything free".** Every product feature (commerce, analytics, email capture, scheduling, reviews, bundles, communities, upsells, discount codes, Przelewy24/BLIK) is Free. Pricing differentiation: custom domain add-ons (primary revenue, ~97% margin), Pro power features (§18), Business agency features (§19).
 
 ### 0.2 Anti-patterns resolved (from `anti-patterns-audit.md`)
@@ -117,8 +117,8 @@ Pricing:
 | Tier | USD | What's gated ON (not unlocked from below) |
 |---|---|---|
 | Free | $0 | Subdomain only (`tadaify.com/you`). Custom domain optional via universal $2/mo add-on (see F-DOMAIN-ADDON-001) — no plan upgrade required; 90d analytics; **5 AI uses/mo** (theme matcher + bio rewrite + copy suggest); 48h support. Pages: **1** (homepage only, post-MVP F-MULTIPAGE-001). |
-| Creator | $5/mo | 1 custom domain included. Extra domains via universal $2/mo add-on; 180d analytics; **20 AI uses/mo**; 24h priority support; custom favicon; scheduled publishing; verified creator badge; directory listing opt-in. Pages: **5** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
-| Pro | $15/mo | 1 custom domain included. Extra domains via universal $2/mo add-on. 8 power features (§18): unlimited analytics, **100 AI uses/mo**, A/B testing, Creator API + MCP server (OpenAPI 3.0 + `@tadaify/mcp` npm + custom GPT template), advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO tools; 365d analytics; 12h support. Pages: **20** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
+| Creator | $8/mo | 1 custom domain included. Extra domains via universal $2/mo add-on; 180d analytics; **20 AI uses/mo**; 24h priority support; custom favicon; scheduled publishing; verified creator badge; directory listing opt-in. Pages: **5** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
+| Pro | $19/mo | 1 custom domain included. Extra domains via universal $2/mo add-on. 8 power features (§18): unlimited analytics, **100 AI uses/mo**, A/B testing, Creator API + MCP server (OpenAPI 3.0 + `@tadaify/mcp` npm + custom GPT template), advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO tools; 365d analytics; 12h support. Pages: **20** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
 | Business | $49/mo | 10 custom domains included (agency — manage multiple client pages from one account). Extra domains via universal $2/mo add-on. Agency sub-accounts + white-label + 4h SLA; all-time analytics; **unlimited AI**. Pages: **unlimited** (post-MVP F-MULTIPAGE-001). **Price locked for life per F-PRICELOCK-001.** |
 
 > **2026-04-25 — DEC-PRICELOCK-01 applied:** price-lock-for-life is a brand commitment, not a promotion. The prior 3-year windowed lock (DEC-SYN-06 / F-172a) is superseded — the lock is now perpetual for uninterrupted subscriptions. Cancellation + re-subscription triggers then-current price. See `brand-lock.md §9 (Pricing commitments — locked)`.
@@ -126,6 +126,18 @@ Pricing:
 > **2026-04-25 — DEC-PRICELOCK-02 applied:** $2/mo domain add-on universalised across all tiers (Free / Creator / Pro / Business) — never frame it as Free-tier-only. Pro tier simplified to 1 custom domain (was 3); multi-domain is a Business/agency need. Business changed from "Unlimited" to 10 domains (agency use). Pro-vs-Creator differentiator now: unlimited analytics retention, 200 AI/mo, A/B testing, advanced integrations, removable branding in email receipts, abandoned-cart recovery, advanced SEO. See `F-DOMAIN-ADDON-001` and `brand-lock.md §9`.
 
 > **2026-04-25 — DEC-MULTIPAGE-01 applied:** multi-page accounts confirmed for post-MVP (Q+1, Creator-tier unlock). Tier ladder Free 1 / Creator 5 / Pro 20 / Business unlimited. MVP stories (F-LANDING-001, F-FULLFLOW-001) MUST be forward-compatible: blocks need a `page_id` FK, URL routes use `/<handle>/<slug>` pattern. See `F-MULTIPAGE-001` (§20) and `docs/research/multi-page-grid-and-templates.md`.
+
+### DEC-083 — Pricing: Creator $8/mo, Pro $19/mo (supersedes DEC-037)
+
+> **2026-04-28 — DEC-083 locked.** Pricing revised: Creator **$8/mo**, Pro **$19/mo**. Business $49/mo unchanged. Free $0 unchanged.
+>
+> **Rationale (DEC-274 user answer, option 2):** The Phase-A landing flagship sections ("Most Generous Free", comparison tables) were already speculatively written and rendered at $8/$19 in `mockups/tadaify-mvp/landing.html` L1578. Reverting those to $5/$15 would require updating all Phase-A marketing copy AND the mockup, contradicting the approved visual surface. Aligning the canonical spec to the rendered mockup is the cheaper path with fewer user-facing inconsistencies. The competitive framing ("Linktree Premium on Free, forever") remains valid at $8/$19 — Linktree Pro is $12, Linktree Premium is $30; Creator $8 still undercuts the premium tier significantly.
+>
+> **Supersedes:** DEC-037 (locked 2026-04-24, Creator $5/mo / Pro $15/mo). DEC-037 row in `docs/decisions/INDEX.md` marked `superseded by DEC-083`.
+>
+> **Price-lock contract:** DEC-PRICELOCK-01 applies unchanged — anyone who subscribes at $8 or $19 after this lock date pays that price for life (uninterrupted subscriptions). Pre-DEC-083 subscribers (none exist yet — product not shipped) would be on $5/$15 forever.
+>
+> **Affected files updated:** `mockups/tadaify-mvp/landing.html` (all pricing references), `docs/decisions/INDEX.md` (DEC-037 superseded + DEC-083 row added), this spec §1 tier table + §0 overview line.
 
 ### 1.1 The five wedges (v2-locked)
 
