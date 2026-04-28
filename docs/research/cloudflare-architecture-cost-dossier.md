@@ -47,9 +47,9 @@ Tadaify is a link-in-bio + light-commerce SaaS for nano/micro creators, built **
 
 **Pricing has two states the reviewer should know about.** The canonical `functional-spec.md` and `decisions/INDEX.md` lock prices via DEC-037 at **Free $0 / Creator $5 / Pro $15 / Business $49**. The user answered **DEC-274 today (2026-04-28)** adopting **Creator $8 / Pro $19** (Business unchanged at $49 in available materials); this has not yet been rolled into the spec/INDEX/landing as of dossier-write time. Cost-at-scale rows below are presented at both price points where it materially changes the margin story.
 
-**Cost at 100k MAU:** ~$1,600/mo all-in across all vendors (`infra-v2.md` §5.4). Per-MAU = $0.016. Per-Pro-user = $0.18-0.26. With 30% Pro mix at $15 (or $19 post-DEC-274), revenue is $300k-380k/mo → **gross margin >99%**. The architecture scales linearly because Cloudflare absorbs the bandwidth-heavy path at zero marginal egress cost (R2: $0 egress; Workers: bundled in plan; Cloudflare for SaaS: free egress on customer hostnames).
+**Cost at 100k MAU:** ~$1,480/mo all-in across all vendors (revised from `infra-v2.md` §5.4's $1,600 after Workers AI repricing to fp8-fast model). Per-MAU = $0.015. Per-Pro-user = $0.18-0.26. With 30% Pro mix at $15 (or $19 post-DEC-274), revenue is $300k-380k/mo → **gross margin >99%**. The architecture scales linearly because Cloudflare absorbs the bandwidth-heavy path at zero marginal egress cost (R2: $0 egress; Workers: bundled in plan; Cloudflare for SaaS: free egress on customer hostnames). The Workers AI line is especially lean at scale — fp8-fast variant is ~$30/mo at 100k MAU vs the $130 previously modelled with the non-fast pricing.
 
-**The architecture is defensible only because we built strong defensive decisions on top.** Three catastrophic ledgers are explicitly defused: (a) **video** — no native upload; YouTube embed only (DEC-097 §15) — without this gate a viral Business creator costs `−$288/creator/mo` per `video-block-cloudflare-cost.md` §5.4; (b) **livestream** — block removed entirely from MVP (DEC-099); embed-only oEmbed wrapper covers Twitch/Kick UX without the bandwidth liability; (c) **AI** — Cloudflare Workers AI proxied (no BYOK), per-tier daily quotas (Free 5/mo, Creator 20/mo, Pro 100/mo, Business unlimited per DEC-AI-QUOTA-LADDER-01), prefix-cached input + 1h output cache, model `@cf/meta/llama-3.1-8b-instruct-fast` at $0.000223/call.
+**The architecture is defensible only because we built strong defensive decisions on top.** Three catastrophic ledgers are explicitly defused: (a) **video** — no native upload; YouTube embed only (DEC-097 §15) — without this gate a viral Business creator costs `−$288/creator/mo` per `video-block-cloudflare-cost.md` §5.4; (b) **livestream** — block removed entirely from MVP (DEC-099); embed-only oEmbed wrapper covers Twitch/Kick UX without the bandwidth liability; (c) **AI** — Cloudflare Workers AI proxied (no BYOK), per-tier daily quotas (Free 5/mo, Creator 20/mo, Pro 100/mo, Business unlimited per DEC-AI-QUOTA-LADDER-01), prefix-cached input + 1h output cache, model `@cf/meta/llama-3.1-8b-instruct-fp8-fast` at ~$0.000046/call ($0.045/M input + $0.384/M output). Note: the non-fast variant `@cf/meta/llama-3.1-8b-instruct` costs $0.282/$0.827 per M tokens — ~6× more expensive; we explicitly target the fp8-fast variant.
 
 **Reviewer's eye should land hardest on §4 (cost-at-scale tables) and §5 (defensive decisions). § 9 (EU compliance posture) carries the most genuinely unanswered legal questions — DAC7 onboarding, Polish WHT 20% on outbound payments to non-treaty affiliates, UK post-Brexit zero-threshold VAT.**
 
@@ -98,7 +98,7 @@ flowchart TB
     R2["Cloudflare R2<br/>Hero images, thumbs<br/>Custom fonts, uploads<br/>$0 egress"]
     AE["Analytics Engine<br/>Hot, 90-day retention<br/>SQL HTTP API"]
     KV["Cloudflare KV<br/>Tenant metadata cache"]
-    AI["Workers AI<br/>llama-3.1-8b-instruct-fast<br/>Proxied, daily quotas"]
+    AI["Workers AI<br/>llama-3.1-8b-instruct-fp8-fast<br/>Proxied, daily quotas"]
   end
 
   subgraph SB["SUPABASE (eu-central-1)"]
@@ -157,7 +157,7 @@ Sources: `infra-v2.md` §2 (`docs/architecture/infra-v2.md` L60-L171), `function
 | **Cloudflare R2** | Media storage (hero images, fonts, thumbnails, uploaded media) | **$0 egress** (vs S3 $0.085/GB) — saves ~$4500/mo at 100k MAU | DEC-035 (`infra-v2.md` §0) |
 | **Cloudflare Analytics Engine** | Hot analytics tier, 90-day retention, SQL via HTTP — for creator dashboards "views last hour", "top product today" | 10M writes + 1M reads/mo free tier, $0.25/M overage; unlimited cardinality | `insights-metrics-feasibility.md` §1.1 |
 | **Cloudflare KV** | Distributed key-value — session tokens, tenant metadata, edge cache | Free 1GB; <1ms reads at edge | infra-v2.md §3.1 |
-| **Cloudflare Workers AI** | Inference for AI Suggest features (bio rewrite, theme matcher, copy suggest) — model `@cf/meta/llama-3.1-8b-instruct-fast` proxied | $0.000223/call; bundled in Workers Paid; encoding/inference both at edge | DEC-AI-FEATURES-ROADMAP-01, `ai-cost-and-tier-strategy.md` §3.1 |
+| **Cloudflare Workers AI** | Inference for AI Suggest features (bio rewrite, theme matcher, copy suggest) — model `@cf/meta/llama-3.1-8b-instruct-fp8-fast` proxied | ~$0.000046/call (at $0.045/M input + $0.384/M output, ~1k input + 200 output tokens/call); bundled in Workers Paid; encoding/inference both at edge | DEC-AI-FEATURES-ROADMAP-01, `ai-cost-and-tier-strategy.md` §3.1; https://developers.cloudflare.com/workers-ai/platform/pricing/ |
 | **Supabase Postgres (eu-central-1)** | System of record — profiles, pages, blocks, products, orders, subscribers, reviews; RLS policies enforce tenant isolation | 14-subsystem reuse from `linkofme` + `untiltify` (DEC-SYN-35); SQL flexibility for relational data | `infra-cost-analysis.md` §6 |
 | **Supabase GoTrue (Auth)** | Email + password, Google + Apple SSO, magic links | Bundled in Pro plan; in-EU region; Inbucket for local auth-flow testing | DEC-027 |
 | **Supabase Edge Functions** | Server-side logic — Stripe webhooks, social import (handle-based per DEC-SOCIAL-01), preview generator parser, AI proxy, cache purge triggers | Deno; 2M invocations included in Pro | infra-v2.md §3.2 |
@@ -166,7 +166,7 @@ Sources: `infra-v2.md` §2 (`docs/architecture/infra-v2.md` L60-L171), `function
 | **AWS Athena** | Ad-hoc SQL over S3 Parquet for long-range creator reports + admin audit + GDPR data export | $5/TB scanned; <$5/mo at 100k MAU | DEC-INFRA-MINIMAL-01 |
 | **AWS Glue Data Catalog** | Auto-updating schema for Athena tables | Effectively free (~$0.01/mo at our scale) | DEC-INFRA-MINIMAL-01 |
 | **AWS IAM OIDC** | GitHub Actions OIDC role for deploy + `claude-readonly` for audits | No static creds; AWS-managed `ReadOnlyAccess` for Claude | CLAUDE.md project rules |
-| **Stripe** | Subscriptions billing + Connect Standard for affiliate/creator payouts (v2) + Tax for VAT OSS EU | 2.9% + $0.30 per US card; 1.4% + 25¢ EU; +0.5% Stripe Billing on subs; Connect Standard ~0.25% transfer fee with €2 cap | DEC-073, `payment-vendor-vat-compliance.md` (Stripe wins over Paddle from $50k MRR) |
+| **Stripe** | Subscriptions billing + Connect Standard for affiliate/creator payouts (v2) + Tax for VAT OSS EU | 2.9% + $0.30 per US card; 1.4% + 25¢ EU; +0.5% Stripe Billing on subs; Connect Standard (PL, platform-handled pricing model): **9 zł / monthly active connected account + 0.25% per transfer + 1.35 zł per payout**. Source: https://stripe.com/en-pl/connect/pricing | DEC-073, `payment-vendor-vat-compliance.md` (Stripe wins over Paddle from $50k MRR) |
 | **Resend** | Transactional email (welcome, magic link, purchase, review request) | Better DX than SES; $0.40/1k vs SES $0.10/1k — switch to SES at 50k MAU per Q-INFRA-v2-04 | infra-v2.md §3.4 |
 | **youtube-nocookie embed** | Sole video delivery mechanism — native upload **rejected** | Saves ~$288/Business creator/mo at 100k pageviews (see §4.5) | DEC-097 §15 |
 | **DNS — Cloudflare authoritative** | tadaify.com authoritative on Cloudflare; OVH holds registrar ownership; nameservers `ns{1,2}.cloudflare.com` | Route 53 explicitly NOT used | DEC-DNS-01 (`functional-spec.md` L79) |
@@ -176,7 +176,7 @@ Sources: `infra-v2.md` §2 (`docs/architecture/infra-v2.md` L60-L171), `function
 The decision flipped from v1 (CloudFront-first, ~$0.22/MAU at 10k) to v2 (Cloudflare-first, ~$0.03/MAU at 10k — 87% cheaper) because:
 
 1. R2 has **zero egress fees**; S3 has $0.09/GB → $4500/mo savings at 100k MAU × media delivery
-2. Cloudflare Business plan bundles unlimited bandwidth, eliminating viral-creator egress tail-risk
+2. Cloudflare Business plan bundles unlimited bandwidth for **HTML / edge-rendered pages / small static assets (CSS, JS, icons, small images)**, eliminating viral-creator egress tail-risk on the core creator-page delivery path. Note: Cloudflare Service-Specific Terms restrict use of the "unlimited bandwidth" benefit for large-file delivery (video, audio, large PDFs); those asset types should route through Stream, R2 signed URLs, or external CDN respectively — see §4.5.6 below.
 3. Cloudflare for SaaS Custom Hostnames is operationally simpler than CloudFront SaaS Manager + Lambda@Edge + ACM SAN orchestration
 4. Cloudflare Workers gives richer per-event analytics than CloudFront real-time logs at zero marginal cost
 5. Single edge vendor = one bill, one auth, one debug surface
@@ -234,18 +234,18 @@ This is the section the reviewer should scrutinise hardest. Numbers verified aga
 | Component | Pricing tier targeted | Unit price | Free-tier allowance | Source |
 |---|---|---|---|---|
 | Cloudflare Pro plan | Pro $20/mo (MVP) | flat | DDoS, basic bot, 100 page rules | `infra-cost-analysis.md` §1.4 |
-| Cloudflare Business plan | Business $200/mo (10k+ MAU) | flat | 100 Custom Hostnames free, unlimited bandwidth, advanced bot mgmt | `custom-domains-cloudflare-vs-cloudfront.md` §1.4 |
+| Cloudflare Business plan | Business $200/mo (10k+ MAU) | flat | Custom Hostnames (pay-as-you-go, free allowance 100), unlimited bandwidth, **Super Bot Fight Mode** (heuristic bot fighting; full Bot Management with bot score + custom rules = Enterprise only) | `custom-domains-cloudflare-vs-cloudfront.md` §1.4; https://developers.cloudflare.com/bots/plans/biz-and-ent/ |
 | Cloudflare for SaaS Custom Hostnames overage | beyond 100 included on Business | $0.10/hostname/mo | first 100 free | Cloudflare for SaaS billing docs |
 | Cloudflare Workers (Paid) | $5/mo bundle | $0.30/M req beyond 10M | 10M req/mo + 30M free CPU-ms | infra-v2.md §3.1 |
 | Cloudflare R2 storage | per-GB | $0.015/GB-mo | 10 GB free | infra-v2.md §3.1 |
 | Cloudflare R2 egress | per-GB | **$0.00** | unlimited (the headline) | infra-v2.md §0 |
 | Cloudflare R2 class-A ops | per-million | $4.50/M | 1M free | infra-v2.md §3.1 |
-| Cloudflare Analytics Engine writes | $0.25/M | beyond 10M/mo | 10M writes + 1M reads/mo free | `insights-metrics-feasibility.md` §1.1 |
-| Cloudflare Workers AI | per-token (llama-3.1-8b) | $0.282/Mtok in + $0.827/Mtok out = ~$0.000223/call | 10k neurons/day free | `ai-cost-and-tier-strategy.md` §3.1 |
+| Cloudflare Analytics Engine writes | $0.25/M | beyond 10M/mo | 10M writes + 1M reads/mo free | `insights-metrics-feasibility.md` §1.1. **Note:** as of 2026-04, Cloudflare has published the pricing schedule but billing has **not yet started** — overage is not currently charged. Model it in cost projections for future accuracy, but realise you may be on free usage in practice until billing activates. |
+| Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct-fp8-fast`) | per-token | **$0.045/Mtok in + $0.384/Mtok out ≈ $0.000046/call** (at ~1k input + 200 output tokens/call). The non-fast variant `@cf/meta/llama-3.1-8b-instruct` costs $0.282/Mtok in + $0.827/Mtok out — ~6× more expensive on input. We target the fp8-fast variant per DEC-AI-SUGGEST. | 10k neurons/day free | https://developers.cloudflare.com/workers-ai/platform/pricing/ |
 | Cloudflare Stream (NOT in MVP) | per-min | $0.005/min stored + $0.001/min delivered | none | `video-block-cloudflare-cost.md` §2 |
 | Supabase Pro | $25/mo flat | 8 GB DB + 250 GB egress + 100 GB storage + 2M Edge Fn invocations | yes (allowances) | `infra-cost-analysis.md` §2.2 |
 | Supabase Team | $599/mo | 8 GB base + read replica + daily backups | overage applies | infra-cost-analysis.md §2.2 |
-| Supabase egress overage | $0.09/GB | beyond plan | — | **9× CloudFront rate; cost cliff** |
+| Supabase egress overage | $0.09/GB | beyond plan | — | **9× CloudFront rate; cost cliff.** Supabase "egress" covers ALL data leaving the platform: Database queries, Auth responses, Storage downloads, Edge Function responses, Realtime messages, and Log Drains — NOT just Storage/CDN-style file delivery. Our architecture mitigates this by having Cloudflare cache all public-page traffic (creator pages go via Worker cache, not direct Supabase query on each request). |
 | Supabase MAU overage (Pro) | $0.00325/MAU | beyond 100k | — | infra-cost-analysis.md §2.2 |
 | AWS S3 storage | $0.023/GB-mo | none (always paid) | — | infra-v2.md §4.1 |
 | AWS S3 lifecycle to Glacier Deep | $0.00099/GB-mo | n/a | applied after 90d | infra-v2.md §4.1 |
@@ -254,8 +254,8 @@ This is the section the reviewer should scrutinise hardest. Numbers verified aga
 | Stripe processing — EU cards | 1.4% + €0.25/txn | none | — | Stripe public pricing |
 | Stripe Billing | +0.5% on subscriptions | none | — | Stripe public pricing |
 | Stripe Tax | $0.50 per filing or 0.5% of txn | n/a | — | `payment-vendor-vat-compliance.md` |
-| Stripe Connect Standard | ~0.25% per transfer + €2 cap | none | — | `affiliate-program.md` Topic 2 |
-| Resend | $20/mo for 50k, $80/mo for 250k | 3k/mo free | — | infra-v2.md §3.4 |
+| Stripe Connect Standard (PL — platform-handled pricing) | **9 zł / monthly active connected account + 0.25% per transfer + 1.35 zł per payout** (replaces previously stated "0.25% + €2 cap" which is not the PL rate) | none | — | https://stripe.com/en-pl/connect/pricing; `affiliate-program.md` Topic 2 |
+| Resend | $20/mo for 50k (Pro), **$90/mo for 100k** (Scale — corrected from incorrect $80/250k) | 3k/mo free | — | https://resend.com/pricing; infra-v2.md §3.4 |
 
 ### 4.2 Cost-at-scale tables
 
@@ -290,19 +290,20 @@ All numbers USD/month. Numbers from `infra-v2.md` §5.1-5.5.
 | Cloudflare R2 storage | $0.10 | $0.08 | $1 | $10 | $85 |
 | Cloudflare Workers overage | $0 | $0 | $6 (~30M req) | $90 (~300M req) | bundled |
 | Cloudflare Analytics Engine | $0 | $0 | $10 (~50M writes) | $125 (~500M writes) | bundled |
-| Cloudflare Workers AI | <$1 | $5 | $20 | $130 | $1,500 |
+| Cloudflare Workers AI (fp8-fast variant) | <$1 | ~$0.30 | ~$3 | ~$30 | ~$300 |
 | Supabase | $0 (Free) | $0 (Free) | $25 (Pro) + $15 compute = $40 | $599 (Team) + $50 egress = $649 | ~$1,500 (Team + add-ons) |
 | AWS S3 + Athena + Glue | $0.01 | $0.01 | $0.65 | $1.80 | $18 |
 | Stripe (processing only — passthrough on commerce) | n/a | $1 (refund noise) | $5 | $50 | $500 |
-| Resend | $0 (free 3k/mo) | $0 (free) | $20 | $80 | $500 (or self-host SES at ~$130) |
+| Resend / email | $0 (free 3k/mo) | $0 (free) | $20 (Pro 50k) | $90 (Scale 100k — at 10k MAU volume; above 100k/mo email → SES migration per Q-INFRA-v2-04) | $500 (or self-host SES at ~$130 — per Q-INFRA-v2-03, switch at 50k MAU recommended) |
 | Misc (Sentry, Stripe monitoring) | $5 | $10 | $25 | $200 | $2,000 |
-| **Total / mo** | **~$5-10** | **~$40-50** | **~$330** | **~$1,600** | **~$9,100** |
-| **Per-MAU** | $0.05-0.10 | $0.04-0.05 | $0.033 | $0.016 | $0.009 |
+| **Total / mo** | **~$5-10** | **~$35-45** | **~$315** | **~$1,480** | **~$7,900** |
+| **Per-MAU** | $0.05-0.10 | $0.035-0.045 | $0.032 | $0.015 | $0.008 |
 
 Notes:
-- The 100k row used `infra-v2.md` §5.4's $1,600 — already includes a generous custom-domain count (500 paid) and OpenAI fallback for AI. Workers AI at $0.000223/call × 650k gens ≈ $145, dropping the AI line by ~$300 vs the legacy assumption.
-- The 10k row in `infra-v2.md` rounded to ~$300; we conservatively land at $330 to reflect the AI+misc envelope after the DEC-AI-QUOTA-LADDER-01 refresh.
-- Workers AI cost at 1M MAU ($1,500/mo) replaces what `infra-v2.md` modelled as ~$4,000/mo OpenAI cost — using the cheaper Cloudflare-native llama drops the "biggest unknown" 60%.
+- **Workers AI repricing (Codex review P1 fix):** the fp8-fast variant (`@cf/meta/llama-3.1-8b-instruct-fp8-fast`) costs $0.045/M input + $0.384/M output — approximately 6× cheaper on input and 2.2× cheaper on output vs the non-fast model ($0.282/$0.827). Previous cost rows used non-fast model pricing by mistake. Corrected per-call cost ~$0.000046 (vs old $0.000223). This reduces the AI line at 100k MAU from ~$130 to ~$30, and at 1M MAU from ~$1,500 to ~$300.
+- The 100k row previously cited `infra-v2.md` §5.4's $1,600 — updated to ~$1,480 reflecting the fp8-fast AI repricing (AI drops $100) + custom-domain count (500 paid) consistent.
+- The 10k row conservatively lands at $315 after AI repricing (from $330) + DEC-AI-QUOTA-LADDER-01 scope.
+- Workers AI cost at 1M MAU (~$300/mo) replaces what `infra-v2.md` modelled as ~$4,000/mo OpenAI cost — Cloudflare-native fp8-fast llama drops the "biggest unknown" by ~93%.
 
 #### 4.2.3 Revenue and gross margin
 
@@ -327,10 +328,10 @@ Listed in order of when they bite as the business grows:
 1. **Cloudflare Free → Pro plan** (~$20/mo step) — happens at first paying customer; trivial.
 2. **Supabase Free → Pro** ($25/mo step) — at ~50k Auth users or 0.5 GB DB, whichever first; happens around 1k-2k MAU.
 3. **Workers Free → Workers Paid** ($5/mo step + $0.30/M req) — first time we exceed 100k req/day; effectively MVP launch.
-4. **Cloudflare Pro → Business** ($200/mo step) — the BIG one. Triggered when we need:
-   - Cloudflare for SaaS Custom Hostnames (Pro plan does NOT include) → we pay the $200 the moment the first paying creator wants `mybrand.com → page`
-   - Unlimited bandwidth (already valuable at 1k+ MAU for viral protection)
-   - Bot Management (advanced)
+4. **Cloudflare Pro → Business** ($200/mo step) — Triggered when we want:
+   - **Unlimited bandwidth** — the primary viral-traffic protection (already valuable at 1k+ MAU); Pro plan is bandwidth-metered
+   - **Super Bot Fight Mode** + WAF advanced rules + image optimisation + advanced rate-limits — Business-tier hardening suite
+   - **Note:** Custom Hostnames (Cloudflare for SaaS) are available on **Free, Pro, Business, and Enterprise** plans alike (pay-as-you-go up to 50,000 custom hostnames at $0.10/hostname/mo). The first paying creator wanting `mybrand.com` does **NOT** force a Pro→Business jump by itself. Business is still desirable for the other capabilities listed above, but is not required solely for the first custom hostname. Source: https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/plans/
 5. **Supabase Pro → Team** ($25 → $599/mo step) — at ~80-100k MAU when egress overage on Pro starts to dominate. Team includes read replicas + daily backups + 250 GB bandwidth base.
 6. **Cloudflare Business → Enterprise** (~$3,000/mo+ negotiated) — at 250k-500k MAU; below that, Business plan overages remain cheaper than Enterprise commit.
 7. **Workers AI quota cliffs** — Free quota of 10k neurons/day exhausts when daily active creator count × avg AI clicks > rough threshold; predictable based on daily click pattern.
@@ -358,9 +359,10 @@ A coordinated bot attack scraping a target creator's page 1M times in a week cou
 
 **Defense (already in plan):**
 - Cloudflare DDoS protection unlimited on Business plan
-- Cloudflare Bot Management on Business plan
+- Cloudflare **Super Bot Fight Mode** on Business plan (heuristic bot detection + JS challenge). Full Bot Management with bot score and custom rules is Enterprise-only. For MVP, Super Bot Fight Mode + WAF rate-limit rules cover the scraping/spam vector adequately.
 - Per-tenant rate-limit at viewer-request stage (Cloudflare Workers: reject >100 RPS per tenant with 429)
 - Per-tenant egress tracking → auto-pause domain if monthly egress exceeds fair-use (10 GB/mo Pro, 100 GB Business)
+- Future-Enterprise upgrade trigger: if bot-score-based custom rules become necessary (high-volume targeted attacks), Enterprise Bot Management is the lever. Below ~250k MAU, Super Bot Fight Mode + WAF rate-limits are sufficient.
 
 #### 4.5.3 AI prompt-injection / spam abuse
 
@@ -389,9 +391,11 @@ Approaching Cloudflare Enterprise threshold. At 10k custom hostnames × $0.10/mo
 
 #### 4.5.6 Viral creator single-month egress spike
 
-A TikTok-viral creator could generate 10M views in a week = ~4.8 TB egress (per `bandwidth-based-model-v2.md` Executive summary §0). On CloudFront retail this is ~$400. On Cloudflare Business plan it is **$0** (unlimited bandwidth). This is the headline reason to be on Business plan, not Pro.
+A TikTok-viral creator could generate 10M views in a week = ~4.8 TB egress (per `bandwidth-based-model-v2.md` Executive summary §0). On CloudFront retail this is ~$400. On Cloudflare Business plan it is **$0** for **HTML / edge-rendered pages and small static assets** (CSS, JS, icons, small hero images ≤100 KB), which is exactly what our creator-page payload is (100 KB assumption in §4.2.1). This is the headline reason to be on Business plan, not Pro.
 
-**Defense in depth:** even though Cloudflare absorbs egress, custom-domain-tenant fair-use throttling kicks in if the same creator drives 50× their tier's bandwidth budget — soft-throttle to 2 req/s with "Upgrade for unthrottled" CTA. Business creator never throttled.
+**Important scope on "unlimited bandwidth":** Cloudflare's Service-Specific Terms for Application Services restrict the "unlimited" benefit from large-file delivery (video files, audio/podcast delivery, large PDFs, binary downloads). For tadaify this is a **non-issue at MVP** because: (a) native video upload is killed (DEC-097 §15) — YouTube handles all video bandwidth; (b) audio/podcast delivery is not a MVP block; (c) large-file assets route through R2 signed URLs which have $0 egress but are subject to their own R2 pricing. The "unlimited bandwidth absorbs viral traffic" headline specifically covers the 100 KB page-view payload — this claim is correct and defensible.
+
+**Defense in depth:** even though Cloudflare absorbs egress on the page path, custom-domain-tenant fair-use throttling kicks in if the same creator drives 50× their tier's bandwidth budget — soft-throttle to 2 req/s with "Upgrade for unthrottled" CTA. Business creator never throttled on the page path.
 
 ---
 
@@ -490,7 +494,7 @@ Enumerated user/system flows + the explicit handling. Mix of issues we built gua
 | 15 | Creator changes handle | `redirects` table + 301 from old `tadaify.com/<old>`; SEO weight transfers; custom domain detached if pointing old way |
 | 16 | Creator deletes account during active Pro subscription | 30-day grace per video block (`video-block-cloudflare-cost.md` §7.5); Stripe cancel-at-period-end; data export auto-generated; hard-delete day 31 |
 | 17 | Creator imports duplicate Linktree handle (preview generator) | F-PREVIEW-005 hash-based referral; admin-only, never public; opt-out form `tadaify.com/opt-out` |
-| 18 | Bot scraping creator pages 1M times in week | Cloudflare Bot Management filters; bot views excluded from creator analytics; rate-limit at viewer-request stage |
+| 18 | Bot scraping creator pages 1M times in week | Cloudflare Super Bot Fight Mode (Business plan) + WAF rate-limit rules filter heuristic bots; bot views excluded from creator analytics; rate-limit at viewer-request stage. Full bot-score rules require Enterprise Bot Management — deferred until scale justifies. |
 | 19 | A creator's TikTok goes viral generating 10M views in a week | Cloudflare Business unlimited bandwidth absorbs; auto-throttle to 2 req/s only if hitting custom-domain fair-use cap |
 | 20 | EU visitor declines cookies | F-058a granular consent; analytics fall back to anonymised hashed-IP rotation 24h |
 | 21 | EU B2B buyer with valid VAT-EU ID | Stripe Tax VIES validation → 0% reverse-charge invoice issued; buyer self-accounts per Art 28b Polish VAT |
@@ -560,7 +564,7 @@ Pulled from spec + research docs. Each item: status + DEC that will close it.
 | **"Powered by tadaify" footer as Pro unlock** | Manipulation pattern (Linktree); never exists on any tier | DEC-ANTI-001 / AP-001 hard-locked |
 | **Per-feature gating (Linktree model)** | Honest cost-driver model is bandwidth, not features; everything-free-everywhere differentiator | `bandwidth-based-model-v2.md` §1.1 |
 | **Substack-style profile-referral non-cash** | 30% recurring cash + double-sided incentive (free month for referred creator) wins | `affiliate-program.md` Topic 1 §1.2.1 |
-| **Cloudflare Pro plan as sufficient base** | Custom Hostnames not available; Bot Management not advanced; bandwidth not unlimited; Business plan mandatory | `custom-domains-cloudflare-vs-cloudfront.md` §1.4 |
+| **Cloudflare Pro plan as sufficient base** | Bandwidth is metered (not unlimited); Super Bot Fight Mode only (not advanced WAF + rate-limits); image optimisation and advanced rate-limits are Business-tier. Custom Hostnames (Cloudflare for SaaS) ARE available on Pro (and Free) at pay-as-you-go up to 50k — but Pro lacks the unlimited-bandwidth guarantee that protects against viral-creator egress spikes. Business plan justified for bandwidth + bot + WAF suite, not for the first custom hostname alone. | `custom-domains-cloudflare-vs-cloudfront.md` §1.4; https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/plans/ |
 
 ---
 
@@ -619,7 +623,7 @@ This section warrants the reviewer's most careful read. Solo-founder EU SaaS shi
 
 - **Stripe absorbs the EMI obligation** via Stripe Technology Europe Ltd (Central Bank of Ireland authorisation)
 - **tadaify stays a "platform user"** — no payment-institution status, no EMI license, no separate PSD2 SCA implementation beyond what Stripe ships
-- **Stripe Connect Standard** for affiliate / creator payouts: ~0.25% transfer fee + €2 cap
+- **Stripe Connect Standard** for affiliate / creator payouts (PL, platform-handled pricing model): **9 zł / monthly active connected account + 0.25% per transfer + 1.35 zł per payout** (source: https://stripe.com/en-pl/connect/pricing). The "0.25% + €2 cap" figure is not the PL pricing — it was an approximation from US/EU generic Connect docs. Cost analysis in §4 updated accordingly.
 
 ### 9.8 PCI DSS
 
@@ -630,7 +634,7 @@ This section warrants the reviewer's most careful read. Solo-founder EU SaaS shi
 
 - **Double-opt-in mandatory** (DEC-ANTI-014) — magic-link per signup attempt
 - **Magic-link rate-limit per IP** (1/min, 5/hour, 30/day)
-- **Cloudflare Bot Management** filters at edge
+- **Cloudflare Super Bot Fight Mode** (Business plan) filters at edge — heuristic-based JS challenge + known-bad bot blocking. Enterprise-only "Bot Management" (bot score, custom ML rules) deferred until Enterprise tier justified by scale.
 - **Hashed-IP visitor fingerprint** (24h rotation) — GDPR-compliant analytics dedup
 
 ---
