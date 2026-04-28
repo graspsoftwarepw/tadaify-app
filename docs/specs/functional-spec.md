@@ -643,7 +643,7 @@ When analytics detect a viral moment (>3× 30-day rolling average views), show s
 
 ## 6b. Creator Tier Composition ($8/mo — anti-patterns-audit-2026-04-24)
 
-Creator at $8/mo earns its $5 premium above the $3 domain add-on through 8 concrete features — NONE involving "Powered by tadaify removal" or any AP-001 variant.
+Creator at $8/mo earns its $6 premium above the $2 domain add-on through 8 concrete features — NONE involving "Powered by tadaify removal" or any AP-001 variant.
 
 | Feature | Tier | Eng effort |
 |---|---|---|
@@ -978,7 +978,7 @@ Free exports last 90d as CSV. Pro exports all-time + Google Sheets live sync (ho
 
 Invite up to 2 additional editors (Pro: 3 total seats). Role-based: Editor / Admin / Owner. Audit log: every action timestamped + author. Invite via magic-link email.
 
-**Why worth $10/mo:** Linktree Premium $30 ships "Add Admins" — we match at Pro $19 (well under half the price).
+**Why worth $10/mo:** Linktree Premium $30 ships "Add Admins" — we match at Pro $19 (37% cheaper, $11/mo savings).
 
 **Data model:** `team_memberships(id, owner_user_id, member_user_id, role, invited_at, accepted_at, revoked_at)`, `team_audit_log(...)`.
 
@@ -1255,7 +1255,7 @@ Report revenue across sub-accounts + generate invoice to agency's own clients wi
 | Tier | Monthly | Annual ARPU |
 |---|---|---|
 | Free | $0 | $0 |
-| Free + 1 domain addon | $3 | $36 |
+| Free + 1 domain addon | $2 | $24 |
 | Creator | $8 | $96 |
 | Creator + 1 extra domain | $10 | $120 |
 | Pro | $19 | $228 |
