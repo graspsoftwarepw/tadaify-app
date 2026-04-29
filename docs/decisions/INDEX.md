@@ -19,7 +19,7 @@ Full rationale lives in the per-file record. This table is the navigation layer.
 | 0006 | DEC-037 | **superseded** by 0008 | 4-tier flat structure: Free $0 / Creator $5/mo / Pro $15/mo / Business $49/mo | pricing, tiers | [0006-four-tier-structure.md](0006-four-tier-structure.md) |
 | 0007 | DEC-043 | accepted | "Everything free" gating model | pricing, feature-gating, free-tier | [0007-everything-free-gating.md](0007-everything-free-gating.md) |
 | 0008 | DEC-083 | **superseded** by 0009 | Pricing revised: Creator $8/mo, Pro $19/mo (supersedes DEC-037) | pricing, tiers | [0008-pricing-interim-8-19.md](0008-pricing-interim-8-19.md) |
-| 0009 | DEC-279 | accepted | Final pricing: Creator $7.99/mo, Pro $19.99/mo, extra-domain $1.99/mo | pricing, tiers, domain-addon | [0009-pricing-final-7.99-19.99.md](0009-pricing-final-7.99-19.99.md) |
+| 0009 | DEC-279 | accepted (Business line superseded by 0047) | Final pricing: Creator $7.99/mo, Pro $19.99/mo, extra-domain $1.99/mo | pricing, tiers, domain-addon | [0009-pricing-final-7.99-19.99.md](0009-pricing-final-7.99-19.99.md) |
 | 0010 | DEC-TRIAL-01 | accepted | No Pro trial mechanism — replaced by transparent preview + 30-day money-back | onboarding, trials, ux, anti-patterns | [0010-no-pro-trial-mechanism.md](0010-no-pro-trial-mechanism.md) |
 | 0011 | DEC-SOCIAL-01 | accepted | Social-import on onboarding: handle-based link generation (not OAuth) | onboarding, social, oauth, anti-patterns | [0011-social-import-handle-based.md](0011-social-import-handle-based.md) |
 | 0012 | DEC-MKT-B-v2 | accepted | Preview generator is admin-only tool — not a public endpoint | marketing, preview-generator, admin | [0012-preview-generator-admin-only.md](0012-preview-generator-admin-only.md) |
@@ -40,7 +40,7 @@ Full rationale lives in the per-file record. This table is the navigation layer.
 | 0027 | DEC-PRICELOCK-01 | accepted | Price-lock-for-life — paid subscription price locked forever for uninterrupted subscriptions | pricing, price-lock, trust | [0027-price-lock-for-life.md](0027-price-lock-for-life.md) |
 | 0028 | DEC-PRICELOCK-02 | accepted | Universal domain add-on across all tiers: structure locked (DEC-PRICELOCK-02) | pricing, custom-domain, domain-addon | [0028-domain-addon-pricing.md](0028-domain-addon-pricing.md) |
 | 0029 | DEC-CREATOR-API-01 | accepted | Creator API for Pro tier: OpenAPI 3.0 + `@tadaify/mcp` npm MCP server | api, pro-tier, mcp, openapi | [0029-creator-api-pro-tier.md](0029-creator-api-pro-tier.md) |
-| 0030 | DEC-AI-QUOTA-LADDER-01 | accepted | AI quota: unified shared bucket — Free 5/mo / Creator 20/mo / Pro 100/mo / Business unlimited | ai, quota, pricing | [0030-ai-quota-unified-ladder.md](0030-ai-quota-unified-ladder.md) |
+| 0030 | DEC-AI-QUOTA-LADDER-01, DEC-286, DEC-030 | accepted | AI credits: unified shared bucket — Free 5/mo / Creator 20/mo / Pro 100/mo / Business unlimited | ai, credits, pricing | [0030-ai-credits-unified-ladder.md](0030-ai-credits-unified-ladder.md) |
 | 0031 | DEC-AI-FEATURES-ROADMAP-01 | accepted | Text-only AI scope at MVP: theme matcher + bio rewrite + copy suggest (answer A) | ai, mvp-scope, features | [0031-ai-text-only-scope.md](0031-ai-text-only-scope.md) |
 | 0032 | DEC-ANIMATIONS-SPLIT-01 | accepted | Animations sub-tab: 2 sections — Entrance + Ambient (answer A) | animations, customization, ux | [0032-animations-two-sections.md](0032-animations-two-sections.md) |
 | 0033 | DEC-WALLPAPER-ANIM-01 | accepted | Background stays static — all motion lives in Animations > Ambient (answer C) | animations, background, customization | [0033-background-stays-static.md](0033-background-stays-static.md) |
@@ -57,6 +57,7 @@ Full rationale lives in the per-file record. This table is the navigation layer.
 | 0044 | DEC-081 | accepted | Research SPIKE acceptance: insights feasibility accepted — dispatch mockup work (Option 1) | research, process | [0044-research-spike-accepted.md](0044-research-spike-accepted.md) |
 | 0045 | DEC-082 | accepted | Polling architecture for Pro live-view — no Durable Objects push (Option 6) | analytics, architecture, durable-objects, polling | [0045-polling-architecture-no-do-for-pro.md](0045-polling-architecture-no-do-for-pro.md) |
 | 0046 | DEC-083-insights | **superseded** by 0009 | Pro and Business tier pricing from insights session (superseded by DEC-083 spec lock) | pricing, business-tier, insights | [0046-insights-pro-business-tier-pricing.md](0046-insights-pro-business-tier-pricing.md) |
+| 0047 | DEC-287 | accepted | Business pricing: $49.99/mo (.99 alignment, partial supersede of 0009 Business line) | pricing, business-tier | [0047-business-pricing-49.99.md](0047-business-pricing-49.99.md) |
 
 ---
 
@@ -64,11 +65,12 @@ Full rationale lives in the per-file record. This table is the navigation layer.
 
 | Chain | Files |
 |---|---|
-| Tier pricing | `0006` (DEC-037, $5/$15) → `0008` (DEC-083, $8/$19) → `0009` (DEC-279, $7.99/$19.99) |
+| Tier pricing | `0006` (DEC-037, $5/$15) → `0008` (DEC-083, $8/$19) → `0009` (DEC-279, $7.99/$19.99) → `0047` (DEC-287, Business $49.99/mo) |
 | Insights tier pricing | `0046` (DEC-083-insights, insights session) → `0009` (DEC-279, final prices) |
 | Domain add-on price | `0028` (DEC-PRICELOCK-02) structure accepted; price history $2→$1.99 documented in `0028` body, price superseded by `0009` |
 | Price-lock scope | `0022` (DEC-SYN-06, 3-year) → `0027` (DEC-PRICELOCK-01, lifetime) |
 | Pro live-view architecture | `0039` DEC-076 Option 9 (originally DO+SSE) → corrected by `0045` DEC-082 (polling) |
+| AI terminology | `0030` (DEC-AI-QUOTA-LADDER-01) terminology updated to "AI credits" per DEC-286, 2026-04-29; alias preserved for backwards search |
 
 ---
 
@@ -83,4 +85,4 @@ Full rationale lives in the per-file record. This table is the navigation layer.
 - DEC-OPT-BADGE is referenced in the spec but has no full body documented; it is a
   minor implementation note about the optional support badge in footer — not a standalone DEC.
 
-*Last updated: 2026-04-28 — supersession integrity fixed per Codex review PR #120 (P1: 0009 supersedes off-by-one + 0028 scope correction; P2: 0006/0046 chain alignment).*
+*Last updated: 2026-04-29 — DEC-286 AI credits terminology lock + DEC-287 Business $49.99 (0047 added; 0030 renamed + aliases updated; 0009 partial supersede noted).*

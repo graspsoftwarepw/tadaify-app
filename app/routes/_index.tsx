@@ -5,8 +5,8 @@
  * Implements all 11 sections per mockups/tadaify-mvp/landing.html (visual contract).
  * Framework: React Router 7 SSR on Cloudflare Workers (DEC-FRAMEWORK-01, DEC-DOMAIN-01).
  *
- * Pricing throughout: $7.99 (Creator) / $19.99 (Pro) / $1.99/mo (domain add-on) per DEC-279.
- * AI quota: Free 5 / Creator 20 / Pro 100 / Business ∞ per DEC-AI-QUOTA-LADDER-01 (0030).
+ * Pricing throughout: $7.99 (Creator) / $19.99 (Pro) / $49.99 (Business) / $1.99/mo (domain add-on) per DEC-279+DEC-287.
+ * AI credits: Free 5 / Creator 20 / Pro 100 / Business ∞ per DEC-AI-QUOTA-LADDER-01 / DEC-286 (0030).
  *
  * TADA-BUG-001 + DEC-DOMAIN-01: wordmark preview shows tadaify.com/<handle> (real URL format).
  * The brand lockup (tada!ify with ! and –) appears ONLY in the wordmark element, never in
@@ -1801,7 +1801,7 @@ curl -H "Authorization: Bearer sk_tdf_..." \\
                 { label: "Free", color: "#6B7280", bg: "#F3F4F6", border: "transparent", speed: "Hourly refresh", window: "7-day window" },
                 { label: "Creator $7.99/mo", color: "#6366F1", bg: "rgba(99,102,241,0.06)", border: "rgba(99,102,241,0.15)", speed: "5-min refresh", window: "90-day window" },
                 { label: "Pro $19.99/mo", color: "#6366F1", bg: "rgba(99,102,241,0.1)", border: "rgba(99,102,241,0.25)", speed: "Real-time (60s)", window: "1-year window + API" },
-                { label: "Business $49/mo", color: "#6366F1", bg: "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))", border: "rgba(99,102,241,0.3)", speed: "+ Replay sessions", window: "All-time history + Parquet" },
+                { label: "Business $49.99/mo", color: "#6366F1", bg: "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))", border: "rgba(99,102,241,0.3)", speed: "+ Replay sessions", window: "All-time history + Parquet" },
               ].map(({ label, color, bg, border, speed, window: win }) => (
                 <div
                   key={label}
@@ -1939,12 +1939,12 @@ curl -H "Authorization: Bearer sk_tdf_..." \\
               },
               {
                 q: "What's the catch?",
-                a: "No catch. Every product feature is on Free. You pay only if you want a custom domain ($1.99/mo add-on), or if you want Creator ($7.99) which bundles the domain with priority support and longer analytics retention, or Pro ($19.99) for team seats + custom code + email automations, or Business ($49) for agency sub-accounts and white-label.",
+                a: "No catch. Every product feature is on Free. You pay only if you want a custom domain ($1.99/mo add-on), or if you want Creator ($7.99) which bundles the domain with priority support and longer analytics retention, or Pro ($19.99) for team seats + custom code + email automations, or Business ($49.99) for agency sub-accounts and white-label.",
               },
               {
                 q: "Do you have AI features?",
-                /* DEC-AI-QUOTA-LADDER-01 (0030): Free 5/mo, Creator 20/mo, Pro 100/mo, Business unlimited */
-                a: "Yes — three at MVP: theme matcher, bio rewrite, and page-copy suggestions. Free tier: 5 generations/month. Creator: 20/mo. Pro: 100/mo. Business: unlimited. Every AI edit shows a diff before applying — you approve, we never overwrite your voice silently.",
+                /* DEC-AI-QUOTA-LADDER-01 / DEC-286 (0030): Free 5 credits/mo, Creator 20/mo, Pro 100/mo, Business unlimited */
+                a: "Yes — three at MVP: theme matcher, bio rewrite, and page-copy suggestions. Free tier: 5 AI credits/month. Creator: 20/mo. Pro: 100/mo. Business: unlimited. Every AI edit shows a diff before applying — you approve, we never overwrite your voice silently.",
               },
               {
                 q: "How fast can I launch?",

@@ -1,10 +1,10 @@
 ---
 id: 0009
 aliases: ["DEC-279"]
-status: accepted
+status: accepted (Business line superseded by 0047, 2026-04-29)
 date: 2026-04-28
 supersedes: ["0008-pricing-interim-8-19.md", "0046-insights-pro-business-tier-pricing.md"]
-superseded_by: null
+superseded_by: ["0047-business-pricing-49.99.md"]
 topics: [pricing, tiers, domain-addon]
 ---
 
@@ -23,7 +23,7 @@ Final prices:
 - Creator: **$7.99/mo**
 - Pro: **$19.99/mo**
 - Custom-domain add-on: **$1.99/mo** (supersedes DEC-PRICELOCK-02's $2/mo)
-- Business: $49/mo (unchanged)
+- Business: $49.99/mo (**superseded by 0047/DEC-287, 2026-04-29**; was $49/mo at time of this DEC)
 - Free: $0 (unchanged)
 
 Annual figures:

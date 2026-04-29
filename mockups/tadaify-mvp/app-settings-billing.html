@@ -916,7 +916,7 @@
                 <li>Sell products + communities</li>
                 <li>Verified ✓ creator badge</li>
                 <li>Schedule visibility</li>
-                <li>20 AI uses / day</li>
+                <li>20 AI credits / mo</li>
               </ul>
               <button class="cc-cta" onclick="selectPlan('creator')">Pick Creator</button>
             </div>
@@ -929,20 +929,20 @@
                 <li>Per-page custom domain</li>
                 <li>Password protection</li>
                 <li>REST API + MCP</li>
-                <li>100 AI uses / day</li>
+                <li>100 AI credits / mo</li>
               </ul>
               <button class="cc-cta" onclick="selectPlan('pro')">Pick Pro</button>
             </div>
 
             <div class="compare-card" data-plan="business">
               <div class="cc-name">Business</div>
-              <div class="cc-price"><b id="cmp-biz-price">$49/mo</b> · locked for life</div>
+              <div class="cc-price"><b id="cmp-biz-price">$49.99/mo</b> · locked for life</div>
               <ul class="cc-features">
                 <li>Everything in Pro</li>
                 <li>A/B testing</li>
                 <li>Team seats + roles</li>
                 <li>Parquet R2 monthly archive</li>
-                <li>Unlimited AI uses</li>
+                <li>Unlimited AI credits</li>
               </ul>
               <button class="cc-cta" onclick="selectPlan('business')">Pick Business</button>
             </div>
@@ -1444,18 +1444,18 @@
 
     document.getElementById('cmp-creator-price').textContent = fmtYearly(7.99);
     document.getElementById('cmp-pro-price').textContent     = fmtYearly(19.99);
-    document.getElementById('cmp-biz-price').textContent     = fmtYearly(49);
+    document.getElementById('cmp-biz-price').textContent     = fmtYearly(49.99);
 
     /* Update the plan card price too if it's a paid state */
     if (currentState !== 'free' && currentState !== 'zero-invoices' && currentState !== 'eur-currency') {
       var basePrice = ({
         'creator-active': 8, 'creator-trial': 8, 'past-due': 8,
         'cancel-scheduled': 8, 'card-expiring': 8, 'multi-sub-items': 8,
-        'business-yearly': 49
+        'business-yearly': 49.99
       })[currentState] || 8;
       var pcEl = document.getElementById('plan-price');
       if (currentState === 'business-yearly' || c === 'yearly') {
-        pcEl.innerHTML = '<b>$' + (basePrice * 10) + '/yr</b> · renews <b>Dec 1, 2026</b> <span class="cadence-savings">save 2 mo</span>';
+        pcEl.innerHTML = '<b>$' + (basePrice * 12).toFixed(2) + '/yr</b> · renews <b>Dec 1, 2026</b> <span class="cadence-savings">save 2 mo</span>';
       } else {
         pcEl.innerHTML = '<b>$' + basePrice + '/mo</b> · renews <b>Dec 1, 2026</b>';
       }
@@ -1476,7 +1476,7 @@
     openModal('change-plan-modal');
   }
   function selectPlan(plan) {
-    var price = ({ free: '$0', creator: '$7.99/mo', pro: '$19.99/mo', business: '$49/mo' })[plan];
+    var price = ({ free: '$0', creator: '$7.99/mo', pro: '$19.99/mo', business: '$49.99/mo' })[plan];
     document.getElementById('cp-target').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     document.getElementById('cp-target-name').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
     document.getElementById('cp-target-price').textContent = price;
@@ -1689,8 +1689,8 @@
       case 'business-yearly':
         icon.textContent = '🔒';
         name.textContent = 'Business';
-        price.innerHTML  = '<b>$490/yr</b> · renews <b>Dec 1, 2026</b> <span class="cadence-savings">save 2 mo</span>';
-        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $49/mo</span><span class="chip success">Active · yearly</span>';
+        price.innerHTML  = '<b>$599.88/yr</b> · renews <b>Dec 1, 2026</b> <span class="cadence-savings">save 2 mo</span>';
+        badges.innerHTML = '<span class="chip locked-life">🔒 Locked for life at $49.99/mo</span><span class="chip success">Active · yearly</span>';
         pricelock.hidden = false;
         renderInvoices('usd');
         break;

@@ -8,7 +8,7 @@
   status: draft-for-review
 
   Scope: stand-alone deep-dive of /app/settings#team. Business-only tab per
-  DEC-083 (Business plan = $49/mo, includes 10 team members account-level).
+  DEC-083 (Business plan = $49.99/mo, includes 10 team members account-level).
   Free / Creator / Pro see a demo / upsell view (per
   feedback_no_blur_premium_features — premium features visible & interactive,
   gating happens at action time via TierGate.checkAndProceed).
@@ -35,7 +35,7 @@
     State switcher: empty / 5-members / 10-of-10-full / pending-invites-only
 
   DEC trail:
-    DEC-083                 Business pricing $49/mo · 10 team members included · cap account-level
+    DEC-083                 Business pricing $49.99/mo · 10 team members included · cap account-level
     DEC-PRICELOCK-01        price-lock-for-life (cross-ref on upsell card)
     AP-031                  no sticky upsell banners — only the upgrade card
 
@@ -1031,7 +1031,7 @@
   </span>
 
   <span class="dt-spacer"></span>
-  <span class="dt-info">DEC-083 · Business $49/mo includes <code>10 members</code> account-level · cap → contact support</span>
+  <span class="dt-info">DEC-083 · Business $49.99/mo includes <code>10 members</code> account-level · cap → contact support</span>
 </div>
 
 <!-- ============================================================
@@ -1109,7 +1109,7 @@
         <div class="demo-banner" id="demo-banner" hidden>
           <div class="db-ico" aria-hidden="true">⭐</div>
           <div class="db-body">
-            <strong>Team is part of Business · $49/mo</strong>
+            <strong>Team is part of Business · $49.99/mo</strong>
             You're previewing with sample data — invites and role changes won't actually send. Upgrade to Business and your real team comes with 10 included members, audit log, and SAML SSO.
           </div>
           <div class="db-actions">
@@ -1123,7 +1123,7 @@
         <div class="settings-section" id="seats-section">
           <div class="settings-section-title with-action">
             <span class="st-left">Seats &amp; usage</span>
-            <span class="chip locked-life" title="DEC-083 · Business price locked at signup forever">🔒 Locked at $49/mo for life</span>
+            <span class="chip locked-life" title="DEC-083 · Business price locked at signup forever">🔒 Locked at $49.99/mo for life</span>
           </div>
 
           <div class="seats-card">
@@ -1481,7 +1481,7 @@
         <!-- Help footer -->
         <div class="help-footer">
           <p>
-            Team is included on the <b>Business plan ($49/mo)</b> with up to 10 members at no extra cost — see <a href="./pricing.html#business">pricing</a> · need more? <a href="mailto:support@tadaify.com?subject=Raise%20team%20cap%20above%2010">support@tadaify.com</a>
+            Team is included on the <b>Business plan ($49.99/mo)</b> with up to 10 members at no extra cost — see <a href="./pricing.html#business">pricing</a> · need more? <a href="mailto:support@tadaify.com?subject=Raise%20team%20cap%20above%2010">support@tadaify.com</a>
             <br>
             DEC-083 · DEC-PRICELOCK-01 · Audit log retention 90 days (Enterprise: longer) · GDPR-compliant data processing.
           </p>
@@ -2151,7 +2151,7 @@
   }
 
   function upgradeToBusiness() {
-    alert('Mockup: would route to /pricing#business with checkout-intent=team and locked-for-life $49/mo.');
+    alert('Mockup: would route to /pricing#business with checkout-intent=team and locked-for-life $49.99/mo.');
   }
 
   /* -------------------------------------------------------------
@@ -2181,7 +2181,7 @@
     if (currentTier !== 'business' && window.TierGate) {
       window.TierGate.checkAndProceed({
         currentTier: currentTier,
-        features: [{ id: 'team-invite', name: 'Invite a team member', requires: 'business', meta: '10 members included on Business · $49/mo locked-for-life' }],
+        features: [{ id: 'team-invite', name: 'Invite a team member', requires: 'business', meta: '10 members included on Business · $49.99/mo locked-for-life' }],
         onProceed:    function () { showInviteModal(); },
         onUpgrade:    upgradeToBusiness,
         onSaveWithout: null,  /* hide that branch */

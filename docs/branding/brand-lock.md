@@ -128,8 +128,8 @@ Full token system locked per `tadaify-theme-tokens.html` (2026-04-24). Key deriv
 
 ### §9 additions (2026-04-25 second wave)
 
-- **Creator API (Pro tier pillar — DEC-CREATOR-API-01=A).** AI-friendly REST API, per-user keys, OpenAPI 3.0, `@tadaify/mcp` npm MCP server, custom GPT template. Positioning line: *"Your AI assistant manages your tadaify so you don't have to."* Pro differentiator alongside 100 AI uses/mo.
-- **AI quota ladder (DEC-AI-QUOTA-LADDER-01=B).** Unified token bucket: **Free 5 uses/mo / Creator 20 uses/mo / Pro 100 uses/mo / Business unlimited**. All text-only AI features (theme matcher, bio rewrite, block copy suggest) share the same bucket. Image generation deferred per DEC-AI-FEATURES-ROADMAP-01=A.
+- **Creator API (Pro tier pillar — DEC-CREATOR-API-01=A).** AI-friendly REST API, per-user keys, OpenAPI 3.0, `@tadaify/mcp` npm MCP server, custom GPT template. Positioning line: *"Your AI assistant manages your tadaify so you don't have to."* Pro differentiator alongside 100 AI credits/mo.
+- **AI credits ladder (DEC-AI-QUOTA-LADDER-01=B / DEC-286).** Unified token bucket: **Free 5 credits/mo / Creator 20 credits/mo / Pro 100 credits/mo / Business unlimited**. All text-only AI features (theme matcher, bio rewrite, block copy suggest) share the same bucket. Image generation deferred per DEC-AI-FEATURES-ROADMAP-01=A. Terminology: "AI credits" (uniform term per DEC-286 2026-04-29; "AI uses" / "AI quota" / "AI generations" retired).
 - **Opt-in support badge (DEC-OPT-BADGE — refines AP-001).** AP-001 remains fully intact: no forced "Powered by tadaify" on any tier, ever. Refinement: an **opt-in** "made with tada!ify" badge is available on every tier, default **OFF**. Creators who want to show brand affinity can enable it. Never default ON, never a condition for Free tier, never a paid unlock.
 - **Pinned message primitive (DEC-PINNED-MSG-01=A).** Toggleable fading announcement line above profile card. Max 80 chars. Dismissible by visitor. tadaify-only differentiator — no competitor ships this as a built-in page primitive.
 
