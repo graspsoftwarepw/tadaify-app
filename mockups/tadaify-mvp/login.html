@@ -1,16 +1,26 @@
 <!--
   type: mockup
   project: tadaify
-  title: Login — auth screen
+  title: Login — auth screen (4 providers parallel)
   created_at: 2026-04-25
+  updated_at: 2026-04-29
   author: orchestrator
   status: draft-for-review
 
   Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify, Motion v10 logo, light/dark mode toggle.
 
-  DEC trail: DEC-019 tagline; DEC-WORDMARK-01 (no hyphen); DEC-TRIAL-01 (no trials); DEC-SOCIAL-01 (handle-input only, no OAuth dance); DEC-PRICELOCK-01/02; DEC-AI-QUOTA-LADDER-01 (Free 5).
+  DEC trail (Slice B revision):
+    - DEC-019 tagline; DEC-WORDMARK-01; DEC-TRIAL-01; DEC-PRICELOCK-01/02; DEC-AI-QUOTA-LADDER-01
+    - DEC-291 (answered) — Auth flow Option B-modified; email path → 6-digit OTP code (NOT magic-link click)
+    - DEC-294 (answered) — 4 providers parallel: X / Google / Apple / Email-OTP. Force-email Auth Hook ON.
+    - DEC-292 (pending; mocked = A parallel) — 4 buttons stacked, NOT email-first discovery.
+    - DEC-293 (pending; mocked = auto-link ON) — Identity linking via email; UI doesn't surface explicitly.
 
-  Anti-patterns: AP-001 no Powered by, AP-013 no phone, AP-017 no trials, AP-024 progressive reveal, AP-030 Free default.
+  Flow:
+    Login screen → (Google/Apple/X) → OAuth round-trip → dashboard
+    Login screen → (Email)           → email-input → 6-digit OTP → dashboard
+    "Forgot password?" link visible only if user has a password set. Mockup shows always for completeness;
+    in production it's conditional on the user record (DESIGN_QUESTION below).
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -23,9 +33,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
-    /* ----------------------------------------------------------------
-       AUTH TOPBAR — identical structure to register.html + app-dashboard
-       ---------------------------------------------------------------- */
+    /* AUTH TOPBAR */
     .auth-bar {
       position: sticky; top: 0; z-index: 40;
       background: var(--bg-elevated);
@@ -35,52 +43,36 @@
       box-shadow: 0 1px 0 rgba(17,24,39,0.02);
       min-height: 54px;
     }
-    .auth-bar .brand {
-      display: flex; align-items: center; gap: 10px;
-      text-decoration: none; color: inherit;
-    }
+    .auth-bar .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
     .auth-bar .wm { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -0.02em; }
     .auth-bar .wm .ta  { color: var(--wm-ta); }
     .auth-bar .wm .da  { color: var(--wm-da); }
     .auth-bar .wm .ify { color: var(--wm-ify); }
     .auth-bar .spacer { flex: 1; }
-    .auth-bar .bar-link {
-      font-size: 13px; font-weight: 500; color: var(--fg-muted);
-      text-decoration: none; white-space: nowrap;
-    }
+    .auth-bar .bar-link { font-size: 13px; font-weight: 500; color: var(--fg-muted); text-decoration: none; white-space: nowrap; }
     .auth-bar .bar-link strong { color: var(--brand-primary); font-weight: 600; }
     .auth-bar .bar-link:hover strong { color: var(--brand-primary-hover); }
 
-    /* Theme toggle — matches dashboard pattern exactly */
     .theme-toggle-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border-radius: 8px;
       background: transparent; border: 1px solid transparent;
-      color: var(--fg-muted); cursor: pointer;
-      transition: all .12s ease;
-      position: relative;
+      color: var(--fg-muted); cursor: pointer; transition: all .12s ease; position: relative;
     }
     .theme-toggle-btn:hover { background: var(--bg-muted); color: var(--fg); }
-    .theme-toggle-btn svg {
-      width: 18px; height: 18px;
-      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
-    }
+    .theme-toggle-btn svg { width: 18px; height: 18px; transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1); }
     .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
     body.dark-mode .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
     body.dark-mode .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
 
-    /* ----------------------------------------------------------------
-       LOGIN PAGE LAYOUT — centered card, full-width mobile
-       ---------------------------------------------------------------- */
+    /* LOGIN PAGE LAYOUT */
     .login-page {
       min-height: calc(100vh - 54px);
       display: flex; align-items: center; justify-content: center;
       padding: clamp(24px, 5vw, 64px) 20px;
     }
-
     .login-card {
-      width: 100%;
-      max-width: 440px;
+      width: 100%; max-width: 460px;
       background: var(--bg-elevated);
       border: 1px solid var(--border);
       border-radius: 20px;
@@ -98,11 +90,9 @@
       }
     }
 
-    /* ----------------------------------------------------------------
-       WELCOME-BACK HINT (when ?handle= param present)
-       ---------------------------------------------------------------- */
+    /* WELCOME-BACK HINT (when ?handle= param present) */
     .welcome-hint {
-      display: none; /* shown via JS when ?handle= exists */
+      display: none;
       align-items: center; gap: 12px;
       padding: 12px 14px;
       background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.06));
@@ -117,139 +107,134 @@
       color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 17px;
     }
     .welcome-hint .wh-text { line-height: 1.4; }
-    .welcome-hint .wh-title {
-      font-family: var(--font-display);
-      font-size: 16px; font-weight: 600; color: var(--fg);
-    }
+    .welcome-hint .wh-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--fg); }
     .welcome-hint .wh-sub { font-size: 12px; color: var(--fg-muted); }
 
-    /* ----------------------------------------------------------------
-       LOGIN HEADER
-       ---------------------------------------------------------------- */
-    .login-header { margin-bottom: 24px; }
+    .login-header { margin-bottom: 22px; }
     .login-header h1 {
       font-family: var(--font-display);
       font-size: clamp(28px, 5vw, 38px);
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      line-height: 1.1;
-      margin-bottom: 6px;
+      font-weight: 600; letter-spacing: -0.02em;
+      line-height: 1.1; margin-bottom: 6px;
     }
-    .login-header .subhead {
-      font-size: 15px; color: var(--fg-muted); line-height: 1.55;
-    }
+    .login-header .subhead { font-size: 15px; color: var(--fg-muted); line-height: 1.55; }
 
-    /* ----------------------------------------------------------------
-       STAGGER FADE-UP entrance animations
-       ---------------------------------------------------------------- */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .fade-up { animation: fadeUp 320ms ease both; }
-    .delay-1 { animation-delay: 80ms; }
-    .delay-2 { animation-delay: 160ms; }
-    .delay-3 { animation-delay: 240ms; }
-    .delay-4 { animation-delay: 320ms; }
-    .delay-5 { animation-delay: 400ms; }
-    .delay-6 { animation-delay: 480ms; }
+    .delay-1 { animation-delay: 60ms; }
+    .delay-2 { animation-delay: 120ms; }
+    .delay-3 { animation-delay: 180ms; }
+    .delay-4 { animation-delay: 240ms; }
 
-    /* ----------------------------------------------------------------
-       FORM FIELDS
-       ---------------------------------------------------------------- */
-    .field-block { margin-bottom: 14px; }
-    .field-block label {
-      display: block; font-size: 13px; font-weight: 600;
-      color: var(--fg-muted); margin-bottom: 6px;
-    }
+    /* PROVIDER STACK — same pattern as register.html */
+    .provider-stack { display: flex; flex-direction: column; gap: 10px; }
 
-    /* Password field with show/hide toggle */
-    .pw-wrap { position: relative; }
-    .pw-wrap input { padding-right: 60px; min-height: 44px; }
-    .pw-show-btn {
-      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-      background: none; border: none; padding: 4px 6px;
-      font-size: 13px; font-weight: 500; font-family: inherit;
-      color: var(--fg-muted); cursor: pointer;
-    }
-    .pw-show-btn:hover { color: var(--fg); }
-
-    .forgot-link {
-      display: block; text-align: right;
-      font-size: 12px; font-weight: 500; color: var(--fg-muted);
-      margin-top: 6px; text-decoration: none;
-    }
-    .forgot-link:hover { color: var(--brand-primary); }
-
-    /* ----------------------------------------------------------------
-       PRIMARY CTA
-       ---------------------------------------------------------------- */
-    .login-submit-btn {
-      width: 100%; min-height: 46px;
-      margin-top: 8px;
-    }
-
-    /* ----------------------------------------------------------------
-       DIVIDER
-       ---------------------------------------------------------------- */
-    .divider-or {
-      display: flex; align-items: center; gap: 12px;
-      color: var(--fg-subtle); font-size: 12px;
-      margin: 18px 0;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .divider-or::before, .divider-or::after {
-      content: ""; flex: 1; height: 1px; background: var(--border);
-    }
-
-    /* ----------------------------------------------------------------
-       GOOGLE BUTTON
-       ---------------------------------------------------------------- */
-    .auth-btn-google {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 18px;
+    .auth-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px;
       background: var(--bg-elevated);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius);
-      font-size: 14px; font-weight: 600;
-      cursor: pointer; width: 100%; min-height: 44px;
+      cursor: pointer; width: 100%;
       transition: all 120ms ease;
-      color: var(--fg);
-      justify-content: center;
+      color: var(--fg); text-align: left;
+      min-height: 56px; font-family: inherit;
     }
-    .auth-btn-google:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
-    .auth-btn-google .google-icon { width: 20px; height: 20px; flex-shrink: 0; }
-
-    /* ----------------------------------------------------------------
-       MAGIC-LINK TOGGLE
-       ---------------------------------------------------------------- */
-    .magic-link-toggle {
-      width: 100%; margin-top: 10px;
-      background: none; border: 1px dashed var(--border-strong);
-      border-radius: var(--radius); padding: 10px 14px;
-      font-size: 13px; font-weight: 500; font-family: inherit;
-      color: var(--fg-muted); cursor: pointer;
-      transition: all 120ms ease;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      min-height: 44px;
+    .auth-btn:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
+    .auth-btn .icon-wrap {
+      width: 28px; height: 28px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-    .magic-link-toggle:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+    .auth-btn .icon-wrap svg { width: 22px; height: 22px; }
+    .auth-btn .label-wrap { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .auth-btn .label-main { font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--fg); }
+    .auth-btn .label-hint { font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--fg-subtle); }
+    .auth-btn.tier-1 { border-width: 1.5px; }
+    .auth-btn.tier-2 { background: transparent; }
 
-    /* The magic-link-only form (hidden by default) */
-    #magic-form { display: none; }
-    .magic-notice {
+    .icon-apple { fill: #000; }
+    body.dark-mode .icon-apple { fill: #FFF; }
+    .icon-x { fill: #000; }
+    body.dark-mode .icon-x { fill: #FFF; }
+
+    .all-paths-note {
       font-size: 12px; color: var(--fg-muted);
-      text-align: center; margin-top: 10px;
+      text-align: center; padding: 10px 14px;
+      background: var(--bg-muted);
+      border-radius: var(--radius); margin-top: 14px;
+      line-height: 1.5;
     }
 
-    /* ----------------------------------------------------------------
-       TRUST TRIO STRIP
-       ---------------------------------------------------------------- */
+    /* EMAIL FLOW (revealed when "Continue with Email" clicked) */
+    #email-step, #otp-step { display: none; }
+
+    .email-step-wrap label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--fg-muted); margin-bottom: 6px;
+    }
+    .email-step-wrap .input { width: 100%; min-height: 44px; }
+
+    /* OTP — same grid as register.html */
+    .otp-grid {
+      display: flex; gap: 8px; justify-content: center;
+      margin: 18px 0 8px;
+    }
+    .otp-input {
+      width: 44px; height: 56px; text-align: center;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 22px; font-weight: 600;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--bg-elevated); color: var(--fg);
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .otp-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.18);
+      outline: none;
+    }
+    @media (max-width: 420px) {
+      .otp-input { width: 38px; height: 50px; font-size: 19px; }
+      .otp-grid { gap: 6px; }
+    }
+    body.dark-mode .otp-input { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .otp-input:focus { border-color: #6366F1; }
+
+    .resend-row {
+      text-align: center; font-size: 13px; color: var(--fg-muted);
+      margin-top: 16px;
+    }
+    .resend-row .resend-btn {
+      background: none; border: none; padding: 0;
+      color: var(--brand-primary); font-weight: 600; cursor: pointer;
+      font-family: inherit; font-size: 13px;
+    }
+    .resend-row .resend-btn:disabled { color: var(--fg-subtle); cursor: not-allowed; }
+
+    .forgot-link {
+      display: block; text-align: center;
+      font-size: 13px; font-weight: 500; color: var(--fg-muted);
+      margin-top: 16px; text-decoration: none;
+      background: none; border: none; padding: 0;
+      cursor: pointer; font-family: inherit; width: 100%;
+    }
+    .forgot-link:hover { color: var(--brand-primary); }
+
+    .back-link {
+      display: inline-block; margin-top: 14px;
+      font-size: 13px; color: var(--fg-muted);
+      background: none; border: none; padding: 0; cursor: pointer;
+      font-family: inherit; text-decoration: none;
+    }
+    .back-link:hover { color: var(--fg); }
+
+    /* TRUST TRIO STRIP */
     .trust-strip {
       display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-      margin: 24px 0 0;
+      margin: 22px 0 0;
     }
     .trust-chip {
       display: inline-flex; align-items: center; gap: 5px;
@@ -258,178 +243,76 @@
       font-size: 11px; font-weight: 500;
       background: var(--bg-muted);
       border: 1px solid var(--border);
-      color: var(--fg-muted);
-      white-space: nowrap;
+      color: var(--fg-muted); white-space: nowrap;
     }
 
-    /* ----------------------------------------------------------------
-       BOTTOM LINK — Create account
-       ---------------------------------------------------------------- */
     .create-account-row {
-      margin-top: 22px;
+      margin-top: 18px;
       text-align: center;
       font-size: 13px; color: var(--fg-muted);
     }
     .create-account-row a { color: var(--brand-primary); font-weight: 600; }
     .create-account-row a:hover { color: var(--brand-primary-hover); }
 
-    /* ----------------------------------------------------------------
-       MOBILE: sticky CTA at bottom
-       ---------------------------------------------------------------- */
-    .sticky-cta-mobile {
-      display: none;
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
-      background: var(--bg-elevated);
-      border-top: 1px solid var(--border);
-      padding: 12px 20px;
-    }
-    .sticky-cta-mobile .btn { width: 100%; min-height: 46px; }
-    @media (max-width: 480px) {
-      .sticky-cta-mobile { display: block; }
-      /* hide the in-card submit on mobile, use sticky one */
-      .login-submit-btn { display: none; }
-    }
-
-    /* ----------------------------------------------------------------
-       DARK MODE OVERRIDES
-       ---------------------------------------------------------------- */
-    body.dark-mode {
-      background: #0B0F1E;
-      color: #F3F4F6;
-    }
-    body.dark-mode .auth-bar {
-      background: #0E1428;
-      border-bottom-color: #1F2937;
-    }
+    /* DARK MODE OVERRIDES */
+    body.dark-mode { background: #0B0F1E; color: #F3F4F6; }
+    body.dark-mode .auth-bar { background: #0E1428; border-bottom-color: #1F2937; }
     body.dark-mode .auth-bar .wm .ify { color: #F3F4F6; }
     body.dark-mode .auth-bar .bar-link { color: #9CA3AF; }
     body.dark-mode .login-page { background: #0B0F1E; }
-    body.dark-mode .login-card {
-      background: #0E1428;
-      border-color: #1F2937;
-    }
+    body.dark-mode .login-card { background: #0E1428; border-color: #1F2937; }
     body.dark-mode .login-header h1 { color: #F3F4F6; }
     body.dark-mode .login-header .subhead { color: #9CA3AF; }
-    body.dark-mode .field-block label { color: #9CA3AF; }
+    body.dark-mode .email-step-wrap label { color: #9CA3AF; }
     body.dark-mode .input {
-      background: #141A2D;
-      border-color: #1F2937;
-      color: #F3F4F6;
-    }
-    body.dark-mode .input:focus { border-color: #6366F1; box-shadow: 0 0 0 4px rgba(99,102,241,0.18); }
-    body.dark-mode .pw-show-btn { color: #9CA3AF; }
-    body.dark-mode .pw-show-btn:hover { color: #F3F4F6; }
-    body.dark-mode .forgot-link { color: #9CA3AF; }
-    body.dark-mode .forgot-link:hover { color: #A5B4FC; }
-    body.dark-mode .auth-btn-google {
       background: #141A2D; border-color: #1F2937; color: #F3F4F6;
     }
-    body.dark-mode .auth-btn-google:hover { background: #1F2937; border-color: #6366F1; }
-    body.dark-mode .magic-link-toggle {
-      border-color: #1F2937; color: #9CA3AF;
-    }
-    body.dark-mode .magic-link-toggle:hover { border-color: #6366F1; color: #A5B4FC; background: rgba(99,102,241,0.08); }
+    body.dark-mode .input:focus { border-color: #6366F1; box-shadow: 0 0 0 4px rgba(99,102,241,0.18); }
+    body.dark-mode .auth-btn { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .auth-btn:hover { background: #1F2937; border-color: #6366F1; }
+    body.dark-mode .auth-btn.tier-2 { background: transparent; }
+    body.dark-mode .auth-btn .label-main { color: #F3F4F6; }
+    body.dark-mode .auth-btn .label-hint { color: #6B7280; }
+    body.dark-mode .all-paths-note { background: #141A2D; color: #9CA3AF; }
     body.dark-mode .trust-chip { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
     body.dark-mode .create-account-row { color: #9CA3AF; }
-    body.dark-mode .sticky-cta-mobile { background: #0E1428; border-top-color: #1F2937; }
     body.dark-mode .welcome-hint {
       background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
       border-color: rgba(99,102,241,0.25);
     }
     body.dark-mode .welcome-hint .wh-title { color: #F3F4F6; }
     body.dark-mode .welcome-hint .wh-sub { color: #9CA3AF; }
-    body.dark-mode .magic-notice { color: #9CA3AF; }
-    body.dark-mode #magic-form .input {
-      background: #141A2D; border-color: #1F2937; color: #F3F4F6;
-    }
+    body.dark-mode .resend-row { color: #9CA3AF; }
   </style>
 
 <style data-source="responsive-tablet-tier">
-/* ==========================================================================
-   Responsive tablet-tier (600–1023px) + modal viewport clamp.
-   Auto-injected 2026-04-27 per feedback_tadaify_three_viewport_support.
-   Targets common cramped layouts at iPad-portrait widths and ensures
-   modals never overflow the viewport at any size.
-   ========================================================================== */
 @media (max-width: 1023px) and (min-width: 600px) {
-  /* Clamp 3+ column grids to 2 columns at tablet width */
-  .feed,
-  .related-grid,
-  .grid-3,
-  .grid-4,
-  .features-grid,
-  .three-col,
-  .four-col,
-  .cards-grid,
-  .links-grid,
-  .blocks-grid,
-  .shop-grid,
-  .testimonial-grid,
-  .pricing-grid {
+  .feed, .related-grid, .grid-3, .grid-4, .features-grid, .three-col, .four-col,
+  .cards-grid, .links-grid, .blocks-grid, .shop-grid, .testimonial-grid, .pricing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-  /* Reduce horizontal padding on common containers */
-  .container,
-  .wrap,
-  .page-wrap,
-  .public-wrap {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
+  .container, .wrap, .page-wrap, .public-wrap {
+    padding-left: 24px !important; padding-right: 24px !important;
   }
-  /* Slightly smaller hero typography */
   h1.hero-title, .hero h1 { font-size: clamp(28px, 5vw, 44px); }
 }
-
 @media (max-width: 599px) {
-  /* Mobile: single column, smaller padding, larger touch targets */
-  .feed,
-  .related-grid,
-  .grid-3,
-  .grid-4,
-  .features-grid,
-  .three-col,
-  .four-col,
-  .cards-grid,
-  .links-grid,
-  .blocks-grid,
-  .shop-grid,
-  .testimonial-grid,
-  .pricing-grid {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
+  .feed, .related-grid, .grid-3, .grid-4, .features-grid, .three-col, .four-col,
+  .cards-grid, .links-grid, .blocks-grid, .shop-grid, .testimonial-grid, .pricing-grid {
+    grid-template-columns: 1fr !important; gap: 16px !important;
   }
-  .container,
-  .wrap,
-  .page-wrap,
-  .public-wrap {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+  .container, .wrap, .page-wrap, .public-wrap {
+    padding-left: 16px !important; padding-right: 16px !important;
   }
-  /* Touch-target floor for buttons + nav links */
-  .btn, button.btn, a.btn,
-  .nav-links a {
-    min-height: 44px;
-  }
+  .btn, button.btn, a.btn, .nav-links a { min-height: 44px; }
 }
-
-/* Modal viewport clamp — applies at every viewport. Only adds bounds if a
-   modal forgot them. Uses min() to keep desktop behavior when there's
-   already a max-width or width set inline. */
-.modal,
-.modal-card,
-.modal-dialog,
-.tdf-modal,
-.modal-content {
+.modal, .modal-card, .modal-dialog, .tdf-modal, .modal-content {
   max-width: min(960px, calc(100vw - 32px));
   max-height: min(92vh, 920px);
   overflow-y: auto;
 }
 @media (max-width: 599px) {
-  .modal,
-  .modal-card,
-  .modal-dialog,
-  .tdf-modal,
-  .modal-content {
+  .modal, .modal-card, .modal-dialog, .tdf-modal, .modal-content {
     max-width: calc(100vw - 16px);
     max-height: calc(100vh - 32px);
     border-radius: 14px;
@@ -446,7 +329,7 @@
       <span class="wm"><span class="ta">ta</span><span class="da">da!</span><span class="ify">ify</span></span>
     </a>
     <span class="spacer"></span>
-    <span class="bar-link">New here? <a href="./register.html"><strong>Sign up →</strong></a></span>
+    <span class="bar-link">Don't have an account? <a href="./register.html"><strong>Sign up →</strong></a></span>
     <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle light / dark theme">
       <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -469,92 +352,129 @@
       <!-- LOGIN HEADER -->
       <div class="login-header fade-up">
         <h1 id="login-heading">Welcome back</h1>
-        <p class="subhead">Log in to keep building.</p>
+        <p class="subhead">Sign in to keep building.</p>
       </div>
 
-      <!-- PASSWORD LOGIN FORM (default) -->
-      <form id="pw-login-form" onsubmit="handleLogin(event)">
+      <!-- ============ PROVIDER PICKER (default state) ============ -->
+      <div id="provider-step">
+        <div class="provider-stack">
+          <button class="auth-btn tier-1 fade-up delay-1" onclick="oauthFlow('google')">
+            <span class="icon-wrap">
+              <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+            </span>
+            <span class="label-wrap">
+              <span class="label-main">Continue with Google</span>
+              <span class="label-hint">fastest for Gmail users</span>
+            </span>
+          </button>
 
-        <div class="field-block fade-up delay-1">
-          <label for="email-input">Email</label>
-          <input class="input" type="email" id="email-input" name="email"
-            placeholder="you@example.com" autocomplete="email" required
-            style="width:100%; min-height:44px;" autofocus/>
+          <button class="auth-btn tier-1 fade-up delay-2" onclick="oauthFlow('apple')">
+            <span class="icon-wrap">
+              <svg class="icon-apple" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+              </svg>
+            </span>
+            <span class="label-wrap">
+              <span class="label-main">Continue with Apple</span>
+              <span class="label-hint">iOS users + privacy</span>
+            </span>
+          </button>
+
+          <button class="auth-btn tier-2 fade-up delay-3" onclick="oauthFlow('x')">
+            <span class="icon-wrap">
+              <svg class="icon-x" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </span>
+            <span class="label-wrap">
+              <span class="label-main">Continue with X</span>
+              <span class="label-hint">creator-friendly</span>
+            </span>
+          </button>
+
+          <button class="auth-btn tier-2 fade-up delay-4" onclick="emailFlow()">
+            <span class="icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <path d="m3 7 9 6 9-6"/>
+              </svg>
+            </span>
+            <span class="label-wrap">
+              <span class="label-main">Continue with Email</span>
+              <span class="label-hint">we'll send a 6-digit code</span>
+            </span>
+          </button>
         </div>
 
-        <div class="field-block fade-up delay-2">
-          <label for="pw-input">Password</label>
-          <div class="pw-wrap">
-            <input class="input" type="password" id="pw-input" name="password"
-              placeholder="••••••••" autocomplete="current-password" required
-              style="width:100%;"/>
-            <button class="pw-show-btn" type="button" onclick="togglePwVis()" aria-label="Show/hide password">Show</button>
-          </div>
-          <a href="#" class="forgot-link" onclick="event.preventDefault(); showForgot()">Forgot password?</a>
+        <div class="all-paths-note">
+          ✉️ All paths sign you in via your email. We never ask for your phone.
         </div>
 
-        <div class="field-block fade-up delay-3" style="display:flex;align-items:center;gap:8px; margin-bottom:6px;">
-          <input type="checkbox" id="stay-logged-in" style="flex-shrink:0; width:16px;height:16px;"/>
-          <label for="stay-logged-in" style="font-size:13px; font-weight:400; color:var(--fg-muted); margin:0; cursor:pointer;">
-            Stay logged in on this device
-          </label>
-        </div>
-
-        <button class="btn btn-primary login-submit-btn fade-up delay-4" type="submit">
-          Log in
-        </button>
-      </form>
-
-      <!-- MAGIC-LINK TOGGLE -->
-      <button class="magic-link-toggle fade-up delay-5" id="magic-toggle" onclick="toggleMagicLink()" type="button">
-        ✨ Send me a magic link instead
-      </button>
-
-      <!-- MAGIC-LINK FORM (hidden by default) -->
-      <div id="magic-form" class="fade-up delay-3">
-        <div class="field-block" style="margin-top:14px;">
-          <label for="magic-email">Email</label>
-          <input class="input" type="email" id="magic-email"
-            placeholder="you@example.com" autocomplete="email"
-            style="width:100%; min-height:44px;"/>
-        </div>
-        <button class="btn btn-primary" style="width:100%; min-height:46px;" onclick="handleMagicLink()">
-          Send magic link ✨
-        </button>
-        <p class="magic-notice">We'll email you a 1-click link — no password needed.</p>
-        <button type="button" onclick="toggleMagicLink()" style="display:block; margin:12px auto 0; background:none; border:none; font-size:13px; color:var(--fg-muted); cursor:pointer; font-family:inherit;">
-          ← Back to password
-        </button>
+        <!-- DESIGN_QUESTION: Forgot-password link is shown unconditionally here.
+             In production it should only render if the authenticated user record
+             has password_set=true. Mockup shows always for completeness. -->
+        <button class="forgot-link" onclick="showForgot()">Forgot password?</button>
       </div>
 
-      <!-- DIVIDER -->
-      <div class="divider-or fade-up delay-5" id="divider-or">or</div>
+      <!-- ============ EMAIL STEP — entry ============ -->
+      <div id="email-step">
+        <div class="email-step-wrap">
+          <label for="email-input">Email address</label>
+          <input class="input" type="email" id="email-input" placeholder="you@example.com" autocomplete="email"/>
+          <button class="btn btn-primary" id="send-code-btn" onclick="sendOtpCode()" style="width:100%; margin-top:14px; min-height:44px;" disabled>
+            Send me a code →
+          </button>
+        </div>
+        <div class="all-paths-note">
+          ✉️ Your code expires in 10 minutes. Check spam if it doesn't arrive.
+        </div>
+        <button class="back-link" onclick="backToProvider()">← back to sign-in options</button>
+      </div>
 
-      <!-- GOOGLE SOCIAL AUTH (Google only per DEC-SOCIAL-01) -->
-      <button class="auth-btn-google fade-up delay-6" onclick="handleGoogleLogin()">
-        <svg class="google-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-          <path fill="none" d="M0 0h48v48H0z"/>
-        </svg>
-        Continue with Google
-      </button>
+      <!-- ============ OTP STEP — 6 digits ============ -->
+      <div id="otp-step">
+        <div style="text-align:center; padding: 4px 0 0;">
+          <div style="font-size:48px; margin-bottom:10px;">📬</div>
+          <h2 style="font-size: clamp(20px,3.5vw,26px); margin-bottom:8px;">Check your email</h2>
+          <p style="font-size:14px; color: var(--fg-muted); line-height:1.6;">
+            We sent a 6-digit code to<br/>
+            <strong id="otp-email-display" style="color: var(--brand-primary);">you@example.com</strong>
+          </p>
+        </div>
+        <div class="otp-grid" role="group" aria-label="6-digit verification code">
+          <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="0" aria-label="Digit 1"/>
+          <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="1" aria-label="Digit 2"/>
+          <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="2" aria-label="Digit 3"/>
+          <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="3" aria-label="Digit 4"/>
+          <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="4" aria-label="Digit 5"/>
+          <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="5" aria-label="Digit 6"/>
+        </div>
+        <button class="btn btn-primary" id="verify-otp-btn" onclick="verifyOtp()" style="width:100%; margin-top:12px; min-height:44px;" disabled>
+          Verify code →
+        </button>
+        <div class="resend-row">
+          Didn't get the code?
+          <button class="resend-btn" id="resend-btn" onclick="resendOtp()" disabled>Resend in <span id="resend-countdown">60</span>s</button>
+        </div>
+        <button class="back-link" onclick="backToEmailStep()">← wrong email? go back</button>
+      </div>
 
       <!-- TRUST TRIO STRIP -->
-      <div class="trust-strip fade-up delay-6">
+      <div class="trust-strip fade-up delay-4">
         <span class="trust-chip">🔒 Price locked for life</span>
         <span class="trust-chip">💸 30-day money-back · No trials</span>
         <span class="trust-chip">🛡 GDPR-compliant · export &amp; delete anytime</span>
       </div>
 
-      <!-- CREATE ACCOUNT LINK -->
-      <div class="create-account-row fade-up delay-6">
+      <div class="create-account-row fade-up delay-4">
         First time here? <a href="./register.html">Create account →</a>
       </div>
 
-      <!-- Card footer wordmark — subtle brand close -->
       <div style="text-align:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
         <a href="./landing.html" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; opacity:0.6;">
           <span class="logo-mark" data-logo style="width:18px;height:18px"></span>
@@ -568,16 +488,11 @@
     </div><!-- /login-card -->
   </div><!-- /login-page -->
 
-  <!-- MOBILE STICKY CTA -->
-  <div class="sticky-cta-mobile">
-    <button class="btn btn-primary" onclick="handleLoginMobile()">Log in</button>
-  </div>
-
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
   <script>
     // ----------------------------------------------------------------
-    // URL param: ?handle=<name> — welcome-back hint + email pre-fill
+    // URL param: ?handle=<name> → welcome-back hint
     // ----------------------------------------------------------------
     var params   = new URLSearchParams(window.location.search);
     var handle   = params.get('handle');
@@ -586,72 +501,144 @@
     if (handle) {
       var hint = document.getElementById('welcome-hint');
       hint.style.display = 'flex';
-      document.getElementById('wh-title').textContent = 'Hey, @' + handle + ' \uD83D\uDC4B';
+      document.getElementById('wh-title').textContent = 'Hey, @' + handle + ' 👋';
       document.getElementById('wh-avatar').textContent = handle.charAt(0).toUpperCase();
       document.getElementById('login-heading').textContent = 'Welcome back, @' + handle;
-      // Pre-fill email placeholder (handle may map to email in real app)
-      document.getElementById('email-input').placeholder = handle + '@example.com';
-      document.getElementById('magic-email').placeholder = handle + '@example.com';
     }
 
     // ----------------------------------------------------------------
-    // Password show / hide
+    // Step navigation
     // ----------------------------------------------------------------
-    function togglePwVis() {
-      var inp = document.getElementById('pw-input');
-      var btn = inp.parentNode.querySelector('.pw-show-btn');
-      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
-      else { inp.type = 'password'; btn.textContent = 'Show'; }
+    function showStep(name) {
+      ['provider-step','email-step','otp-step'].forEach(function(id) {
+        document.getElementById(id).style.display = (id === name) ? 'block' : 'none';
+      });
+    }
+    function emailFlow() {
+      showStep('email-step');
+      setTimeout(function() {
+        var ei = document.getElementById('email-input');
+        if (ei) ei.focus();
+      }, 100);
+    }
+    function backToProvider() { showStep('provider-step'); }
+    function backToEmailStep() {
+      showStep('email-step');
+      otpInputs.forEach(function(i) { i.value = ''; });
+      refreshVerifyBtn();
+    }
+
+    function oauthFlow(provider) {
+      // Mockup: in production redirects to /auth/oauth/<provider> → callback → dashboard.
+      alert('Mockup: in real app this would authenticate via ' + provider + ' and redirect to ' + nextPath);
     }
 
     // ----------------------------------------------------------------
-    // Magic link toggle
+    // Email validation + send code
     // ----------------------------------------------------------------
-    var magicVisible = false;
-    function toggleMagicLink() {
-      magicVisible = !magicVisible;
-      document.getElementById('pw-login-form').style.display  = magicVisible ? 'none' : '';
-      document.getElementById('magic-form').style.display     = magicVisible ? 'block' : 'none';
-      document.getElementById('divider-or').style.display     = magicVisible ? 'none' : '';
-      document.getElementById('magic-toggle').style.display   = magicVisible ? 'none' : '';
-      if (magicVisible) {
-        document.getElementById('magic-email').focus();
-      }
+    var emailInput = document.getElementById('email-input');
+    var sendCodeBtn = document.getElementById('send-code-btn');
+    function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || ''); }
+    if (emailInput) {
+      emailInput.addEventListener('input', function() {
+        sendCodeBtn.disabled = !validEmail(emailInput.value);
+      });
+    }
+    function sendOtpCode() {
+      var emailVal = (emailInput.value || '').trim();
+      if (!validEmail(emailVal)) return;
+      document.getElementById('otp-email-display').textContent = emailVal;
+      showStep('otp-step');
+      setTimeout(function() {
+        otpInputs[0].focus();
+        startResendCountdown();
+      }, 200);
     }
 
     // ----------------------------------------------------------------
-    // Form submissions (mockup level — no real auth)
+    // OTP grid (paste-friendly, auto-advance) — same pattern as register.html
     // ----------------------------------------------------------------
-    function handleLogin(e) {
-      e.preventDefault();
-      alert('Mockup: in real app this would log you in and redirect to ' + nextPath);
+    var otpInputs = document.querySelectorAll('.otp-input');
+    var verifyBtn = document.getElementById('verify-otp-btn');
+    function otpValue() {
+      var v = '';
+      otpInputs.forEach(function(i) { v += i.value || ''; });
+      return v;
     }
-    function handleLoginMobile() {
-      alert('Mockup: in real app this would log you in and redirect to ' + nextPath);
+    function refreshVerifyBtn() { verifyBtn.disabled = otpValue().length !== 6; }
+    otpInputs.forEach(function(inp, idx) {
+      inp.addEventListener('input', function() {
+        var val = (inp.value || '').replace(/[^0-9]/g, '');
+        inp.value = val.charAt(0) || '';
+        if (val.length > 1) {
+          var rest = val.slice(1);
+          for (var k = 0; k < rest.length && (idx + 1 + k) < otpInputs.length; k++) {
+            otpInputs[idx + 1 + k].value = rest.charAt(k);
+          }
+        }
+        if (inp.value && idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+        refreshVerifyBtn();
+      });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !inp.value && idx > 0) otpInputs[idx - 1].focus();
+      });
+      inp.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        for (var k = 0; k < paste.length && (idx + k) < otpInputs.length; k++) {
+          otpInputs[idx + k].value = paste.charAt(k);
+        }
+        var nextIdx = Math.min(idx + paste.length, otpInputs.length - 1);
+        otpInputs[nextIdx].focus();
+        refreshVerifyBtn();
+      });
+    });
+
+    var resendTimer = null;
+    function startResendCountdown() {
+      var btn = document.getElementById('resend-btn');
+      var secs = 60;
+      btn.disabled = true;
+      btn.innerHTML = 'Resend in <span id="resend-countdown">' + secs + '</span>s';
+      if (resendTimer) clearInterval(resendTimer);
+      resendTimer = setInterval(function() {
+        secs--;
+        var el = document.getElementById('resend-countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) {
+          clearInterval(resendTimer);
+          btn.disabled = false;
+          btn.textContent = 'Resend code';
+        }
+      }, 1000);
     }
-    function handleGoogleLogin() {
-      alert('Mockup: in real app this would authenticate via Google and redirect to ' + nextPath);
+    function resendOtp() {
+      alert('Mockup: in real flow Supabase GoTrue resends a fresh 6-digit code.');
+      startResendCountdown();
     }
-    function handleMagicLink() {
-      var email = document.getElementById('magic-email').value;
-      if (!email) { document.getElementById('magic-email').focus(); return; }
-      alert('Mockup: in real app we would send a magic link to ' + email);
+
+    function verifyOtp() {
+      if (otpValue().length !== 6) return;
+      // Mockup: real flow calls supabase.auth.verifyOtp; on success redirects.
+      alert('Mockup: in real app, code verified → redirect to ' + nextPath);
     }
+
     function showForgot() {
-      var email = document.getElementById('email-input').value;
-      alert('Mockup: in real app we would send a password reset to ' + (email || 'your email'));
+      // DESIGN_QUESTION: only render this in production if user has password_set=true.
+      alert('Mockup: in real app, password reset email is sent. Hidden if user signs in via OTP only.');
     }
 
-    window.togglePwVis    = togglePwVis;
-    window.toggleMagicLink = toggleMagicLink;
-    window.handleLogin    = handleLogin;
-    window.handleLoginMobile = handleLoginMobile;
-    window.handleGoogleLogin = handleGoogleLogin;
-    window.handleMagicLink = handleMagicLink;
-    window.showForgot     = showForgot;
+    window.oauthFlow       = oauthFlow;
+    window.emailFlow       = emailFlow;
+    window.backToProvider  = backToProvider;
+    window.backToEmailStep = backToEmailStep;
+    window.sendOtpCode     = sendOtpCode;
+    window.verifyOtp       = verifyOtp;
+    window.resendOtp       = resendOtp;
+    window.showForgot      = showForgot;
 
     // ----------------------------------------------------------------
-    // Theme toggle — mirrors dashboard + register pattern
+    // Theme toggle
     // ----------------------------------------------------------------
     var themeToggle = document.getElementById('theme-toggle');
     (function() {

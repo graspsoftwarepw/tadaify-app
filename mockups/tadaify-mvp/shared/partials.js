@@ -44,7 +44,7 @@
           '<a href="./index.html">Templates</a>' +
           '<a href="./index.html">Trust</a>' +
           '<a href="./index.html">Hub</a>' +
-          '<a href="./try.html" class="btn btn-ghost btn-sm">Try it free</a>' +
+          '<a href="./login.html" class="btn btn-ghost btn-sm">Log in</a>' +
           '<a href="./register.html" class="btn btn-primary btn-sm">Claim your handle</a>' +
         '</div>' +
       '</div>' +
