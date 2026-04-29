@@ -102,13 +102,13 @@ export function MotionLogo({ size, className }: MotionLogoProps) {
       return;
     }
 
-    const orbBase = document.getElementById(`orb-${uid}-base`);
-    const orbLight = document.getElementById(`orb-${uid}-light`);
-    const flashE = document.getElementById(`flash-${uid}-E`);
-    const flashS = document.getElementById(`flash-${uid}-S`);
-    const flashW = document.getElementById(`flash-${uid}-W`);
-    const flashN = document.getElementById(`flash-${uid}-N`);
-    const orbs = [orbBase, orbLight].filter(Boolean) as SVGElement[];
+    const orbBase = document.getElementById(`orb-${uid}-base`) as SVGCircleElement | null;
+    const orbLight = document.getElementById(`orb-${uid}-light`) as SVGCircleElement | null;
+    const flashE = document.getElementById(`flash-${uid}-E`) as SVGElement | null;
+    const flashS = document.getElementById(`flash-${uid}-S`) as SVGElement | null;
+    const flashW = document.getElementById(`flash-${uid}-W`) as SVGElement | null;
+    const flashN = document.getElementById(`flash-${uid}-N`) as SVGElement | null;
+    const orbs = [orbBase, orbLight].filter((o): o is SVGCircleElement => o !== null);
 
     function frame(now: number) {
       if (!startRef.current) startRef.current = now;

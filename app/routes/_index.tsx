@@ -244,9 +244,11 @@ function useHandleClaim(locale: string) {
 function Wordmark({
   className,
   onDark = false,
+  style: styleProp,
 }: {
   className?: string;
   onDark?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
     <span
@@ -258,14 +260,16 @@ function Wordmark({
         display: "inline-flex",
         alignItems: "baseline",
         whiteSpace: "nowrap",
+        ...styleProp,
       }}
       aria-hidden="true"
     >
       <span style={{ color: onDark ? "#818CF8" : "#6366F1" }}>ta</span>
+      {/* Per DEC-043 (0007-everything-free-gating.md) brand lockup: da! uses brand-warm, not separator gray */}
+      {/* tokens.css: --wm-da: #F59E0B (light), --brand-warm-soft: #FDE68A (on-dark) */}
       <span
         style={{
-          color: onDark ? "rgba(255,255,255,0.4)" : "rgba(17,24,39,0.3)",
-          fontWeight: 900,
+          color: onDark ? "#FDE68A" : "#F59E0B",
           margin: "0 0.06em",
         }}
       >
@@ -1930,8 +1934,11 @@ curl -H "Authorization: Bearer sk_tdf_..." \\
                 a: "Yes. Paste your existing bio-link URL on signup — we auto-import your links in 30 seconds. Custom themes, scheduled links, email-capture blocks all come across. No manual copying.",
               },
               {
+                /* Per DEC-043 (0007-everything-free-gating.md) — 0% fees on EVERY tier, including Free.
+                   Commerce features (shop, paid articles, tip jar) work on every tier.
+                   Pricing differentiation = custom-domain add-on + Pro power features + Business agency tools. */
                 q: "Do you charge seller fees?",
-                a: "0% on every paid tier. Forever. Bound by our Price Lock on tadaify.com/trust. Free tier has no commerce — upgrade to Creator ($7.99/mo) to sell. We take nothing — only Stripe's processing fee applies (~2.9% + 30¢).",
+                a: "0% platform fees on every tier, forever — including Free. Commerce features (shop, paid articles, tip jar) work the same on every tier; we never take a cut of your revenue. The only paid extras are your own custom domain ($1.99/mo add-on), Creator power features ($7.99/mo), Pro team + automation tools ($19.99/mo), and Business agency seats ($49.99/mo) — never a gate on whether you can sell.",
               },
               {
                 q: "What about the data I put in?",

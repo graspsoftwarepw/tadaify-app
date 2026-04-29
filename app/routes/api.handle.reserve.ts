@@ -63,23 +63,32 @@ export async function action({ request, context }: Route.ActionArgs) {
     );
   }
 
-  // Cleanup expired reservations before inserting (lightweight hygiene)
+  // TODO (Slice B — Register): Once the `profiles` table lands, add a pre-INSERT check here:
+  //   SELECT id FROM profiles WHERE handle = $1
+  // If a row is found → return 409 { reserved: false, reason: "handle_taken" }
+  // This prevents reserving a handle that is already claimed by a live account.
+  // The profiles table does not exist yet — this guard is intentionally deferred.
+
+  // Atomically clean up expired reservations for this handle before inserting.
+  // Using a targeted DELETE rather than a server-side RPC so we don't depend on
+  // the cleanup_expired_reservations function being present.
   await fetch(
-    `${supabaseUrl}/rest/v1/rpc/cleanup_expired_reservations`,
+    `${supabaseUrl}/rest/v1/handle_reservations?handle=eq.${encodeURIComponent(raw)}&expires_at=lt.${encodeURIComponent(new Date().toISOString())}`,
     {
-      method: "POST",
+      method: "DELETE",
       headers: {
         apikey: serviceKey,
         Authorization: `Bearer ${serviceKey}`,
-        "Content-Type": "application/json",
       },
-      body: "{}",
     }
   ).catch(() => {
     // Fire-and-forget — cleanup failure must not block reservation
   });
 
-  // Insert reservation (upsert: if same handle reserved again, update timestamps)
+  // Plain INSERT — no merge-duplicates.
+  // If the handle is already actively reserved (PK conflict), Supabase returns 409
+  // which we surface to the caller.  This is intentional security: a claimed handle
+  // must not be silently upserted / overwritten via a direct API hit.
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
   const insertRes = await fetch(
@@ -90,8 +99,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         apikey: serviceKey,
         Authorization: `Bearer ${serviceKey}`,
         "Content-Type": "application/json",
-        // On conflict (handle already reserved), return the existing row
-        Prefer: "resolution=merge-duplicates,return=representation",
+        Prefer: "return=minimal",
       },
       body: JSON.stringify({
         handle: raw,
@@ -105,10 +113,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (!insertRes.ok) {
     const errBody = await insertRes.text().catch(() => "");
-    // Check if this is a conflict on an ACTIVE reservation by someone else
     if (insertRes.status === 409) {
+      // PK conflict — handle is actively reserved by another session
       return Response.json(
-        { reserved: false, reason: "already_reserved" },
+        { reserved: false, reason: "active_reservation" },
         { status: 409 }
       );
     }
