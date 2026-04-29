@@ -742,6 +742,13 @@
                     <button class="pw-show-btn" type="button" onclick="event.stopPropagation(); togglePwVis()" aria-label="Show/hide password">Show</button>
                   </div>
                   <div class="pw-min-hint">At least 8 characters. Mix of letters and numbers recommended.</div>
+
+                  <label for="set-pw-confirm" style="display:block; font-size:13px; font-weight:500; color: var(--fg-muted); margin: 14px 0 6px;">Confirm password</label>
+                  <div class="pw-input-wrap-card">
+                    <input class="input" type="password" id="set-pw-confirm" placeholder="••••••••" autocomplete="new-password"/>
+                    <button class="pw-show-btn" type="button" onclick="event.stopPropagation(); togglePwVisConfirm()" aria-label="Show/hide confirm password">Show</button>
+                  </div>
+                  <div class="pw-min-hint" id="pw-match-hint" style="color: var(--fg-muted);">Re-enter to confirm — protects you from a typo lock-out.</div>
                 </div>
               </div>
             </div>
@@ -1110,12 +1117,28 @@
       if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
       else { inp.type = 'password'; btn.textContent = 'Show'; }
     }
+    function togglePwVisConfirm() {
+      var inp = document.getElementById('set-pw-confirm');
+      var btn = inp.parentNode.querySelector('.pw-show-btn');
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+      else { inp.type = 'password'; btn.textContent = 'Show'; }
+    }
     function finishPwToggle() {
       if (pwSelected === 2) {
         var pw = (document.getElementById('set-pw-input').value || '').trim();
+        var pwc = (document.getElementById('set-pw-confirm').value || '').trim();
         if (pw.length < 8) {
           alert('Password must be at least 8 characters.');
           document.getElementById('set-pw-input').focus();
+          return;
+        }
+        if (pw !== pwc) {
+          var hint = document.getElementById('pw-match-hint');
+          if (hint) {
+            hint.textContent = '✗ Passwords do not match — re-type to confirm.';
+            hint.style.color = '#DC2626';
+          }
+          document.getElementById('set-pw-confirm').focus();
           return;
         }
       }
@@ -1157,6 +1180,7 @@
     window.resendOtp        = resendOtp;
     window.selectPwCard     = selectPwCard;
     window.togglePwVis      = togglePwVis;
+    window.togglePwVisConfirm = togglePwVisConfirm;
     window.finishPwToggle   = finishPwToggle;
     window.goToOnboarding   = goToOnboarding;
     window.currentHandle    = currentHandle;
