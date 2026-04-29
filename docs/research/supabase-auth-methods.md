@@ -119,19 +119,24 @@ Source: [verifyOtp reference](https://supabase.com/docs/reference/javascript/aut
 - Configurable: `auth.email.otp_expiry`. Hard maximum: **86400 s (24 h)** — Supabase explicitly disallows higher *"to guard against brute force attacks"*.
 - Recommended for tadaify: tighten to **600 s (10 min)** — matches Linktree's behaviour and limits the blast radius if a code email is forwarded.
 
-### 2.6 Rate limits (default Supabase)
+### 2.6 Rate limits (default Supabase, current docs 2026-04)
 
-Per [Supabase rate limits](https://supabase.com/docs/guides/auth/rate-limits):
+Per [Supabase rate limits](https://supabase.com/docs/guides/auth/rate-limits) — corrected after PR #123 Codex round-1 review:
 
-| Bucket                                 | Default              | Configurable | Customisable on Free? |
-|----------------------------------------|----------------------|--------------|-----------------------|
-| OTP sends per project per hour         | `otp.requests_per_hour` (60/h project-wide on built-in SMTP) | Yes (Pro+ with custom SMTP) | No — built-in SMTP is hard-capped |
-| OTP sends per user (period window)     | 60 s between sends   | Yes          | Yes                   |
-| Email-bucket (signup + recover + user) | `email.inbuilt_smtp_per_hour` ≈ 4/h on built-in, **unlimited on custom SMTP** | Custom SMTP only | Hard-capped on built-in |
-| Verify (`verifyOtp`)                   | Token bucket per IP, max 30 req burst, refilled per hour | No | No |
-| Token refresh                          | Token bucket per IP, max 30 req burst                                  | No | No |
+| Endpoint / bucket                                      | Default                                  | Configurable | Notes                                                                      |
+|--------------------------------------------------------|------------------------------------------|--------------|-----------------------------------------------------------------------------|
+| `/auth/v1/otp` (signInWithOtp — magic link OR OTP code) | **30 sends/hour, project-wide**          | Pro+ project | Independent of SMTP source. Counts both magic-link and OTP-code requests.  |
+| `/auth/v1/signup` + `/auth/v1/recover` + email-update via built-in SMTP only | **2 emails/hour, project-wide** | Custom SMTP removes the cap | Applies only to Supabase's built-in email provider. Custom SMTP (Resend) bypasses this bucket. |
+| `/auth/v1/verify` (`verifyOtp`)                        | **360 verify attempts/hour, per IP**     | No           | Plus burst behavior. Wrong-code retries don't tank legitimate users on different IPs. |
+| `/auth/v1/token` (refresh)                             | 1800/hour per IP                         | No           | Generous; not relevant for signup flow.                                    |
+| Per-user OTP send                                      | 60 s between sends                       | Yes          | User-level cooldown — matches the 60s resend timer in current mockup.       |
 
-**Decision implication:** the **4 emails/hour on built-in SMTP** is unworkable for production. We **must** wire custom SMTP (Resend) before any public launch. This is non-negotiable. Local dev uses Inbucket (no rate limits) per `feedback_supabase_local_inbucket_for_auth_testing.md`.
+**Decision implication (corrected):**
+
+- The **30/h OTP project-wide cap** is the binding limit for our signup flow regardless of SMTP. At 30 OTPs/hour we can onboard ~720/day max — comfortable for MVP, would clip at 1k+ daily new signups.
+- The 2/h built-in-SMTP cap applies ONLY to `/signup` + `/recover` + email-update endpoints (NOT `/otp`). For pure email-OTP flow that does not use `/signup`, this bucket is largely irrelevant.
+- Resend custom SMTP is recommended for **deliverability + branded sender + production-readiness** reasons (DKIM, dedicated IP, branded domain), not because of a hard rate-limit cliff. Plan to wire before public launch but it is no longer a non-negotiable prerequisite.
+- Local dev uses Inbucket (no rate limits) per `feedback_supabase_local_inbucket_for_auth_testing.md`.
 
 ### 2.7 Template / copy controls
 
@@ -289,14 +294,20 @@ Blended assumption: **2 auth emails / DAU / month** (conservative).
 Notes:
 - Supabase Free tier covers up to 50k MAU. MAU is "any user with at least one auth event in 30 days." Cheap.
 - Resend Free covers 3k emails/month with a 100/day cap. **The 100/day cap is the binding constraint at small scale**, not monthly. At 50 DAU sending 2 OTPs/mo each, fine. At 100+ DAU clustered around launches, 100/day will trip — must move to Resend Pro ($20/mo) earlier than the volume math suggests.
-- All numbers assume custom SMTP (Resend) is wired from day one. Built-in SMTP is non-viable past MVP smoke-test.
+- Custom SMTP (Resend) is recommended for branded sender + DKIM + deliverability, not as a rate-limit blocker. Built-in SMTP is viable for early MVP/smoke-test and small beta as long as project stays under the 30/h `/auth/v1/otp` cap and the 2/h built-in-SMTP `/signup`+`/recover` cap.
 - At 10k+ DAU, cost is **dominated by Supabase MAU pricing**, not email. OTP-vs-password makes no measurable cost difference.
 
 **Conclusion:** auth method choice has near-zero cost impact for tadaify's foreseeable horizon (≤10k DAU = ≤$20/mo total auth cost). Cost is a non-issue for the decision.
 
-### 8.3 Rate limit cliff
+### 8.3 Rate limit cliff (corrected after Codex round-1)
 
-**Hard ceiling on built-in SMTP: ~4 auth emails/hour project-wide.** The very first wave of beta users will hit this. **Resend custom SMTP must be wired before any external announce.** This is captured as a Slice B prerequisite.
+The binding default ceilings are:
+
+- **30 OTP sends/hour project-wide** on `/auth/v1/otp` — independent of SMTP. Hard cap from MVP day one. Equivalent to ~720 signups + login-codes per day before throttling. Comfortable for early traction; tight at 1k+ daily new signups.
+- **2 emails/hour built-in SMTP** on `/signup` + `/recover` + email-update endpoints only — NOT triggered by pure-OTP flow. Relevant if we ever add a `signUp({ password })` path or `resetPasswordForEmail`.
+- Custom SMTP (Resend) **bypasses the 2/h SMTP bucket** but does NOT relax the 30/h `/auth/v1/otp` cap. The OTP cap is configurable on Pro+.
+
+**Decision implication:** Resend custom SMTP is a **deliverability + branded-sender + production-readiness** recommendation, not a hard rate-limit blocker. Plan to wire before public launch (DKIM, branded domain, deliverability monitoring). MVP smoke-test and small beta can run on built-in SMTP if we stay under the limits.
 
 ---
 
@@ -308,7 +319,7 @@ Estimates assume the orchestrator-driven workflow per `feedback_estimates_in_age
 
 1. **Mockup revision** (1 dispatch) — update `mockups/tadaify-mvp/register.html` to OTP-code popup variant + "or continue with Google" + post-confirm landing into Slice C wizard. **Opus 4.7** per `feedback_mockups_always_opus.md`. Output: revised HTML mockup. [+1 user review cycle]
 2. **Backend + frontend implementation** (1 dispatch, Sonnet) — wire `signInWithOtp` + `verifyOtp` for the OTP-code path, switch email template to `{{ .Token }}` form, add Google OAuth button via `signInWithOAuth`, harvest reserved handle from `raw_user_meta_data` into `profiles` row via DB trigger. Pure additive on the existing `0019` no-phone constraint. Output: Slice B PR with unit tests + Playwright plan. [+1 Codex review cycle, +1 Claude apply cycle]
-3. **Custom SMTP wiring** (½ dispatch, Sonnet) — Resend project, DKIM/DMARC config in Cloudflare DNS, Supabase project SMTP settings, env vars per `feedback_env_var_grep_before_deploy.md`. Output: Resend live, first OTP email through Resend smoke-tested locally. [+0.5 user verify cycle]
+3. **Custom SMTP wiring** (½ dispatch, Sonnet) — Resend project, DKIM/DMARC config in Cloudflare DNS, Supabase project SMTP settings, env vars per `feedback_env_var_grep_before_deploy.md`. Output: Resend live, first OTP email through Resend smoke-tested locally. [+0.5 user verify cycle]. Recommended pre-public-launch for deliverability/branded sender, not strictly required to ship Slice B against built-in SMTP if traffic stays under default rate limits.
 4. **Slice C onboarding step "set password (optional)"** (1 dispatch, Sonnet) — separate slice, gated on Slice B complete. Adds one step to wizard, calls `updateUser({ password })`. [+1 user review cycle]
 
 **Total: ~3.5 agent dispatches + 3.5 user review cycles + 1 Codex round.** Realistic calendar elapse ≈ 2–4 days at user's current pacing (the bottleneck is user pacing, not agent throughput, per the same memory rule).
@@ -339,7 +350,7 @@ Locking the v1 auth flow for tadaify Slice B Register. User pivoted away from th
 
 ### Szczegolowy opis
 
-Current Slice B mockup at `mockups/tadaify-mvp/register.html` shows three signup paths (Google OAuth + email magic-link + email+password). User wants to replace the magic-link path with an **email OTP numeric-code popup** (Linktree-login-style) and remove the password requirement at signup. Open subquestion: do we set a password later (in Slice C) or never? Adding password later via `updateUser` is trivially additive — zero migration risk. Cost is a non-issue at MVP scale ($0 up to 10k DAU). Rate-limit cliff on built-in SMTP forces Resend wiring as a Slice B prerequisite either way.
+Current Slice B mockup at `mockups/tadaify-mvp/register.html` shows three signup paths (Google OAuth + email magic-link + email+password). User wants to replace the magic-link path with an **email OTP numeric-code popup** (Linktree-login-style) and remove the password requirement at signup. Open subquestion: do we set a password later (in Slice C) or never? Adding password later via `updateUser` is trivially additive — zero migration risk. Cost is a non-issue at MVP scale ($0 up to 10k DAU). Resend custom SMTP is recommended for deliverability/branding before public launch but is no longer treated as a hard rate-limit blocker (corrected after PR #123 Codex round-1 review — see §2.6 + §8.3).
 
 ### Opcje
 
