@@ -343,19 +343,21 @@ Three layers per §4.4: provider whitelist + `before-user-created` Auth Hook rej
 - **Different email (Apple relay vs real email, or post-MVP X)** → in account settings, surface "Add another login method" → calls `linkIdentity()` → user authenticates with the second provider while logged in → both identities now share `user_id`.
 - **Forgot which provider I used** → email-OTP path always works because every account has email by construction. User enters email, receives OTP, lands in account, can see linked providers in settings.
 
-### 5.5 Per-option business rationale + cost-at-scale
+### 5.5 Per-option business rationale + provider-specific incremental cost
 
 #### Recommendation: Email-OTP + email-password (Slice C) + Google OAuth, auto-link ON, manual-link ON, force-email Auth Hook
 
-| Option | Per-option business rationale | DAU 100 | DAU 1k | DAU 10k | DAU 100k | DAU 1M |
-|---|---|---|---|---|---|---|
-| **Recommended (above)** | Lowest auth friction for creator audience (email + Google covers ~95% of web SaaS signups per industry baseline). Zero vendor risk. Auto-link kills the Cognito problem at the schema layer. Force-email keeps Stripe / OTP / GDPR healthy. | $0 (Supabase free tier) | $0 | ~$25/mo (Supabase Pro) | ~$25/mo (Supabase Pro + addon storage) | ~$599/mo (Supabase Team) | 
-| **+ Apple, post-MVP** | Adds ~5-10% conversion lift on iOS-heavy audiences. Op cost: $99/yr + 6mo rotation tax + email source registration. | +$99/yr | +$99/yr | +$99/yr | +$99/yr | +$99/yr |
-| **+ X, post-MVP** | Adds creator-flavoured social CTA. Email-not-guaranteed + volatile pricing. Probably <2% incremental conversion. | $0 | $0 | TBD pay-per-usage | TBD | TBD |
-| **Alternative: email-only, no Google** | Simpler. -10-20% conversion vs offering Google CTA per industry baseline. | $0 | $0 | $0 | $0 | $0 |
-| **Alternative: every provider on day 1** | Higher conversion ceiling. 3-5x integration + ops cost. Risk of shipping Slice B late. | $99/yr | $99/yr | $99/yr+TBD | $99/yr+TBD | $99/yr+TBD |
+> **Cost scope clarification (corrected after PR #124 Codex round-1 P1):** the table below shows **incremental provider-specific cost only**. Supabase Auth platform base cost (MAU pricing, Pro $25/mo, Team $599/mo, MAU overage at $0.00325 above included tier) is OUT OF SCOPE here — it is identical across all options because every option ships on Supabase. For the full Supabase MAU + email volume cost-at-scale model with overage math, see PR #123 §8.2 (`docs/research/supabase-auth-methods.md`). Choosing among the auth-method options below does NOT change Supabase MAU spend; it only changes the per-provider add-ons.
 
-(Supabase pricing per [supabase.com/pricing](https://supabase.com/pricing) — free tier covers up to 50k MAU, Pro at $25/mo, Team at $599/mo for the bundle that supports >100k MAU + advanced compute.)
+| Option | Per-option business rationale | Incremental provider cost (independent of Supabase MAU base) |
+|---|---|---|
+| **Recommended (Email-OTP + Google OAuth)** | Lowest auth friction for creator audience (email + Google covers ~95% of web SaaS signups per industry baseline). Zero vendor risk. Auto-link kills the Cognito problem at the schema layer. Force-email keeps Stripe / OTP / GDPR healthy. | **$0** — Google OAuth has no per-call charge from Google for standard userinfo scopes; the only cost is Supabase MAU base, shared across every option. |
+| **+ Apple Sign In (post-MVP)** | Adds ~5-10% conversion lift on iOS-heavy audiences. | **+$99/year** Apple Developer Program + ops time for 6-month key rotation + email source registration in Apple console. No per-call charge. |
+| **+ X / Twitter (post-MVP)** | Adds creator-flavoured social CTA. Email-not-guaranteed + volatile pricing model. Probably <2% incremental conversion. | **TBD** — X moved to volatile pay-per-usage pricing in 2025; current Basic tier is ~$200/month before per-call surcharges. Requires re-pricing before any commitment. |
+| **Alternative: Email-only, no Google** | Simpler. -10-20% conversion vs offering Google CTA per industry baseline. | **$0** — no provider add-on. |
+| **Alternative: Every provider on day 1** | Higher conversion ceiling. 3-5x integration + ops cost. Risk of shipping Slice B late. | **$99/year (Apple) + TBD (X) + 0 (Google)** — sum of add-ons above. |
+
+(Apple Developer Program pricing per [developer.apple.com/programs](https://developer.apple.com/programs/). X API pricing volatile per [developer.x.com/pricing](https://developer.x.com/en/products/x-api). Supabase platform base cost — MAU buckets + Pro/Team plans + overage — modelled in PR #123 §8.2 and applies identically across all rows above.)
 
 ### 5.6 Implementation effort in agent dispatches
 
