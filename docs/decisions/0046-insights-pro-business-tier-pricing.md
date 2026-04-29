@@ -4,7 +4,7 @@ aliases: ["DEC-083-insights"]
 status: superseded
 date: 2026-04-26
 supersedes: []
-superseded_by: "0008-pricing-interim-8-19.md"
+superseded_by: "0009-pricing-final-7.99-19.99.md"
 topics: [pricing, business-tier, insights]
 ---
 

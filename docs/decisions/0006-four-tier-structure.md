@@ -4,7 +4,7 @@ aliases: ["DEC-037"]
 status: superseded
 date: 2026-04-24
 supersedes: []
-superseded_by: "0009-pricing-final-7.99-19.99.md"
+superseded_by: "0008-pricing-interim-8-19.md"
 topics: [pricing, tiers]
 ---
 

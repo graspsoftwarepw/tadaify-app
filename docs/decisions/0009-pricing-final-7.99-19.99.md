@@ -3,7 +3,7 @@ id: 0009
 aliases: ["DEC-279"]
 status: accepted
 date: 2026-04-28
-supersedes: ["0008-pricing-interim-8-19.md", "0027-domain-addon-pricing.md"]
+supersedes: ["0008-pricing-interim-8-19.md", "0046-insights-pro-business-tier-pricing.md"]
 superseded_by: null
 topics: [pricing, tiers, domain-addon]
 ---
