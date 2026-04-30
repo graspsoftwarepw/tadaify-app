@@ -19,21 +19,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
-    /* ── 2-col shell (form + preview) ─────────────────────────── */
-    .ob-twocol {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 24px;
-      margin-top: 24px;
-    }
-    @media (min-width: 960px) {
-      .ob-twocol {
-        grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
-        gap: 28px;
-        align-items: start;
-      }
-    }
-
     /* ── Section label ────────────────────────────────────────── */
     .field-label {
       display: flex;
@@ -316,9 +301,7 @@
       </div>
       <p class="progress-label">Step 3 of 5 · Make it yours</p>
 
-      <div class="ob-twocol">
-
-        <div class="onb-card onb-card-lg" style="margin-top: 24px;">
+      <div class="onb-card onb-card-lg" data-preview-pane="public" style="margin-top: 24px;">
 
           <div class="onb-hero">
             <span class="logo-mark" data-logo></span>
@@ -391,17 +374,6 @@
 
         </div>
 
-        <!-- Live preview pane (right column on >=960px, stacks <960px) -->
-        <aside data-onboarding-preview
-               data-render="profile"
-               data-handle="yourname"
-               data-platforms=""
-               aria-label="Live preview of your tadaify page">
-          <!-- Populated by ./shared/onboarding-preview-pane.js -->
-        </aside>
-
-      </div><!-- /.ob-twocol -->
-
     </div>
   </main>
 
@@ -409,18 +381,6 @@
 
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
-  <script>
-    // Slice C: prep preview pane data-* attributes before pane init.
-    (function () {
-      var p = new URLSearchParams(window.location.search);
-      var pane = document.querySelector('[data-onboarding-preview]');
-      if (pane) {
-        if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
-        if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
-      }
-    })();
-  </script>
-  <script src="./shared/onboarding-preview-pane.js"></script>
   <script>
     // ── State ────────────────────────────────────────────────────────────────
     var params = new URLSearchParams(window.location.search);

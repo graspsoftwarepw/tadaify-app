@@ -18,22 +18,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
-    /* Slice C 2-col shell (form left, preview right) */
-    .ob-twocol {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 24px;
-      margin-top: 24px;
-    }
-    @media (min-width: 1100px) {
-      .ob-twocol {
-        grid-template-columns: minmax(0, 1.4fr) minmax(380px, 0.6fr);
-        gap: 28px;
-        align-items: start;
-      }
-    }
-    .ob-twocol-left { min-width: 0; }
-
     /* Template preview styles (each card self-contained via CSS gradients + typography) */
     .preview-chopin {
       background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
@@ -260,9 +244,7 @@
       </div>
       <p class="progress-label">Step 4 of 5 · Template</p>
 
-      <!-- Slice C: 2-col shell — template grid left, live preview right -->
-      <div class="ob-twocol">
-      <div class="ob-twocol-left">
+      <div data-preview-pane="public">
 
       <div style="text-align:center; margin-top: 40px;">
         <h1>Pick a template that feels like you</h1>
@@ -365,19 +347,7 @@
         </button>
       </div>
 
-      </div><!-- /.ob-twocol-left -->
-
-      <!-- Live preview pane (right column on >=960px, stacks below on mobile) -->
-      <aside data-onboarding-preview
-             data-render="template"
-             data-handle="yourname"
-             data-platforms=""
-             data-template="chopin"
-             aria-label="Live preview of your tadaify page">
-        <!-- Populated by ./shared/onboarding-preview-pane.js -->
-      </aside>
-
-      </div><!-- /.ob-twocol -->
+      </div>
 
     </div>
   </main>
@@ -386,18 +356,6 @@
 
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
-  <script>
-    // Slice C: prep preview pane data-* attributes before pane init.
-    (function () {
-      var p = new URLSearchParams(window.location.search);
-      var pane = document.querySelector('[data-onboarding-preview]');
-      if (!pane) return;
-      if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
-      if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
-      pane.setAttribute('data-template', 'chopin');
-    })();
-  </script>
-  <script src="./shared/onboarding-preview-pane.js"></script>
   <script>
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';

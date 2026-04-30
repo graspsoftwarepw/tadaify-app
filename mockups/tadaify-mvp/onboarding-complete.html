@@ -301,17 +301,10 @@
 
       <!-- Slice C: 3-viewport preview pane replaces the static phone preview.
            Renders the FINAL assembled page using all profile state collected
-           through onboarding (avatar + name + bio + socials + template). -->
-      <div style="margin-top: 40px; max-width: 720px; margin-left: auto; margin-right: auto;">
-        <aside data-onboarding-preview
-               data-render="complete"
-               data-handle="alexandra"
-               data-platforms=""
-               data-template="chopin"
-               aria-label="Final preview of your tadaify page">
-          <!-- Populated by ./shared/onboarding-preview-pane.js -->
-        </aside>
-      </div>
+           through onboarding (avatar + name + bio + socials + template).
+           Uses canonical injectPagePreviewPane via partials.js with
+           creator-public.html as preview source. -->
+      <div data-preview-pane="public" style="margin-top: 40px; max-width: 720px; margin-left: auto; margin-right: auto;"></div>
 
       <!-- Secondary actions (TADA-BUG-004: was 3-card row including
            "Customize further" which duplicated the primary CTA above —
@@ -359,18 +352,6 @@
 
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
-  <script>
-    // Slice C: prep preview pane attrs before pane init.
-    (function () {
-      var p = new URLSearchParams(window.location.search);
-      var pane = document.querySelector('[data-onboarding-preview]');
-      if (!pane) return;
-      if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
-      if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
-      if (p.get('tpl')) pane.setAttribute('data-template', p.get('tpl'));
-    })();
-  </script>
-  <script src="./shared/onboarding-preview-pane.js"></script>
   <script>
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'alexandra';
