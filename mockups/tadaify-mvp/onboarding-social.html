@@ -8,11 +8,10 @@
   Slice C revision (2026-04-29) — DEC-297=B, DEC-298:
     1) Renumbered 4-step → 5-step flow; this is step 2/5.
     2) Added 3-viewport preview pane on right column (Desktop/Tablet/Mobile)
-       uses canonical injectPagePreviewPane via partials.js with creator-public.html
-       as preview source (pageType="public" special-case). onb-card gets
-       data-preview-pane="public" so the IIFE wraps it in tdf-pp-shell.
+       reusing shared/onboarding-preview-pane.js. Preview shows the user's
+       emerging page with selected social icons in a circular row at the top.
     3) Continue now navigates to onboarding-profile.html (the NEW step 3/5).
-    4) Mobile (<1024px): preview pane stacks below the form per tdf-pp-shell grid.
+    4) Mobile (<960px): preview pane stacks below the form, accessible inline.
 -->
 <html lang="en">
 <head>
@@ -22,6 +21,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
+    /* ── Slice C 2-col shell (form + preview pane) ─────────────── */
+    .ob-twocol {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+    @media (min-width: 960px) {
+      .ob-twocol {
+        grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+        gap: 28px;
+        align-items: start;
+      }
+    }
+
     /* ── Platform row ──────────────────────────────────────────── */
     .platform-list {
       display: flex;
@@ -268,7 +282,10 @@
       </div>
       <p class="progress-label">Step 2 of 5 · Your socials</p>
 
-      <div class="onb-card onb-card-lg" data-preview-pane="public" style="margin-top: 24px;">
+      <!-- Slice C: 2-col shell on lg viewports — form left, live preview right.
+           Stacks vertically <960px (preview becomes a section below the form). -->
+      <div class="ob-twocol">
+      <div class="onb-card onb-card-lg" style="margin-top: 24px;">
 
         <!-- Hero -->
         <div class="onb-hero">
@@ -310,6 +327,16 @@
 
       </div>
 
+      <!-- Live preview pane (right column on >=960px, stacks below on mobile) -->
+      <aside data-onboarding-preview
+             data-render="social"
+             data-handle="yourname"
+             aria-label="Live preview of your tadaify page">
+        <!-- Populated by ./shared/onboarding-preview-pane.js -->
+      </aside>
+
+      </div><!-- /.ob-twocol -->
+
     </div>
   </main>
 
@@ -317,6 +344,18 @@
 
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
+  <script>
+    // Slice C: prep preview pane data-* attributes BEFORE pane init runs.
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var pane = document.querySelector('[data-onboarding-preview]');
+      if (pane) {
+        if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
+        if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
+      }
+    })();
+  </script>
+  <script src="./shared/onboarding-preview-pane.js"></script>
   <script>
     // ── Platform config ─────────────────────────────────────────────────────
     // Each entry: { id, label, prefix, icon (emoji fallback), color }
