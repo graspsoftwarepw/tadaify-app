@@ -3,6 +3,12 @@
   Onboarding step 1/5 — pick social platforms (handle-based, DEC-SOCIAL-01)
   F-008 dynamic welcome header + multi-select platform picker
   Mobile-first, sexy. No OAuth, no account connection.
+
+  Slice C revision (2026-04-29) — DEC-297=B, DEC-298 design assumption:
+    Flow is now: 1/5 welcome (this) → 2/5 social → 3/5 profile (NEW) →
+                 4/5 template → 5/5 tier → complete
+    Preview pane intentionally NOT on this step — welcome is the intro picker,
+    no page-level content has been entered yet.
 -->
 <html lang="en">
 <head>
@@ -18,12 +24,11 @@
   <main class="ob-shell">
     <div class="ob-inner">
 
-      <!-- Progress bar -->
-      <!-- TADA-BUG-002: 5 → 4 steps (block-config dropped from onboarding) -->
-      <div class="ob-progress" aria-label="Step 1 of 4">
-        <span class="ob-progress-label">Step 1 of 4 · Welcome</span>
+      <!-- Progress bar (Slice C revision: 4 → 5 steps; profile-setup added at 3/5) -->
+      <div class="ob-progress" aria-label="Step 1 of 5">
+        <span class="ob-progress-label">Step 1 of 5 · Welcome</span>
         <div class="ob-progress-track">
-          <div class="ob-progress-fill" style="width:25%"></div>
+          <div class="ob-progress-fill" style="width:20%"></div>
         </div>
       </div>
 
@@ -159,6 +164,7 @@
     <div class="ob-actionbar-inner">
       <p class="ob-hint" id="pickHint">Pick one or more — or skip to start from a blank template.</p>
       <div class="ob-buttons">
+        <!-- Slice C: Skip from welcome bypasses social handles AND profile (no scraping basis without platforms) → straight to template -->
         <a href="./onboarding-template.html" class="btn btn-ghost" id="skipBtn">
           Skip
         </a>

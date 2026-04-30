@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<!--
+  Onboarding step 3/5 — Make it yours (NEW screen, Slice C revision 2026-04-29)
+
+  DEC-297 = B    — step order: welcome → social → PROFILE (here) → template → tier
+  DEC-298       — design assumption: "scraping works". UX shows scraped From-<Platform>
+                   choice cards for avatar AND bio. Research SPIKE in flight at
+                   docs/research/social-profile-scraping.md (PR #126). Verdict so far:
+                   Option C hybrid is viable (TikTok oEmbed + YouTube Data API free,
+                   IG/FB/X via paid Apify ~$1.5-3/1k).
+                   If research recommends "skip scraping", this mockup degrades:
+                   remove From-<Platform> cards, keep only Upload + Initials for avatar
+                   and "Write your own" for bio.
+  DEC-299       — NO OAuth. Profile-setup uses scraping (public HTML / oEmbed),
+                   never OAuth. Post-signup OAuth is a separate future feature.
+  DEC-026 stands — F-PRO-OAUTH-IMPORT permanently rejected; scraping at onboarding
+                   is a different mechanism.
+
+  Failure UX (silent fallback): if scraping fails for a given platform (rate limit,
+  captcha, profile private), simply omit that From-<Platform> card. Only show an
+  error if ALL scrapes fail — fall back to manual-only with a small muted note.
+  Per research: avatars copied to R2 on user-accept; never hot-link IG/FB CDN URLs.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Make it yours — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css"/>
+  <style>
+    /* ── 2-col shell (form + preview) ─────────────────────────── */
+    .ob-twocol {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+    @media (min-width: 960px) {
+      .ob-twocol {
+        grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+        gap: 28px;
+        align-items: start;
+      }
+    }
+
+    /* ── Section label ────────────────────────────────────────── */
+    .field-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 24px 0 10px;
+    }
+    .field-label h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--fg);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .field-hint {
+      font-size: 12px;
+      color: var(--fg-subtle);
+      font-weight: 500;
+    }
+
+    /* ── Display name input ───────────────────────────────────── */
+    .name-input {
+      width: 100%;
+      border: 1.5px solid var(--border-strong, #D1D5DB);
+      background: var(--bg, #fff);
+      border-radius: var(--radius, 12px);
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--fg);
+      font-family: var(--font-sans, Inter, system-ui, sans-serif);
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+    .name-input:focus {
+      outline: 0;
+      border-color: var(--brand-primary, #6366F1);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+
+    /* ── Avatar grid ──────────────────────────────────────────── */
+    .av-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (min-width: 520px) {
+      .av-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    }
+    .av-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border: 1.5px solid var(--border, #E5E7EB);
+      background: var(--bg-elevated, #fff);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+      min-height: 132px;
+    }
+    .av-card:hover { border-color: var(--fg-subtle, #9CA3AF); transform: translateY(-1px); }
+    .av-card.is-selected {
+      border-color: var(--brand-primary, #6366F1);
+      box-shadow:
+        0 0 0 2px var(--brand-primary, #6366F1),
+        0 12px 28px -14px rgba(99,102,241,0.45);
+    }
+    .av-card.is-selected::after {
+      content: '✓';
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--brand-primary, #6366F1);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .av-thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px -4px rgba(15,23,42,0.18);
+      overflow: hidden;
+    }
+    .av-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .av-source {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--fg-muted, #4B5563);
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .av-source .platform-pill {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 99px;
+      background: var(--bg-sunken, #F3F4F6);
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+    .av-card[data-source="upload"] .av-thumb,
+    .av-card[data-source="initials"] .av-thumb {
+      background: var(--bg-sunken, #F3F4F6);
+      color: var(--fg-muted);
+      border: 1.5px dashed var(--border-strong, #D1D5DB);
+      box-shadow: none;
+    }
+    .av-card[data-source="initials"].is-selected .av-thumb {
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      color: #fff;
+      border: 0;
+    }
+
+    /* ── Bio rows ─────────────────────────────────────────────── */
+    .bio-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bio-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border: 1.5px solid var(--border, #E5E7EB);
+      background: var(--bg-elevated, #fff);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 140ms ease;
+    }
+    .bio-row:hover { border-color: var(--fg-subtle, #9CA3AF); }
+    .bio-row.is-selected {
+      border-color: var(--brand-primary, #6366F1);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+    }
+    .bio-radio {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border-strong, #D1D5DB);
+      flex-shrink: 0;
+      margin-top: 2px;
+      position: relative;
+      transition: border-color 140ms;
+    }
+    .bio-row.is-selected .bio-radio {
+      border-color: var(--brand-primary, #6366F1);
+    }
+    .bio-row.is-selected .bio-radio::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--brand-primary, #6366F1);
+    }
+    .bio-content { flex: 1; min-width: 0; }
+    .bio-source {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--fg-muted, #4B5563);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .bio-text {
+      font-size: 14px;
+      color: var(--fg);
+      line-height: 1.45;
+      word-wrap: break-word;
+    }
+    .bio-textarea {
+      width: 100%;
+      border: 1px solid var(--border, #E5E7EB);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--fg);
+      background: var(--bg, #fff);
+      font-family: var(--font-sans, Inter, system-ui, sans-serif);
+      resize: vertical;
+      min-height: 60px;
+      margin-top: 6px;
+    }
+    .bio-textarea:focus {
+      outline: 0;
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .bio-counter {
+      font-size: 11px;
+      color: var(--fg-subtle);
+      text-align: right;
+      margin-top: 4px;
+    }
+    .bio-counter.is-warn { color: var(--warm-primary, #D97706); }
+
+    /* Skeleton row (per-platform when scrape not yet resolved) */
+    .bio-row.is-skeleton,
+    .av-card.is-skeleton {
+      pointer-events: none;
+    }
+    .bio-row.is-skeleton .bio-text,
+    .bio-row.is-skeleton .bio-source,
+    .av-card.is-skeleton .av-thumb,
+    .av-card.is-skeleton .av-source {
+      background: linear-gradient(90deg, #F3F4F6 0%, #E5E7EB 50%, #F3F4F6 100%);
+      background-size: 200% 100%;
+      animation: skeleton 1.2s ease-in-out infinite;
+      color: transparent !important;
+    }
+    @keyframes skeleton {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Trust strip + actions ────────────────────────────────── */
+    .actions-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 28px;
+    }
+    .skip-link-text {
+      display: block;
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--fg-subtle, #6B7280);
+      text-decoration: none;
+    }
+    .skip-link-text:hover { color: var(--fg-muted); text-decoration: underline; }
+    .trust-strip {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--fg-subtle);
+    }
+
+    /* Mobile niceties: ensure preview pane stacks below */
+    @media (max-width: 599px) {
+      .av-card { min-height: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <div data-partial="nav"></div>
+
+  <main class="onboarding-shell">
+    <div class="onboarding-shell-inner">
+
+      <!-- Progress bar: step 3 of 5 -->
+      <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
+        <div class="progress-step active"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
+      </div>
+      <p class="progress-label">Step 3 of 5 · Make it yours</p>
+
+      <div class="ob-twocol">
+
+        <div class="onb-card onb-card-lg" style="margin-top: 24px;">
+
+          <div class="onb-hero">
+            <span class="logo-mark" data-logo></span>
+            <div>
+              <h2 style="font-size:clamp(24px,3vw,34px); line-height:1.1;">Make it yours</h2>
+              <p class="text-muted" style="font-size:15px; margin-top:6px;">
+                How should visitors see you? <strong style="color:var(--fg);">You can always change this later.</strong>
+              </p>
+            </div>
+          </div>
+
+          <!-- 1. Display name -->
+          <div class="field-label">
+            <h3>Display name</h3>
+            <span class="field-hint">Required</span>
+          </div>
+          <input class="name-input"
+                 id="displayName"
+                 type="text"
+                 autocomplete="name"
+                 spellcheck="false"
+                 placeholder="e.g. Alexandra Doe"
+                 oninput="onNameChange()"/>
+
+          <!-- 2. Avatar selector -->
+          <div class="field-label">
+            <h3>Avatar</h3>
+            <span class="field-hint" id="avatar-hint">Pick one</span>
+          </div>
+
+          <!--
+            DEC-298 design assumption: scraped-avatar cards.
+            If research recommends "skip scraping", remove the platform cards
+            and keep only Upload + Initials. Mocked as max-feature for now.
+
+            Empty / per-platform skeletons stay until resolved (see init script).
+            On all-fail: cards are removed; only Upload + Initials remain.
+          -->
+          <div class="av-grid" id="av-grid">
+            <!-- Populated by init() — preserves order: scraped → upload → initials. -->
+          </div>
+
+          <!-- 3. Bio -->
+          <div class="field-label">
+            <h3>Bio / description</h3>
+            <span class="field-hint" id="bio-counter">0 / 160</span>
+          </div>
+
+          <!--
+            DEC-298 design assumption: scraped-bio rows.
+            If research says skip scraping, drop the From-<Platform> rows and
+            keep only "Write your own" with empty textarea. Mocked as max-feature.
+
+            Per-platform skeleton if not resolved by profile-step landing
+            (eager-prefetch on social-step submit; KV-cached 1h).
+          -->
+          <div class="bio-list" id="bio-list">
+            <!-- Populated by init() -->
+          </div>
+
+          <!-- 4. Actions -->
+          <div class="actions-row">
+            <a id="back-link" href="./onboarding-social.html" class="btn btn-secondary">← Back</a>
+            <button id="continue-btn" class="btn btn-primary btn-lg" style="flex:1;" onclick="goNext()">
+              Continue →
+            </button>
+          </div>
+
+          <!-- 5. Skip link below CTA -->
+          <a href="#" class="skip-link-text" onclick="skipProfile(event)">
+            Skip for now — set up later
+          </a>
+
+          <!-- 6. Trust strip -->
+          <p class="trust-strip">
+            🔒 GDPR-compliant · We never share your profile data
+          </p>
+
+        </div>
+
+        <!-- Live preview pane (right column on >=960px, stacks <960px) -->
+        <aside data-onboarding-preview
+               data-render="profile"
+               data-handle="yourname"
+               data-platforms=""
+               aria-label="Live preview of your tadaify page">
+          <!-- Populated by ./shared/onboarding-preview-pane.js -->
+        </aside>
+
+      </div><!-- /.ob-twocol -->
+
+    </div>
+  </main>
+
+  <div data-partial="footer"></div>
+
+  <script src="./shared/partials.js"></script>
+  <script src="./shared/tokens.js"></script>
+  <script>
+    // Slice C: prep preview pane data-* attributes before pane init.
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var pane = document.querySelector('[data-onboarding-preview]');
+      if (pane) {
+        if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
+        if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
+      }
+    })();
+  </script>
+  <script src="./shared/onboarding-preview-pane.js"></script>
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    var params = new URLSearchParams(window.location.search);
+    var handle = params.get('handle') || 'yourname';
+    var platforms = (params.get('platforms') || '').split(',').filter(Boolean);
+    var skipped = params.get('skipped') === 'socials';
+    var socialsRaw = params.get('socials') || '';
+
+    var PLATFORM_LABELS = {
+      instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube',
+      x: 'X', twitch: 'Twitch', spotify: 'Spotify',
+      linkedin: 'LinkedIn', pinterest: 'Pinterest', threads: 'Threads',
+      facebook: 'Facebook'
+    };
+
+    // DEC-298 design assumption: this is the SHAPE the scraping API will return.
+    // Producer mocks one row per selected platform with realistic-looking text.
+    // If research kills scraping, this map shrinks to {} and the UI degrades
+    // gracefully (only Upload + Initials for avatar; only "Write your own" for bio).
+    var SCRAPED_FIXTURES = {
+      instagram: {
+        avatar: 'https://i.pravatar.cc/200?img=47',
+        bio: 'Photographer · Coffee · NYC. Telling small stories with light.'
+      },
+      tiktok: {
+        avatar: 'https://i.pravatar.cc/200?img=12',
+        bio: 'Daily life vlogs · sometimes funny · always honest.'
+      },
+      youtube: {
+        avatar: 'https://i.pravatar.cc/200?img=33',
+        bio: 'Long-form videos about creativity, gear, and the small wins.'
+      },
+      x: {
+        avatar: 'https://i.pravatar.cc/200?img=22',
+        bio: 'writes code · also writes prose · views my own'
+      },
+      threads: {
+        avatar: 'https://i.pravatar.cc/200?img=15',
+        bio: 'Thinking out loud, mostly. Sometimes posting pasta photos.'
+      },
+      linkedin: {
+        avatar: 'https://i.pravatar.cc/200?img=58',
+        bio: 'Senior product designer · ex-Spotify · writing about craft & teams.'
+      },
+      facebook: {
+        avatar: 'https://i.pravatar.cc/200?img=64',
+        bio: 'Family, food, occasional opinions. Long-time poster.'
+      }
+    };
+
+    // Selected state
+    var displayName = '';
+    var avatarChoice = null;     // { source: 'instagram'|'tiktok'|...|'upload'|'initials', url? }
+    var bioChoice = null;        // { source: <platform>|'manual', text }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function initialsFor(name) {
+      var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return 'YOU';
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    // ── Avatar grid build ────────────────────────────────────────────────────
+    function buildAvatarGrid() {
+      var host = document.getElementById('av-grid');
+      host.innerHTML = '';
+
+      // Scraped cards (DEC-298): one per active platform with available fixture.
+      var anyScraped = false;
+      if (!skipped) {
+        platforms.forEach(function (p) {
+          var fix = SCRAPED_FIXTURES[p];
+          if (!fix || !fix.avatar) return;
+          anyScraped = true;
+          host.appendChild(makeAvCard({
+            source: p,
+            label: 'From ' + (PLATFORM_LABELS[p] || p),
+            avatarUrl: fix.avatar
+          }));
+        });
+      }
+
+      // Upload card
+      host.appendChild(makeAvCard({
+        source: 'upload',
+        label: 'Upload your own',
+        avatarUrl: null,
+        isUpload: true
+      }));
+
+      // Initials card
+      host.appendChild(makeAvCard({
+        source: 'initials',
+        label: 'Use initials',
+        avatarUrl: null,
+        isInitials: true
+      }));
+
+      if (!anyScraped && !skipped && platforms.length > 0) {
+        // All scrapes failed — silent degrade with a small note.
+        var note = document.createElement('p');
+        note.style.cssText = 'grid-column:1/-1; font-size:12px; color:var(--fg-subtle); margin:4px 0 0; text-align:center;';
+        note.textContent = "We couldn't pull profile previews. Pick one of the manual options above.";
+        host.appendChild(note);
+      }
+    }
+
+    function makeAvCard(opts) {
+      var card = document.createElement('div');
+      card.className = 'av-card';
+      card.setAttribute('data-source', opts.source);
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'radio');
+      card.setAttribute('aria-checked', 'false');
+
+      var thumb = document.createElement('div');
+      thumb.className = 'av-thumb';
+      if (opts.avatarUrl) {
+        var img = document.createElement('img');
+        img.alt = '';
+        img.src = opts.avatarUrl;
+        thumb.appendChild(img);
+      } else if (opts.isInitials) {
+        thumb.textContent = initialsFor(displayName) || 'YOU';
+      } else if (opts.isUpload) {
+        thumb.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+      }
+      card.appendChild(thumb);
+
+      var label = document.createElement('span');
+      label.className = 'av-source';
+      label.textContent = opts.label;
+      card.appendChild(label);
+
+      card.addEventListener('click', function () { selectAvatar(card, opts); });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); selectAvatar(card, opts); }
+      });
+      return card;
+    }
+
+    function selectAvatar(card, opts) {
+      document.querySelectorAll('.av-card').forEach(function (c) {
+        c.classList.remove('is-selected');
+        c.setAttribute('aria-checked', 'false');
+      });
+      card.classList.add('is-selected');
+      card.setAttribute('aria-checked', 'true');
+
+      avatarChoice = { source: opts.source, url: opts.avatarUrl || null };
+
+      // Upload: stub a file picker (mockup-only)
+      if (opts.source === 'upload') {
+        // mockup: pretend an upload happened
+        avatarChoice.url = 'https://i.pravatar.cc/200?img=68';
+      }
+
+      pushPreview();
+    }
+
+    // ── Bio rows build ───────────────────────────────────────────────────────
+    function buildBioList() {
+      var host = document.getElementById('bio-list');
+      host.innerHTML = '';
+
+      if (!skipped) {
+        platforms.forEach(function (p) {
+          var fix = SCRAPED_FIXTURES[p];
+          if (!fix || !fix.bio) return;
+          host.appendChild(makeBioRow({
+            source: p,
+            label: 'From ' + (PLATFORM_LABELS[p] || p),
+            text: fix.bio
+          }));
+        });
+      }
+
+      // Always include "Write your own"
+      host.appendChild(makeBioRow({
+        source: 'manual',
+        label: 'Write your own',
+        text: '',
+        isManual: true
+      }));
+    }
+
+    function makeBioRow(opts) {
+      var row = document.createElement('div');
+      row.className = 'bio-row';
+      row.setAttribute('data-source', opts.source);
+
+      var radio = document.createElement('span');
+      radio.className = 'bio-radio';
+      row.appendChild(radio);
+
+      var content = document.createElement('div');
+      content.className = 'bio-content';
+
+      var src = document.createElement('p');
+      src.className = 'bio-source';
+      src.textContent = opts.label;
+      content.appendChild(src);
+
+      if (opts.isManual) {
+        var ta = document.createElement('textarea');
+        ta.className = 'bio-textarea';
+        ta.placeholder = 'A short line about you. 160 characters max.';
+        ta.maxLength = 160;
+        ta.style.display = 'none';
+        ta.addEventListener('input', function () {
+          if (bioChoice && bioChoice.source === 'manual') {
+            bioChoice.text = ta.value;
+            updateBioCounter(ta.value);
+            pushPreview();
+          }
+        });
+        content.appendChild(ta);
+
+        // Show a placeholder line while not selected
+        var placeholder = document.createElement('p');
+        placeholder.className = 'bio-text';
+        placeholder.style.color = 'var(--fg-subtle)';
+        placeholder.style.fontStyle = 'italic';
+        placeholder.textContent = 'Click to write your own…';
+        content.appendChild(placeholder);
+      } else {
+        var text = document.createElement('p');
+        text.className = 'bio-text';
+        text.textContent = opts.text;
+        content.appendChild(text);
+
+        // Editable on click — convert to textarea pre-filled.
+        var editTa = document.createElement('textarea');
+        editTa.className = 'bio-textarea';
+        editTa.value = opts.text;
+        editTa.maxLength = 160;
+        editTa.style.display = 'none';
+        editTa.addEventListener('input', function () {
+          if (bioChoice && bioChoice.source === opts.source) {
+            bioChoice.text = editTa.value;
+            updateBioCounter(editTa.value);
+            pushPreview();
+          }
+        });
+        content.appendChild(editTa);
+      }
+
+      row.appendChild(content);
+
+      row.addEventListener('click', function () { selectBio(row, opts); });
+      return row;
+    }
+
+    function selectBio(row, opts) {
+      document.querySelectorAll('.bio-row').forEach(function (r) {
+        r.classList.remove('is-selected');
+        // Hide any open textareas
+        var ta = r.querySelector('.bio-textarea');
+        if (ta) ta.style.display = 'none';
+        var ph = r.querySelector('.bio-text');
+        if (ph) ph.style.display = '';
+      });
+      row.classList.add('is-selected');
+
+      var ta = row.querySelector('.bio-textarea');
+      var ph = row.querySelector('.bio-text');
+      if (ta) {
+        ta.style.display = '';
+        if (!opts.isManual && ph) ph.style.display = 'none';
+        if (opts.isManual && ph) ph.style.display = 'none';
+        ta.focus();
+      }
+
+      bioChoice = {
+        source: opts.source,
+        text: opts.isManual ? (ta ? ta.value : '') : opts.text
+      };
+      updateBioCounter(bioChoice.text);
+      pushPreview();
+    }
+
+    function updateBioCounter(text) {
+      var len = (text || '').length;
+      var counter = document.getElementById('bio-counter');
+      counter.textContent = len + ' / 160';
+      counter.classList.toggle('is-warn', len > 140);
+    }
+
+    // ── Live name binding ────────────────────────────────────────────────────
+    function onNameChange() {
+      displayName = document.getElementById('displayName').value;
+      // Refresh "Use initials" thumb
+      document.querySelectorAll('.av-card[data-source="initials"] .av-thumb').forEach(function (t) {
+        if (!t.querySelector('img')) t.textContent = initialsFor(displayName) || 'YOU';
+      });
+      pushPreview();
+    }
+
+    // ── Push state into preview pane ─────────────────────────────────────────
+    function pushPreview() {
+      if (!window.tdfPreview || typeof window.tdfPreview.update !== 'function') return;
+      var avatarUrl = avatarChoice && avatarChoice.url ? avatarChoice.url : '';
+      window.tdfPreview.update({
+        handle: handle,
+        displayName: displayName,
+        bio: bioChoice ? bioChoice.text : '',
+        avatarUrl: avatarUrl,
+        platforms: skipped ? [] : platforms
+      });
+    }
+
+    // ── Continue / Skip ──────────────────────────────────────────────────────
+    function goNext() {
+      var url = './onboarding-template.html?handle=' + encodeURIComponent(handle);
+      if (socialsRaw) url += '&socials=' + encodeURIComponent(socialsRaw);
+      if (platforms.length) url += '&platforms=' + encodeURIComponent(platforms.join(','));
+      // Profile choice fields are not strictly required — skip-friendly.
+      if (displayName) url += '&name=' + encodeURIComponent(displayName);
+      if (avatarChoice) url += '&av=' + encodeURIComponent(avatarChoice.source);
+      if (bioChoice && bioChoice.text) url += '&bio=' + encodeURIComponent(bioChoice.text.slice(0, 160));
+      window.location.href = url;
+    }
+    function skipProfile(e) {
+      e.preventDefault();
+      var url = './onboarding-template.html?handle=' + encodeURIComponent(handle);
+      if (socialsRaw) url += '&socials=' + encodeURIComponent(socialsRaw);
+      if (platforms.length) url += '&platforms=' + encodeURIComponent(platforms.join(','));
+      window.location.href = url;
+    }
+    window.skipProfile = skipProfile;
+    window.onNameChange = onNameChange;
+    window.goNext = goNext;
+
+    // ── Back link ────────────────────────────────────────────────────────────
+    document.getElementById('back-link').href =
+      './onboarding-social.html?handle=' + encodeURIComponent(handle) +
+      (platforms.length ? '&platforms=' + encodeURIComponent(platforms.join(',')) : '');
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    buildAvatarGrid();
+    buildBioList();
+    setTimeout(function () {
+      if (window.tdfPreview && typeof window.tdfPreview.update === 'function') {
+        window.tdfPreview.update({
+          handle: handle,
+          platforms: skipped ? [] : platforms,
+          template: 'chopin'
+        });
+      }
+    }, 0);
+  </script>
+</body>
+</html>

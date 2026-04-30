@@ -4,6 +4,14 @@
   DEC-SOCIAL-01 applied 2026-04-24: no OAuth, no auto-import.
   F-004 — multi-platform handle entry, generates "Follow me on" link blocks.
   F-UPSELL-001 — follower count collected as direct question on tier step (not scraped).
+
+  Slice C revision (2026-04-29) — DEC-297=B, DEC-298:
+    1) Renumbered 4-step → 5-step flow; this is step 2/5.
+    2) Added 3-viewport preview pane on right column (Desktop/Tablet/Mobile)
+       reusing shared/onboarding-preview-pane.js. Preview shows the user's
+       emerging page with selected social icons in a circular row at the top.
+    3) Continue now navigates to onboarding-profile.html (the NEW step 3/5).
+    4) Mobile (<960px): preview pane stacks below the form, accessible inline.
 -->
 <html lang="en">
 <head>
@@ -13,6 +21,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
+    /* ── Slice C 2-col shell (form + preview pane) ─────────────── */
+    .ob-twocol {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+    @media (min-width: 960px) {
+      .ob-twocol {
+        grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+        gap: 28px;
+        align-items: start;
+      }
+    }
+
     /* ── Platform row ──────────────────────────────────────────── */
     .platform-list {
       display: flex;
@@ -245,7 +268,7 @@
   <main class="onboarding-shell">
     <div class="onboarding-shell-inner">
 
-      <!-- Progress bar: step 2 of 4 (TADA-BUG-002: blocks step removed) -->
+      <!-- Progress bar: step 2 of 5 (Slice C revision: 4 → 5 steps, profile added at 3/5) -->
       <div class="progress-bar">
         <div class="progress-step done"><span class="progress-dot"></span></div>
         <div class="progress-line done"></div>
@@ -254,9 +277,14 @@
         <div class="progress-step"><span class="progress-dot"></span></div>
         <div class="progress-line"></div>
         <div class="progress-step"><span class="progress-dot"></span></div>
+        <div class="progress-line"></div>
+        <div class="progress-step"><span class="progress-dot"></span></div>
       </div>
-      <p class="progress-label">Step 2 of 4 · Your socials</p>
+      <p class="progress-label">Step 2 of 5 · Your socials</p>
 
+      <!-- Slice C: 2-col shell on lg viewports — form left, live preview right.
+           Stacks vertically <960px (preview becomes a section below the form). -->
+      <div class="ob-twocol">
       <div class="onb-card onb-card-lg" style="margin-top: 24px;">
 
         <!-- Hero -->
@@ -284,12 +312,30 @@
         <!-- Actions -->
         <div style="display:flex; gap:12px; margin-top:28px; flex-wrap:wrap; align-items:center;">
           <a id="back-link" href="./onboarding-welcome.html" class="btn btn-secondary">← Back</a>
+          <button id="skip-socials-btn" class="btn btn-secondary" onclick="handleSkipAll()">
+            Skip socials
+          </button>
           <button id="continue-btn" class="btn btn-primary btn-lg" style="flex:1;" onclick="handleContinue()">
             Continue →
           </button>
         </div>
 
+        <!-- Trust strip -->
+        <p class="trust-strip" style="margin-top:18px; text-align:center; font-size:12px; color:var(--fg-subtle);">
+          🔒 Handle-based — no OAuth, no account connection · You can edit any time
+        </p>
+
       </div>
+
+      <!-- Live preview pane (right column on >=960px, stacks below on mobile) -->
+      <aside data-onboarding-preview
+             data-render="social"
+             data-handle="yourname"
+             aria-label="Live preview of your tadaify page">
+        <!-- Populated by ./shared/onboarding-preview-pane.js -->
+      </aside>
+
+      </div><!-- /.ob-twocol -->
 
     </div>
   </main>
@@ -298,6 +344,18 @@
 
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
+  <script>
+    // Slice C: prep preview pane data-* attributes BEFORE pane init runs.
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var pane = document.querySelector('[data-onboarding-preview]');
+      if (pane) {
+        if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
+        if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
+      }
+    })();
+  </script>
+  <script src="./shared/onboarding-preview-pane.js"></script>
   <script>
     // ── Platform config ─────────────────────────────────────────────────────
     // Each entry: { id, label, prefix, icon (emoji fallback), color }
@@ -363,6 +421,7 @@
     // ── Read URL params ──────────────────────────────────────────────────────
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';
+    // If user came from welcome.html with no platforms picked, treat as skipped-socials.
     var platformsParam = params.get('platforms') || 'instagram,tiktok,youtube';
     var selectedPlatforms = platformsParam.split(',').filter(function(p) {
       return p && PLATFORMS[p];
@@ -424,6 +483,14 @@
       if (input && preview) {
         preview.innerHTML = buildPreviewLine(platformId, input.value);
       }
+      // Slice C: keep live preview pane in sync with active platforms.
+      var active = selectedPlatforms.filter(function (p) { return !skipped[p]; });
+      if (window.tdfPreview && typeof window.tdfPreview.update === 'function') {
+        window.tdfPreview.update({
+          handle: handle,
+          platforms: active
+        });
+      }
     }
 
     // ── Skip a platform ──────────────────────────────────────────────────────
@@ -442,6 +509,13 @@
         var preview = document.getElementById('preview-' + platformId);
         if (preview) preview.innerHTML = '<em>Skipped — won\'t appear on your page.</em>';
       }
+      // Slice C: keep preview pane in sync with skipped state.
+      if (window.tdfPreview && typeof window.tdfPreview.update === 'function') {
+        window.tdfPreview.update({
+          handle: handle,
+          platforms: selectedPlatforms.filter(function (p) { return !skipped[p]; })
+        });
+      }
     }
 
     // ── Build outgoing socials map ───────────────────────────────────────────
@@ -458,14 +532,28 @@
     }
 
     // ── Continue handler ─────────────────────────────────────────────────────
+    // Slice C revision (2026-04-29): destination is now the NEW step 3/5
+    // onboarding-profile.html, not template.html.
     function handleContinue() {
       var socialsMap = buildSocialsMap();
       var socialsEncoded = encodeURIComponent(JSON.stringify(socialsMap));
+      var platforms = Object.keys(socialsMap).join(',');
       window.location.href =
-        './onboarding-template.html' +
+        './onboarding-profile.html' +
         '?handle=' + encodeURIComponent(handle) +
+        '&platforms=' + encodeURIComponent(platforms) +
         '&socials=' + socialsEncoded;
     }
+
+    // ── Skip socials handler ─────────────────────────────────────────────────
+    // Slice C: explicit "Skip socials" button. Skipping = no platforms selected,
+    // so the profile-setup step (3/5) cannot offer scraped From-<Platform> cards.
+    // Falls through to manual-only profile setup.
+    function handleSkipAll() {
+      window.location.href =
+        './onboarding-profile.html?handle=' + encodeURIComponent(handle) + '&skipped=socials';
+    }
+    window.handleSkipAll = handleSkipAll;
 
     // ── Back link ─────────────────────────────────────────────────────────────
     document.getElementById('back-link').href =
@@ -479,6 +567,16 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
     }
+
+    // Slice C: seed the preview pane once it has booted (next tick).
+    setTimeout(function () {
+      if (window.tdfPreview && typeof window.tdfPreview.update === 'function') {
+        window.tdfPreview.update({
+          handle: handle,
+          platforms: selectedPlatforms.filter(function (p) { return !skipped[p]; })
+        });
+      }
+    }, 0);
   </script>
 </body>
 </html>
