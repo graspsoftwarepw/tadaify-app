@@ -1,14 +1,33 @@
 <!--
   type: mockup
   project: tadaify
-  title: Register — auth screen
+  title: Register — auth screen (5-section flow)
   created_at: 2026-04-25
+  updated_at: 2026-04-29
   author: orchestrator
   status: draft-for-review
 
   Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify, Motion v10 logo, light/dark mode toggle.
 
-  DEC trail: DEC-019 tagline; DEC-WORDMARK-01 (no hyphen); DEC-TRIAL-01 (no trials); DEC-SOCIAL-01 (handle-input only, no OAuth dance at handle step); DEC-PRICELOCK-01/02; DEC-AI-QUOTA-LADDER-01/DEC-286 (Free 5 AI credits).
+  DEC trail (Slice B revision):
+    - DEC-019 tagline; DEC-WORDMARK-01 (no hyphen); DEC-TRIAL-01 (no trials)
+    - DEC-PRICELOCK-01/02 (price-locked-for-life trust chip)
+    - DEC-AI-QUOTA-LADDER-01 / DEC-286 (Free 5 AI credits)
+    - DEC-290 (answered) — REMOVE try.html and "Try without an account →" link entirely
+    - DEC-291 (answered) — Auth flow Option B-modified; 4 providers MVP; OAuth → email auto-confirmed (no password); Email path → 6-digit OTP → inline toggle (code vs password)
+    - DEC-294 (answered) — 4 providers parallel: X / Google / Apple / Email-OTP. Force-email Auth Hook ON. Apple gated $99/yr. X gated on email scope.
+    - DEC-295 (pending; mocked = A) — Inline-toggle screen between OTP confirm and onboarding. Default = "send code next time". Opt-in = "set password".
+    - DEC-292 (pending; mocked = A parallel) — 4 buttons side-by-side, NOT email-first discovery / Notion-style.
+    - DEC-293 (pending; mocked = auto-link ON) — Identity linking via email; UI doesn't surface explicitly.
+
+  Section state machine:
+    A handle      → B method
+    B method      → (Google/Apple/X) → OAuth round-trip → C success
+    B method      → (Email)          → B-email
+    B-email       → B-otp
+    B-otp         → B-password-toggle  (only on email path)
+    B-password-toggle → C success
+    C success     → /onboarding-welcome.html?handle=<handle>
 
   Anti-patterns: AP-001 no Powered by, AP-013 no phone, AP-017 no trials, AP-024 progressive reveal, AP-030 Free default.
 -->
@@ -23,9 +42,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
-    /* ----------------------------------------------------------------
-       AUTH TOPBAR — identical structure to app-dashboard.html appbar
-       ---------------------------------------------------------------- */
+    /* AUTH TOPBAR */
     .auth-bar {
       position: sticky; top: 0; z-index: 40;
       background: var(--bg-elevated);
@@ -35,43 +52,30 @@
       box-shadow: 0 1px 0 rgba(17,24,39,0.02);
       min-height: 54px;
     }
-    .auth-bar .brand {
-      display: flex; align-items: center; gap: 10px;
-      text-decoration: none; color: inherit;
-    }
+    .auth-bar .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
     .auth-bar .wm { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -0.02em; }
     .auth-bar .wm .ta  { color: var(--wm-ta); }
     .auth-bar .wm .da  { color: var(--wm-da); }
     .auth-bar .wm .ify { color: var(--wm-ify); }
     .auth-bar .spacer { flex: 1; }
-    .auth-bar .bar-link {
-      font-size: 13px; font-weight: 500; color: var(--fg-muted);
-      text-decoration: none; white-space: nowrap;
-    }
+    .auth-bar .bar-link { font-size: 13px; font-weight: 500; color: var(--fg-muted); text-decoration: none; white-space: nowrap; }
     .auth-bar .bar-link strong { color: var(--brand-primary); font-weight: 600; }
     .auth-bar .bar-link:hover strong { color: var(--brand-primary-hover); }
 
-    /* Theme toggle — matches dashboard pattern exactly */
     .theme-toggle-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border-radius: 8px;
       background: transparent; border: 1px solid transparent;
       color: var(--fg-muted); cursor: pointer;
-      transition: all .12s ease;
-      position: relative;
+      transition: all .12s ease; position: relative;
     }
     .theme-toggle-btn:hover { background: var(--bg-muted); color: var(--fg); }
-    .theme-toggle-btn svg {
-      width: 18px; height: 18px;
-      transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1);
-    }
+    .theme-toggle-btn svg { width: 18px; height: 18px; transition: opacity .2s ease, transform .3s cubic-bezier(.2,.8,.2,1); }
     .theme-icon-moon { position: absolute; opacity: 0; transform: rotate(-30deg) scale(0.6); }
     body.dark-mode .theme-icon-sun  { opacity: 0; transform: rotate(30deg) scale(0.6); }
     body.dark-mode .theme-icon-moon { opacity: 1; transform: rotate(0) scale(1); }
 
-    /* ----------------------------------------------------------------
-       REGISTER GRID — split desktop, stacked mobile
-       ---------------------------------------------------------------- */
+    /* REGISTER GRID — split desktop, stacked mobile */
     .register-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -93,14 +97,11 @@
       color: #FFF;
       display: flex; align-items: center; justify-content: center;
       padding: clamp(32px, 5vw, 72px);
-      position: relative;
-      overflow: hidden;
-      min-height: 400px;
+      position: relative; overflow: hidden; min-height: 400px;
     }
     @media (max-width: 960px) { .preview-col { display: none; } }
     .preview-col::before {
-      content: "";
-      position: absolute; inset: 0;
+      content: ""; position: absolute; inset: 0;
       background:
         radial-gradient(600px 300px at 20% 20%, rgba(245,158,11,0.28), transparent),
         radial-gradient(500px 400px at 80% 80%, rgba(255,255,255,0.1), transparent);
@@ -110,24 +111,17 @@
 
     .preview-card {
       background: rgba(255,255,255,0.12);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255,255,255,0.22);
-      padding: 36px 28px;
-      border-radius: 24px;
+      padding: 36px 28px; border-radius: 24px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.22);
     }
-    /* TADA-BUG-001: this is a URL-preview surface, NOT a brand-lockup
-       surface. Letters may be coloured, but PUNCTUATION (./-) must stay
-       neutral and must NEVER be substituted with the brand "!" mark.
-       The preview reads "tadaify.com/<slug>" — a real URL the user could
-       type — never "tada!ify/<slug>" lockup. */
+    /* TADA-BUG-001: URL-preview surface, NOT brand lockup. Letters may be coloured,
+       but PUNCTUATION (./-) stays neutral and is NEVER substituted with "!". */
     .preview-wordmark {
-      font-family: var(--font-display);
-      font-weight: 600;
+      font-family: var(--font-display); font-weight: 600;
       font-size: clamp(26px, 3.5vw, 40px);
-      letter-spacing: -0.02em;
-      line-height: 1.05;
+      letter-spacing: -0.02em; line-height: 1.05;
       word-break: break-all;
     }
     .preview-wordmark .url-letters { color: #FFF; }
@@ -138,77 +132,48 @@
     .preview-url {
       margin-top: 24px;
       background: rgba(0,0,0,0.3);
-      border-radius: 10px;
-      padding: 10px 16px;
+      border-radius: 10px; padding: 10px 16px;
       font-family: var(--font-mono, monospace);
-      font-size: 13px;
-      color: rgba(255,255,255,0.9);
-      overflow-x: auto;
-      white-space: nowrap;
+      font-size: 13px; color: rgba(255,255,255,0.9);
+      overflow-x: auto; white-space: nowrap;
     }
     .preview-thumb {
       margin-top: 32px;
       background: rgba(255,255,255,0.08);
       border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 14px;
-      padding: 18px;
-      text-align: left;
+      border-radius: 14px; padding: 18px; text-align: left;
     }
     .preview-thumb .dot-row { display: flex; gap: 6px; margin-bottom: 12px; }
     .preview-thumb .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3); }
-    .preview-thumb .line {
-      height: 8px;
-      background: rgba(255,255,255,0.25);
-      border-radius: 4px;
-      margin-top: 10px;
-    }
+    .preview-thumb .line { height: 8px; background: rgba(255,255,255,0.25); border-radius: 4px; margin-top: 10px; }
     .preview-thumb .line.short { width: 60%; }
-    .preview-thumb .line.pill-row {
-      height: 28px;
-      background: rgba(253,230,138,0.35);
-    }
+    .preview-thumb .line.pill-row { height: 28px; background: rgba(253,230,138,0.35); }
 
     .logo-corner {
-      position: absolute;
-      top: 24px; right: 24px;
-      width: 64px; height: 64px;
-      opacity: 0.9;
-      z-index: 2;
+      position: absolute; top: 24px; right: 24px;
+      width: 64px; height: 64px; opacity: 0.9; z-index: 2;
     }
 
-    /* ----------------------------------------------------------------
-       PROGRESSIVE SECTIONS
-       ---------------------------------------------------------------- */
+    /* PROGRESSIVE SECTIONS */
     .reg-section {
-      max-height: 0;
-      overflow: hidden;
-      opacity: 0;
+      max-height: 0; overflow: hidden; opacity: 0;
       transition: max-height 360ms ease, opacity 260ms ease, margin 260ms ease;
       margin: 0;
     }
     .reg-section.revealed {
-      max-height: 1800px;
-      opacity: 1;
-      margin-top: var(--space-8);
+      max-height: 2400px; opacity: 1; margin-top: var(--space-8);
     }
 
     .section-header-mini {
       font-family: var(--font-display);
-      font-size: 22px;
-      color: var(--fg);
-      margin-bottom: 8px;
-      font-weight: 600;
+      font-size: 22px; color: var(--fg);
+      margin-bottom: 8px; font-weight: 600;
     }
 
-    /* ----------------------------------------------------------------
-       HANDLE AVAILABILITY
-       ---------------------------------------------------------------- */
+    /* HANDLE AVAILABILITY */
     .availability {
-      margin-top: 10px;
-      font-size: 14px;
-      min-height: 22px;
-      display: flex; align-items: center; gap: 8px;
-      font-weight: 500;
+      margin-top: 10px; font-size: 14px; min-height: 22px;
+      display: flex; align-items: center; gap: 8px; font-weight: 500;
     }
     .availability.ok    { color: var(--success); }
     .availability.taken { color: var(--danger); }
@@ -223,96 +188,204 @@
     }
     .alternatives button:hover { background: var(--bg-elevated); border-color: var(--brand-primary); }
 
-    /* ----------------------------------------------------------------
-       SECTION B — AUTH METHOD
-       ---------------------------------------------------------------- */
-    .auth-method-section { margin-top: 12px; }
+    /* SECTION B — 4 PROVIDER BUTTONS (vertical stack, parallel paths) */
+    .provider-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 
-    /* Single full-width Google button */
-    .auth-btn-google {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 18px;
+    .auth-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px;
       background: var(--bg-elevated);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius);
-      font-size: 14px; font-weight: 600;
       cursor: pointer; width: 100%;
       transition: all 120ms ease;
-      color: var(--fg);
-      text-align: left;
-      margin-bottom: 4px;
+      color: var(--fg); text-align: left;
+      min-height: 56px;
+      font-family: inherit;
     }
-    .auth-btn-google:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
-    .auth-btn-google .google-icon {
-      width: 20px; height: 20px; flex-shrink: 0;
+    .auth-btn:hover { border-color: var(--brand-primary); background: var(--bg-muted); }
+    .auth-btn .icon-wrap {
+      width: 28px; height: 28px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
+    .auth-btn .icon-wrap svg { width: 22px; height: 22px; }
+    .auth-btn .label-wrap { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .auth-btn .label-main { font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--fg); }
+    .auth-btn .label-hint { font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--fg-subtle); }
+
+    /* Visual hierarchy: Google + Apple slightly more prominent (thicker border) */
+    .auth-btn.tier-1 { border-width: 1.5px; }
+    .auth-btn.tier-2 { background: transparent; }
+
+    /* Apple icon adapts to dark mode */
+    .icon-apple { fill: #000; }
+    body.dark-mode .icon-apple { fill: #FFF; }
+    /* X icon adapts to dark mode */
+    .icon-x { fill: #000; }
+    body.dark-mode .icon-x { fill: #FFF; }
 
     .divider-or {
       display: flex; align-items: center; gap: 12px;
-      color: var(--fg-subtle); font-size: 12px;
-      margin: 16px 0;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      color: var(--fg-subtle); font-size: 11px;
+      margin: 16px 0 12px;
+      font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
     }
     .divider-or::before, .divider-or::after {
       content: ""; flex: 1; height: 1px; background: var(--border);
     }
 
-    /* Email sign-in: magic-link first, pw optional */
-    .email-row {
-      display: flex; gap: 8px; align-items: stretch;
+    .all-paths-note {
+      font-size: 12px; color: var(--fg-muted);
+      text-align: center; padding: 10px 14px;
+      background: var(--bg-muted);
+      border-radius: var(--radius); margin-top: 14px;
+      line-height: 1.5;
     }
-    .email-row input { flex: 1; min-width: 0; }
-
-    .pw-toggle-link {
-      display: inline-block;
-      margin-top: 10px;
-      font-size: 13px;
-      color: var(--fg-muted);
-      cursor: pointer;
-      text-decoration: underline;
-      background: none; border: none; padding: 0;
-      font-family: inherit;
-    }
-    .pw-toggle-link:hover { color: var(--fg); }
-
-    #pw-field { display: none; margin-top: 12px; }
-    #pw-field .pw-input-wrap { position: relative; }
-    #pw-field .pw-show-btn {
-      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-      background: none; border: none; padding: 0; cursor: pointer;
-      color: var(--fg-muted); font-size: 13px; font-family: inherit;
-    }
-    #pw-field .pw-show-btn:hover { color: var(--fg); }
 
     .tos-row {
       margin-top: 16px;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--fg-muted);
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13px; color: var(--fg-muted);
     }
     .tos-row input { margin-top: 3px; flex-shrink: 0; }
     .tos-link { color: var(--brand-primary); text-decoration: underline; }
 
     .no-phone-notice {
-      margin-top: 14px;
-      font-size: 12px;
-      color: var(--fg-subtle);
+      margin-top: 10px;
+      font-size: 12px; color: var(--fg-subtle);
       text-align: center;
       background: var(--bg-muted);
-      border-radius: var(--radius);
-      padding: 8px 12px;
+      border-radius: var(--radius); padding: 8px 12px;
     }
 
-    /* ----------------------------------------------------------------
-       TRUST TRIO STRIP
-       ---------------------------------------------------------------- */
+    /* SECTION B-EMAIL — single email field + Send code */
+    .email-step-wrap { padding: 8px 0; }
+
+    /* SECTION B-OTP — 6-digit code grid */
+    .otp-grid {
+      display: flex; gap: 8px; justify-content: center;
+      margin: 18px 0 8px;
+    }
+    .otp-input {
+      width: 44px; height: 56px;
+      text-align: center;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 22px; font-weight: 600;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--bg-elevated);
+      color: var(--fg);
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .otp-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.18);
+      outline: none;
+    }
+    @media (max-width: 420px) {
+      .otp-input { width: 38px; height: 50px; font-size: 19px; }
+      .otp-grid { gap: 6px; }
+    }
+    body.dark-mode .otp-input { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .otp-input:focus { border-color: #6366F1; }
+
+    .resend-row {
+      text-align: center;
+      font-size: 13px; color: var(--fg-muted);
+      margin-top: 16px;
+    }
+    .resend-row .resend-btn {
+      background: none; border: none; padding: 0;
+      color: var(--brand-primary); font-weight: 600; cursor: pointer;
+      font-family: inherit; font-size: 13px;
+    }
+    .resend-row .resend-btn:disabled { color: var(--fg-subtle); cursor: not-allowed; }
+
+    /* SECTION B-PASSWORD-TOGGLE — radio cards (DEC-295=A) */
+    .pw-toggle-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .pw-card {
+      position: relative;
+      display: flex; gap: 14px;
+      padding: 16px 18px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+    .pw-card:hover { border-color: var(--brand-primary); }
+    .pw-card.selected {
+      border-color: var(--brand-primary);
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+    }
+    .pw-card .radio-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--border-strong);
+      flex-shrink: 0; margin-top: 3px; position: relative;
+      background: var(--bg-elevated);
+      transition: all 120ms ease;
+    }
+    .pw-card.selected .radio-dot {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary);
+    }
+    .pw-card.selected .radio-dot::after {
+      content: ""; position: absolute;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #FFF;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    .pw-card-body { flex: 1; min-width: 0; }
+    .pw-card-title {
+      font-size: 15px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      line-height: 1.3;
+    }
+    .recommended-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: var(--radius-full);
+      background: rgba(34,197,94,0.12);
+      color: var(--success);
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .pw-card-sub {
+      font-size: 13px; color: var(--fg-muted);
+      margin-top: 4px; line-height: 1.5;
+    }
+    .pw-card-extra { display: none; margin-top: 12px; }
+    .pw-card.selected .pw-card-extra { display: block; }
+    /* Only Card 2 reveals password input on selection */
+    #pw-card-1.selected .pw-card-extra { display: none; }
+
+    .pw-input-wrap-card { position: relative; }
+    .pw-input-wrap-card input { width: 100%; min-height: 44px; padding-right: 60px; }
+    .pw-input-wrap-card .pw-show-btn {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; padding: 4px 6px;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      color: var(--fg-muted); cursor: pointer;
+    }
+    .pw-input-wrap-card .pw-show-btn:hover { color: var(--fg); }
+    .pw-min-hint { font-size: 12px; color: var(--fg-subtle); margin-top: 6px; }
+
+    body.dark-mode .pw-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .pw-card:hover { border-color: #6366F1; }
+    body.dark-mode .pw-card.selected {
+      border-color: #6366F1;
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.08));
+    }
+    body.dark-mode .pw-card .radio-dot { background: #141A2D; border-color: #374151; }
+    body.dark-mode .pw-card-title { color: #F3F4F6; }
+    body.dark-mode .pw-card-sub { color: #9CA3AF; }
+    body.dark-mode .pw-input-wrap-card input { background: #0E1428; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .pw-min-hint { color: #6B7280; }
+
+    /* TRUST TRIO STRIP */
     .trust-strip {
       display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-      margin: 28px 0 8px;
+      margin: 24px 0 8px;
     }
     .trust-chip {
       display: inline-flex; align-items: center; gap: 5px;
@@ -325,38 +398,27 @@
       white-space: nowrap;
     }
 
-    /* ----------------------------------------------------------------
-       TIER MENTION — subtle one-liner
-       ---------------------------------------------------------------- */
+    /* TIER MENTION */
     .tier-hint {
       margin-top: 12px;
       padding: 10px 14px;
       background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.06));
       border: 1px solid rgba(99,102,241,0.14);
       border-radius: var(--radius);
-      font-size: 12px;
-      color: var(--fg-muted);
-      text-align: center;
-      line-height: 1.5;
+      font-size: 12px; color: var(--fg-muted);
+      text-align: center; line-height: 1.5;
     }
 
-    /* ----------------------------------------------------------------
-       SECTION C — SUCCESS BURST
-       ---------------------------------------------------------------- */
-    .success-burst {
-      text-align: center;
-      padding: 32px 0;
-    }
+    /* SECTION C — SUCCESS */
+    .success-burst { text-align: center; padding: 32px 0; }
     .success-burst .big-tada {
       font-family: var(--font-display);
       font-size: clamp(56px, 10vw, 96px);
       font-weight: 700;
       background: linear-gradient(135deg, var(--brand-primary), var(--brand-warm));
-      -webkit-background-clip: text;
-      background-clip: text;
+      -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
-      letter-spacing: -0.03em;
-      line-height: 1;
+      letter-spacing: -0.03em; line-height: 1;
       margin-bottom: 16px;
       animation: burstIn 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
@@ -365,15 +427,11 @@
       to   { transform: scale(1);   opacity: 1; }
     }
     .tip-microcopy {
-      font-size: 12px;
-      color: var(--fg-subtle);
-      text-align: center;
-      margin-top: 12px;
+      font-size: 12px; color: var(--fg-subtle);
+      text-align: center; margin-top: 12px;
     }
 
-    /* ----------------------------------------------------------------
-       MOBILE: sticky CTA bar at bottom
-       ---------------------------------------------------------------- */
+    /* MOBILE STICKY CTA */
     .sticky-cta-mobile {
       display: none;
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
@@ -388,17 +446,19 @@
       .form-inner { padding-bottom: 100px; }
     }
 
-    /* ----------------------------------------------------------------
-       DARK MODE OVERRIDES
-       ---------------------------------------------------------------- */
+    .back-link {
+      display: inline-block; margin-top: 18px;
+      font-size: 13px; color: var(--fg-muted);
+      background: none; border: none; padding: 0; cursor: pointer;
+      font-family: inherit; text-decoration: none;
+    }
+    .back-link:hover { color: var(--fg); }
+
+    /* DARK MODE OVERRIDES */
     body.dark-mode {
-      background: #0B0F1E;
-      color: #F3F4F6;
+      background: #0B0F1E; color: #F3F4F6;
     }
-    body.dark-mode .auth-bar {
-      background: #0E1428;
-      border-bottom-color: #1F2937;
-    }
+    body.dark-mode .auth-bar { background: #0E1428; border-bottom-color: #1F2937; }
     body.dark-mode .auth-bar .wm .ify { color: #F3F4F6; }
     body.dark-mode .auth-bar .bar-link { color: #9CA3AF; }
     body.dark-mode .form-col { background: #0B0F1E; }
@@ -407,34 +467,27 @@
     body.dark-mode .section-header-mini { color: #F3F4F6; }
     body.dark-mode .input,
     body.dark-mode .input-group {
-      background: #141A2D;
-      border-color: #1F2937;
-      color: #F3F4F6;
+      background: #141A2D; border-color: #1F2937; color: #F3F4F6;
     }
     body.dark-mode .input-group .prefix { color: #9CA3AF; }
     body.dark-mode .input-group input { color: #F3F4F6; }
-    body.dark-mode .auth-btn-google {
-      background: #141A2D;
-      border-color: #1F2937;
-      color: #F3F4F6;
-    }
-    body.dark-mode .auth-btn-google:hover { background: #1F2937; border-color: #6366F1; }
-    body.dark-mode .trust-chip {
-      background: #141A2D;
-      border-color: #1F2937;
-      color: #9CA3AF;
-    }
+    body.dark-mode .auth-btn { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .auth-btn:hover { background: #1F2937; border-color: #6366F1; }
+    body.dark-mode .auth-btn.tier-2 { background: transparent; }
+    body.dark-mode .auth-btn .label-main { color: #F3F4F6; }
+    body.dark-mode .auth-btn .label-hint { color: #6B7280; }
+    body.dark-mode .trust-chip { background: #141A2D; border-color: #1F2937; color: #9CA3AF; }
     body.dark-mode .tier-hint {
       background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.08));
       border-color: rgba(99,102,241,0.25);
       color: #D1D5DB;
     }
     body.dark-mode .no-phone-notice { background: #141A2D; color: #9CA3AF; }
+    body.dark-mode .all-paths-note { background: #141A2D; color: #9CA3AF; }
     body.dark-mode .sticky-cta-mobile { background: #0E1428; border-top-color: #1F2937; }
     body.dark-mode .alternatives button { background: #141A2D; border-color: #1F2937; }
     body.dark-mode .tos-row { color: #9CA3AF; }
-    body.dark-mode .pw-toggle-link { color: #9CA3AF; }
-    body.dark-mode #pw-field input { background: #141A2D; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .resend-row { color: #9CA3AF; }
   </style>
 </head>
 <body>
@@ -460,7 +513,7 @@
     <div class="form-col">
       <div class="form-inner">
 
-        <!-- SECTION A — CLAIM YOUR HANDLE -->
+        <!-- ============ SECTION A — CLAIM YOUR HANDLE ============ -->
         <section id="section-a" class="reg-section revealed">
           <h1 style="font-size: clamp(28px,4vw,38px); line-height:1.1; margin-bottom:12px;">
             Hey <span id="greet-handle" style="color: var(--brand-primary)">@yourname</span> 👋<br/>
@@ -487,9 +540,7 @@
             Start on Free — 5 AI credits, 1 page, all core features. Upgrade anytime, never auto-enrolled.
           </div>
 
-          <p style="font-size:13px; color: var(--fg-muted); margin-top:16px; text-align:center;">
-            Want to build first, sign up later? <a href="./try.html">Try without an account →</a>
-          </p>
+          <!-- DEC-290: "Try without an account →" link REMOVED. try.html killed. -->
 
           <div class="trust-strip">
             <span class="trust-chip">🔒 Price locked for life</span>
@@ -498,59 +549,87 @@
           </div>
         </section>
 
-        <!-- SECTION B — SIGN IN METHOD -->
+        <!-- ============ SECTION B — SIGN-IN METHOD (4 PROVIDERS PARALLEL) ============ -->
         <section id="section-b" class="reg-section">
           <p class="section-header-mini">How would you like to sign in?</p>
           <p style="font-size:14px; color: var(--fg-muted); margin-bottom:20px;">
             Your handle <strong id="conf-handle" style="color: var(--brand-primary);">@alexandra</strong> is saved. Pick a method and it's yours.
           </p>
 
-          <div class="auth-method-section">
-            <!-- Google OAuth — only social auth per DEC-SOCIAL-01 -->
-            <button class="auth-btn-google" onclick="finishAuth()">
-              <!-- Google "G" SVG icon -->
-              <svg class="google-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                <path fill="none" d="M0 0h48v48H0z"/>
-              </svg>
-              <span>Continue with Google</span>
+          <div class="provider-stack">
+            <!-- 1. Google — tier 1 (most-used) -->
+            <button class="auth-btn tier-1" onclick="oauthFlow('google')">
+              <span class="icon-wrap">
+                <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+              </span>
+              <span class="label-wrap">
+                <span class="label-main">Continue with Google</span>
+                <span class="label-hint">fastest for Gmail users</span>
+              </span>
             </button>
 
-            <div class="divider-or">or email</div>
+            <!-- 2. Apple — tier 1 -->
+            <button class="auth-btn tier-1" onclick="oauthFlow('apple')">
+              <span class="icon-wrap">
+                <svg class="icon-apple" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+              </span>
+              <span class="label-wrap">
+                <span class="label-main">Continue with Apple</span>
+                <span class="label-hint">iOS users + privacy</span>
+              </span>
+            </button>
 
-            <!-- Magic link first (default), password optional -->
-            <div class="email-row">
-              <input class="input" type="email" placeholder="you@example.com" id="email-input" autocomplete="email" style="min-height:44px;"/>
-              <button class="btn btn-secondary" onclick="finishAuth()" style="white-space:nowrap; min-height:44px;">Send magic link ✨</button>
-            </div>
+            <!-- 3. X (Twitter) — tier 2 -->
+            <button class="auth-btn tier-2" onclick="oauthFlow('x')">
+              <span class="icon-wrap">
+                <svg class="icon-x" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </span>
+              <span class="label-wrap">
+                <span class="label-main">Continue with X</span>
+                <span class="label-hint">creator-friendly</span>
+              </span>
+            </button>
 
-            <button class="pw-toggle-link" onclick="togglePw()">or use email + password</button>
-
-            <div id="pw-field">
-              <label for="pw-input" style="margin-top:12px;">Password</label>
-              <div class="pw-input-wrap">
-                <input class="input" type="password" id="pw-input" placeholder="••••••••" autocomplete="new-password" style="min-height:44px; padding-right:52px;"/>
-                <button class="pw-show-btn" type="button" onclick="togglePwVis()" aria-label="Show/hide password">Show</button>
-              </div>
-              <button class="btn btn-secondary" onclick="finishAuth()" style="margin-top:10px; width:100%; min-height:44px;">Create account</button>
-            </div>
-
-            <div class="tos-row">
-              <input type="checkbox" id="tos" checked/>
-              <label for="tos" style="margin:0; font-weight:400; font-size:13px; color: var(--fg-muted);">
-                I agree to the <a href="./index.html" class="tos-link">Terms of Service</a> and <a href="./index.html" class="tos-link">Privacy Policy</a>.
-              </label>
-            </div>
-
-            <div class="no-phone-notice">
-              🔒 We never ask for your phone number. Ever.
-            </div>
+            <!-- 4. Email — tier 2 -->
+            <button class="auth-btn tier-2" onclick="emailFlow()">
+              <span class="icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2"/>
+                  <path d="m3 7 9 6 9-6"/>
+                </svg>
+              </span>
+              <span class="label-wrap">
+                <span class="label-main">Continue with Email</span>
+                <span class="label-hint">we'll send a 6-digit code</span>
+              </span>
+            </button>
           </div>
 
-          <a href="#" onclick="event.preventDefault(); backToA()" style="display:inline-block; margin-top:20px; font-size:13px; color: var(--fg-muted);">← back to handle</a>
+          <div class="all-paths-note">
+            ✉️ All paths confirm your email. We never ask for your phone.
+          </div>
+
+          <div class="tos-row">
+            <input type="checkbox" id="tos" checked/>
+            <label for="tos" style="margin:0; font-weight:400; font-size:13px; color: var(--fg-muted);">
+              I agree to the <a href="./index.html" class="tos-link">Terms of Service</a> and <a href="./index.html" class="tos-link">Privacy Policy</a>.
+            </label>
+          </div>
+
+          <div class="no-phone-notice">
+            🔒 We never ask for your phone number. Ever.
+          </div>
+
+          <button class="back-link" onclick="backToA()">← back to handle</button>
 
           <div class="trust-strip">
             <span class="trust-chip">🔒 Price locked for life</span>
@@ -559,37 +638,136 @@
           </div>
         </section>
 
-        <!-- SECTION B2 — CHECK YOUR EMAIL (password path only, DEC-276) -->
-        <!-- Shown after "Create account" submit on email+password path.
-             Magic-link path skips this — GoTrue self-confirms via the link.
-             On resend: button disabled for 60s (cooldown enforced in JS). -->
-        <section id="section-b2" class="reg-section">
-          <div style="text-align:center; padding: 40px 0 32px;">
-            <div style="font-size:52px; margin-bottom:20px;">📬</div>
-            <h2 style="font-size: clamp(22px,3.5vw,30px); margin-bottom:12px;">Check your email</h2>
-            <p style="font-size:15px; color: var(--fg-muted); line-height:1.6; margin-bottom:24px;">
-              We sent a confirmation link to<br/>
-              <strong id="confirm-email-display" style="color: var(--brand-primary);">you@example.com</strong><br/>
-              Click it to continue → your handle is held for 15 minutes.
-            </p>
+        <!-- ============ SECTION B-EMAIL — EMAIL ENTRY + SEND CODE ============ -->
+        <section id="section-b-email" class="reg-section">
+          <p class="section-header-mini">What's your email?</p>
+          <p style="font-size:14px; color: var(--fg-muted); margin-bottom:18px;">
+            We'll email you a 6-digit code. No password required.
+          </p>
 
-            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 380px; margin: 0 auto 20px; text-align:left;">
-              <p style="font-size:13px; color: var(--fg-muted); margin:0 0 12px;">Didn't arrive? Check your spam folder first, then:</p>
-              <button id="resend-btn" class="btn btn-secondary" style="width:100%; min-height:44px;" onclick="resendConfirmation()">
-                Resend confirmation email
-              </button>
-              <p id="resend-cooldown" style="font-size:12px; color: var(--fg-muted); margin-top:8px; text-align:center; display:none;">
-                Resend available in <span id="resend-countdown">60</span>s
-              </p>
-            </div>
+          <div class="email-step-wrap">
+            <label for="email-input">Email address</label>
+            <input class="input" type="email" id="email-input" placeholder="you@example.com" autocomplete="email" style="width:100%; min-height:44px;"/>
 
-            <a href="#" onclick="event.preventDefault(); backToB()" style="font-size:13px; color: var(--fg-muted);">
-              ← wrong email? go back
-            </a>
+            <button class="btn btn-primary" id="send-code-btn" onclick="sendOtpCode()" style="width:100%; margin-top:14px; min-height:44px;" disabled>
+              Send me a code →
+            </button>
+          </div>
+
+          <div class="all-paths-note">
+            ✉️ Your code expires in 10 minutes. Check spam if it doesn't arrive.
+          </div>
+
+          <button class="back-link" onclick="backToB()">← back to sign-in options</button>
+
+          <div class="trust-strip">
+            <span class="trust-chip">🔒 Price locked for life</span>
+            <span class="trust-chip">💸 30-day money-back · No trials</span>
+            <span class="trust-chip">🛡 GDPR-compliant · export &amp; delete anytime</span>
           </div>
         </section>
 
-        <!-- SECTION C — SUCCESS TRANSITION -->
+        <!-- ============ SECTION B-OTP — ENTER 6-DIGIT CODE ============ -->
+        <section id="section-b-otp" class="reg-section">
+          <div style="text-align:center; padding: 16px 0 0;">
+            <div style="font-size:52px; margin-bottom:14px;">📬</div>
+            <h2 style="font-size: clamp(22px,3.5vw,30px); margin-bottom:10px;">Check your email</h2>
+            <p style="font-size:15px; color: var(--fg-muted); line-height:1.6;">
+              We sent a 6-digit code to<br/>
+              <strong id="otp-email-display" style="color: var(--brand-primary);">you@example.com</strong>
+            </p>
+          </div>
+
+          <!-- 6 separate inputs, auto-advance, paste-friendly -->
+          <div class="otp-grid" role="group" aria-label="6-digit verification code">
+            <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="0" aria-label="Digit 1"/>
+            <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="1" aria-label="Digit 2"/>
+            <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="2" aria-label="Digit 3"/>
+            <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="3" aria-label="Digit 4"/>
+            <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="4" aria-label="Digit 5"/>
+            <input class="otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-index="5" aria-label="Digit 6"/>
+          </div>
+
+          <button class="btn btn-primary" id="verify-otp-btn" onclick="verifyOtp()" style="width:100%; margin-top:14px; min-height:44px;" disabled>
+            Verify code →
+          </button>
+
+          <div class="resend-row">
+            Didn't get the code?
+            <button class="resend-btn" id="resend-btn" onclick="resendOtp()" disabled>Resend in <span id="resend-countdown">60</span>s</button>
+          </div>
+
+          <button class="back-link" onclick="backToBEmail()">← wrong email? go back</button>
+
+          <div class="trust-strip">
+            <span class="trust-chip">🔒 Price locked for life</span>
+            <span class="trust-chip">💸 30-day money-back · No trials</span>
+            <span class="trust-chip">🛡 GDPR-compliant · export &amp; delete anytime</span>
+          </div>
+        </section>
+
+        <!-- ============ SECTION B-PASSWORD-TOGGLE — INLINE POST-OTP CHOICE (DEC-295=A) ============ -->
+        <!-- Only shown on email-OTP path, after successful verifyOtp.
+             OAuth users (Google/Apple/X) skip this entirely. -->
+        <section id="section-b-pwtoggle" class="reg-section">
+          <p class="section-header-mini">How do you want to log in next time?</p>
+          <p style="font-size:14px; color: var(--fg-muted); margin-bottom:20px;">
+            You're all set, <strong id="pwtoggle-handle" style="color: var(--brand-primary);">@alexandra</strong>. One quick choice before we set up your page.
+          </p>
+
+          <div class="pw-toggle-cards">
+            <!-- Card 1 — pre-selected default (recommended) -->
+            <div class="pw-card selected" id="pw-card-1" onclick="selectPwCard(1)" role="radio" aria-checked="true" tabindex="0">
+              <span class="radio-dot" aria-hidden="true"></span>
+              <div class="pw-card-body">
+                <div class="pw-card-title">
+                  Send me a login code
+                  <span class="recommended-badge">✓ Recommended</span>
+                </div>
+                <div class="pw-card-sub">We'll email you a 6-digit code each time. No password to remember.</div>
+              </div>
+            </div>
+
+            <!-- Card 2 — opt-in: set password (reveals password input) -->
+            <div class="pw-card" id="pw-card-2" onclick="selectPwCard(2)" role="radio" aria-checked="false" tabindex="0">
+              <span class="radio-dot" aria-hidden="true"></span>
+              <div class="pw-card-body">
+                <div class="pw-card-title">Set a password for faster sign-in</div>
+                <div class="pw-card-sub">Faster daily sign-in. You can always use a code instead.</div>
+
+                <div class="pw-card-extra">
+                  <label for="set-pw-input" style="display:block; font-size:13px; font-weight:500; color: var(--fg-muted); margin: 14px 0 6px;">Choose a password</label>
+                  <div class="pw-input-wrap-card">
+                    <input class="input" type="password" id="set-pw-input" placeholder="••••••••" autocomplete="new-password"/>
+                    <button class="pw-show-btn" type="button" onclick="event.stopPropagation(); togglePwVis()" aria-label="Show/hide password">Show</button>
+                  </div>
+                  <div class="pw-min-hint">At least 8 characters. Mix of letters and numbers recommended.</div>
+
+                  <label for="set-pw-confirm" style="display:block; font-size:13px; font-weight:500; color: var(--fg-muted); margin: 14px 0 6px;">Confirm password</label>
+                  <div class="pw-input-wrap-card">
+                    <input class="input" type="password" id="set-pw-confirm" placeholder="••••••••" autocomplete="new-password"/>
+                    <button class="pw-show-btn" type="button" onclick="event.stopPropagation(); togglePwVisConfirm()" aria-label="Show/hide confirm password">Show</button>
+                  </div>
+                  <div class="pw-min-hint" id="pw-match-hint" style="color: var(--fg-muted);">Re-enter to confirm — protects you from a typo lock-out.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="pwtoggle-continue-btn" onclick="finishPwToggle()" style="width:100%; margin-top:18px; min-height:46px;">
+            Continue →
+          </button>
+
+          <!-- DEC-295=A: NO "Skip" link — don't pollute with a third option. -->
+
+          <div class="trust-strip">
+            <span class="trust-chip">🔒 Price locked for life</span>
+            <span class="trust-chip">💸 30-day money-back · No trials</span>
+            <span class="trust-chip">🛡 GDPR-compliant · export &amp; delete anytime</span>
+          </div>
+        </section>
+
+        <!-- ============ SECTION C — SUCCESS TRANSITION ============ -->
         <section id="section-c" class="reg-section">
           <div class="success-burst">
             <div class="big-tada">tada! 🎉</div>
@@ -601,7 +779,7 @@
               Next: let's set up your page in 60 seconds.
             </p>
             <button class="btn btn-primary btn-lg"
-              onclick="window.location.href='./onboarding-welcome.html?handle=' + encodeURIComponent(currentHandle())"
+              onclick="goToOnboarding()"
               style="margin-top:24px; min-height:52px;">
               Let's go →
             </button>
@@ -620,9 +798,7 @@
           Live preview
         </p>
         <div class="preview-card">
-          <!-- TADA-BUG-001: real URL string, NOT brand lockup.
-               Letters coloured for hierarchy, punctuation stays neutral,
-               no "!" anywhere. -->
+          <!-- TADA-BUG-001: real URL string, NOT brand lockup. -->
           <div class="preview-wordmark" aria-label="Live URL preview">
             <span class="url-letters">tadaify</span><span class="url-punct">.</span><span class="url-tld">com</span><span class="url-punct">/</span><span class="handle" id="preview-handle">alexandra</span>
           </div>
@@ -664,7 +840,7 @@
     // ----------------------------------------------------------------
     var TAKEN = { 'john': 1, 'alex': 1, 'jane': 1, 'mike': 1, 'sarah': 1 };
     var RESERVED = ['admin','tadaify','support','pricing','login','register','api','help','about','blog','terms','privacy'];
-    var MIN_LEN = 3, MAX_LEN = 30;  /* DEC-275: 30 chars — matches spec regex + landing.html (was 24, a mockup oversight) */
+    var MIN_LEN = 3, MAX_LEN = 30;
 
     function localePrefix() {
       var lang = (navigator.language || 'en').toLowerCase();
@@ -682,27 +858,27 @@
     var nextBtn   = document.getElementById('next-btn');
     var mobileBtn = document.getElementById('mobile-next-btn');
     var greet     = document.getElementById('greet-handle');
-    var confHandle  = document.getElementById('conf-handle');
-    var finalGreet  = document.getElementById('final-greet');
+    var confHandle    = document.getElementById('conf-handle');
+    var pwToggleHandle = document.getElementById('pwtoggle-handle');
+    var finalGreet    = document.getElementById('final-greet');
     var previewHandle = document.getElementById('preview-handle');
     var previewUrl    = document.getElementById('preview-url-handle');
 
     function currentHandle() {
       return (input.value || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
     }
-
     function setNextEnabled(enabled) {
       nextBtn.disabled   = !enabled;
       mobileBtn.disabled = !enabled;
     }
-
     function render() {
       var h = currentHandle();
-      if (previewHandle)  previewHandle.textContent  = h || '…';
-      if (previewUrl)     previewUrl.textContent      = 'https://tadaify.com/' + (h || '…');
-      if (greet)          greet.textContent           = '@' + (h || 'yourname');
-      if (confHandle)     confHandle.textContent      = '@' + (h || 'yourname');
-      if (finalGreet)     finalGreet.textContent      = '@' + (h || 'yourname');
+      if (previewHandle)    previewHandle.textContent    = h || '…';
+      if (previewUrl)       previewUrl.textContent       = 'https://tadaify.com/' + (h || '…');
+      if (greet)            greet.textContent            = '@' + (h || 'yourname');
+      if (confHandle)       confHandle.textContent       = '@' + (h || 'yourname');
+      if (pwToggleHandle)   pwToggleHandle.textContent   = '@' + (h || 'yourname');
+      if (finalGreet)       finalGreet.textContent       = '@' + (h || 'yourname');
 
       alts.style.display = 'none';
       alts.innerHTML = '';
@@ -733,131 +909,284 @@
       msg.textContent = '✓ tadaify.com/' + h + ' is yours.';
       setNextEnabled(true);
     }
-
     input.addEventListener('input', render);
     render();
 
-    // Pre-fill from ?handle= param
     var params = new URLSearchParams(window.location.search);
     if (params.get('handle')) { input.value = params.get('handle'); render(); }
 
     // ----------------------------------------------------------------
-    // Progressive section reveal
+    // Section navigation helpers
     // ----------------------------------------------------------------
-    function revealB() {
-      document.getElementById('section-b').classList.add('revealed');
-      document.getElementById('mobile-cta-a').style.display = 'none';
+    function showSection(id) {
+      // Reveal target; do NOT auto-collapse previous (stacked progressive UX).
+      var el = document.getElementById(id);
+      if (el) el.classList.add('revealed');
       setTimeout(function() {
-        document.getElementById('section-b').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 200);
+    }
+    function hideSection(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('revealed');
+    }
+    function hideAllAfter(idx) {
+      // Sections in order: A, B, B-email, B-otp, B-pwtoggle, C
+      var seq = ['section-a','section-b','section-b-email','section-b-otp','section-b-pwtoggle','section-c'];
+      for (var i = idx + 1; i < seq.length; i++) hideSection(seq[i]);
+    }
+
+    function revealB() {
+      showSection('section-b');
+      document.getElementById('mobile-cta-a').style.display = 'none';
     }
     function backToA() {
-      document.getElementById('section-b').classList.remove('revealed');
-      document.getElementById('section-b2').classList.remove('revealed');
-      document.getElementById('section-c').classList.remove('revealed');
+      hideAllAfter(0);
       document.getElementById('mobile-cta-a').style.display = '';
       document.getElementById('section-a').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    function togglePw() {
-      var el = document.getElementById('pw-field');
-      el.style.display = getComputedStyle(el).display === 'none' ? 'block' : 'none';
-    }
-    function togglePwVis() {
-      var inp = document.getElementById('pw-input');
-      var btn = inp.parentNode.querySelector('.pw-show-btn');
-      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
-      else { inp.type = 'password'; btn.textContent = 'Show'; }
-    }
-
-    /* DEC-276 (locked 2026-04-28): interstitial only on password path;
-       magic-link self-confirms via GoTrue redirect — skips B2. */
-    function isPwPath() {
-      var pwField = document.getElementById('pw-field');
-      return getComputedStyle(pwField).display !== 'none';
-    }
-
-    // B2 navigation
-    function revealB2() {
-      // Populate email display from what user typed
-      var emailVal = (document.getElementById('email-input').value || '').trim() || 'you@example.com';
-      document.getElementById('confirm-email-display').textContent = emailVal;
-
-      document.getElementById('section-b').classList.remove('revealed');
-      document.getElementById('section-b2').classList.add('revealed');
-      setTimeout(function() {
-        document.getElementById('section-b2').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
-    }
-
-    function backToB() {
-      document.getElementById('section-b2').classList.remove('revealed');
-      document.getElementById('section-b').classList.add('revealed');
-      setTimeout(function() {
-        document.getElementById('section-b').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        document.getElementById('email-input').focus();
-      }, 200);
-    }
-
-    var resendTimer = null;
-    function resendConfirmation() {
-      var btn = document.getElementById('resend-btn');
-      var cooldownEl = document.getElementById('resend-cooldown');
-      var countdownEl = document.getElementById('resend-countdown');
-      btn.disabled = true;
-      var secs = 60;
-      countdownEl.textContent = secs;
-      cooldownEl.style.display = 'block';
-      alert('Resent (mockup) — in real flow Supabase GoTrue sends a new confirmation email.');
-      resendTimer = setInterval(function() {
-        secs--;
-        countdownEl.textContent = secs;
-        if (secs <= 0) {
-          clearInterval(resendTimer);
-          btn.disabled = false;
-          cooldownEl.style.display = 'none';
-        }
-      }, 1000);
-    }
-
-    var countdownTimer = null;
-    function finishAuth() {
-      if (!document.getElementById('tos').checked) {
-        alert('Please accept the Terms to continue.'); return;
-      }
-      // DEC-276: password path → show "Check your email" interstitial (B2).
-      // Magic-link path → skip B2, go straight to success burst (C).
-      if (isPwPath()) {
-        revealB2();
-        return;
-      }
-      document.getElementById('section-c').classList.add('revealed');
-      setTimeout(function() {
-        document.getElementById('section-c').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
-      var n = 2;
-      var el = document.getElementById('countdown');
-      countdownTimer = setInterval(function() {
-        n--;
-        if (n <= 0) {
-          clearInterval(countdownTimer);
-          window.location.href = './onboarding-welcome.html?handle=' + encodeURIComponent(currentHandle());
-        } else { el.textContent = n; }
-      }, 1000);
     }
 
     nextBtn.addEventListener('click', function() { if (!nextBtn.disabled) revealB(); });
     mobileBtn.addEventListener('click', function() { if (!mobileBtn.disabled) revealB(); });
 
-    window.backToA            = backToA;
-    window.backToB            = backToB;
-    window.togglePw           = togglePw;
-    window.togglePwVis        = togglePwVis;
-    window.finishAuth         = finishAuth;
-    window.resendConfirmation = resendConfirmation;
-    window.currentHandle      = currentHandle;
+    // ----------------------------------------------------------------
+    // ToS gate — shared by all 4 provider buttons
+    // ----------------------------------------------------------------
+    function ensureTos() {
+      if (!document.getElementById('tos').checked) {
+        alert('Please accept the Terms to continue.');
+        return false;
+      }
+      return true;
+    }
 
     // ----------------------------------------------------------------
-    // Theme toggle — mirrors dashboard pattern
+    // OAuth path (Google / Apple / X) — skip B-email / B-otp / B-pwtoggle.
+    // Per DEC-291: OAuth users get email auto-confirmed by provider, NO password.
+    // Per DEC-294: Apple gated on $99/yr Developer Program; X gated on email scope.
+    //   In production, "Continue with Apple"/"Continue with X" buttons may render
+    //   with a "Coming soon" pill if launch gate isn't met. Mockup shows all 4 active.
+    // ----------------------------------------------------------------
+    function oauthFlow(provider) {
+      if (!ensureTos()) return;
+      // Mockup: skip the actual OAuth round-trip; jump to success.
+      // Real flow: window.location = `/auth/oauth/${provider}` → callback → C
+      goToSuccess({ skipPwToggle: true, source: provider });
+    }
+
+    // ----------------------------------------------------------------
+    // Email path — B → B-email → B-otp → B-pwtoggle → C
+    // ----------------------------------------------------------------
+    function emailFlow() {
+      if (!ensureTos()) return;
+      showSection('section-b-email');
+      setTimeout(function() {
+        var ei = document.getElementById('email-input');
+        if (ei) ei.focus();
+      }, 250);
+    }
+    function backToB() {
+      hideAllAfter(1);
+      document.getElementById('section-b').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Email field validation → enables Send button
+    var emailInput = document.getElementById('email-input');
+    var sendCodeBtn = document.getElementById('send-code-btn');
+    function validEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || '');
+    }
+    if (emailInput) {
+      emailInput.addEventListener('input', function() {
+        sendCodeBtn.disabled = !validEmail(emailInput.value);
+      });
+    }
+
+    // ----------------------------------------------------------------
+    // OTP grid — auto-advance on input, paste-friendly
+    // ----------------------------------------------------------------
+    var otpInputs = document.querySelectorAll('.otp-input');
+    var verifyBtn = document.getElementById('verify-otp-btn');
+    function otpValue() {
+      var v = '';
+      otpInputs.forEach(function(i) { v += i.value || ''; });
+      return v;
+    }
+    function refreshVerifyBtn() { verifyBtn.disabled = otpValue().length !== 6; }
+    otpInputs.forEach(function(inp, idx) {
+      inp.addEventListener('input', function(e) {
+        var val = (inp.value || '').replace(/[^0-9]/g, '');
+        inp.value = val.charAt(0) || '';
+        if (val.length > 1) {
+          // paste-fill spread across remaining boxes
+          var rest = val.slice(1);
+          for (var k = 0; k < rest.length && (idx + 1 + k) < otpInputs.length; k++) {
+            otpInputs[idx + 1 + k].value = rest.charAt(k);
+          }
+        }
+        if (inp.value && idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+        refreshVerifyBtn();
+      });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !inp.value && idx > 0) {
+          otpInputs[idx - 1].focus();
+        }
+      });
+      inp.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+        for (var k = 0; k < paste.length && (idx + k) < otpInputs.length; k++) {
+          otpInputs[idx + k].value = paste.charAt(k);
+        }
+        var nextIdx = Math.min(idx + paste.length, otpInputs.length - 1);
+        otpInputs[nextIdx].focus();
+        refreshVerifyBtn();
+      });
+    });
+
+    function sendOtpCode() {
+      var emailVal = (emailInput.value || '').trim();
+      if (!validEmail(emailVal)) return;
+      document.getElementById('otp-email-display').textContent = emailVal;
+      showSection('section-b-otp');
+      setTimeout(function() {
+        otpInputs[0].focus();
+        startResendCountdown();
+      }, 300);
+    }
+    function backToBEmail() {
+      hideAllAfter(2);
+      document.getElementById('section-b-email').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      otpInputs.forEach(function(i) { i.value = ''; });
+      refreshVerifyBtn();
+    }
+
+    var resendTimer = null;
+    function startResendCountdown() {
+      var btn = document.getElementById('resend-btn');
+      var countEl = document.getElementById('resend-countdown');
+      var secs = 60;
+      btn.disabled = true; countEl.textContent = secs;
+      btn.innerHTML = 'Resend in <span id="resend-countdown">' + secs + '</span>s';
+      if (resendTimer) clearInterval(resendTimer);
+      resendTimer = setInterval(function() {
+        secs--;
+        var el = document.getElementById('resend-countdown');
+        if (el) el.textContent = secs;
+        if (secs <= 0) {
+          clearInterval(resendTimer);
+          btn.disabled = false;
+          btn.textContent = 'Resend code';
+        }
+      }, 1000);
+    }
+    function resendOtp() {
+      alert('Mockup: in real flow Supabase GoTrue resends a fresh 6-digit code.');
+      startResendCountdown();
+    }
+
+    function verifyOtp() {
+      if (otpValue().length !== 6) return;
+      // Mockup: accept any 6 digits; real flow calls supabase.auth.verifyOtp.
+      // DEC-291: email path → show inline pw-toggle screen.
+      showSection('section-b-pwtoggle');
+    }
+
+    // ----------------------------------------------------------------
+    // Section B-password-toggle — radio cards (DEC-295=A)
+    // Card 1 default = pre-selected "send code next time".
+    // Card 2 reveals password input on selection.
+    // ----------------------------------------------------------------
+    var pwSelected = 1;
+    function selectPwCard(n) {
+      pwSelected = n;
+      document.getElementById('pw-card-1').classList.toggle('selected', n === 1);
+      document.getElementById('pw-card-2').classList.toggle('selected', n === 2);
+      document.getElementById('pw-card-1').setAttribute('aria-checked', n === 1 ? 'true' : 'false');
+      document.getElementById('pw-card-2').setAttribute('aria-checked', n === 2 ? 'true' : 'false');
+      if (n === 2) {
+        setTimeout(function() {
+          var pwi = document.getElementById('set-pw-input');
+          if (pwi) pwi.focus();
+        }, 200);
+      }
+    }
+    function togglePwVis() {
+      var inp = document.getElementById('set-pw-input');
+      var btn = inp.parentNode.querySelector('.pw-show-btn');
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+      else { inp.type = 'password'; btn.textContent = 'Show'; }
+    }
+    function togglePwVisConfirm() {
+      var inp = document.getElementById('set-pw-confirm');
+      var btn = inp.parentNode.querySelector('.pw-show-btn');
+      if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Hide'; }
+      else { inp.type = 'password'; btn.textContent = 'Show'; }
+    }
+    function finishPwToggle() {
+      if (pwSelected === 2) {
+        var pw = (document.getElementById('set-pw-input').value || '').trim();
+        var pwc = (document.getElementById('set-pw-confirm').value || '').trim();
+        if (pw.length < 8) {
+          alert('Password must be at least 8 characters.');
+          document.getElementById('set-pw-input').focus();
+          return;
+        }
+        if (pw !== pwc) {
+          var hint = document.getElementById('pw-match-hint');
+          if (hint) {
+            hint.textContent = '✗ Passwords do not match — re-type to confirm.';
+            hint.style.color = '#DC2626';
+          }
+          document.getElementById('set-pw-confirm').focus();
+          return;
+        }
+      }
+      goToSuccess({ skipPwToggle: false, source: 'email' });
+    }
+
+    // ----------------------------------------------------------------
+    // Section C — success burst → onboarding-welcome.html?handle=<handle>
+    // ----------------------------------------------------------------
+    var countdownTimer = null;
+    function goToSuccess(opts) {
+      // OAuth path skips the pw-toggle screen entirely.
+      showSection('section-c');
+      var n = 2;
+      var el = document.getElementById('countdown');
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTimer = setInterval(function() {
+        n--;
+        if (n <= 0) {
+          clearInterval(countdownTimer);
+          goToOnboarding();
+        } else {
+          el.textContent = n;
+        }
+      }, 1000);
+    }
+    function goToOnboarding() {
+      window.location.href = './onboarding-welcome.html?handle=' + encodeURIComponent(currentHandle());
+    }
+
+    // Expose for inline handlers
+    window.backToA          = backToA;
+    window.backToB          = backToB;
+    window.backToBEmail     = backToBEmail;
+    window.oauthFlow        = oauthFlow;
+    window.emailFlow        = emailFlow;
+    window.sendOtpCode      = sendOtpCode;
+    window.verifyOtp        = verifyOtp;
+    window.resendOtp        = resendOtp;
+    window.selectPwCard     = selectPwCard;
+    window.togglePwVis      = togglePwVis;
+    window.togglePwVisConfirm = togglePwVisConfirm;
+    window.finishPwToggle   = finishPwToggle;
+    window.goToOnboarding   = goToOnboarding;
+    window.currentHandle    = currentHandle;
+
+    // ----------------------------------------------------------------
+    // Theme toggle
     // ----------------------------------------------------------------
     var themeToggle = document.getElementById('theme-toggle');
     (function() {
