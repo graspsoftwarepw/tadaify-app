@@ -368,11 +368,16 @@
 
     // Slice C revised: back link → onboarding-profile.html (step 3) if user has any
     // socials/platforms (profile step is reachable then), else back to welcome.
+    // Codex PR #127 P2: also forward name/bio/av so profile selections are not lost
+    // on back-navigation (template → profile keeps state symmetric with profile → template).
     var backHref;
     if (socialsRaw || platformsRaw) {
       backHref = './onboarding-profile.html?handle=' + encodeURIComponent(handle);
       if (platformsRaw) backHref += '&platforms=' + encodeURIComponent(platformsRaw);
       if (socialsRaw) backHref += '&socials=' + encodeURIComponent(socialsRaw);
+      if (nameParam) backHref += '&name=' + encodeURIComponent(nameParam);
+      if (bioParam) backHref += '&bio=' + encodeURIComponent(bioParam);
+      if (avParam) backHref += '&av=' + encodeURIComponent(avParam);
     } else {
       backHref = './onboarding-welcome.html?handle=' + encodeURIComponent(handle);
     }
