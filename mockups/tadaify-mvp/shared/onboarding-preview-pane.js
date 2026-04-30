@@ -207,7 +207,12 @@
     '@media (max-width:959px){' +
       '.tdf-pp{position:static;}' +
       '.tdf-pp-stage{min-height:380px;}' +
-      '.tdf-pp-frame iframe{height:460px;}' +
+      /* Codex round-5 P2 fix: scope iframe height override to DESKTOP only.
+         Tablet (1180px) and Mobile (844px) viewports keep their real heights
+         even on narrow screens, so the full viewport renders inside the
+         scaled frame. Otherwise selecting Tablet/Mobile on a narrow stage
+         clips the supposed 820×1180 / 390×844 frame back to 460px. */
+      '.tdf-pp-frame[data-vp="desktop"] iframe{height:460px;}' +
     '}'
   );
 
