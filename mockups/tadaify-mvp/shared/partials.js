@@ -2083,7 +2083,9 @@
   var pageType = contentEl.getAttribute('data-preview-pane') || '';
   if (!pageType) return;
 
-  var publicSrc = './creator-' + pageType + '-public.html?_no_viewport_toolbar=1&_preview=1';
+  var publicSrc = pageType === 'public'
+    ? './creator-public.html?_no_viewport_toolbar=1&_preview=1'
+    : './creator-' + pageType + '-public.html?_no_viewport_toolbar=1&_preview=1';
 
   /* ---- Viewport configurations ---------------------------------------- */
   var VIEWPORTS = {

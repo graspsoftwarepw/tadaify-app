@@ -3,6 +3,11 @@
   Onboarding complete — success screen, page is live.
   Enhanced Motion v10 + confetti. Affiliate tip (dismissible).
   AP-001: no "Powered by tadaify" on creator pages, no platform branding upsell here.
+
+  Slice C revision (2026-04-29) — DEC-297=B:
+    Added 3-viewport preview pane below the hero showing the FINAL assembled
+    page (avatar + display name + bio + socials + template + first link CTA).
+    Final landing — no step counter (this is post-onboarding success state).
 -->
 <html lang="en">
 <head>
@@ -294,25 +299,18 @@
         </div>
       </div>
 
-      <!-- Phone preview -->
-      <div class="preview-card-wrap">
-        <div class="phone">
-          <div class="phone-notch"></div>
-          <div class="phone-screen" style="padding:0;">
-            <div style="background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%); padding: 28px 20px; color: #FFF; text-align:center; min-height: 480px;">
-              <div style="width:72px; height:72px; border-radius:50%; background: linear-gradient(135deg,#F59E0B,#FDE68A); margin: 0 auto 12px; display:flex; align-items:center; justify-content:center; color:#1F2937; font-weight:700; font-size:28px;">A</div>
-              <div style="font-family: var(--font-display); font-size: 22px; font-weight:600;">Alexandra Silva</div>
-              <div style="font-size: 12px; opacity:0.75; margin-top:2px;">tadaify.com/<span id="phone-handle">alexandra</span></div>
-              <div style="font-size: 13px; margin-top: 10px; opacity: 0.9;">Fitness coach + content creator 💪</div>
-
-              <div style="margin-top: 20px;">
-                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 10px;">🔗 Morning workout</div>
-                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 10px;">🔗 10 high-protein meals</div>
-                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; padding: 12px 14px; font-size: 13px;">🔗 Why I left corporate</div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- Slice C: 3-viewport preview pane replaces the static phone preview.
+           Renders the FINAL assembled page using all profile state collected
+           through onboarding (avatar + name + bio + socials + template). -->
+      <div style="margin-top: 40px; max-width: 720px; margin-left: auto; margin-right: auto;">
+        <aside data-onboarding-preview
+               data-render="complete"
+               data-handle="alexandra"
+               data-platforms=""
+               data-template="chopin"
+               aria-label="Final preview of your tadaify page">
+          <!-- Populated by ./shared/onboarding-preview-pane.js -->
+        </aside>
       </div>
 
       <!-- Secondary actions (TADA-BUG-004: was 3-card row including
@@ -362,10 +360,46 @@
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
   <script>
+    // Slice C: prep preview pane attrs before pane init.
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var pane = document.querySelector('[data-onboarding-preview]');
+      if (!pane) return;
+      if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
+      if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
+      if (p.get('tpl')) pane.setAttribute('data-template', p.get('tpl'));
+    })();
+  </script>
+  <script src="./shared/onboarding-preview-pane.js"></script>
+  <script>
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'alexandra';
     document.getElementById('live-handle').textContent = handle;
-    document.getElementById('phone-handle').textContent = handle;
+    // phone-handle removed in Slice C (static phone replaced by dynamic preview pane)
+
+    // Slice C: seed preview pane with the full assembled state.
+    setTimeout(function () {
+      if (!window.tdfPreview || typeof window.tdfPreview.update !== 'function') return;
+      var AV_FIXTURES = {
+        instagram: 'https://i.pravatar.cc/200?img=47',
+        tiktok: 'https://i.pravatar.cc/200?img=12',
+        youtube: 'https://i.pravatar.cc/200?img=33',
+        x: 'https://i.pravatar.cc/200?img=22',
+        threads: 'https://i.pravatar.cc/200?img=15',
+        linkedin: 'https://i.pravatar.cc/200?img=58',
+        facebook: 'https://i.pravatar.cc/200?img=64',
+        upload: 'https://i.pravatar.cc/200?img=68'
+      };
+      var av = params.get('av');
+      window.tdfPreview.update({
+        handle: handle,
+        displayName: params.get('name') || '',
+        bio: params.get('bio') || '',
+        avatarUrl: AV_FIXTURES[av] || '',
+        platforms: (params.get('platforms') || '').split(',').filter(Boolean),
+        template: params.get('tpl') || 'chopin'
+      });
+    }, 0);
 
     // Wire next-steps links with handle (TADA-BUG-004: editor-link card removed).
     document.getElementById('preview-link').href =

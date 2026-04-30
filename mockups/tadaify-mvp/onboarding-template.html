@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <!--
-  Onboarding step 3/5 — pick starter template
+  Onboarding step 4/5 — pick starter template (Slice C revision 2026-04-29)
   §11 Templates & Starters — Chopin default (Indigo Serif palette)
+
+  Slice C revision (DEC-297=B):
+    - Renumbered to 4/5 (was 3/4) because profile-setup is the new 3/5.
+    - Added 3-viewport preview pane on right column. Each template card click
+      updates the preview iframe (via window.tdfPreview.update) so users see
+      their accumulated profile (avatar + name + bio + socials) in the chosen
+      template style before committing.
 -->
 <html lang="en">
 <head>
@@ -11,6 +18,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
+    /* Slice C 2-col shell (form left, preview right) */
+    .ob-twocol {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+    @media (min-width: 1100px) {
+      .ob-twocol {
+        grid-template-columns: minmax(0, 1.4fr) minmax(380px, 0.6fr);
+        gap: 28px;
+        align-items: start;
+      }
+    }
+    .ob-twocol-left { min-width: 0; }
+
     /* Template preview styles (each card self-contained via CSS gradients + typography) */
     .preview-chopin {
       background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
@@ -223,8 +246,10 @@
   <main class="onboarding-shell">
     <div class="onboarding-shell-inner">
 
-      <!-- Progress bar (TADA-BUG-002: 5 → 4 steps) -->
+      <!-- Progress bar: step 4 of 5 (Slice C revision: 4 → 5 steps, profile added at 3/5) -->
       <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
         <div class="progress-step done"><span class="progress-dot"></span></div>
         <div class="progress-line done"></div>
         <div class="progress-step done"><span class="progress-dot"></span></div>
@@ -233,7 +258,11 @@
         <div class="progress-line"></div>
         <div class="progress-step"><span class="progress-dot"></span></div>
       </div>
-      <p class="progress-label">Step 3 of 4 · Template</p>
+      <p class="progress-label">Step 4 of 5 · Template</p>
+
+      <!-- Slice C: 2-col shell — template grid left, live preview right -->
+      <div class="ob-twocol">
+      <div class="ob-twocol-left">
 
       <div style="text-align:center; margin-top: 40px;">
         <h1>Pick a template that feels like you</h1>
@@ -336,6 +365,20 @@
         </button>
       </div>
 
+      </div><!-- /.ob-twocol-left -->
+
+      <!-- Live preview pane (right column on >=960px, stacks below on mobile) -->
+      <aside data-onboarding-preview
+             data-render="template"
+             data-handle="yourname"
+             data-platforms=""
+             data-template="chopin"
+             aria-label="Live preview of your tadaify page">
+        <!-- Populated by ./shared/onboarding-preview-pane.js -->
+      </aside>
+
+      </div><!-- /.ob-twocol -->
+
     </div>
   </main>
 
@@ -344,17 +387,39 @@
   <script src="./shared/partials.js"></script>
   <script src="./shared/tokens.js"></script>
   <script>
+    // Slice C: prep preview pane data-* attributes before pane init.
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var pane = document.querySelector('[data-onboarding-preview]');
+      if (!pane) return;
+      if (p.get('handle')) pane.setAttribute('data-handle', p.get('handle'));
+      if (p.get('platforms')) pane.setAttribute('data-platforms', p.get('platforms'));
+      pane.setAttribute('data-template', 'chopin');
+    })();
+  </script>
+  <script src="./shared/onboarding-preview-pane.js"></script>
+  <script>
     var params = new URLSearchParams(window.location.search);
     var handle = params.get('handle') || 'yourname';
     var socialsRaw = params.get('socials') || '';
     var platformsRaw = params.get('platforms') || '';
+    // Slice C: profile fields propagated forward from step 3/5
+    var nameParam = params.get('name') || '';
+    var bioParam = params.get('bio') || '';
+    var avParam = params.get('av') || '';
 
-    // Back link → onboarding-social.html (step 2) if user came through socials,
-    // else back to welcome (step 1).
+    // Slice C revised: back link → onboarding-profile.html (step 3) if user has any
+    // socials/platforms (profile step is reachable then), else back to welcome.
+    // Codex PR #127 P2: also forward name/bio/av so profile selections are not lost
+    // on back-navigation (template → profile keeps state symmetric with profile → template).
     var backHref;
     if (socialsRaw || platformsRaw) {
-      backHref = './onboarding-social.html?handle=' + encodeURIComponent(handle);
+      backHref = './onboarding-profile.html?handle=' + encodeURIComponent(handle);
       if (platformsRaw) backHref += '&platforms=' + encodeURIComponent(platformsRaw);
+      if (socialsRaw) backHref += '&socials=' + encodeURIComponent(socialsRaw);
+      if (nameParam) backHref += '&name=' + encodeURIComponent(nameParam);
+      if (bioParam) backHref += '&bio=' + encodeURIComponent(bioParam);
+      if (avParam) backHref += '&av=' + encodeURIComponent(avParam);
     } else {
       backHref = './onboarding-welcome.html?handle=' + encodeURIComponent(handle);
     }
@@ -367,15 +432,47 @@
       selected = el.dataset.tpl;
       var name = el.querySelector('h4').childNodes[0].textContent.trim();
       document.getElementById('selected-name').textContent = name;
+      // Slice C: drive preview iframe to show this template style.
+      if (window.tdfPreview && typeof window.tdfPreview.update === 'function') {
+        window.tdfPreview.update({ template: selected });
+      }
     }
     function goNext() {
-      // TADA-BUG-002: blocks step removed — go straight to tier.
+      // Slice C: profile fields ride through to tier step for "what you'll get" preview.
       var q = 'handle=' + encodeURIComponent(handle) + '&tpl=' + encodeURIComponent(selected);
       if (socialsRaw) q += '&socials=' + encodeURIComponent(socialsRaw);
+      if (platformsRaw) q += '&platforms=' + encodeURIComponent(platformsRaw);
+      if (nameParam) q += '&name=' + encodeURIComponent(nameParam);
+      if (bioParam) q += '&bio=' + encodeURIComponent(bioParam);
+      if (avParam) q += '&av=' + encodeURIComponent(avParam);
       window.location.href = './onboarding-tier.html?' + q;
     }
     window.select = select;
     window.goNext = goNext;
+
+    // Slice C: seed preview pane with accumulated profile state.
+    setTimeout(function () {
+      if (!window.tdfPreview || typeof window.tdfPreview.update !== 'function') return;
+      // Mockup-only: map av-source param → a fixture URL so preview shows an avatar.
+      var AV_FIXTURES = {
+        instagram: 'https://i.pravatar.cc/200?img=47',
+        tiktok: 'https://i.pravatar.cc/200?img=12',
+        youtube: 'https://i.pravatar.cc/200?img=33',
+        x: 'https://i.pravatar.cc/200?img=22',
+        threads: 'https://i.pravatar.cc/200?img=15',
+        linkedin: 'https://i.pravatar.cc/200?img=58',
+        facebook: 'https://i.pravatar.cc/200?img=64',
+        upload: 'https://i.pravatar.cc/200?img=68'
+      };
+      window.tdfPreview.update({
+        handle: handle,
+        displayName: nameParam,
+        bio: bioParam,
+        avatarUrl: AV_FIXTURES[avParam] || '',
+        platforms: platformsRaw ? platformsRaw.split(',').filter(Boolean) : [],
+        template: selected
+      });
+    }, 0);
   </script>
 </body>
 </html>

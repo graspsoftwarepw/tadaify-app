@@ -1,8 +1,15 @@
 <!DOCTYPE html>
 <!--
-  Onboarding step 5/5 — contextual tier recommendation
+  Onboarding step 5/5 — contextual tier recommendation (Slice C revision 2026-04-29)
   F-UPSELL-002 engine output based on signals collected in social step.
   Anti-pattern AP-030: Free tier stays default-selected (not Creator).
+
+  Slice C revision (DEC-297=B):
+    - Renumbered to 5/5 (was 4/4) because profile-setup is the new 3/5.
+    - Preview pane intentionally NOT on this step — tier choice doesn't change
+      the rendered page visually, so a preview pane would add noise without
+      signal. The decision matters only in which BR/AI features are gated
+      (badge in admin, not on the public page).
 -->
 <html lang="en">
 <head>
@@ -318,8 +325,10 @@
   <main class="onboarding-shell">
     <div class="onboarding-shell-inner">
 
-      <!-- Progress bar (TADA-BUG-002: 5 → 4 steps; tier is now the 4th + final) -->
+      <!-- Progress bar: step 5 of 5 (Slice C revision: 4 → 5 steps, profile added at 3/5) -->
       <div class="progress-bar">
+        <div class="progress-step done"><span class="progress-dot"></span></div>
+        <div class="progress-line done"></div>
         <div class="progress-step done"><span class="progress-dot"></span></div>
         <div class="progress-line done"></div>
         <div class="progress-step done"><span class="progress-dot"></span></div>
@@ -328,7 +337,7 @@
         <div class="progress-line done"></div>
         <div class="progress-step active"><span class="progress-dot"></span></div>
       </div>
-      <p class="progress-label">Step 4 of 4 · Your plan</p>
+      <p class="progress-label">Step 5 of 5 · Your plan</p>
 
       <div style="text-align:center; margin-top: 40px;">
         <h1>Start free. Upgrade only if you want.</h1>
@@ -472,11 +481,18 @@
     var blocks = params.get('blocks') || '0';
     var imported = params.get('imported') === '1';
 
-    // TADA-BUG-002: blocks step removed; back link now → template.
-    document.getElementById('back-link').href =
-      './onboarding-template.html?handle=' + encodeURIComponent(handle) +
-      '&tpl=' + encodeURIComponent(tpl) +
-      (imported ? '&imported=1' : '');
+    // Slice C: back to template (step 4/5), forwarding profile state.
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var u = './onboarding-template.html?handle=' + encodeURIComponent(handle) +
+              '&tpl=' + encodeURIComponent(tpl) +
+              (imported ? '&imported=1' : '');
+      ['platforms','socials','name','bio','av'].forEach(function (k) {
+        var v = p.get(k);
+        if (v) u += '&' + k + '=' + encodeURIComponent(v);
+      });
+      document.getElementById('back-link').href = u;
+    })();
 
     var billing = 'annual';
     var tier = 'free';
@@ -507,13 +523,24 @@
       }
     }
 
+    function buildCompleteUrl(chosenTier) {
+      // Slice C: forward profile state to complete.html so its preview pane
+      // shows the actual chosen avatar / name / bio / template / socials.
+      var params = new URLSearchParams(window.location.search);
+      var url = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=' + chosenTier;
+      ['platforms','socials','tpl','name','bio','av'].forEach(function (k) {
+        var v = params.get(k);
+        if (v) url += '&' + k + '=' + encodeURIComponent(v);
+      });
+      return url;
+    }
     function goNext() {
-      window.location.href = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=free';
+      window.location.href = buildCompleteUrl('free');
     }
     function goNextPaid() {
       // in real flow → payment step. For mockup, forward to complete.
       alert('Mockup: payment step is out of scope for this iteration. Forwarding to success screen.');
-      window.location.href = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=' + tier;
+      window.location.href = buildCompleteUrl(tier);
     }
 
     window.setBilling = setBilling;
