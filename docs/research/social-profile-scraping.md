@@ -25,7 +25,9 @@ related_brs: []
 | **TikTok** | NO for profile pages (currently). Official `oembed` endpoint exists. | Moderate — OG tags + `https://www.tiktok.com/oembed?url=…` work. ~50–70% from CF Workers; flaky over time. | **Direct fetch via oEmbed + OG** OR paid API ($1.5–4.0 / 1k) |
 | **YouTube (chosen 5th)** | NO for `/@handle` and `/channel/<id>` pages. Public Atom feed + page OG fully accessible. | High — ~80–95% from CF Workers; Google does throttle but rarely blocks. | **Direct fetch viable** (Atom + page meta) |
 
-**DEC-298 recommendation: Option C — Scrape via third-party API service for IG/X/FB; direct-fetch oEmbed/OG for TikTok and YouTube; budget ~$10–30/mo at <1k DAU, scaling per the Cost-at-scale table below. Most importantly: scrape on demand, do NOT persist if user picks a different option. NEW DEC required (does not contradict DEC-026 — different mechanism).**
+~~**DEC-298 recommendation: Option C — Scrape via third-party API service for IG/X/FB; direct-fetch oEmbed/OG for TikTok and YouTube; budget ~$10–30/mo at <1k DAU, scaling per the Cost-at-scale table below. Most importantly: scrape on demand, do NOT persist if user picks a different option. NEW DEC required (does not contradict DEC-026 — different mechanism).**~~
+
+> **DEC-298 ANSWERED = A (2026-04-30): SKIP SCRAPING ENTIRELY.** Profile-step is manual-only. The Option C recommendation above was the original conclusion of this SPIKE before user decision; it stands as analysis-of-record but is NOT being implemented. DEC-026 stands without modification. The "different mechanism" framing in the original recommendation was challenged by Codex (PR #126 round-1 P1) and reframed in §"Scraping vs. OAuth" below — DEC-026's literal "no API scraping at any tier" is broad enough to cover this path.
 
 **DEC-297 ordering: Profile-step AFTER social-step** — only profiles the user explicitly listed are eligible to scrape, and we present scraped values as opt-in cards on the profile-step. Without scraping, ordering is indifferent (Option A would invert).
 
@@ -233,11 +235,12 @@ Assumptions:
 - **Risk:** maintenance burden, occasional Meta C&D risk (low for low-volume).
 - **DEC-297 implication:** profile-step AFTER social.
 
-### Option C — Third-party API service for IG/X/FB; direct for TikTok/YouTube *(RECOMMENDED)*
+### Option C — Third-party API service for IG/X/FB; direct for TikTok/YouTube ~~*(RECOMMENDED)*~~ *(superseded — DEC-298=A locked)*
 - **Business rationale:** ~95% reliability across all 5 platforms; vendor abstracts platform brittleness; we focus on UX not anti-bot warfare. Free tier of Apify covers <500 onboardings/mo (i.e. through ~50 DAU).
 - **Cost:** $0–$10/mo to ~50 DAU; ~$100/mo at 1k DAU; ~$1k/mo at 10k DAU. See cost table.
 - **Risk:** vendor goes down → graceful fallback to manual entry. Vendor pricing changes (~yearly).
 - **DEC-297 implication:** profile-step AFTER social.
+- **Status (2026-04-30):** This was the original recommended option in this SPIKE. **DEC-298 user decision = A (skip scraping entirely).** Option C is preserved as analysis-of-record but is NOT being implemented at MVP.
 
 ### Option D — Hybrid (direct first, paid fallback)
 - **Business rationale:** lowest steady-state cost (~40% below Option C) once tuning settles.
@@ -251,25 +254,28 @@ Assumptions:
 
 ---
 
-## DEC-298 (proposed) — Public-profile scraping for onboarding profile-step
+## ~~DEC-298 (proposed)~~ DEC-298 (ANSWERED 2026-04-30 = A) — Public-profile scraping
 
-| Field | Value |
+> **DECISION:** A — skip scraping entirely. Profile-setup is manual-only (Upload OR Initials avatar + Write your own bio). $0/mo cost. The proposed table below preserved as analysis-of-record.
+
+| Field | Value (HISTORICAL) |
 |---|---|
 | **ID** | DEC-298 |
 | **Czego dotyczy** | Profile-step onboarding scraping mechanism |
-| **Szczegolowy opis** | Slice C onboarding adds a profile-setup step (avatar + bio). To reduce friction we want to pre-populate options from public profiles the user listed in the social-step. Five platforms in scope: Instagram, X, Facebook, TikTok, YouTube. DEC-026 rejected OAuth-based deep import — that decision stands and is unrelated to this surface-level metadata fetch. The question: which mechanism do we use? |
+| **Szczegolowy opis** | Slice C onboarding adds a profile-setup step (avatar + bio). To reduce friction we want to pre-populate options from public profiles the user listed in the social-step. Five platforms in scope: Instagram, X, Facebook, TikTok, YouTube. ~~DEC-026 rejected OAuth-based deep import — that decision stands and is unrelated to this surface-level metadata fetch.~~ *(Corrected: DEC-026's "no API scraping at any tier" is broad enough to cover this path — see §"Scraping vs. OAuth" for full reconciliation.)* The question: which mechanism do we use? |
 | **Opcje** | 1. Skip scraping; manual entry only. 2. Direct fetch from CF Workers, no vendor; 30–50% success on IG/X/FB. 3. Hybrid: TikTok+YouTube direct, IG+X+FB via Apify pay-per-result; ~95% blended success. 4. Pure direct + hybrid fallback (eng-heavy, not worth at MVP). 5. Re-evaluate OAuth (subsumed by Option 3 for YouTube). |
-| **Twoja rekomendacja** | **Option 3** — direct fetch where viable (TikTok oEmbed + YouTube Data API v3), paid Apify pay-per-result for IG/X/FB. Blended ~95% success, ~$10/mo cost at <100 DAU, scales linearly. Eager-prefetch on social-step submit, 5s timeout per platform, KV-cached. Avatar copied to R2 only on user-accept. GDPR basis = contract performance (subject is the user). Privacy-policy clause added. |
+| **Twoja rekomendacja (HISTORICAL)** | ~~**Option 3** — direct fetch where viable (TikTok oEmbed + YouTube Data API v3), paid Apify pay-per-result for IG/X/FB. Blended ~95% success, ~$10/mo cost at <100 DAU, scales linearly. Eager-prefetch on social-step submit, 5s timeout per platform, KV-cached. Avatar copied to R2 only on user-accept. GDPR basis = contract performance (subject is the user). Privacy-policy clause added.~~ |
+| **User answer (2026-04-30)** | **Option 1 (A) — skip scraping.** Profile-step is manual-only. Zero infra cost. Reasoning per chat: simpler MVP, no legal/TOS exposure, user can always paste manually. |
 
-## DEC-297 (proposed) — Profile-step ordering relative to social-step
+## ~~DEC-297 (proposed)~~ DEC-297 (ANSWERED = B) — Profile-step ordering
 
 | Field | Value |
 |---|---|
 | **ID** | DEC-297 |
 | **Czego dotyczy** | Onboarding step ordering: where does the new profile-setup step go? |
-| **Szczegolowy opis** | Slice C currently has welcome → social → template → tier → complete. The new profile-step (avatar + bio) needs a slot. If we scrape (DEC-298 = Option 3), profile-step depends on social-step having been completed. If we skip scraping (DEC-298 = Option 1), no dependency. |
-| **Opcje** | 1. welcome → **profile** → social → template → tier → complete (profile FIRST; only viable if DEC-298=skip). 2. welcome → social → **profile** → template → tier → complete (profile AFTER social; required if DEC-298 ∈ {2,3,4}). 3. welcome → social → template → **profile** → tier → complete (profile late; user has chosen template by then so we can show preview). |
-| **Twoja rekomendacja** | **Option 2** — profile-step immediately after social-step, BEFORE template. Two reasons: (a) DEC-298=Option 3 requires it; (b) putting profile before template means template selection can use the avatar in its preview, which is a UX win. Total flow: welcome → social → **profile** → template → tier → complete. |
+| **Szczegolowy opis** | Slice C currently has welcome → social → template → tier → complete. The new profile-step (avatar + bio) needs a slot. |
+| **Opcje** | 1. welcome → **profile** → social → template → tier → complete. 2. welcome → social → **profile** → template → tier → complete. 3. welcome → social → template → **profile** → tier → complete. |
+| **User answer (2026-04-30)** | **Option 2 (B) — profile AFTER social, BEFORE template.** Total flow: welcome 1/5 → social 2/5 → **profile 3/5 (NEW)** → template 4/5 → tier 5/5 → complete. |
 
 ---
 
