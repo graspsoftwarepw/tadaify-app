@@ -43,6 +43,27 @@
     custom:    { bg: '#F9FAFB',                                          fg: '#111827', mute: '#6B7280',                  card: '#FFFFFF',               font: '"Inter", sans-serif' }
   };
 
+  // Dark variants of TEMPLATES — applied when state.theme === 'dark'.
+  // Most templates already have dark-friendly contrast; this tweaks the
+  // 2 light templates (minimal, sunrise, custom) so dark-mode actually
+  // changes the embedded page, per Codex round-4 P3 finding on PR #127.
+  var TEMPLATES_DARK_OVERRIDE = {
+    minimal:   { bg: '#0B0F1E', fg: '#F3F4F6', mute: '#9CA3AF', card: '#1F2937' },
+    sunrise:   { bg: 'linear-gradient(135deg,#1F2937 0%,#312E81 100%)', fg: '#FDE68A', mute: 'rgba(253,230,138,0.70)', card: 'rgba(0,0,0,0.30)' },
+    custom:    { bg: '#0F172A', fg: '#F3F4F6', mute: '#9CA3AF', card: '#1E293B' }
+  };
+
+  function templateFor(state) {
+    var base = TEMPLATES[state.template] || TEMPLATES.chopin;
+    if (state.theme !== 'dark') return base;
+    var override = TEMPLATES_DARK_OVERRIDE[state.template];
+    if (!override) return base;  // template already dark by design (chopin, neon, nightfall)
+    var merged = {};
+    Object.keys(base).forEach(function (k) { merged[k] = base[k]; });
+    Object.keys(override).forEach(function (k) { merged[k] = override[k]; });
+    return merged;
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -88,7 +109,7 @@
   }
 
   function renderPreviewSrcdoc(state, viewport) {
-    var t = state.t = TEMPLATES[state.template] || TEMPLATES.chopin;
+    var t = state.t = templateFor(state);
     var width = viewport === 'desktop' ? 720 : viewport === 'tablet' ? 768 : 390;
     var pad = viewport === 'mobile' ? 18 : 28;
     var avatar = renderAvatar(state);
@@ -165,11 +186,17 @@
       'padding:14px;display:flex;justify-content:center;align-items:flex-start;min-height:480px;}' +
     '.tdf-pp[data-theme="dark"] .tdf-pp-stage{background:repeating-linear-gradient(45deg,#0F172A,#0F172A 8px,#1E293B 8px,#1E293B 16px);}' +
     '.tdf-pp-frame{background:#fff;border-radius:16px;overflow:hidden;border:1px solid rgba(15,23,42,0.08);' +
-      'box-shadow:0 18px 40px -20px rgba(15,23,42,0.32);transition:width .25s ease;}' +
+      'box-shadow:0 18px 40px -20px rgba(15,23,42,0.32);transition:width .25s ease;' +
+      'transform-origin:top center;}' +
     '.tdf-pp-frame iframe{display:block;border:0;width:100%;height:560px;}' +
+    /* Desktop: fill the container at canonical desktop width (no scale).
+       Tablet: real 820×1180 frame with transform:scale to fit in narrower container.
+       Mobile: real 390×844 frame; iframe height grows so full mobile viewport renders. */
     '.tdf-pp-frame[data-vp="desktop"]{width:min(100%,720px);}' +
-    '.tdf-pp-frame[data-vp="tablet"]{width:min(100%,520px);}' +
-    '.tdf-pp-frame[data-vp="mobile"]{width:300px;}' +
+    '.tdf-pp-frame[data-vp="tablet"]{width:820px;transform:scale(0.55);margin-bottom:-540px;}' +
+    '.tdf-pp-frame[data-vp="tablet"] iframe{height:1180px;}' +
+    '.tdf-pp-frame[data-vp="mobile"]{width:390px;transform:scale(0.78);margin-bottom:-180px;}' +
+    '.tdf-pp-frame[data-vp="mobile"] iframe{height:844px;}' +
     '.tdf-pp-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;' +
       'padding:8px 14px;border-top:1px solid var(--border,#E5E7EB);}' +
     '.tdf-pp-update{display:inline-flex;align-items:center;gap:5px;font-size:11px;' +
@@ -240,8 +267,8 @@
       frame.setAttribute('data-vp', state.viewport);
       var labels = {
         desktop: 'Desktop · 1280+ wide',
-        tablet:  'Tablet · 768 × 1024',
-        mobile:  'Mobile · 390 × 844'
+        tablet:  'Tablet · 820 × 1180 (scaled to fit)',
+        mobile:  'Mobile · 390 × 844 (scaled to fit)'
       };
       if (label) label.textContent = labels[state.viewport];
     }
@@ -260,6 +287,9 @@
         state.theme = state.theme === 'light' ? 'dark' : 'light';
         host.setAttribute('data-theme', state.theme);
         themeBtn.textContent = state.theme === 'light' ? 'Light' : 'Dark';
+        // Codex round-4 P3 fix: rerender the embedded page so dark-mode
+        // actually flips template colors, not just the surrounding chrome.
+        rerender();
       });
     }
 
