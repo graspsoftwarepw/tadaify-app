@@ -1,14 +1,17 @@
 ---
-type: research
+type: SPIKE
 project: tadaify
 title: "Public-profile scraping feasibility for Slice C onboarding profile-step (5 platforms)"
 agent: opus-4-7
 author: orchestrator
 created_at: 2026-04-30
-status: draft
-tags: [onboarding, scraping, gdpr, cloudflare-workers, decisions]
+status: superseded
+superseded_by: ../decisions/0030-...md
+tags: [onboarding, scraping, gdpr, cloudflare-workers, decisions, dec-298]
 related_brs: []
 ---
+
+> **STATUS NOTE (2026-04-30, after this report landed):** DEC-298 was answered = **A (skip scraping entirely)**. Profile-setup in Slice C is manual-only (Upload OR Initials avatar + Write your own bio). This report is preserved as historical/reference material — none of the recommended Option C / Option D paths are being implemented at MVP. The Option-C cost model and Apify integration plan documented below would only become relevant if DEC-298 is re-opened in the future.
 
 # Public-profile scraping feasibility — Slice C onboarding profile-step
 
@@ -58,7 +61,9 @@ UX intent: cards on the profile-step like "Use bio from Instagram", "Use bio fro
 | Cost | ~$0 + dev time | ~$0 (direct) or $0–$30/mo (API) |
 | Legal posture | Explicit user consent via OAuth | Legitimate-interest with disclosure (GDPR), TOS-friction varies by platform |
 
-**Conclusion:** scraping does NOT contradict DEC-026. DEC-026 was about deep content import via official APIs. This is shallow public-page metadata for onboarding pre-fill. **A new DEC (DEC-298) is warranted to lock the chosen approach.**
+**Tentative conclusion (corrected after PR #126 Codex round-1 P1):** scraping IS in tension with DEC-026's literal text "no API scraping at any tier" (consequences §). The mechanisms differ (OAuth vs HTML fetch) and the data scope differs (deep posts vs shallow profile metadata), but DEC-026 used a broad "no API scraping" formulation that this Option C path would technically violate. **The right resolution is NOT to claim compatibility — it is to either (a) propose a superseding DEC that narrows DEC-026 to "no OAuth-based content import" and explicitly permits surface scraping for onboarding pre-fill, or (b) accept DEC-026's broad formulation and pick Option A (skip scraping). User decision on DEC-298 is the gate; without an explicit reconciling DEC, implementation against this report would proceed against a rejected architectural boundary.**
+
+**Update 2026-04-30:** DEC-298 = A (skip scraping). DEC-026 stands without modification. Option C / D / E paths in this report are preserved as historical reference only and are NOT being implemented.
 
 ---
 
@@ -129,10 +134,11 @@ Selected over LinkedIn (TOS-hostile, high legal-risk after HiQ post-remand) and 
 - **HTML/SSR posture (April 2026):** channel page renders OG tags + a giant `ytInitialData` JSON blob in the initial HTML. ~95% of the time the page returns a usable response without browser rendering. ([scrapfly-yt][yt-scrapfly])
 - **Public Atom feed:** `https://www.youtube.com/feeds/videos.xml?channel_id=<id>` returns video list (no bio, but useful for verification). Free, stable, no auth.
 - **Rate limits:** Google throttles aggressive scraping but rarely outright blocks for low-volume requests.
-- **TOS posture:** [YouTube Terms](https://www.youtube.com/static?template=terms) prohibit "access[ing] the Service using automated means" but the YouTube Data API v3 is available for legitimate use (10k units/day quota free). For onboarding-pre-fill purposes, the Data API v3 + an API key is the cleanest path: zero TOS risk.
+- **TOS posture:** [YouTube Terms](https://www.youtube.com/static?template=terms) prohibit "access[ing] the Service using automated means" but the YouTube Data API v3 is available for legitimate use. For onboarding-pre-fill purposes, the Data API v3 + an API key is the cleanest path: zero TOS risk.
+- **Quota model (CORRECTED after Codex round-1 P3):** Default quota is **10,000 units/day** project-wide ([Google quota docs](https://developers.google.com/youtube/v3/guides/quota_and_compliance_audits)). `channels.list?forHandle=<handle>&part=snippet` costs **1 unit per call** ([list endpoint cost docs](https://developers.google.com/youtube/v3/docs/channels/list)). Math: 10,000 channel-fetches/day max before throttling. At 30% of new signups providing a YouTube handle and 1 lookup per signup, the binding ceiling is ~10,000 daily new signups before quota becomes a planning constraint. Quota extension via Google's compliance audit (free, ~2-4 weeks turnaround) raises the cap. **Plan implication:** at <1k DAU the quota is not a constraint; at ~10k DAU plan a quota-extension audit; at 100k+ DAU consider caching channel-snippet by handle (TTL ~24h) to reduce re-fetches.
 - **From Cloudflare Workers:** **VIABLE.** Direct fetch ~80–95% success. Data API v3 endpoint `https://www.googleapis.com/youtube/v3/channels` with `forHandle=<handle>&part=snippet` is rock solid.
-- **Third-party APIs:** unnecessary; the official Data API is free and sufficient.
-- **Verdict:** **Use YouTube Data API v3 directly.** API key is free with generous quota. Zero scraping legal risk.
+- **Third-party APIs:** unnecessary; the official Data API is free and sufficient at MVP scale.
+- **Verdict:** **Use YouTube Data API v3 directly.** API key is free with generous (but bounded) quota. Zero scraping legal risk.
 
 ---
 
@@ -141,7 +147,12 @@ Selected over LinkedIn (TOS-hostile, high legal-risk after HiQ post-remand) and 
 ### 9. GDPR / UODO posture (Polish data protection)
 
 - **Subject:** when we scrape someone's bio from Instagram, **the data subject is the creator themselves** (the tadaify user). They explicitly typed in their own profile URL during onboarding. This is markedly easier than the typical "scraping strangers' data" GDPR scenario.
-- **Lawful basis:** Article 6(1)(b) GDPR — **performance of a contract with the data subject**. The user signed up for tadaify and asked us to set up their profile. Scraping their own publicly-listed bio to pre-populate their tadaify profile is contractual necessity. We do **NOT** need a legitimate-interest assessment (LIA) because the data subject is the user themselves.
+- **Lawful basis (CORRECTED after Codex round-1 P2):** Article 6(1)(b) GDPR (performance of a contract with the data subject) was the initially-proposed basis. However, EDPB Guidelines 2/2019 on contractual necessity for online services interpret 6(1)(b) **narrowly** — it covers what is *objectively necessary* to deliver the requested service, not what is convenient or personalisation-driven. Pre-populating an avatar/bio from a user's listed Instagram is convenience, not strict contractual necessity (the service works without pre-fill; the user can manually paste).
+  - **Recommended path:** Article 6(1)(a) **explicit consent** at the point of capture — UI shows "✓ Use my Instagram bio for profile pre-fill" toggle, defaulting OFF; user opt-in triggers the scrape. Legally clean, no LIA required, withdrawable.
+  - **Fallback path:** Article 6(1)(f) **legitimate interest** — requires an LIA (legitimate-interest assessment) documenting the balancing test. Tadaify's interest (reduce onboarding friction) vs. data subject's expectations (typing IG URL implies *some* fetching, but maybe not bio storage). LIA needed before this option is viable.
+  - **Reject:** 6(1)(b) contractual necessity as written in the original draft. EDPB guidance is too narrow for this use case.
+  - Source: [EDPB Guidelines 2/2019 — contractual necessity for online services (2026 update)](https://www.edpb.europa.eu/system/files/2026-03/edpb-summary-guidelines2-2019-contractual-necessity-online-services_en.pdf).
+  - Legal review by qualified counsel required before any scraping path ships in production.
 - **Polish UODO precedent:** the €220k fine in [Inside Privacy / Bisnode](https://www.insideprivacy.com/data-privacy/polish-supervisory-authority-issues-gdpr-fine-for-data-scraping-without-informing-individuals/) was for **scraping data about non-users without notification**. Not applicable here — our subject is a consenting user.
 - **Best practice (mandatory):**
   1. **Disclose** in onboarding UI: "We'll fetch your public bio from the profiles you listed to suggest options. You can edit or skip."
