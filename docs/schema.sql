@@ -31,3 +31,65 @@ CREATE OR REPLACE FUNCTION cleanup_expired_reservations()
 AS $$ DELETE FROM handle_reservations WHERE expires_at < now(); $$;
 
 GRANT EXECUTE ON FUNCTION cleanup_expired_reservations() TO anon, authenticated;
+
+-- Migration: 20260501000001_profiles.sql
+-- Added in Story F-REGISTER-001a — email-OTP + Auth Hook + handle binding
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id            uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  handle        text        UNIQUE NOT NULL
+                            CHECK (handle ~ '^[a-z0-9](?:[a-z0-9_]{1,29})?$'),
+  email         text        NOT NULL,
+  display_name  text,
+  tos_version   text        NOT NULL DEFAULT 'v1',
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles (handle);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles (email);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY own_row_select ON profiles
+  FOR SELECT TO authenticated
+  USING (auth.uid() = id);
+
+CREATE POLICY own_row_update ON profiles
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+-- NOTE: INSERT granted to service-role only (Workers api.auth.verify.ts).
+-- Anon/authenticated cannot self-insert.
+
+CREATE OR REPLACE FUNCTION update_updated_at()
+  RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER profiles_updated_at
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+-- Migration: 20260501000002_handle_reservation_cleanup_trigger.sql
+-- Automatically removes the handle_reservations row when a profiles row is inserted.
+
+CREATE OR REPLACE FUNCTION on_profile_created_cleanup_reservation()
+  RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM handle_reservations WHERE handle = NEW.handle;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER profile_created_cleanup_reservation
+  AFTER INSERT ON profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION on_profile_created_cleanup_reservation();

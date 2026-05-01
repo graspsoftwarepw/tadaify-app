@@ -213,8 +213,9 @@ secure_password_change = false
 max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# Number of seconds before the email OTP expires.
+# DEC-291: 10-minute expiry for email-OTP (F-REGISTER-001a)
+otp_expiry = 600
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -259,9 +260,10 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
-# [auth.hook.before_user_created]
-# enabled = true
-# uri = "pg-functions://postgres/auth/before-user-created-hook"
+# DEC-294: force-email Auth Hook ON — rejects NULL/empty email at signup (F-REGISTER-001a)
+[auth.hook.before_user_created]
+enabled = true
+uri = "http://host.docker.internal:54321/functions/v1/before-user-created"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]
