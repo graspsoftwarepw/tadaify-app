@@ -178,14 +178,50 @@ export async function action({ request, context }: Route.ActionArgs) {
       profilesInsertRes.status,
       errText
     );
-    // Non-fatal if row already exists (duplicate confirm, race) — log and proceed.
-    // A 23505 unique violation means the row already exists (idempotent).
     if (profilesInsertRes.status !== 409) {
       return Response.json(
         { error: "Account confirmed but profile creation failed. Please contact support." },
         { status: 502 }
       );
     }
+
+    // ── 409 disambiguation (F3 round-2) ──────────────────────────────────
+    // The pre-check above closes the obvious case, but a TOCTOU race remains
+    // between pre-check and INSERT. On 409 we MUST re-query to learn which
+    // row actually owns the handle:
+    //   • row.id === userId → same user retrying → idempotent, proceed.
+    //   • row.id !== userId → another user just claimed it → 409 handle_taken.
+    //   • no row found      → unique-violation on a different column? bail.
+    const postCheckRes = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?handle=eq.${encodeURIComponent(handle)}&select=id&limit=1`,
+      {
+        method: "GET",
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!postCheckRes.ok) {
+      return Response.json(
+        { error: "Account confirmed but profile creation failed. Please contact support." },
+        { status: 502 }
+      );
+    }
+
+    const postCheckRows = (await postCheckRes.json()) as Array<{ id: string }>;
+    if (postCheckRows.length === 0 || postCheckRows[0].id !== userId) {
+      // Race lost — another user owns this handle now (or no row at all,
+      // meaning the unique violation came from a different column we don't
+      // currently expect; treat as handle_taken to be safe).
+      return Response.json(
+        { verified: false, error: "This handle was just claimed. Please pick a different one.", reason: "handle_taken" },
+        { status: 409 }
+      );
+    }
+    // Same user retrying — idempotent, fall through.
   }
 
   // ── Cleanup handle reservation (fire-and-forget) ─────────────────────────

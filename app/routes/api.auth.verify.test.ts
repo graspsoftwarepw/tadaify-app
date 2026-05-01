@@ -199,9 +199,13 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
       .mockResolvedValueOnce(
         new Response(JSON.stringify([{ id: "user-uuid-001" }]), { status: 200 })
       )
-      // Third call: profiles INSERT → 409 (already exists, ignored)
+      // Third call: profiles INSERT → 409 (already exists)
       .mockResolvedValueOnce(new Response("", { status: 409 }))
-      // Fourth call: handle_reservations DELETE
+      // Fourth call: profiles post-check → SAME uid → idempotent
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: "user-uuid-001" }]), { status: 200 })
+      )
+      // Fifth call: handle_reservations DELETE
       .mockResolvedValueOnce(new Response("", { status: 200 }));
 
     vi.stubGlobal("fetch", mockFetch);
@@ -253,8 +257,41 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
     expect(res.status).toBe(500);
   });
 
-  it("proceeds if profiles INSERT returns 409 (row already exists — idempotent, no pre-check row)", async () => {
-    // Pre-check returns empty (race between pre-check and INSERT — acceptable)
+  it("idempotent when INSERT 409 and post-check shows same userId owns the handle (retry)", async () => {
+    // Pre-check empty → INSERT 409 → post-check returns SAME uid → idempotent success.
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: "tok",
+            user: { id: "uid", user_metadata: { handle: "alex", tos_version: "v1" } },
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // pre-check: empty
+      .mockResolvedValueOnce(new Response("", { status: 409 })) // INSERT: duplicate
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: "uid" }]), { status: 200 })
+      ) // post-check: same uid
+      .mockResolvedValueOnce(new Response("", { status: 200 })); // cleanup
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", token: "123456" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { verified: boolean };
+    expect(res.status).toBe(200);
+    expect(data.verified).toBe(true);
+  });
+
+  it("returns 409 handle_taken when INSERT 409 and post-check shows DIFFERENT userId (TOCTOU race lost)", async () => {
+    // Pre-check empty → another user inserts between pre-check and our INSERT →
+    // INSERT 409 → post-check returns OTHER uid → must return 409 handle_taken,
+    // NOT { verified: true }.
     const mockFetch = vi
       .fn()
       .mockResolvedValueOnce(
@@ -268,7 +305,9 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
       )
       .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // pre-check: empty
       .mockResolvedValueOnce(new Response("", { status: 409 })) // INSERT: duplicate (race)
-      .mockResolvedValueOnce(new Response("", { status: 200 })); // cleanup
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: "other-uid" }]), { status: 200 })
+      ); // post-check: OTHER uid won the race
 
     vi.stubGlobal("fetch", mockFetch);
 
@@ -276,8 +315,39 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
       request: makeRequest({ email: "user@example.com", token: "123456" }),
       context: makeContext(supabaseEnv),
     });
-    const data = (await res.json()) as { verified: boolean };
-    expect(res.status).toBe(200);
-    expect(data.verified).toBe(true);
+    const data = (await res.json()) as { verified: boolean; reason?: string };
+    expect(res.status).toBe(409);
+    expect(data.verified).toBe(false);
+    expect(data.reason).toBe("handle_taken");
+  });
+
+  it("returns 409 handle_taken when INSERT 409 and post-check returns no row (unexpected unique violation)", async () => {
+    // Defensive: post-check finds no row (handle column doesn't match anymore?
+    // race + delete? unique violation on other column?) — fail safe, do NOT
+    // return verified: true.
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: "tok",
+            user: { id: "uid", user_metadata: { handle: "alex", tos_version: "v1" } },
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // pre-check: empty
+      .mockResolvedValueOnce(new Response("", { status: 409 })) // INSERT: duplicate
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })); // post-check: empty
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", token: "123456" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { verified: boolean; reason?: string };
+    expect(res.status).toBe(409);
+    expect(data.reason).toBe("handle_taken");
   });
 });
