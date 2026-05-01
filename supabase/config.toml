@@ -260,10 +260,16 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
-# DEC-294: force-email Auth Hook ON — rejects NULL/empty email at signup (F-REGISTER-001a)
+# DEC-294: force-email Auth Hook ON — rejects NULL/empty email at signup (F-REGISTER-001a).
+# Supabase CLI v2.84+ requires `secrets` for HTTP auth hooks (used by GoTrue
+# to HMAC-sign outbound webhook calls). Generate locally:
+#   `printf "v1,whsec_%s" "$(openssl rand -base64 32)"`
+# then store under BEFORE_USER_CREATED_HOOK_SECRET in .env. Production: set via
+# Supabase dashboard → Auth → Hooks → before-user-created → Secret.
 [auth.hook.before_user_created]
 enabled = true
 uri = "http://host.docker.internal:54321/functions/v1/before-user-created"
+secrets = "env(BEFORE_USER_CREATED_HOOK_SECRET)"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]
