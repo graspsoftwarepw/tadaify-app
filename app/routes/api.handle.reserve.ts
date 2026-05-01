@@ -63,11 +63,34 @@ export async function action({ request, context }: Route.ActionArgs) {
     );
   }
 
-  // TODO (Slice B — Register): Once the `profiles` table lands, add a pre-INSERT check here:
-  //   SELECT id FROM profiles WHERE handle = $1
-  // If a row is found → return 409 { reserved: false, reason: "handle_taken" }
-  // This prevents reserving a handle that is already claimed by a live account.
-  // The profiles table does not exist yet — this guard is intentionally deferred.
+  // ── Profiles pre-check: reject if handle permanently claimed ────────────
+  // The profiles table now exists (Slice B migration 20260501000001_profiles.sql).
+  // If the handle is already in profiles → it is permanently claimed by a live account.
+  // Return 409 immediately — do not proceed to INSERT into handle_reservations.
+
+  const profilesCheckRes = await fetch(
+    `${supabaseUrl}/rest/v1/profiles?handle=eq.${encodeURIComponent(raw)}&select=id&limit=1`,
+    {
+      method: "GET",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Accept: "application/json",
+      },
+    }
+  ).catch(() => null);
+
+  if (profilesCheckRes?.ok) {
+    const claimed = (await profilesCheckRes.json().catch(() => [])) as Array<{ id: string }>;
+    if (claimed.length > 0) {
+      return Response.json(
+        { reserved: false, reason: "handle_taken" },
+        { status: 409 }
+      );
+    }
+  }
+  // If the profiles check errors (e.g. network blip), fall through and let the reservation proceed.
+  // The verify step will catch any race on INSERT.
 
   // Atomically clean up expired reservations for this handle before inserting.
   // Using a targeted DELETE rather than a server-side RPC so we don't depend on

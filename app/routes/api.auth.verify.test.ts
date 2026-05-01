@@ -97,7 +97,7 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
     SUPABASE_SERVICE_ROLE_KEY: "service_key",
   };
 
-  it("returns { verified: true } + creates profiles row on success", async () => {
+  it("returns { verified: true, access_token } + creates profiles row on success (F2)", async () => {
     const mockFetch = vi
       .fn()
       // First call: /auth/v1/verify → success
@@ -113,9 +113,11 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
           { status: 200 }
         )
       )
-      // Second call: profiles INSERT → 201
+      // Second call: profiles handle pre-check (GET) → empty → no existing row
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      // Third call: profiles INSERT → 201
       .mockResolvedValueOnce(new Response("", { status: 201 }))
-      // Third call: handle_reservations DELETE → fire-and-forget (200 OK is fine)
+      // Fourth call: handle_reservations DELETE → fire-and-forget (200 OK is fine)
       .mockResolvedValueOnce(new Response("", { status: 200 }));
 
     vi.stubGlobal("fetch", mockFetch);
@@ -124,17 +126,93 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
       request: makeRequest({ email: "user@example.com", token: "123456" }),
       context: makeContext(supabaseEnv),
     });
-    const data = (await res.json()) as { verified: boolean; handle: string };
+    const data = (await res.json()) as { verified: boolean; handle: string; access_token: string };
     expect(res.status).toBe(200);
     expect(data.verified).toBe(true);
     expect(data.handle).toBe("alex");
+    // F2: access_token must be present in response
+    expect(data.access_token).toBe("tok123");
+
+    // Verify profiles handle pre-check was called (GET with handle filter)
+    const preCheckCall = mockFetch.mock.calls[1];
+    expect((preCheckCall[0] as string)).toContain("/rest/v1/profiles");
+    expect((preCheckCall[0] as string)).toContain("handle=eq.alex");
 
     // Verify profiles INSERT was called with service-role key
-    const profilesCall = mockFetch.mock.calls[1];
+    const profilesCall = mockFetch.mock.calls[2];
     expect(profilesCall[0]).toContain("/rest/v1/profiles");
     const profilesBody = JSON.parse(profilesCall[1].body as string);
     expect(profilesBody.handle).toBe("alex");
     expect(profilesBody.tos_version).toBe("v1");
+  });
+
+  it("returns 409 handle_taken when a different user already owns the handle (F3 EC-002)", async () => {
+    const mockFetch = vi
+      .fn()
+      // First call: /auth/v1/verify → success for user-uuid-002
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: "tok456",
+            user: {
+              id: "user-uuid-002", // different user
+              user_metadata: { handle: "alex", tos_version: "v1" },
+            },
+          }),
+          { status: 200 }
+        )
+      )
+      // Second call: profiles handle pre-check → row owned by user-uuid-001 (different id!)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: "user-uuid-001" }]), { status: 200 })
+      );
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "other@example.com", token: "654321" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { verified: boolean; reason: string };
+    expect(res.status).toBe(409);
+    expect(data.verified).toBe(false);
+    expect(data.reason).toBe("handle_taken");
+  });
+
+  it("proceeds as idempotent when the same user retries verify (F3 same-id branch)", async () => {
+    const mockFetch = vi
+      .fn()
+      // First call: /auth/v1/verify → success
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: "tok789",
+            user: {
+              id: "user-uuid-001",
+              user_metadata: { handle: "alex", tos_version: "v1" },
+            },
+          }),
+          { status: 200 }
+        )
+      )
+      // Second call: profiles handle pre-check → row owned by SAME user (idempotent retry)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: "user-uuid-001" }]), { status: 200 })
+      )
+      // Third call: profiles INSERT → 409 (already exists, ignored)
+      .mockResolvedValueOnce(new Response("", { status: 409 }))
+      // Fourth call: handle_reservations DELETE
+      .mockResolvedValueOnce(new Response("", { status: 200 }));
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", token: "123456" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { verified: boolean };
+    expect(res.status).toBe(200);
+    expect(data.verified).toBe(true);
   });
 
   it("returns 400 with error code when OTP verify fails", async () => {
@@ -175,7 +253,8 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
     expect(res.status).toBe(500);
   });
 
-  it("proceeds if profiles INSERT returns 409 (row already exists — idempotent)", async () => {
+  it("proceeds if profiles INSERT returns 409 (row already exists — idempotent, no pre-check row)", async () => {
+    // Pre-check returns empty (race between pre-check and INSERT — acceptable)
     const mockFetch = vi
       .fn()
       .mockResolvedValueOnce(
@@ -187,8 +266,9 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
           { status: 200 }
         )
       )
-      .mockResolvedValueOnce(new Response("", { status: 409 })) // duplicate row
-      .mockResolvedValueOnce(new Response("", { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // pre-check: empty
+      .mockResolvedValueOnce(new Response("", { status: 409 })) // INSERT: duplicate (race)
+      .mockResolvedValueOnce(new Response("", { status: 200 })); // cleanup
 
     vi.stubGlobal("fetch", mockFetch);
 

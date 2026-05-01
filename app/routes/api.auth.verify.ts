@@ -14,7 +14,7 @@
  *
  * Request body:  { email: string; token: string }
  * Response:
- *   200 { verified: true; handle: string }
+ *   200 { verified: true; handle: string; access_token: string }
  *   400 { error: string; code?: string }
  *   502 { error: string }
  *
@@ -111,6 +111,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   };
 
   const userId = verifyData.user?.id;
+  const accessToken = verifyData.access_token ?? "";
   const handle = verifyData.user?.user_metadata?.handle ?? "";
   const tosVersion = verifyData.user?.user_metadata?.tos_version ?? "v1";
 
@@ -120,6 +121,36 @@ export async function action({ request, context }: Route.ActionArgs) {
       { error: "Verification succeeded but user data is incomplete. Please contact support." },
       { status: 500 }
     );
+  }
+
+  // ── Handle race-condition pre-check (F3) ────────────────────────────────
+  // SELECT id FROM profiles WHERE handle = $1 before INSERT.
+  // If a row exists with a DIFFERENT id → another user claimed the handle first (EC-002).
+  // Return 409 to UI with reason: "handle_taken".
+  // If a row exists with the SAME id → idempotent retry by the same user (safe to proceed).
+
+  const handleCheckRes = await fetch(
+    `${supabaseUrl}/rest/v1/profiles?handle=eq.${encodeURIComponent(handle)}&select=id&limit=1`,
+    {
+      method: "GET",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (handleCheckRes.ok) {
+    const existing = (await handleCheckRes.json()) as Array<{ id: string }>;
+    if (existing.length > 0 && existing[0].id !== userId) {
+      // Different user already owns this handle — race condition EC-002
+      return Response.json(
+        { verified: false, error: "This handle was just claimed. Please pick a different one.", reason: "handle_taken" },
+        { status: 409 }
+      );
+    }
+    // If existing[0].id === userId → same user retrying → fall through to idempotent INSERT
   }
 
   // ── Create profiles row (service-role, bypasses RLS) ────────────────────
@@ -172,5 +203,5 @@ export async function action({ request, context }: Route.ActionArgs) {
     console.warn("[api.auth.verify] handle_reservation cleanup failed:", err);
   });
 
-  return Response.json({ verified: true, handle }, { status: 200 });
+  return Response.json({ verified: true, handle, access_token: accessToken }, { status: 200 });
 }

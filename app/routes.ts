@@ -14,6 +14,7 @@ export default [
 
   // Auth API (F-REGISTER-001a)
   route("/api/auth/signup", "routes/api.auth.signup.ts"),
+  route("/api/auth/login-otp", "routes/api.auth.login-otp.ts"),
   route("/api/auth/verify", "routes/api.auth.verify.ts"),
   route("/api/auth/password", "routes/api.auth.password.ts"),
 ] satisfies RouteConfig;

@@ -99,12 +99,12 @@ export default function LoginPage() {
     }
     dispatch({ type: "SUBMIT_START" });
     try {
-      // For login, we send OTP via the same signup endpoint (Supabase creates or
-      // re-authenticates existing user — DEC-293 auto-link ON)
-      const res = await fetch("/api/auth/signup", {
+      // For login, we use the dedicated login-otp endpoint that does NOT require a handle
+      // and sets create_user: false (DEC-307 returning-user flow).
+      const res = await fetch("/api/auth/login-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: state.email, handle: "", tos_version: "v1" }),
+        body: JSON.stringify({ email: state.email }),
       });
       const data = (await res.json()) as { sent?: boolean; error?: string };
       if (!res.ok || !data.sent) {
@@ -176,10 +176,10 @@ export default function LoginPage() {
     const now = Date.now();
     if (!canResend(state, now)) return;
     try {
-      await fetch("/api/auth/signup", {
+      await fetch("/api/auth/login-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: state.email, handle: "", tos_version: "v1" }),
+        body: JSON.stringify({ email: state.email }),
       });
       dispatch({ type: "RESEND_CODE", now });
       showToast("New code sent! Check your inbox.");
