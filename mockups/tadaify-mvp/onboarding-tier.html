@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <!--
-  Onboarding step 5/5 — contextual tier recommendation (Slice C revision 2026-04-29)
-  F-UPSELL-002 engine output based on signals collected in social step.
-  Anti-pattern AP-030: Free tier stays default-selected (not Creator).
+  Onboarding step 5/5 — plan comparison (read-only).
+
+  DEC-311=A refined (2026-05-01):
+    - Onboarding no longer offers paid-plan selection or Stripe Checkout.
+    - Every user starts on Free. The final onboarding step is purely
+      informational: a side-by-side plan comparison + a clear message that
+      "most features are free to try; upgrade later from Settings whenever
+      you're ready." Checkout, billing toggle, and paid-tier selection are
+      owned by F-PRICING-001 and surfaced via Settings → Billing post-
+      onboarding.
+    - No tier card is selectable; Free is visually marked as "Your starting
+      plan." The single CTA forwards to onboarding-complete with tier=free.
 
   Slice C revision (DEC-297=B):
     - Renumbered to 5/5 (was 4/4) because profile-setup is the new 3/5.
-    - Preview pane intentionally NOT on this step — tier choice doesn't change
-      the rendered page visually, so a preview pane would add noise without
-      signal. The decision matters only in which BR/AI features are gated
-      (badge in admin, not on the public page).
+    - Preview pane intentionally NOT on this step — comparison is a static
+      read-only matrix; preview pane would add noise without signal.
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pick your plan — tadaify</title>
+  <title>Compare plans — tadaify</title>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./shared/tokens.css"/>
   <style>
@@ -33,26 +40,26 @@
       border: 2px solid var(--border);
       border-radius: var(--radius-lg);
       padding: var(--space-6);
-      cursor: pointer;
-      transition: all 160ms ease;
       position: relative;
       display: flex;
       flex-direction: column;
+      /* DEC-311=A: read-only comparison; no cursor:pointer, no hover transform. */
     }
-    .tier-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
-    .tier-card.selected {
+    /* Free is the user's starting plan — visually highlighted but not "selected" */
+    .tier-card.starting-plan {
       border-color: var(--brand-primary);
       box-shadow: var(--shadow-brand);
     }
     .tier-card .ribbon {
       position: absolute;
       top: -12px; right: 16px;
-      background: var(--brand-warm);
-      color: #1F2937;
+      background: var(--brand-primary);
+      color: #fff;
       padding: 4px 12px;
       border-radius: var(--radius-full);
       font-size: 12px;
       font-weight: 700;
+      letter-spacing: 0.01em;
     }
     .tier-card .price {
       font-family: var(--font-display);
@@ -71,39 +78,9 @@
     .tier-card ul li { padding: 4px 0; padding-left: 20px; position: relative; }
     .tier-card ul li::before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 700; }
 
-    .billing-toggle {
-      display: inline-flex;
-      background: var(--bg-muted);
-      border-radius: var(--radius-full);
-      padding: 4px;
-      gap: 4px;
-    }
-    .billing-toggle button {
-      background: transparent;
-      border: 0;
-      padding: 8px 16px;
-      border-radius: var(--radius-full);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--fg-muted);
-      cursor: pointer;
-    }
-    .billing-toggle button.active {
-      background: var(--bg-elevated);
-      color: var(--fg);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .save-badge {
-      display: inline-block;
-      background: var(--success-bg);
-      color: #065F46;
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-      font-size: 11px;
-      font-weight: 700;
-      margin-left: 8px;
-    }
+    /* DEC-311=A refined: billing-toggle and .save-badge removed —
+       no monthly/annual choice in onboarding; that lives in F-PRICING-001
+       (Settings → Billing). */
 
     .recommendation {
       background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.1));
@@ -337,45 +314,37 @@
         <div class="progress-line done"></div>
         <div class="progress-step active"><span class="progress-dot"></span></div>
       </div>
-      <p class="progress-label">Step 5 of 5 · Your plan</p>
+      <p class="progress-label">Step 5 of 5 · Compare plans</p>
 
       <div style="text-align:center; margin-top: 40px;">
-        <h1>Start free. Upgrade only if you want.</h1>
-        <p class="lead text-muted" style="margin-top:12px;">
-          Based on your audience size (<strong>50k IG followers</strong>), most creators at your scale pick Creator.
+        <h1>You're all set — starting on Free.</h1>
+        <p class="lead text-muted" style="margin-top:12px; max-width: 640px; margin-left:auto; margin-right:auto;">
+          Most features are <strong>free to try</strong>. Take tadaify for a spin, build your page, see if it fits — then
+          upgrade anytime from <strong>Settings → Billing</strong> if you want more pages, custom domains, or extra AI credits.
         </p>
       </div>
 
       <div class="recommendation">
-        💡 Creator plan includes 1 custom domain free ($1.99/mo value), 180d analytics, 20 AI credits/month, and priority support — tap to explore.
+        ✨ No credit card needed today. Here's what each plan includes so you know what's available when you're ready.
       </div>
 
-      <!-- Price-lock-for-life guarantee — unique to tadaify -->
+      <!-- Price-lock-for-life guarantee — info only, applies once user upgrades -->
       <div class="pricelock">
         <div class="pricelock-icon" aria-hidden="true">🔒</div>
         <div class="pricelock-body">
-          <h4 class="pricelock-title">Your price is locked for life.</h4>
+          <h4 class="pricelock-title">When you do upgrade, your price is locked for life.</h4>
           <p class="pricelock-text">
-            Subscribe today at <strong>$7.99/mo</strong> → pay <strong>$7.99/mo</strong> in year 3, year 5, year 10.
+            Subscribe at <strong>$7.99/mo</strong> later → pay <strong>$7.99/mo</strong> in year 3, year 5, year 10.
             As long as your subscription stays active, we <strong>never</strong> raise your price. Ever.
-            Only if you cancel and re-subscribe later do you pay the then-current price.
+            Only if you cancel and re-subscribe do you pay the then-current price.
           </p>
         </div>
       </div>
 
-      <!-- Billing toggle -->
-      <div style="text-align:center; margin-top: 32px;">
-        <div class="billing-toggle">
-          <button class="active" onclick="setBilling(this, 'annual')">
-            Annual <span class="save-badge">save 2 months</span>
-          </button>
-          <button onclick="setBilling(this, 'monthly')">Monthly</button>
-        </div>
-      </div>
-
-      <!-- Tier cards -->
+      <!-- Tier cards: read-only comparison (DEC-311=A refined) -->
       <div class="tier-grid">
-        <div class="tier-card selected" data-tier="free" onclick="selectTier(this)">
+        <div class="tier-card starting-plan" data-tier="free">
+          <div class="ribbon">✓ Your starting plan</div>
           <h3>Free</h3>
           <div class="price">$0</div>
           <div class="text-sm text-muted">Forever · no credit card</div>
@@ -389,8 +358,7 @@
           </ul>
         </div>
 
-        <div class="tier-card" data-tier="creator" onclick="selectTier(this)">
-          <div class="ribbon">💡 Suggested for you</div>
+        <div class="tier-card" data-tier="creator">
           <h3>Creator</h3>
           <div class="price">$7.99 <span class="per">/mo</span></div>
           <div class="text-sm text-muted">Billed annually · $95.88/yr</div>
@@ -406,7 +374,7 @@
           </ul>
         </div>
 
-        <div class="tier-card" data-tier="pro" onclick="selectTier(this)">
+        <div class="tier-card" data-tier="pro">
           <h3>Pro</h3>
           <div class="price">$19.99 <span class="per">/mo</span></div>
           <div class="text-sm text-muted">Billed annually · $239.88/yr</div>
@@ -423,7 +391,7 @@
           </ul>
         </div>
 
-        <div class="tier-card" data-tier="business" onclick="selectTier(this)">
+        <div class="tier-card" data-tier="business">
           <h3>Business</h3>
           <div class="price">$49.99 <span class="per">/mo</span></div>
           <div class="text-sm text-muted">Billed annually · $599.88/yr</div>
@@ -444,22 +412,19 @@
       <div class="addon-universal">
         <span class="addon-plus">+</span>
         <p>
-          Need extra domains? Add <strong>$1.99/mo per custom domain</strong> to any plan — Free included. No upgrade needed.
+          Need extra domains later? Add <strong>$1.99/mo per custom domain</strong> to any plan — Free included. No upgrade needed.
         </p>
       </div>
 
-      <!-- Actions -->
+      <!-- Single CTA: every user starts Free; upgrade lives in Settings → Billing -->
       <div style="display:flex; gap:12px; margin-top: 40px; flex-wrap: wrap; justify-content: center;">
         <button class="btn btn-primary btn-lg" id="primary-cta" onclick="goNext()">
-          Start free — you can upgrade anytime
-        </button>
-        <button class="btn btn-secondary btn-lg" id="upgrade-cta" onclick="goNextPaid()" style="display:none;">
-          Continue with <span id="tier-name">Creator</span> <span id="tier-price">$5/mo</span>
+          Take me to my page →
         </button>
       </div>
 
       <p class="text-sm text-muted" style="text-align:center; margin-top: 20px;">
-        30-day money-back on any paid tier. No trials, no surprises.<br/>
+        Upgrade whenever you want from <strong>Settings → Billing</strong>. 30-day money-back on any paid tier.<br/>
         🔒 <strong>Price locked for life</strong> — we never raise the price on active subscribers.
       </p>
 
@@ -494,59 +459,27 @@
       document.getElementById('back-link').href = u;
     })();
 
-    var billing = 'annual';
-    var tier = 'free';
+    // DEC-311=A refined: every user starts Free. No tier picker, no billing
+    // toggle, no Stripe Checkout in onboarding. Upgrade flow lives in
+    // Settings → Billing (F-PRICING-001).
 
-    function setBilling(btn, mode) {
-      billing = mode;
-      document.querySelectorAll('.billing-toggle button').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-    }
-
-    function selectTier(el) {
-      document.querySelectorAll('.tier-card').forEach(function(c){ c.classList.remove('selected'); });
-      el.classList.add('selected');
-      tier = el.dataset.tier;
-
-      var primary = document.getElementById('primary-cta');
-      var upgrade = document.getElementById('upgrade-cta');
-      if (tier === 'free') {
-        primary.style.display = '';
-        upgrade.style.display = 'none';
-      } else {
-        primary.style.display = 'none';
-        upgrade.style.display = '';
-        var prices = { creator: '$7.99/mo', pro: '$19.99/mo', business: '$49.99/mo' };
-        var names  = { creator: 'Creator', pro: 'Pro', business: 'Business' };
-        document.getElementById('tier-name').textContent = names[tier];
-        document.getElementById('tier-price').textContent = prices[tier];
-      }
-    }
-
-    function buildCompleteUrl(chosenTier) {
+    function buildCompleteUrl() {
       // Slice C: forward profile state to complete.html so its preview pane
       // shows the actual chosen avatar / name / bio / template / socials.
       var params = new URLSearchParams(window.location.search);
-      var url = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=' + chosenTier;
+      var url = './onboarding-complete.html?handle=' + encodeURIComponent(handle) + '&tier=free';
       ['platforms','socials','tpl','name','bio','av'].forEach(function (k) {
         var v = params.get(k);
         if (v) url += '&' + k + '=' + encodeURIComponent(v);
       });
       return url;
     }
+
     function goNext() {
-      window.location.href = buildCompleteUrl('free');
-    }
-    function goNextPaid() {
-      // in real flow → payment step. For mockup, forward to complete.
-      alert('Mockup: payment step is out of scope for this iteration. Forwarding to success screen.');
-      window.location.href = buildCompleteUrl(tier);
+      window.location.href = buildCompleteUrl();
     }
 
-    window.setBilling = setBilling;
-    window.selectTier = selectTier;
     window.goNext = goNext;
-    window.goNextPaid = goNextPaid;
   </script>
 </body>
 </html>
