@@ -1,0 +1,24 @@
+# Workers runtime env bindings (gitignored .dev.vars).
+#
+# Server-side route handlers in app/routes/api.*.ts run as Cloudflare Workers
+# (even in local dev via `wrangler dev`). Workers reads bindings from .dev.vars —
+# NOT from the .env file used by Vite / Supabase CLI.
+#
+# BOTH files are required for local dev:
+#   .env           → client-side VITE_* vars + Supabase CLI hook secrets
+#   .dev.vars      → Workers runtime bindings (this file)
+#
+# Setup:
+#   cp .dev.vars.example .dev.vars
+#   Run `supabase start`, then `supabase status -o env` to get the values.
+#   Fill in the placeholders below with the output values.
+
+# Supabase local API (port 54351 — tadaify custom port band 5435X)
+SUPABASE_URL=http://127.0.0.1:54351
+SUPABASE_ANON_KEY=eyJ...replace-with-output-of-supabase-status
+SUPABASE_SERVICE_ROLE_KEY=eyJ...replace-with-output-of-supabase-status
+
+# Handle reservation TTL in seconds (default: 600 = 10 minutes, DEC-326 = A).
+# Override to a small value (e.g. 10) in test environments to exercise expiry
+# without waiting 10 minutes: HANDLE_RESERVATION_TTL_SECONDS=10
+HANDLE_RESERVATION_TTL_SECONDS=600

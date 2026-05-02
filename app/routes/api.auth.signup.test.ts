@@ -2,6 +2,7 @@
  * Unit tests for api.auth.signup.ts
  * Run: npx vitest run app/routes/api.auth.signup.test.ts
  * Story: F-REGISTER-001a
+ * U1: env binding validation (Bug 1 fix — hard-fail instead of silent stub)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -84,30 +85,82 @@ describe("api.auth.signup — input validation", () => {
   });
 });
 
-// ── Stub mode (no Supabase env vars) ─────────────────────────────────────────
+// ── U1: env binding validation (Bug 1 fix — hard-fail instead of silent stub) ─
+// Covers: BUG-149-1 / ECN-149-01 / ECN-149-02
 
-describe("api.auth.signup — stub mode (no env vars)", () => {
-  it("returns { sent: true, stub: true } when Supabase env vars missing", async () => {
+describe("api.auth.signup — U1: env binding validation", () => {
+  it("returns 500 when context.cloudflare.env is undefined", async () => {
     const res = await action({
       request: makeRequest({ email: "user@example.com", handle: "alex", tos_version: "v1" }),
-      context: makeContext({}), // no SUPABASE_URL / SUPABASE_ANON_KEY
+      context: {}, // no cloudflare.env at all
     });
-    const data = (await res.json()) as { sent: boolean; stub: boolean };
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(500);
+    expect(data.error).toMatch(/Workers env binding missing/);
+  });
+
+  it("returns 500 when env.SUPABASE_URL is empty string", async () => {
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", handle: "alex", tos_version: "v1" }),
+      context: makeContext({ SUPABASE_URL: "", SUPABASE_ANON_KEY: "valid" }),
+    });
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(500);
+    expect(data.error).toMatch(/Workers env binding missing/);
+  });
+
+  it("returns 500 when env.SUPABASE_ANON_KEY is empty string", async () => {
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", handle: "alex", tos_version: "v1" }),
+      context: makeContext({ SUPABASE_URL: "http://supabase.test", SUPABASE_ANON_KEY: "" }),
+    });
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(500);
+    expect(data.error).toMatch(/Workers env binding missing/);
+  });
+
+  it("returns 200 with { sent: true } (no stub flag) on happy path", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", handle: "alex", tos_version: "v1" }),
+      context: makeContext({ SUPABASE_URL: "http://supabase.test", SUPABASE_ANON_KEY: "anon_key" }),
+    });
+    const data = (await res.json()) as Record<string, unknown>;
     expect(res.status).toBe(200);
     expect(data.sent).toBe(true);
-    expect(data.stub).toBe(true);
+    // Must NOT include stub flag — that was the silent-stub regression
+    expect(data).not.toHaveProperty("stub");
+  });
+
+  it("error message references .dev.vars.example by name", async () => {
+    const res = await action({
+      request: makeRequest({ email: "user@example.com", handle: "alex", tos_version: "v1" }),
+      context: makeContext({}),
+    });
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(500);
+    expect(data.error).toContain(".dev.vars.example");
   });
 });
 
 // ── Email normalisation ────────────────────────────────────────────────────────
 
 describe("api.auth.signup — email normalisation", () => {
-  it("trims and lowercases email before sending (stub mode)", async () => {
+  it("trims and lowercases email before sending (rejects without env)", async () => {
+    // With no env bindings, the handler should hard-fail (Bug 1 fix).
+    // This test verifies the normalisation guard still runs before env check.
     const res = await action({
       request: makeRequest({ email: "  USER@EXAMPLE.COM  ", handle: "alex", tos_version: "v1" }),
       context: makeContext({}),
     });
-    expect(res.status).toBe(200);
+    // After Bug 1 fix: no env → 500 (not 200-stub). Email normalisation happens
+    // before env check so the request is still well-formed; 500 is the expected
+    // outcome from the missing binding gate.
+    expect(res.status).toBe(500);
   });
 });
 

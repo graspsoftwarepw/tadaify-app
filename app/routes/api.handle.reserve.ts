@@ -1,8 +1,8 @@
 /**
  * POST /api/handle/reserve
  *
- * Creates a 15-minute handle reservation when user clicks "Claim your handle →"
- * on the landing page or the final CTA band.
+ * Creates a handle reservation when user clicks "Claim your handle →" on the
+ * landing page or the final CTA band.
  *
  * After a successful reservation, the client navigates to /register?handle=<slug>.
  *
@@ -10,11 +10,17 @@
  * Runtime:   Cloudflare Workers (DEC-FRAMEWORK-01).
  * DB:        handle_reservations table (migration 20260429000001_handle_reservations.sql).
  *
+ * Reservation TTL: HANDLE_RESERVATION_TTL_SECONDS env var (default: 600 = 10 min).
+ * DEC-326 = A: canonical 10 min (down from 15 min). SQL DEFAULT dropped in
+ * migration 20260502000001_drop_handle_reservations_default.sql — JS computes
+ * expires_at so it reflects the env-var value at runtime (testable without wait).
+ *
  * Request body:  { handle: string }
  * Response:
  *   201 { reserved: true, handle: string, expires_at: string }
  *   409 { reserved: false, reason: "already_reserved" }
  *   400 { error: string }
+ *   500 { error: "invalid TTL config" } — when HANDLE_RESERVATION_TTL_SECONDS is negative
  */
 
 import type { Route } from "./+types/api.handle.reserve";
@@ -22,6 +28,31 @@ import {
   validateHandle,
   HANDLE_ERROR_MESSAGES,
 } from "~/lib/handle-validator";
+
+const DEFAULT_TTL_SECONDS = 600; // 10 min — DEC-326 = A
+
+/**
+ * Resolve TTL in milliseconds from the Workers env var.
+ * Returns { ttlMs: number } on success, { error: string } on invalid config.
+ */
+function resolveTtlMs(env: Record<string, string> | undefined): { ttlMs: number } | { error: string } {
+  const raw = env?.HANDLE_RESERVATION_TTL_SECONDS;
+
+  if (raw === undefined || raw === null || raw === "") {
+    return { ttlMs: DEFAULT_TTL_SECONDS * 1000 };
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
+    console.warn("[api.handle.reserve] HANDLE_RESERVATION_TTL_SECONDS is non-numeric:", raw, "— using default");
+    return { ttlMs: DEFAULT_TTL_SECONDS * 1000 };
+  }
+  if (parsed <= 0) {
+    return { error: "invalid TTL config" };
+  }
+
+  return { ttlMs: parsed * 1000 };
+}
 
 export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "POST") {
@@ -50,13 +81,21 @@ export async function action({ request, context }: Route.ActionArgs) {
   const supabaseUrl = env?.SUPABASE_URL;
   const serviceKey = env?.SUPABASE_SERVICE_ROLE_KEY;
 
+  // Resolve TTL — fail fast if config is invalid
+  const ttlResult = resolveTtlMs(env);
+  if ("error" in ttlResult) {
+    console.error("[api.handle.reserve] Invalid TTL config:", env?.HANDLE_RESERVATION_TTL_SECONDS);
+    return Response.json({ error: ttlResult.error }, { status: 500 });
+  }
+  const { ttlMs } = ttlResult;
+
   // Capture request metadata for the reservation row
   const ip = request.headers.get("cf-connecting-ip") ?? null;
   const userAgent = request.headers.get("user-agent") ?? null;
 
   if (!supabaseUrl || !serviceKey) {
     // Local dev without Supabase bindings — return a stub reservation
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + ttlMs).toISOString();
     return Response.json(
       { reserved: true, handle: raw, expires_at: expiresAt },
       { status: 201 }
@@ -112,7 +151,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   // If the handle is already actively reserved (PK conflict), Supabase returns 409
   // which we surface to the caller.  This is intentional security: a claimed handle
   // must not be silently upserted / overwritten via a direct API hit.
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + ttlMs).toISOString();
 
   const insertRes = await fetch(
     `${supabaseUrl}/rest/v1/handle_reservations`,

@@ -166,3 +166,76 @@ describe("api.handle.reserve — profiles pre-check (F4)", () => {
     expect(data.reason).toBe("active_reservation");
   });
 });
+
+// ── U4: TTL env-var resolution + default fallback (Bug 6 fix) ────────────────
+
+describe("api.handle.reserve — U4: TTL env-var resolution", () => {
+  /** Helper: run reservation and extract expires_at delta in seconds */
+  async function getExpiresAtDeltaSeconds(
+    envOverride: Record<string, string>,
+    nowMs = Date.now()
+  ): Promise<number> {
+    vi.useFakeTimers();
+    vi.setSystemTime(nowMs);
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 })) // profiles check
+      .mockResolvedValueOnce(new Response("", { status: 200 })) // expired DELETE
+      .mockResolvedValueOnce(new Response("", { status: 201 })); // INSERT
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ handle: "testttl" }),
+      context: makeContext({ ...supabaseEnv, ...envOverride }),
+    });
+
+    vi.useRealTimers();
+
+    const data = (await res.json()) as { reserved: boolean; expires_at: string };
+    expect(res.status).toBe(201);
+    const expiresMs = new Date(data.expires_at).getTime();
+    return (expiresMs - nowMs) / 1000;
+  }
+
+  it("uses HANDLE_RESERVATION_TTL_SECONDS from env when set", async () => {
+    const delta = await getExpiresAtDeltaSeconds({ HANDLE_RESERVATION_TTL_SECONDS: "30" });
+    // Allow 2s tolerance for any timing jitter
+    expect(delta).toBeGreaterThanOrEqual(28);
+    expect(delta).toBeLessThanOrEqual(32);
+  });
+
+  it("falls back to 600 (10 min) when env var unset", async () => {
+    const delta = await getExpiresAtDeltaSeconds({});
+    expect(delta).toBeGreaterThanOrEqual(598);
+    expect(delta).toBeLessThanOrEqual(602);
+  });
+
+  it("falls back to 600 when env var is empty string", async () => {
+    const delta = await getExpiresAtDeltaSeconds({ HANDLE_RESERVATION_TTL_SECONDS: "" });
+    expect(delta).toBeGreaterThanOrEqual(598);
+    expect(delta).toBeLessThanOrEqual(602);
+  });
+
+  it("falls back to 600 when env var is non-numeric", async () => {
+    const delta = await getExpiresAtDeltaSeconds({ HANDLE_RESERVATION_TTL_SECONDS: "abc" });
+    expect(delta).toBeGreaterThanOrEqual(598);
+    expect(delta).toBeLessThanOrEqual(602);
+  });
+
+  it("rejects negative TTL with 500 and does not create reservation", async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ handle: "testnegttl" }),
+      context: makeContext({ ...supabaseEnv, HANDLE_RESERVATION_TTL_SECONDS: "-10" }),
+    });
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(500);
+    expect(data.error).toBe("invalid TTL config");
+    // No fetch calls should have been made (reservation was rejected before any DB call)
+    expect(mockFetch.mock.calls.length).toBe(0);
+  });
+});

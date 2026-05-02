@@ -9,7 +9,7 @@ CREATE TABLE handle_reservations (
   handle      text        PRIMARY KEY
                           CHECK (handle ~ '^[a-z0-9](?:[a-z0-9_]{1,29})?$'),
   reserved_at timestamptz NOT NULL DEFAULT now(),
-  expires_at  timestamptz NOT NULL DEFAULT now() + interval '15 minutes',
+  expires_at  timestamptz NOT NULL,  -- DEFAULT dropped in 20260502000001 (JS computes via HANDLE_RESERVATION_TTL_SECONDS env var, DEC-326=A: 10 min)
   ip          inet,
   user_agent  text
 );
