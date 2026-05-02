@@ -1,0 +1,241 @@
+<!--
+type: mockup
+project: tadaify
+title: Auth email — identity linked notification (informational, multipart preview)
+created_at: 2026-05-02T14:10:00Z
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email mockup: identity linked</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    body { background: var(--bg-muted); padding: 32px clamp(16px,4vw,48px); }
+    .page-header { max-width: 1280px; margin: 0 auto 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    .page-header h1 { font-size: 28px; }
+    .page-header .crumbs { font-size: 13px; color: var(--fg-muted); }
+    .page-header .crumbs a { color: var(--brand-primary); }
+    .page-header .pill { padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--info-bg); color: var(--info); }
+    .page-intro { max-width: 1280px; margin: 0 auto 24px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; max-width: 840px; }
+
+    .pair-grid { max-width: 720px; margin: 0 auto; }
+    .scheme-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 8px 4px; }
+
+    .inbucket { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+    .inbucket-bar {
+      padding: 12px 18px; background: var(--bg-muted); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted);
+    }
+    .inbucket-bar .dev-badge { background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 10px; letter-spacing: 0.04em; }
+    .inbucket-bar .scheme-mark { margin-left: auto; padding: 2px 8px; border-radius: 4px; background: var(--bg-elevated); border: 1px solid var(--border-strong); }
+    .inbucket-headers {
+      padding: 14px 22px; border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);
+      display: grid; grid-template-columns: 70px 1fr; gap: 4px 14px;
+    }
+    .inbucket-headers .k { color: var(--fg-subtle); text-align: right; }
+    .inbucket-headers .v { color: var(--fg); word-break: break-all; }
+    .inbucket-headers .v strong { color: var(--fg); font-weight: 600; }
+
+    .email-canvas { padding: 32px 18px; background: #F3F4F6; }
+    .email {
+      max-width: 600px; margin: 0 auto;
+      background: #FFFFFF; border-radius: 14px; overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #111827; box-shadow: 0 4px 12px rgba(17,24,39,0.08);
+    }
+    .email-mark { padding: 28px 32px 8px; }
+    .email-mark .wordmark {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      letter-spacing: -0.02em; font-size: 28px; line-height: 1;
+      display: inline-flex; align-items: baseline;
+    }
+    .email-mark .wm-ta  { color: #6366F1; }
+    .email-mark .wm-da  { color: #F59E0B; }
+    .email-mark .wm-ify { color: #111827; }
+
+    .email-body { padding: 16px 32px 32px; }
+    .greeting {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      font-size: 26px; line-height: 1.2; letter-spacing: -0.01em;
+      margin: 0 0 6px; color: #111827;
+    }
+    .sub { font-size: 15px; color: #4B5563; margin: 0 0 28px; line-height: 1.55; }
+
+    .info-card {
+      background: #F9FAFB; border: 1px solid #E5E7EB;
+      border-radius: 14px; padding: 22px 24px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+    .provider-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .provider-icon svg { display: block; }
+
+    .info-rows { display: grid; gap: 6px; font-size: 14px; }
+    .info-rows .row { display: grid; grid-template-columns: 96px 1fr; gap: 8px; align-items: baseline; }
+    .info-rows .label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6B7280; }
+    .info-rows .value { color: #111827; font-weight: 500; }
+    .info-rows .value code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #F3F4F6; padding: 1px 6px; border-radius: 4px; }
+    .info-rows .value.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; color: #4B5563; }
+
+    .body-copy { font-size: 14px; line-height: 1.65; color: #374151; margin: 0 0 18px; }
+
+    .alert-note {
+      margin-top: 22px;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #7F1D1D;
+    }
+    .alert-note strong { color: #991B1B; }
+    .alert-note code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; background: #FFFFFF; padding: 1px 6px; border-radius: 4px; color: #991B1B; }
+
+    .disclaimer {
+      margin-top: 22px; padding-top: 22px; border-top: 1px solid #E5E7EB;
+      font-size: 12px; line-height: 1.6; color: #6B7280;
+    }
+
+    .email-footer {
+      padding: 18px 32px 22px; border-top: 1px solid #F3F4F6;
+      font-size: 11px; color: #9CA3AF; text-align: center; letter-spacing: 0.02em;
+    }
+
+    .plain-section { max-width: 1280px; margin: 36px auto 0; }
+    .plain-section h2 { font-size: 18px; margin-bottom: 6px; }
+    .plain-section p { font-size: 13px; color: var(--fg-muted); margin-bottom: 14px; }
+    .plain-frame { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .plain-frame .inbucket-bar { border-radius: var(--radius) var(--radius) 0 0; }
+    .plain-frame pre {
+      margin: 0; padding: 22px 28px;
+      font-family: var(--font-mono); font-size: 13px;
+      line-height: 1.65; color: var(--fg);
+      white-space: pre-wrap; word-wrap: break-word;
+    }
+    .footer-links { max-width: 1280px; margin: 32px auto 0; font-size: 12px; color: var(--fg-subtle); text-align: center; }
+    .footer-links a { color: var(--brand-primary); margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <span class="pill">Email mockup</span>
+    <h1>Identity linked — multipart preview</h1>
+    <span class="crumbs"><a href="./index.html">← email gallery</a></span>
+  </header>
+
+  <p class="page-intro">
+    Informational notification (no token) sent after a third-party identity is linked to an existing tadaify account via OAuth. Real-impl placeholder: <code>{{ .Provider }}</code> for the provider name (Google / Apple / etc.). This is a security trail email — the user already authorized the link in-flow; this email arrives as a record so an unauthorized link triggers an immediate review. Below: rendered in a light email client; plain-text fallback (multipart/alternative) at the bottom.
+  </p>
+
+  <div class="pair-grid">
+
+    <div>
+      <div class="inbucket">
+        <div class="inbucket-bar">
+          <span class="dev-badge">🔧 LOCAL DEV</span>
+          <span>Inbucket http://localhost:54354</span>
+          <span class="scheme-mark">light</span>
+        </div>
+        <div class="inbucket-headers">
+          <span class="k">From:</span><span class="v"><strong>tadaify</strong> &lt;noreply@tadaify.com&gt;</span>
+          <span class="k">To:</span><span class="v">waserek@local.test</span>
+          <span class="k">Subject:</span><span class="v"><strong>We linked your Google account to tadaify</strong></span>
+          <span class="k">Date:</span><span class="v">2026-05-02 12:34 UTC</span>
+        </div>
+        <div class="email-canvas">
+          <div class="email" role="article" aria-label="Identity linked notification email">
+            <div class="email-mark">
+              <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+            </div>
+            <div class="email-body">
+              <h1 class="greeting">Hey @waserek</h1>
+              <p class="sub">we linked your Google account to your <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> profile.</p>
+
+              <div class="info-card">
+                <span class="provider-icon" aria-hidden="true">
+                  <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4285F4" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                    <path fill="#34A853" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                    <path fill="#FBBC05" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                    <path fill="#EA4335" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                  </svg>
+                </span>
+                <div class="info-rows">
+                  <div class="row"><span class="label">Provider</span><span class="value">Google</span></div>
+                  <div class="row"><span class="label">Email used</span><span class="value mono">waserek@gmail.com</span></div>
+                  <div class="row"><span class="label">Linked at</span><span class="value mono">2026-05-02 12:34 UTC</span></div>
+                </div>
+              </div>
+
+              <p class="body-copy">Future sign-ins via Google will go straight in. You can still sign in with your email + 6-digit code at any time.</p>
+
+              <div class="alert-note">
+                🛡 <strong>Didn't link this?</strong> Contact support immediately at <code>support@tadaify.com</code> and open your security settings to revoke the linked account.
+              </div>
+
+              <p class="disclaimer">This is a security record — we email you whenever a new sign-in method is added so unauthorized links can be reviewed. We never share your address.</p>
+            </div>
+            <div class="email-footer">
+              tadaify · sent from noreply@tadaify.com · this address doesn't accept replies
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section class="plain-section">
+    <div class="scheme-label">multipart/alternative — text/plain fallback</div>
+    <h2>What plain-text-only clients see</h2>
+    <p>Some clients (terminal mail readers, accessibility tools, SMS gateways, low-bandwidth previews) render only the <code>text/plain</code> part. The fallback contains the same notification in clear ASCII — no markup, no CSS, no images.</p>
+    <div class="plain-frame">
+      <div class="inbucket-bar">
+        <span>Content-Type: text/plain; charset=UTF-8</span>
+        <span class="scheme-mark">plain</span>
+      </div>
+<pre>Hey @waserek,
+
+We linked your Google account to your tadaify.com profile.
+
+  Provider:   Google
+  Email used: waserek@gmail.com
+  Linked at:  2026-05-02 12:34 UTC
+
+Future sign-ins via Google will go straight in. You can still
+sign in with your email + 6-digit code at any time.
+
+Didn't link this? Contact support immediately at
+support@tadaify.com and open your security settings to revoke
+the linked account.
+
+This is a security record - we email you whenever a new
+sign-in method is added so unauthorized links can be reviewed.
+We never share your address.
+
+--
+tada!ify
+sent from noreply@tadaify.com
+this address doesn't accept replies</pre>
+    </div>
+  </section>
+
+  <p class="footer-links"><a href="./index.html">← back to email gallery</a> · <a href="./email-change-confirm.html">← email change confirm</a> · <a href="./welcome.html">welcome →</a></p>
+
+</body>
+</html>

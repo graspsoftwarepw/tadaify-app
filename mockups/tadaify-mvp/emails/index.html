@@ -9,7 +9,7 @@ created_at: 2026-05-02T13:15:00Z
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tadaify — Email mockups · Phase 1</title>
+  <title>tadaify — Email mockups · Phase 1 + Phase 2 preview</title>
   <link rel="stylesheet" href="../shared/tokens.css">
   <style>
     body { background: var(--bg-muted); }
@@ -140,23 +140,27 @@ created_at: 2026-05-02T13:15:00Z
 
   <header class="gallery-header">
     <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
-    <h1>Email mockups · Phase 1</h1>
+    <h1>Email mockups · Phase 1 + Phase 2 preview</h1>
     <span class="crumbs"><a href="../index.html">← all mockups</a></span>
   </header>
 
   <section class="intro">
-    <h2>Auth emails — Phase 1</h2>
+    <h2>Auth + lifecycle emails — Phase 1 ready, Phase 2 preview</h2>
     <p>
-      Two transactional emails cover 100% of the Phase 1 auth surface: the OTP sent on signup
+      Phase 1 (merged) ships two transactional auth emails: the OTP sent on signup
       (new visitor confirms their address) and the OTP sent on every subsequent login
-      (passwordless sign-in is the only login path in tadaify). Token-only delivery per
-      <strong>TR-tadaify-002</strong> — the email body never contains <code>{{ .ConfirmationURL }}</code>
-      or any clickable auth link. The 6-digit code is the entire auth handshake. Each mockup
-      shows the email rendered side-by-side in a light client and a dark client, plus the
-      <code>text/plain</code> multipart fallback below.
+      (passwordless sign-in is the only login path in tadaify). Phase 2 (preview only —
+      not yet implemented in production) adds four more templates: password reset,
+      email-change confirmation, identity-linked notification, and the post-onboarding
+      welcome email. Token-only delivery per <strong>TR-tadaify-002</strong> — the auth
+      email body never contains <code>{{ .ConfirmationURL }}</code> or any clickable auth
+      link. The 6-digit code is the entire auth handshake. The welcome email is the only
+      non-auth surface and may carry a single user-page link. Each mockup shows the email
+      in a light client plus the <code>text/plain</code> multipart fallback below.
     </p>
     <div class="meta-pills">
       <span class="pill ok">Phase 1 — ready</span>
+      <span class="pill info">Phase 2 — preview</span>
       <span class="pill info">tadaify-app#150</span>
       <span class="pill warm">Brand lock 2026-04-24</span>
       <span class="pill muted">DEC-WORDMARK-01</span>
@@ -193,41 +197,41 @@ created_at: 2026-05-02T13:15:00Z
 
   </div>
 
-  <h3 class="section-title">Phase 2 — coming next</h3>
+  <h3 class="section-title">Phase 2 — preview (mockups only, not yet implemented in production)</h3>
 
   <div class="tile-grid">
 
-    <span class="tile disabled" aria-disabled="true">
-      <span class="tile-status later">Phase 2</span>
+    <a class="tile" href="./password-reset.html">
+      <span class="tile-status next">Preview</span>
       <span class="tile-icon">03</span>
       <h4 class="tile-title">Password reset OTP</h4>
-      <p class="tile-sub">Optional once we add password sign-in alongside OTP. Same token-only contract.</p>
-      <span class="tile-meta">coming Phase 2</span>
-    </span>
+      <p class="tile-sub">Sent when a user submits the password-reset form. Same token-only contract — no clickable reset link.</p>
+      <span class="tile-meta">Subject: "Reset your tadaify password: 738294" · TTL 10 min</span>
+    </a>
 
-    <span class="tile disabled" aria-disabled="true">
-      <span class="tile-status later">Phase 2</span>
+    <a class="tile" href="./email-change-confirm.html">
+      <span class="tile-status next">Preview</span>
       <span class="tile-icon">04</span>
       <h4 class="tile-title">Email change confirm</h4>
-      <p class="tile-sub">Sent to new address when a user updates their primary email. Confirms ownership of the new address.</p>
-      <span class="tile-meta">coming Phase 2</span>
-    </span>
+      <p class="tile-sub">Sent to the new address when a user updates their primary email. Confirms ownership of the new mailbox.</p>
+      <span class="tile-meta">Subject: "Confirm your new tadaify email: 416052" · TTL 10 min</span>
+    </a>
 
-    <span class="tile disabled" aria-disabled="true">
-      <span class="tile-status later">Phase 2</span>
+    <a class="tile" href="./identity-linked.html">
+      <span class="tile-status next">Preview</span>
       <span class="tile-icon">05</span>
       <h4 class="tile-title">Identity linked</h4>
-      <p class="tile-sub">Notification when a third-party identity (Google, Apple) is linked to an existing tadaify account.</p>
-      <span class="tile-meta">coming Phase 2</span>
-    </span>
+      <p class="tile-sub">Informational notification (no token) sent after a third-party identity is linked via OAuth — security trail.</p>
+      <span class="tile-meta">Subject: "We linked your Google account to tadaify"</span>
+    </a>
 
-    <span class="tile disabled" aria-disabled="true">
-      <span class="tile-status later">Phase 2</span>
+    <a class="tile warm" href="./welcome.html">
+      <span class="tile-status next">Preview</span>
       <span class="tile-icon">06</span>
       <h4 class="tile-title">Welcome email</h4>
-      <p class="tile-sub">Lifecycle (not auth). Sent ~1 hour after first login with onboarding tips and trust strip.</p>
-      <span class="tile-meta">coming Phase 2</span>
-    </span>
+      <p class="tile-sub">Lifecycle (not auth). Sent after onboarding completion with page URL, three setup tips, and one soft trust line.</p>
+      <span class="tile-meta">Subject: "Welcome to tadaify, @waserek!"</span>
+    </a>
 
   </div>
 

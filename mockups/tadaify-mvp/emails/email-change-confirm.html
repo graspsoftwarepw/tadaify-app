@@ -1,0 +1,234 @@
+<!--
+type: mockup
+project: tadaify
+title: Auth email — email change confirm OTP (token-only, multipart preview)
+created_at: 2026-05-02T14:05:00Z
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email mockup: email change confirm</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    body { background: var(--bg-muted); padding: 32px clamp(16px,4vw,48px); }
+    .page-header { max-width: 1280px; margin: 0 auto 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    .page-header h1 { font-size: 28px; }
+    .page-header .crumbs { font-size: 13px; color: var(--fg-muted); }
+    .page-header .crumbs a { color: var(--brand-primary); }
+    .page-header .pill { padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--info-bg); color: var(--info); }
+    .page-intro { max-width: 1280px; margin: 0 auto 24px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; max-width: 840px; }
+
+    .pair-grid { max-width: 720px; margin: 0 auto; }
+    .scheme-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 8px 4px; }
+
+    .inbucket { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+    .inbucket-bar {
+      padding: 12px 18px; background: var(--bg-muted); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted);
+    }
+    .inbucket-bar .dev-badge { background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 10px; letter-spacing: 0.04em; }
+    .inbucket-bar .scheme-mark { margin-left: auto; padding: 2px 8px; border-radius: 4px; background: var(--bg-elevated); border: 1px solid var(--border-strong); }
+    .inbucket-headers {
+      padding: 14px 22px; border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);
+      display: grid; grid-template-columns: 70px 1fr; gap: 4px 14px;
+    }
+    .inbucket-headers .k { color: var(--fg-subtle); text-align: right; }
+    .inbucket-headers .v { color: var(--fg); word-break: break-all; }
+    .inbucket-headers .v strong { color: var(--fg); font-weight: 600; }
+
+    .email-canvas { padding: 32px 18px; background: #F3F4F6; }
+    .email {
+      max-width: 600px; margin: 0 auto;
+      background: #FFFFFF; border-radius: 14px; overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #111827; box-shadow: 0 4px 12px rgba(17,24,39,0.08);
+    }
+    .email-mark { padding: 28px 32px 8px; }
+    .email-mark .wordmark {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      letter-spacing: -0.02em; font-size: 28px; line-height: 1;
+      display: inline-flex; align-items: baseline;
+    }
+    .email-mark .wm-ta  { color: #6366F1; }
+    .email-mark .wm-da  { color: #F59E0B; }
+    .email-mark .wm-ify { color: #111827; }
+
+    .email-body { padding: 16px 32px 32px; }
+    .greeting {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      font-size: 26px; line-height: 1.2; letter-spacing: -0.01em;
+      margin: 0 0 6px; color: #111827;
+    }
+    .sub { font-size: 15px; color: #4B5563; margin: 0 0 28px; line-height: 1.55; }
+    .sub code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #F3F4F6; padding: 1px 6px; border-radius: 4px; color: #111827; }
+
+    .otp-card {
+      background: #F9FAFB; border: 1px solid #E5E7EB;
+      border-radius: 14px; padding: 28px 24px; text-align: center;
+      margin-bottom: 24px;
+    }
+    .otp-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: #6B7280; margin: 0 0 14px;
+    }
+    .otp-code {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      font-size: 56px; letter-spacing: 0.1em; color: #111827;
+      line-height: 1; font-feature-settings: "tnum" 1, "lnum" 1;
+      margin: 0 0 14px; user-select: all;
+    }
+    .otp-expiry { font-size: 13px; color: #6B7280; margin: 0; }
+    .otp-expiry strong { color: #111827; font-weight: 600; }
+
+    .body-copy { font-size: 14px; line-height: 1.65; color: #374151; margin: 0 0 18px; }
+
+    .alert-note {
+      margin-top: 22px;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #78350F;
+    }
+    .alert-note strong { color: #92400E; }
+    .alert-note .wordmark { font-family: 'Crimson Pro', Georgia, serif; font-weight: 600; }
+    .alert-note .wm-ta  { color: #6366F1; }
+    .alert-note .wm-da  { color: #F59E0B; }
+    .alert-note .wm-ify { color: #78350F; }
+
+    .disclaimer {
+      margin-top: 22px; padding-top: 22px; border-top: 1px solid #E5E7EB;
+      font-size: 12px; line-height: 1.6; color: #6B7280;
+    }
+
+    .email-footer {
+      padding: 18px 32px 22px; border-top: 1px solid #F3F4F6;
+      font-size: 11px; color: #9CA3AF; text-align: center; letter-spacing: 0.02em;
+    }
+
+    .plain-section { max-width: 1280px; margin: 36px auto 0; }
+    .plain-section h2 { font-size: 18px; margin-bottom: 6px; }
+    .plain-section p { font-size: 13px; color: var(--fg-muted); margin-bottom: 14px; }
+    .plain-frame { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .plain-frame .inbucket-bar { border-radius: var(--radius) var(--radius) 0 0; }
+    .plain-frame pre {
+      margin: 0; padding: 22px 28px;
+      font-family: var(--font-mono); font-size: 13px;
+      line-height: 1.65; color: var(--fg);
+      white-space: pre-wrap; word-wrap: break-word;
+    }
+    .footer-links { max-width: 1280px; margin: 32px auto 0; font-size: 12px; color: var(--fg-subtle); text-align: center; }
+    .footer-links a { color: var(--brand-primary); margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <span class="pill">Email mockup</span>
+    <h1>Email change confirm — multipart preview</h1>
+    <span class="crumbs"><a href="./index.html">← email gallery</a></span>
+  </header>
+
+  <p class="page-intro">
+    Sent by Supabase GoTrue to the <strong>new</strong> address when a user updates their primary email. Token-only delivery (TR-tadaify-002) — no clickable confirm link; the 6-digit code confirms ownership of the new mailbox. Real-impl placeholders: <code>{{ .Email }}</code> for the current address, <code>{{ .NewEmail }}</code> for the new address. Below: rendered in a light email client; plain-text fallback (multipart/alternative) at the bottom.
+  </p>
+
+  <div class="pair-grid">
+
+    <div>
+      <div class="inbucket">
+        <div class="inbucket-bar">
+          <span class="dev-badge">🔧 LOCAL DEV</span>
+          <span>Inbucket http://localhost:54354</span>
+          <span class="scheme-mark">light</span>
+        </div>
+        <div class="inbucket-headers">
+          <span class="k">From:</span><span class="v"><strong>tadaify</strong> &lt;noreply@tadaify.com&gt;</span>
+          <span class="k">To:</span><span class="v">waserek-new@local.test</span>
+          <span class="k">Subject:</span><span class="v"><strong>Confirm your new tadaify email: 416052</strong></span>
+          <span class="k">Date:</span><span class="v">2026-05-02 12:34 UTC</span>
+        </div>
+        <div class="email-canvas">
+          <div class="email" role="article" aria-label="Email change confirm OTP email">
+            <div class="email-mark">
+              <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+            </div>
+            <div class="email-body">
+              <h1 class="greeting">Hi 👋</h1>
+              <p class="sub">you asked to change your <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> email from <code>waserek@local.test</code> to <code>waserek-new@local.test</code>.</p>
+
+              <div class="otp-card">
+                <p class="otp-label">Your confirmation code</p>
+                <p class="otp-code">416052</p>
+                <p class="otp-expiry">Code expires in <strong>10 minutes</strong>.</p>
+              </div>
+
+              <p class="body-copy">Enter the 6 digits above on the verification page to confirm the change. The new email becomes your primary login email after confirmation.</p>
+
+              <div class="alert-note">
+                🔔 <strong>Didn't request this change?</strong> Ignore this email and check your account security at
+                <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com/settings/security</span></span>.
+                The code expires automatically — no action required.
+              </div>
+
+              <p class="disclaimer">We never share your email address. This is a one-off confirmation; if you don't enter the code within 10 minutes, the change is discarded and your current email stays in place.</p>
+            </div>
+            <div class="email-footer">
+              tadaify · sent from noreply@tadaify.com · this address doesn't accept replies
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section class="plain-section">
+    <div class="scheme-label">multipart/alternative — text/plain fallback</div>
+    <h2>What plain-text-only clients see</h2>
+    <p>Some clients (terminal mail readers, accessibility tools, SMS gateways, low-bandwidth previews) render only the <code>text/plain</code> part. The fallback contains the same code in clear ASCII — no markup, no CSS, no images. Token-only path is preserved.</p>
+    <div class="plain-frame">
+      <div class="inbucket-bar">
+        <span>Content-Type: text/plain; charset=UTF-8</span>
+        <span class="scheme-mark">plain</span>
+      </div>
+<pre>Hi,
+
+You asked to change your tadaify.com email from
+waserek@local.test to waserek-new@local.test.
+
+Your confirmation code:
+
+    4 1 6 0 5 2
+
+Code expires in 10 minutes.
+
+Enter the 6 digits above on the verification page to confirm
+the change. The new email becomes your primary login email
+after confirmation.
+
+Didn't request this change? Ignore this email and check your
+account security at tadaify.com/settings/security. The code
+expires automatically - no action required.
+
+We never share your email address. This is a one-off
+confirmation; if you don't enter the code within 10 minutes,
+the change is discarded and your current email stays in place.
+
+--
+tada!ify
+sent from noreply@tadaify.com
+this address doesn't accept replies</pre>
+    </div>
+  </section>
+
+  <p class="footer-links"><a href="./index.html">← back to email gallery</a> · <a href="./password-reset.html">← password reset</a> · <a href="./identity-linked.html">identity linked →</a></p>
+
+</body>
+</html>
