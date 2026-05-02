@@ -75,10 +75,11 @@ npm run test:e2e:ui       # Playwright UI mode (interactive)
 npm run test:e2e:debug    # PWDEBUG=1 step-through
 ```
 
-The `webServer` block in `playwright.config.ts` auto-starts `npm run dev` (Vite + the
-`@cloudflare/vite-plugin` SSR adapter that serves Workers routes) when no server is already
-running. The previous "wrangler dev required" diagnosis was wrong — Vite dev DOES serve
-`/api/*` Workers routes via SSR, verified manually 2026-05-02.
+The `webServer` block in `playwright.config.ts` auto-starts `npm run dev` (Vite SSR) when
+no server is already running. Note: the default `npm run dev` serves page routes but does
+**not** handle Workers resource routes (`/api/*`) — those return 400 (no loader). The
+critical-path API smoke test (`handle check`) is intentionally skipped under the default
+webServer. Full API-route coverage requires a wrangler-backed server (follow-up: #163).
 
 S1-S6 in `register-cascade.spec.ts` are currently `test.fixme()` (known-broken pending follow-up
 issue #163: debounce-aware selectors + per-test handle isolation + S6 env passthrough). Once
