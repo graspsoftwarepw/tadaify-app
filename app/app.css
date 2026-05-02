@@ -14,11 +14,13 @@
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  /* Body stays light until tokens.css ships a dark variant.
+     Removing dark:bg-gray-950 and color-scheme:dark prevents the OS dark-mode
+     preference from flipping the background to gray-950 while all text/border
+     tokens remain light-palette values — that combination makes text invisible.
+     The ThemeToggleButton (body.dark-mode) performs icon-swap only; a full
+     dark palette is a separate story. */
+  @apply bg-white;
 }
 
 /* Theme toggle button (mirrors mockups/tadaify-mvp/register.html lines 65-76).
