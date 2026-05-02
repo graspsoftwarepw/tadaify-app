@@ -1,0 +1,291 @@
+<!--
+type: mockup
+project: tadaify
+title: Lifecycle email — welcome (handle-claim celebration, multipart preview)
+created_at: 2026-05-02T14:15:00Z
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email mockup: welcome</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    body { background: var(--bg-muted); padding: 32px clamp(16px,4vw,48px); }
+    .page-header { max-width: 1280px; margin: 0 auto 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    .page-header h1 { font-size: 28px; }
+    .page-header .crumbs { font-size: 13px; color: var(--fg-muted); }
+    .page-header .crumbs a { color: var(--brand-primary); }
+    .page-header .pill { padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(245,158,11,0.18); color: #92400E; }
+    .page-intro { max-width: 1280px; margin: 0 auto 24px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; max-width: 840px; }
+
+    .pair-grid { max-width: 720px; margin: 0 auto; }
+    .scheme-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 8px 4px; }
+
+    .inbucket { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+    .inbucket-bar {
+      padding: 12px 18px; background: var(--bg-muted); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted);
+    }
+    .inbucket-bar .dev-badge { background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 10px; letter-spacing: 0.04em; }
+    .inbucket-bar .scheme-mark { margin-left: auto; padding: 2px 8px; border-radius: 4px; background: var(--bg-elevated); border: 1px solid var(--border-strong); }
+    .inbucket-headers {
+      padding: 14px 22px; border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);
+      display: grid; grid-template-columns: 70px 1fr; gap: 4px 14px;
+    }
+    .inbucket-headers .k { color: var(--fg-subtle); text-align: right; }
+    .inbucket-headers .v { color: var(--fg); word-break: break-all; }
+    .inbucket-headers .v strong { color: var(--fg); font-weight: 600; }
+
+    .email-canvas { padding: 32px 18px; background: #F3F4F6; }
+    .email {
+      max-width: 600px; margin: 0 auto;
+      background: #FFFFFF; border-radius: 14px; overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #111827; box-shadow: 0 4px 12px rgba(17,24,39,0.08);
+    }
+
+    .email-mark { padding: 36px 32px 12px; text-align: left; }
+    .email-mark .wordmark {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      letter-spacing: -0.02em; font-size: 40px; line-height: 1;
+      display: inline-flex; align-items: baseline;
+    }
+    .email-mark .wm-ta  { color: #6366F1; }
+    .email-mark .wm-da  { color: #F59E0B; }
+    .email-mark .wm-ify { color: #111827; }
+
+    .email-body { padding: 8px 32px 32px; }
+    .greeting {
+      font-family: 'Crimson Pro', Georgia, serif; font-weight: 600;
+      font-size: 30px; line-height: 1.2; letter-spacing: -0.01em;
+      margin: 0 0 8px; color: #111827;
+    }
+    .sub { font-size: 15px; color: #4B5563; margin: 0 0 24px; line-height: 1.55; }
+
+    .hero-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(245,158,11,0.06) 100%);
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 26px;
+    }
+    .hero-rows { display: grid; gap: 8px; font-size: 14px; margin-bottom: 18px; }
+    .hero-rows .row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: baseline; }
+    .hero-rows .label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6B7280; }
+    .hero-rows .value { color: #111827; font-weight: 500; }
+    .hero-rows .value code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; background: #FFFFFF; padding: 2px 8px; border-radius: 5px; border: 1px solid #E5E7EB; color: #111827; }
+
+    .cta-button {
+      display: inline-block;
+      background: #6366F1;
+      color: #FFFFFF !important;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 12px 22px;
+      border-radius: 10px;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      box-shadow: 0 1px 2px rgba(17,24,39,0.08);
+    }
+    .cta-button:hover { background: #4F46E5; }
+
+    .tips-list {
+      margin: 4px 0 24px;
+      padding: 0;
+      list-style: none;
+    }
+    .tips-list li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #F3F4F6;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #374151;
+    }
+    .tips-list li:last-child { border-bottom: 0; }
+    .tips-list .step-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.12);
+      color: #6366F1;
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600;
+      font-size: 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+    }
+    .tips-list .step-text strong { color: #111827; font-weight: 600; }
+
+    .trust-line {
+      margin-top: 20px;
+      padding: 12px 16px;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #4B5563;
+      text-align: center;
+    }
+    .trust-line strong { color: #111827; }
+
+    .email-footer {
+      padding: 18px 32px 22px; border-top: 1px solid #F3F4F6;
+      font-size: 11px; color: #9CA3AF; text-align: center; letter-spacing: 0.02em;
+    }
+    .email-footer a { color: #6B7280; text-decoration: underline; }
+
+    .plain-section { max-width: 1280px; margin: 36px auto 0; }
+    .plain-section h2 { font-size: 18px; margin-bottom: 6px; }
+    .plain-section p { font-size: 13px; color: var(--fg-muted); margin-bottom: 14px; }
+    .plain-frame { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .plain-frame .inbucket-bar { border-radius: var(--radius) var(--radius) 0 0; }
+    .plain-frame pre {
+      margin: 0; padding: 22px 28px;
+      font-family: var(--font-mono); font-size: 13px;
+      line-height: 1.65; color: var(--fg);
+      white-space: pre-wrap; word-wrap: break-word;
+    }
+    .footer-links { max-width: 1280px; margin: 32px auto 0; font-size: 12px; color: var(--fg-subtle); text-align: center; }
+    .footer-links a { color: var(--brand-primary); margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <span class="pill">Lifecycle email</span>
+    <h1>Welcome — multipart preview</h1>
+    <span class="crumbs"><a href="./index.html">← email gallery</a></span>
+  </header>
+
+  <p class="page-intro">
+    Sent right after handle claim (post-OTP verification, before / regardless of onboarding completion) per <strong>DEC-332 = D</strong>. The email celebrates that <code>@handle</code> is now permanently the user's; it does NOT claim the page is live (page becomes live only after explicit Publish action — see DEC-332 = D semantics). Skip-the-onboarding users still receive this email; they own the handle either way. <strong>No token, not auth.</strong> No clickable links to a "live page" because the page is reserved-not-published; the only CTA is "Set up your page" deep-linking into the dashboard. One soft trust line ("price locked for life") is allowed; auth emails carry none. Below: rendered in a light email client; plain-text fallback (multipart/alternative) at the bottom.
+  </p>
+
+  <div class="pair-grid">
+
+    <div>
+      <div class="inbucket">
+        <div class="inbucket-bar">
+          <span class="dev-badge">🔧 LOCAL DEV</span>
+          <span>Inbucket http://localhost:54354</span>
+          <span class="scheme-mark">light</span>
+        </div>
+        <div class="inbucket-headers">
+          <span class="k">From:</span><span class="v"><strong>tadaify</strong> &lt;noreply@tadaify.com&gt;</span>
+          <span class="k">To:</span><span class="v">waserek@local.test</span>
+          <span class="k">Subject:</span><span class="v"><strong>@waserek is yours — welcome to tadaify</strong></span>
+          <span class="k">Date:</span><span class="v">2026-05-02 12:34 UTC</span>
+        </div>
+        <div class="email-canvas">
+          <div class="email" role="article" aria-label="Welcome email">
+            <div class="email-mark">
+              <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+            </div>
+            <div class="email-body">
+              <h1 class="greeting">@waserek is yours 🎉</h1>
+              <p class="sub">welcome to <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> — we're holding <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com/waserek</span></span> for you, forever.</p>
+
+              <div class="hero-card">
+                <div class="hero-rows">
+                  <div class="row"><span class="label">Your handle</span><span class="value"><code>@waserek</code></span></div>
+                  <div class="row"><span class="label">Reserved URL</span><span class="value"><code>https://tadaify.com/waserek</code></span></div>
+                  <div class="row"><span class="label">Status</span><span class="value"><code>not yet published</code></span></div>
+                </div>
+                <a class="cta-button" href="https://tadaify.com/app/setup">Set up your page →</a>
+              </div>
+
+              <p style="margin: 0 0 18px 0; font-size: 14px; color: #4B5563; line-height: 1.6;">
+                Your page goes live the moment you click <strong>Publish</strong> — any time after you've added at least one block. Until then, visitors who hit your URL see a "coming soon" placeholder — no empty page, no awkward first impression. Take your time.
+              </p>
+
+              <ul class="tips-list">
+                <li>
+                  <span class="step-num">1</span>
+                  <span class="step-text"><strong>Add your first link block.</strong> Drop a YouTube video, an external shop link, or a contact form — whatever your audience needs first. Your page stays in draft until you're ready.</span>
+                </li>
+                <li>
+                  <span class="step-num">2</span>
+                  <span class="step-text"><strong>Pick a theme.</strong> Light, dark, or your own colors. Switch any time from <code style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;background:#F3F4F6;padding:1px 5px;border-radius:4px;">Settings → Appearance</code>.</span>
+                </li>
+                <li>
+                  <span class="step-num">3</span>
+                  <span class="step-text"><strong>Share once you're ready.</strong> Drop <code style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;background:#F3F4F6;padding:1px 5px;border-radius:4px;">tadaify.com/waserek</code> in your bio on Instagram, TikTok, X, YouTube, anywhere — but only after you've published at least one block.</span>
+                </li>
+              </ul>
+
+              <p class="trust-line">
+                🔒 <strong>Price locked for life</strong> — your plan never increases. Whatever tier you pick today is what you pay forever.
+              </p>
+            </div>
+            <div class="email-footer">
+              tadaify · sent from noreply@tadaify.com · <a href="https://tadaify.com/settings/email-preferences">manage email preferences</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section class="plain-section">
+    <div class="scheme-label">multipart/alternative — text/plain fallback</div>
+    <h2>What plain-text-only clients see</h2>
+    <p>Some clients (terminal mail readers, accessibility tools, low-bandwidth previews) render only the <code>text/plain</code> part. Same content in clear ASCII — no markup, no CSS, no images.</p>
+    <div class="plain-frame">
+      <div class="inbucket-bar">
+        <span>Content-Type: text/plain; charset=UTF-8</span>
+        <span class="scheme-mark">plain</span>
+      </div>
+<pre>@waserek is yours.
+
+Welcome to tadaify.com - we're holding tadaify.com/waserek
+for you, forever.
+
+  Your handle:   @waserek
+  Reserved URL:  https://tadaify.com/waserek
+  Status:        not yet published
+
+Set up your page:
+https://tadaify.com/app/setup
+
+Your page goes live the moment you click Publish - any time
+after you've added at least one block. Until then, visitors
+who hit your URL see a "coming soon" placeholder - no empty
+page, no awkward first impression. Take your time.
+
+Three quick steps when you're ready:
+
+  1. Add your first link block. Drop a YouTube video, an
+     external shop link, or a contact form - whatever your
+     audience needs first. Your page stays in draft until
+     you're ready.
+
+  2. Pick a theme. Light, dark, or your own colors. Switch
+     any time from Settings -> Appearance.
+
+  3. Share once you're ready. Drop tadaify.com/waserek in
+     your bio on Instagram, TikTok, X, YouTube, anywhere -
+     but only after you've published at least one block.
+
+Price locked for life - your plan never increases. Whatever
+tier you pick today is what you pay forever.
+
+--
+tada!ify
+sent from noreply@tadaify.com
+manage email preferences:
+https://tadaify.com/settings/email-preferences</pre>
+    </div>
+  </section>
+
+  <p class="footer-links"><a href="./index.html">← back to email gallery</a> · <a href="./identity-linked.html">← identity linked</a> · <a href="./_email-tokens-preview.html">tokens compare</a></p>
+
+</body>
+</html>
