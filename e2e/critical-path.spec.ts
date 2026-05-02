@@ -24,9 +24,10 @@ test("landing page loads and shows handle input", async ({ page }) => {
 
   await page.goto("/");
 
-  // Core landing page element — the handle claim input
+  // Core landing page element — the handle claim input (use first() to avoid strict-mode
+  // violation when multiple inputs match on pages with hero + footer handle forms)
   await expect(
-    page.getByRole("textbox", { name: /handle|username|claim/i })
+    page.getByRole("textbox", { name: /handle|username|claim/i }).first()
       .or(page.locator("input[placeholder*='handle'], input[placeholder*='your'], input[type='text']").first())
   ).toBeVisible({ timeout: 10_000 });
 
@@ -51,7 +52,10 @@ test("/register page loads and shows first step", async ({ page }) => {
 });
 
 test("handle check API responds to well-formed request", async ({ request }) => {
-  const res = await request.get("/api/handle/check?handle=testhandle");
+  // handle/check is a POST action (react-router action, not loader — GET returns 400)
+  const res = await request.post("/api/handle/check", {
+    data: { handle: "testhandle" },
+  });
   // Endpoint exists and returns JSON — 200 (available) or 409 (taken/reserved)
   expect([200, 409]).toContain(res.status());
   const data = await res.json() as Record<string, unknown>;
