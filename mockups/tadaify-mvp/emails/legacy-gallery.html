@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email templates gallery</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    /* --- Page chrome --- */
+    body { background: var(--bg-muted); }
+    .gallery-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(249,250,251,0.92);
+      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px clamp(16px,4vw,32px);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .gallery-header .brand { display: inline-flex; align-items: baseline; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: -0.02em; }
+    .gallery-header .brand .ta { color: var(--brand-primary); }
+    .gallery-header .brand .hyp { color: var(--wm-hyphen); margin: 0 1px; }
+    .gallery-header .brand .da { color: var(--brand-warm); }
+    .gallery-header .brand .ify { color: var(--fg); }
+    .gallery-header h1 {
+      font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-muted);
+      margin-left: 4px;
+    }
+    .gallery-toolbar { margin-left: auto; display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .toggle-group { display: inline-flex; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: var(--radius-full); padding: 3px; gap: 0; }
+    .toggle-group button {
+      border: 0; background: transparent; padding: 6px 14px;
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+      border-radius: var(--radius-full); cursor: pointer;
+      transition: background 140ms, color 140ms;
+    }
+    .toggle-group button.active { background: var(--brand-primary); color: #FFF; }
+    .toggle-group button:hover:not(.active) { background: var(--bg-muted); color: var(--fg); }
+
+    .gallery-intro {
+      max-width: 880px; margin: 32px auto 16px;
+      padding: 0 clamp(16px,4vw,32px);
+    }
+    .gallery-intro h2 { font-size: 32px; margin-bottom: 8px; }
+    .gallery-intro p { color: var(--fg-muted); font-size: 16px; line-height: 1.6; }
+    .gallery-intro .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+    .toc {
+      max-width: 880px; margin: 0 auto 32px;
+      padding: 0 clamp(16px,4vw,32px);
+    }
+    .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 8px; }
+    .toc-link {
+      display: block; padding: 10px 14px; background: var(--bg-elevated);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 13px; color: var(--fg); text-decoration: none;
+      transition: border 120ms, transform 120ms;
+    }
+    .toc-link:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+    .toc-link .num { color: var(--fg-subtle); font-family: var(--font-mono); font-size: 11px; margin-right: 8px; }
+    .toc-link .stack { display: inline-block; margin-left: 8px; padding: 1px 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 4px; }
+    .toc-link .stack.sb { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .toc-link .stack.rs { background: rgba(245,158,11,0.15); color: #92400E; }
+
+    /* --- Email card --- */
+    .email-card {
+      max-width: 880px; margin: 32px auto;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .email-card-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-muted);
+    }
+    .email-meta-row { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: baseline; margin-bottom: 6px; }
+    .email-num { font-family: var(--font-mono); font-size: 12px; color: var(--fg-subtle); }
+    .email-stack-pill { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+    .email-stack-pill.sb { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .email-stack-pill.rs { background: rgba(245,158,11,0.15); color: #92400E; }
+    .email-filename { font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); }
+
+    .email-subject { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--fg); letter-spacing: -0.01em; margin-top: 6px; }
+    .email-preheader { font-size: 13px; color: var(--fg-subtle); margin-top: 4px; font-style: italic; }
+
+    .email-card-toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px 28px; background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .email-card-toolbar .small-toggle {
+      font-size: 12px; font-weight: 600; padding: 5px 11px;
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-full); color: var(--fg-muted);
+      cursor: pointer; transition: background 120ms, color 120ms, border-color 120ms;
+    }
+    .email-card-toolbar .small-toggle.active {
+      background: var(--brand-primary); color: #FFF; border-color: var(--brand-primary);
+    }
+    .email-card-toolbar .small-toggle:hover:not(.active) { background: var(--bg-muted); color: var(--fg); }
+    .email-card-toolbar .copy-btn {
+      margin-left: auto; font-size: 12px; font-weight: 600;
+      background: var(--fg); color: var(--fg-inverse);
+      border: 0; padding: 6px 14px; border-radius: var(--radius-full); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .email-card-toolbar .copy-btn:hover { background: var(--brand-primary); }
+    .email-card-toolbar .copy-btn.ok { background: var(--success); }
+
+    /* Iframe stage */
+    .email-stage {
+      padding: 24px;
+      background: repeating-linear-gradient(45deg, transparent 0, transparent 12px, rgba(17,24,39,0.02) 12px, rgba(17,24,39,0.02) 13px), var(--bg-muted);
+      display: flex; justify-content: center;
+      transition: background 200ms;
+    }
+    .email-stage.dark { background: var(--bg-dark); }
+    .email-iframe {
+      border: 1px solid var(--border-strong);
+      background: #FFF;
+      width: 100%;
+      max-width: 640px;
+      min-height: 600px;
+      transition: max-width 220ms ease, min-height 220ms ease;
+      box-shadow: var(--shadow-lg);
+      border-radius: 6px;
+    }
+    .email-iframe.mobile { max-width: 375px; }
+    .email-stage.dark .email-iframe { border-color: #1F2937; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+
+    /* Source view */
+    details.email-source {
+      margin: 0; padding: 0;
+      border-top: 1px solid var(--border);
+    }
+    details.email-source > summary {
+      cursor: pointer; padding: 12px 28px;
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);
+      list-style: none; display: flex; align-items: center; gap: 8px;
+      background: var(--bg);
+    }
+    details.email-source > summary::-webkit-details-marker { display: none; }
+    details.email-source > summary::before {
+      content: "▸"; transition: transform 140ms; color: var(--fg-subtle);
+    }
+    details.email-source[open] > summary::before { transform: rotate(90deg); }
+    details.email-source > summary:hover { background: var(--bg-muted); color: var(--fg); }
+    .source-tabs { display: flex; gap: 0; border-top: 1px solid var(--border); background: var(--bg-muted); padding: 0 28px; }
+    .source-tabs button {
+      background: transparent; border: 0; padding: 10px 14px;
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);
+      cursor: pointer; border-bottom: 2px solid transparent;
+    }
+    .source-tabs button.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); }
+    .source-pre {
+      margin: 0; padding: 16px 28px 20px;
+      background: #0B0F1E; color: #E5E7EB;
+      font-family: var(--font-mono); font-size: 11px; line-height: 1.55;
+      overflow-x: auto; max-height: 480px; overflow-y: auto;
+      white-space: pre; tab-size: 2;
+    }
+
+    /* Footer */
+    .gallery-footer {
+      max-width: 880px; margin: 48px auto 32px;
+      padding: 0 clamp(16px,4vw,32px);
+      text-align: center; font-size: 13px; color: var(--fg-subtle);
+    }
+
+    /* Mobile */
+    @media (max-width: 720px) {
+      .email-card-toolbar { padding: 10px 16px; }
+      .email-card-header { padding: 16px 20px; }
+      .email-stage { padding: 16px 8px; }
+      .source-tabs, .source-pre { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="gallery-header">
+    <span class="brand"><span class="ta">ta</span><span class="hyp">!</span><span class="da">da</span><span class="ify">ify</span></span>
+    <h1>Email gallery · 10 templates</h1>
+    <div class="gallery-toolbar">
+      <span style="font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.06em;">All previews:</span>
+      <div class="toggle-group" id="globalThemeToggle" role="tablist" aria-label="Theme preview">
+        <button data-mode="light" class="active" type="button">☀ Light</button>
+        <button data-mode="dark" type="button">☾ Dark</button>
+      </div>
+      <div class="toggle-group" id="globalSizeToggle" role="tablist" aria-label="Size preview">
+        <button data-size="desktop" class="active" type="button">🖥 Desktop</button>
+        <button data-size="mobile" type="button">📱 Mobile</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="gallery-intro">
+    <h2>tadaify in inboxes</h2>
+    <p>
+      10 transactional email templates &mdash; the only place tadaify reaches users outside the app. Each card below shows the rendered preview, lets you toggle light/dark and desktop/mobile, view the production HTML, and copy it for direct paste into the prod codebase.
+    </p>
+    <div class="meta-pills">
+      <span class="pill pill-primary">4 Supabase Auth</span>
+      <span class="pill pill-warm">6 Resend custom</span>
+      <span class="pill">All have plain-text twin (.txt)</span>
+      <span class="pill">Inline CSS · Outlook-safe · WCAG AA</span>
+    </div>
+  </section>
+
+  <nav class="toc" aria-label="Templates">
+    <div class="toc-grid">
+      <a class="toc-link" href="#email-1"><span class="num">01</span>Confirm signup<span class="stack sb">Supabase</span></a>
+      <a class="toc-link" href="#email-2"><span class="num">02</span>Magic link<span class="stack sb">Supabase</span></a>
+      <a class="toc-link" href="#email-3"><span class="num">03</span>Reset password<span class="stack sb">Supabase</span></a>
+      <a class="toc-link" href="#email-4"><span class="num">04</span>Change email<span class="stack sb">Supabase</span></a>
+      <a class="toc-link" href="#email-5"><span class="num">05</span>Team invite<span class="stack rs">Resend</span></a>
+      <a class="toc-link" href="#email-6"><span class="num">06</span>GDPR export ready<span class="stack rs">Resend</span></a>
+      <a class="toc-link" href="#email-7"><span class="num">07</span>Subscription cancelled<span class="stack rs">Resend</span></a>
+      <a class="toc-link" href="#email-8"><span class="num">08</span>Payment failed<span class="stack rs">Resend</span></a>
+      <a class="toc-link" href="#email-9"><span class="num">09</span>Handle change confirm<span class="stack rs">Resend</span></a>
+      <a class="toc-link" href="#email-10"><span class="num">10</span>Waitlist promote<span class="stack rs">Resend</span></a>
+    </div>
+  </nav>
+
+  <!-- Template card factory: rendered via JS at bottom -->
+  <main id="emails"></main>
+
+  <footer class="gallery-footer">
+    <p>tadaify email templates · brand canon: Indigo Serif (locked 2026-04-24)</p>
+    <p style="margin-top:8px;">
+      Files: <code style="font-family:var(--font-mono);">supabase-auth/*.html</code> &middot;
+      <code style="font-family:var(--font-mono);">resend/*.html</code> &middot;
+      see <a href="./README.md">README.md</a> for integration.
+    </p>
+  </footer>
+
+  <script>
+    // --- Template registry --------------------------------------------------
+    const TEMPLATES = [
+      {
+        id: 1, stack: "supabase",
+        slug: "verify-signup",
+        path: "./supabase-auth/verify-signup.html",
+        textPath: "./supabase-auth/verify-signup.txt",
+        subject: "Confirm your tadaify account",
+        preheader: "Tap once to confirm your email and start building your tadaify page. Link expires in 24 hours.",
+        from: "tadaify <noreply@tadaify.com>",
+      },
+      {
+        id: 2, stack: "supabase",
+        slug: "magic-link",
+        path: "./supabase-auth/magic-link.html",
+        textPath: "./supabase-auth/magic-link.txt",
+        subject: "Your tadaify magic login link",
+        preheader: "Tap once to sign in to tadaify. Or paste this 6-digit code. Expires in 1 hour.",
+        from: "tadaify <noreply@tadaify.com>",
+      },
+      {
+        id: 3, stack: "supabase",
+        slug: "reset-password",
+        path: "./supabase-auth/reset-password.html",
+        textPath: "./supabase-auth/reset-password.txt",
+        subject: "Reset your tadaify password",
+        preheader: "Reset your tadaify password. Link expires in 1 hour. Didn't request this? You can safely ignore this email.",
+        from: "tadaify <security@tadaify.com>",
+      },
+      {
+        id: 4, stack: "supabase",
+        slug: "change-email",
+        path: "./supabase-auth/change-email.html",
+        textPath: "./supabase-auth/change-email.txt",
+        subject: "Confirm your new email address",
+        preheader: "Confirm the email change. Both addresses must confirm. Link expires in 24 hours.",
+        from: "tadaify <security@tadaify.com>",
+      },
+      {
+        id: 5, stack: "resend",
+        slug: "team-invite",
+        path: "./resend/team-invite.html",
+        textPath: "./resend/team-invite.txt",
+        subject: "Sarah invited you to join Acme Studio on tadaify",
+        preheader: "Sarah invited you to join Acme Studio as Editor on tadaify. Accept by May 3.",
+        from: "tadaify <invites@tadaify.com>",
+      },
+      {
+        id: 6, stack: "resend",
+        slug: "gdpr-export-ready",
+        path: "./resend/gdpr-export-ready.html",
+        textPath: "./resend/gdpr-export-ready.txt",
+        subject: "Your tadaify data export is ready",
+        preheader: "Your data export is ready. Download within 7 days. Size: 2.4 MB.",
+        from: "tadaify <privacy@tadaify.com>",
+      },
+      {
+        id: 7, stack: "resend",
+        slug: "subscription-cancelled",
+        path: "./resend/subscription-cancelled.html",
+        textPath: "./resend/subscription-cancelled.txt",
+        subject: "Your tadaify subscription is cancelled (until May 27)",
+        preheader: "Your subscription is cancelled but @yourhandle stays live until May 27. Reactivate anytime to keep your locked-for-life price.",
+        from: "tadaify <billing@tadaify.com>",
+      },
+      {
+        id: 8, stack: "resend",
+        slug: "payment-failed",
+        path: "./resend/payment-failed.html",
+        textPath: "./resend/payment-failed.txt",
+        subject: "Payment for tadaify failed — please update your card",
+        preheader: "Payment for $5.00 didn't go through. Update your card before May 27 to keep your page live.",
+        from: "tadaify <billing@tadaify.com>",
+      },
+      {
+        id: 9, stack: "resend",
+        slug: "handle-change-confirm",
+        path: "./resend/handle-change-confirm.html",
+        textPath: "./resend/handle-change-confirm.txt",
+        subject: "You changed your tadaify handle: oldhandle → newhandle",
+        preheader: "Your handle changed: @oldhandle → @newhandle. Old links redirect for 30 days. Undo within 1h if this wasn't you.",
+        from: "tadaify <security@tadaify.com>",
+      },
+      {
+        id: 10, stack: "resend",
+        slug: "waitlist-promote",
+        path: "./resend/waitlist-promote.html",
+        textPath: "./resend/waitlist-promote.txt",
+        subject: "Your tadaify spot is ready! 🎉",
+        preheader: "Your tadaify handle @yourhandle is reserved. Finalize within 7 days to claim it.",
+        from: "tadaify <hello@tadaify.com>",
+      },
+    ];
+
+    const stackLabel = (s) => s === "supabase" ? "Supabase Auth" : "Resend";
+    const stackPillCls = (s) => s === "supabase" ? "sb" : "rs";
+
+    // --- Render -------------------------------------------------------------
+    const root = document.getElementById("emails");
+    TEMPLATES.forEach((t) => {
+      const card = document.createElement("section");
+      card.className = "email-card";
+      card.id = `email-${t.id}`;
+      card.dataset.slug = t.slug;
+      card.innerHTML = `
+        <header class="email-card-header">
+          <div class="email-meta-row">
+            <span class="email-num">#${String(t.id).padStart(2,'0')}</span>
+            <span class="email-stack-pill ${stackPillCls(t.stack)}">${stackLabel(t.stack)}</span>
+            <span class="email-filename">${t.path}</span>
+            <span class="email-filename" style="color:var(--fg-subtle);">From: ${t.from}</span>
+          </div>
+          <div class="email-subject">${t.subject}</div>
+          <div class="email-preheader">${t.preheader}</div>
+        </header>
+
+        <div class="email-card-toolbar">
+          <button class="small-toggle theme active" type="button" data-mode="light">☀ Light</button>
+          <button class="small-toggle theme" type="button" data-mode="dark">☾ Dark</button>
+          <span style="width:8px;"></span>
+          <button class="small-toggle size active" type="button" data-size="desktop">🖥 Desktop</button>
+          <button class="small-toggle size" type="button" data-size="mobile">📱 Mobile (375px)</button>
+          <button class="copy-btn" type="button" data-copy="html">📋 Copy HTML</button>
+          <button class="copy-btn" type="button" data-copy="text" style="background:var(--brand-warm);color:#1F2937;">📋 Copy .txt</button>
+        </div>
+
+        <div class="email-stage">
+          <iframe class="email-iframe" src="${t.path}" title="${t.subject} preview" loading="lazy"></iframe>
+        </div>
+
+        <details class="email-source">
+          <summary>View source · HTML + plain-text twin</summary>
+          <div class="source-tabs">
+            <button class="active" data-tab="html" type="button">${t.slug}.html</button>
+            <button data-tab="text" type="button">${t.slug}.txt</button>
+          </div>
+          <pre class="source-pre" data-pane="html">Loading ${t.path} …</pre>
+          <pre class="source-pre" data-pane="text" hidden>Loading ${t.textPath} …</pre>
+        </details>
+      `;
+      root.appendChild(card);
+
+      // --- Wire toolbar within this card -------------------------------------
+      const stage = card.querySelector(".email-stage");
+      const iframe = card.querySelector(".email-iframe");
+      const themeBtns = card.querySelectorAll(".small-toggle.theme");
+      const sizeBtns = card.querySelectorAll(".small-toggle.size");
+
+      themeBtns.forEach((b) => b.addEventListener("click", () => {
+        themeBtns.forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        const mode = b.dataset.mode;
+        stage.classList.toggle("dark", mode === "dark");
+        // Force re-render iframe with prefers-color-scheme via colorScheme attr fallback
+        try {
+          const doc = iframe.contentDocument;
+          if (doc && doc.documentElement) {
+            doc.documentElement.style.colorScheme = mode;
+            // Add a marker so @media (prefers-color-scheme: dark) approximation visible:
+            // Simulate by toggling a class — emails use prefers-color-scheme so we paint stage bg only.
+          }
+        } catch (e) { /* cross-origin or not loaded yet */ }
+      }));
+
+      sizeBtns.forEach((b) => b.addEventListener("click", () => {
+        sizeBtns.forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        iframe.classList.toggle("mobile", b.dataset.size === "mobile");
+      }));
+
+      // --- Source loading + tabs --------------------------------------------
+      const tabBtns = card.querySelectorAll(".source-tabs button");
+      const htmlPane = card.querySelector('.source-pre[data-pane="html"]');
+      const textPane = card.querySelector('.source-pre[data-pane="text"]');
+      let htmlSrc = null, textSrc = null;
+      const loadOnce = () => {
+        if (htmlSrc !== null) return;
+        fetch(t.path).then(r => r.text()).then(s => {
+          htmlSrc = s;
+          htmlPane.textContent = s;
+        }).catch(e => { htmlPane.textContent = `[Could not load ${t.path}]\n${e}\n\nIf running over file://, your browser may block fetch — open via a local server (e.g. \`python3 -m http.server\` from the mockups dir) to view source.`; });
+        fetch(t.textPath).then(r => r.text()).then(s => {
+          textSrc = s;
+          textPane.textContent = s;
+        }).catch(e => { textPane.textContent = `[Could not load ${t.textPath}]\n${e}`; });
+      };
+      card.querySelector("details.email-source").addEventListener("toggle", (e) => { if (e.target.open) loadOnce(); });
+
+      tabBtns.forEach((b) => b.addEventListener("click", () => {
+        tabBtns.forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        const which = b.dataset.tab;
+        htmlPane.hidden = which !== "html";
+        textPane.hidden = which !== "text";
+      }));
+
+      // --- Copy buttons ------------------------------------------------------
+      card.querySelectorAll(".copy-btn").forEach((b) => b.addEventListener("click", async () => {
+        const which = b.dataset.copy;
+        const url = which === "html" ? t.path : t.textPath;
+        try {
+          const res = await fetch(url);
+          const text = await res.text();
+          await navigator.clipboard.writeText(text);
+          const orig = b.textContent;
+          b.classList.add("ok");
+          b.textContent = "✓ Copied";
+          setTimeout(() => { b.classList.remove("ok"); b.textContent = orig; }, 1600);
+        } catch (e) {
+          alert(`Could not copy ${url}.\nIf running on file://, browsers may block fetch + clipboard. Open this gallery via \`python3 -m http.server\` for full functionality, or copy from disk: ${url}`);
+        }
+      }));
+    });
+
+    // --- Global toggles drive every card -----------------------------------
+    document.querySelectorAll("#globalThemeToggle button").forEach((b) => {
+      b.addEventListener("click", () => {
+        document.querySelectorAll("#globalThemeToggle button").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        const mode = b.dataset.mode;
+        document.querySelectorAll(".email-card").forEach((card) => {
+          const target = card.querySelector(`.small-toggle.theme[data-mode="${mode}"]`);
+          if (target && !target.classList.contains("active")) target.click();
+        });
+      });
+    });
+    document.querySelectorAll("#globalSizeToggle button").forEach((b) => {
+      b.addEventListener("click", () => {
+        document.querySelectorAll("#globalSizeToggle button").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        const size = b.dataset.size;
+        document.querySelectorAll(".email-card").forEach((card) => {
+          const target = card.querySelector(`.small-toggle.size[data-size="${size}"]`);
+          if (target && !target.classList.contains("active")) target.click();
+        });
+      });
+    });
+  </script>
+</body>
+</html>

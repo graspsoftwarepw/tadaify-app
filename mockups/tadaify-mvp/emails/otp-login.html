@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<!--
+type: mockup
+project: tadaify
+title: Email mockup — Login OTP (Phase 1, DEC-307 returning-user path)
+created_at: 2026-05-02T17:08:00Z
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email mockup — Login OTP (Phase 1)</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    /* Page chrome shared with otp-signup.html — kept inline so the file is
+       openable standalone without a chained CSS partial. If we extract a
+       shared `_email-frame.css` later, this block moves there verbatim. */
+    body { background: var(--bg-muted); padding: 32px 16px 96px; }
+
+    .preview-page { max-width: 1080px; margin: 0 auto; }
+    .preview-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+      text-decoration: none; padding: 8px 14px; border-radius: var(--radius-full);
+      background: var(--bg-elevated); border: 1px solid var(--border-strong);
+      margin-bottom: 20px;
+      transition: border 120ms, color 120ms;
+    }
+    .preview-back:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .preview-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 32px; letter-spacing: -0.02em; margin-bottom: 6px;
+    }
+    .preview-sub { color: var(--fg-muted); font-size: 15px; margin-bottom: 4px; }
+    .preview-decs {
+      font-size: 12px; color: var(--fg-subtle); font-family: var(--font-mono);
+      margin-bottom: 28px;
+    }
+
+    .clients-grid {
+      display: grid; gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    }
+
+    .inbucket {
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-lg); background: #fff;
+      border: 1px solid var(--border);
+    }
+    .inbucket.dark { background: #0F172A; border-color: #1E293B; }
+
+    .inbucket-chrome {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: #F1F5F9; font-size: 12px; color: #475569;
+    }
+    .inbucket.dark .inbucket-chrome {
+      background: #1E293B; border-bottom-color: #334155; color: #94A3B8;
+    }
+    .inbucket-chrome .dot { width: 11px; height: 11px; border-radius: 50%; }
+    .inbucket-chrome .dot.r { background: #FB7185; }
+    .inbucket-chrome .dot.y { background: #FBBF24; }
+    .inbucket-chrome .dot.g { background: #34D399; }
+    .inbucket-chrome .url {
+      margin-left: 8px; font-family: var(--font-mono); font-size: 11px;
+      padding: 3px 10px; background: #fff; border-radius: var(--radius-full);
+      color: #475569; border: 1px solid #CBD5E1;
+    }
+    .inbucket.dark .inbucket-chrome .url {
+      background: #0F172A; color: #CBD5E1; border-color: #334155;
+    }
+    .inbucket-chrome .badge {
+      margin-left: auto; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px;
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+    }
+    .inbucket.dark .inbucket-chrome .badge {
+      background: rgba(99,102,241,0.22); color: #C7D2FE;
+    }
+
+    .inbucket-headers {
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      background: #FAFAFA; font-size: 13px;
+    }
+    .inbucket.dark .inbucket-headers {
+      background: #0B1220; border-bottom-color: #1E293B; color: #CBD5E1;
+    }
+    .inbucket-headers .row {
+      display: grid; grid-template-columns: 64px 1fr; gap: 8px; padding: 3px 0;
+    }
+    .inbucket-headers .key {
+      font-weight: 600; color: var(--fg-subtle);
+      letter-spacing: 0.04em; text-transform: uppercase; font-size: 11px;
+      padding-top: 2px;
+    }
+    .inbucket.dark .inbucket-headers .key { color: #64748B; }
+    .inbucket-headers .val { color: var(--fg); font-family: var(--font-mono); font-size: 12px; }
+    .inbucket.dark .inbucket-headers .val { color: #E2E8F0; }
+    .inbucket-headers .val .from-name { font-family: var(--font-sans); font-weight: 600; }
+
+    .inbucket-tab-strip {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    .inbucket.dark .inbucket-tab-strip {
+      background: #0F172A; border-bottom-color: #1E293B;
+    }
+    .inbucket-tab {
+      padding: 10px 18px; font-size: 12px; font-weight: 600;
+      color: var(--fg-muted); border-bottom: 2px solid transparent;
+      cursor: default;
+    }
+    .inbucket-tab.active {
+      color: var(--brand-primary); border-bottom-color: var(--brand-primary);
+    }
+    .inbucket.dark .inbucket-tab { color: #94A3B8; }
+    .inbucket.dark .inbucket-tab.active { color: #C7D2FE; border-bottom-color: #C7D2FE; }
+
+    .inbucket-body-wrap { padding: 32px 24px 24px; background: #F8FAFC; }
+    .inbucket.dark .inbucket-body-wrap { background: #020617; }
+
+    /* ---------- email body ---------- */
+    .email-body {
+      max-width: 600px; margin: 0 auto;
+      background: #FFFFFF;
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(17,24,39,0.06), 0 8px 24px rgba(17,24,39,0.04);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #111827; line-height: 1.55;
+    }
+    .email-body__hero {
+      padding: 36px 40px 8px;
+      background:
+        radial-gradient(600px 200px at 100% 0%, rgba(139,92,246,0.10), transparent 60%),
+        radial-gradient(400px 200px at 0% 0%, rgba(245,158,11,0.08), transparent 60%),
+        #FFFFFF;
+    }
+    .email-body__wordmark {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600; font-size: 32px;
+      letter-spacing: -0.02em; line-height: 1;
+      display: inline-block; margin-bottom: 24px;
+    }
+    .email-body__wordmark .ta  { color: #6366F1; }
+    .email-body__wordmark .hyp { color: rgba(17,24,39,0.30); margin: 0 1px; }
+    .email-body__wordmark .da  { color: #F59E0B; }
+    .email-body__wordmark .ify { color: #111827; }
+
+    .email-body__greeting {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600; font-size: 28px; letter-spacing: -0.02em;
+      color: #111827; margin: 0 0 6px;
+    }
+    .email-body__sub { font-size: 15px; color: #6B7280; margin: 0; }
+
+    .email-body__token-block { padding: 32px 40px; text-align: center; }
+    .email-body__token-label {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.10em;
+      text-transform: uppercase; color: #6366F1; margin-bottom: 12px;
+    }
+    .email-body__token {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600; font-size: 56px; letter-spacing: 0.16em;
+      color: #111827; line-height: 1; padding: 22px 0;
+      display: inline-block; min-width: 320px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.05));
+      border: 1.5px solid rgba(99,102,241,0.18);
+      border-radius: 14px;
+      font-feature-settings: "tnum", "lnum";
+    }
+    .email-body__token-expiry {
+      font-size: 13px; color: #9CA3AF; margin-top: 14px; font-weight: 500;
+    }
+
+    .email-body__copy {
+      padding: 8px 40px 28px; font-size: 15px; color: #374151;
+    }
+    .email-body__copy p { margin: 0 0 14px; }
+    .email-body__copy p.lead { font-size: 16px; }
+    .email-body__copy strong { color: #111827; }
+
+    .email-body__device-card {
+      margin: 0 40px 24px;
+      padding: 14px 16px;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #4B5563;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .email-body__device-card .icn {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(99,102,241,0.12); color: #6366F1;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .email-body__device-card strong { display: block; color: #111827; font-weight: 600; margin-bottom: 2px; }
+
+    .email-body__trust-strip {
+      padding: 18px 28px; background: #F9FAFB;
+      border-top: 1px solid #F3F4F6; border-bottom: 1px solid #F3F4F6;
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px;
+      font-size: 12px; font-weight: 600; color: #4B5563;
+    }
+    .email-body__trust-strip span { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+
+    .email-body__footer {
+      padding: 24px 40px 36px;
+      font-size: 12px; color: #9CA3AF; line-height: 1.6;
+    }
+    .email-body__footer .disclaimer {
+      padding: 12px 14px; background: #FAFAFA;
+      border-left: 3px solid #E5E7EB; border-radius: 4px;
+      color: #6B7280; margin-bottom: 16px;
+    }
+    .email-body__footer .meta {
+      font-family: 'JetBrains Mono', 'SF Mono', monospace;
+      font-size: 11px; color: #9CA3AF;
+    }
+    .email-body__footer a { color: #6366F1; text-decoration: none; }
+
+    /* dark-mode email body — Apple Mail dark / Gmail dark, ECN-150-03 */
+    .inbucket.dark .email-body {
+      background: #1F2937; color: #E5E7EB;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .inbucket.dark .email-body__hero {
+      background:
+        radial-gradient(600px 200px at 100% 0%, rgba(139,92,246,0.18), transparent 60%),
+        radial-gradient(400px 200px at 0% 0%, rgba(245,158,11,0.12), transparent 60%),
+        #1F2937;
+    }
+    .inbucket.dark .email-body__wordmark .ta  { color: #A5B4FC; }
+    .inbucket.dark .email-body__wordmark .hyp { color: rgba(229,231,235,0.40); }
+    .inbucket.dark .email-body__wordmark .da  { color: #FCD34D; }
+    .inbucket.dark .email-body__wordmark .ify { color: #F9FAFB; }
+    .inbucket.dark .email-body__greeting { color: #F9FAFB; }
+    .inbucket.dark .email-body__sub      { color: #9CA3AF; }
+    .inbucket.dark .email-body__token-label { color: #A5B4FC; }
+    .inbucket.dark .email-body__token {
+      color: #F9FAFB;
+      background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(245,158,11,0.10));
+      border-color: rgba(165,180,252,0.30);
+    }
+    .inbucket.dark .email-body__token-expiry { color: #9CA3AF; }
+    .inbucket.dark .email-body__copy { color: #D1D5DB; }
+    .inbucket.dark .email-body__copy strong { color: #F9FAFB; }
+    .inbucket.dark .email-body__device-card {
+      background: #111827; border-color: #374151; color: #D1D5DB;
+    }
+    .inbucket.dark .email-body__device-card strong { color: #F9FAFB; }
+    .inbucket.dark .email-body__device-card .icn {
+      background: rgba(165,180,252,0.15); color: #A5B4FC;
+    }
+    .inbucket.dark .email-body__trust-strip {
+      background: #111827; border-color: #374151; color: #D1D5DB;
+    }
+    .inbucket.dark .email-body__footer { color: #6B7280; }
+    .inbucket.dark .email-body__footer .disclaimer {
+      background: #111827; border-left-color: #374151; color: #9CA3AF;
+    }
+    .inbucket.dark .email-body__footer .meta { color: #6B7280; }
+    .inbucket.dark .email-body__footer a { color: #A5B4FC; }
+
+    .plaintext-section { max-width: 880px; margin: 48px auto 0; padding: 0 16px; }
+    .plaintext-section h3 {
+      font-family: var(--font-sans);
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--fg-muted); margin: 0 0 12px;
+    }
+    .plaintext-section pre {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 22px 26px;
+      font-family: var(--font-mono); font-size: 13px;
+      color: var(--fg); line-height: 1.7;
+      white-space: pre-wrap; word-break: break-word;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .spec-notes { max-width: 880px; margin: 32px auto 0; padding: 0 16px; }
+    .spec-notes-card {
+      padding: 24px 28px; background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--brand-warm);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+    .spec-notes-card h3 {
+      font-family: var(--font-sans); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--brand-warm-dark); margin: 0 0 12px;
+    }
+    .spec-notes-card ul { margin: 0; padding-left: 18px; }
+    .spec-notes-card li { font-size: 14px; color: var(--fg); padding: 3px 0; }
+    .spec-notes-card li code {
+      font-family: var(--font-mono); font-size: 12px;
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+    }
+
+    @media (max-width: 720px) {
+      .clients-grid { grid-template-columns: 1fr; }
+      .email-body__hero, .email-body__token-block,
+      .email-body__copy, .email-body__footer { padding-left: 24px; padding-right: 24px; }
+      .email-body__device-card { margin-left: 24px; margin-right: 24px; }
+      .email-body__token { font-size: 44px; min-width: 0; padding: 18px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-page">
+    <a href="./index.html" class="preview-back">← Back to email mockups</a>
+
+    <h1 class="preview-title">Login OTP — Phase 1</h1>
+    <p class="preview-sub">Sent when a returning user requests sign-in (DEC-307 returning-user path). Same OTP-only contract as signup, recognising the user is already known.</p>
+    <p class="preview-decs">DEC-291 / DEC-294 / DEC-295 / DEC-306 / DEC-307 · TR-tadaify-002 · ECN-150-02 / -03 / -06</p>
+
+    <div class="clients-grid">
+
+      <!-- LIGHT MODE EMAIL CLIENT -->
+      <div class="inbucket">
+        <div class="inbucket-chrome">
+          <span class="dot r"></span>
+          <span class="dot y"></span>
+          <span class="dot g"></span>
+          <span class="url">localhost:54354 · Inbucket</span>
+          <span class="badge">light client</span>
+        </div>
+        <div class="inbucket-headers">
+          <div class="row"><span class="key">From</span><span class="val"><span class="from-name">tadaify</span> &lt;noreply@tadaify.com&gt;</span></div>
+          <div class="row"><span class="key">To</span><span class="val">waserek@local.test</span></div>
+          <div class="row"><span class="key">Subject</span><span class="val">Sign in to tadaify: 502718</span></div>
+          <div class="row"><span class="key">Date</span><span class="val">2026-05-02 13:21:42 UTC</span></div>
+          <div class="row"><span class="key">Type</span><span class="val">multipart/alternative · text/html + text/plain</span></div>
+        </div>
+        <div class="inbucket-tab-strip">
+          <div class="inbucket-tab active">HTML</div>
+          <div class="inbucket-tab">Plain text</div>
+          <div class="inbucket-tab">Raw source</div>
+        </div>
+        <div class="inbucket-body-wrap">
+          <article class="email-body" role="article" aria-label="Login OTP email">
+            <header class="email-body__hero">
+              <span class="email-body__wordmark" aria-label="tadaify">
+                <span class="ta">ta</span><span class="hyp">-</span><span class="da">da!</span><span class="ify">ify</span>
+              </span>
+              <h1 class="email-body__greeting">Welcome back, @waserek</h1>
+              <p class="email-body__sub">signing you in to tadaify.</p>
+            </header>
+
+            <div class="email-body__token-block">
+              <div class="email-body__token-label">Your sign-in code</div>
+              <div class="email-body__token">502718</div>
+              <div class="email-body__token-expiry">Code expires in 10 minutes</div>
+            </div>
+
+            <div class="email-body__copy">
+              <p class="lead">Type these <strong>6 digits</strong> back into the tadaify sign-in form to finish logging in.</p>
+              <p>No password, no link to click — just the code, then you're in.</p>
+            </div>
+
+            <div class="email-body__device-card">
+              <span class="icn">🖥</span>
+              <span>
+                <strong>Sign-in attempt detected</strong>
+                Chrome on macOS · Warsaw, PL · 2026-05-02 13:21 UTC<br/>
+                Didn't request this? Ignore this email — no action will be taken without the code above.
+              </span>
+            </div>
+
+            <div class="email-body__trust-strip">
+              <span>🔒 Price locked for life</span>
+              <span>💸 30-day money-back</span>
+              <span>🛡 GDPR-compliant</span>
+            </div>
+
+            <footer class="email-body__footer">
+              <div class="disclaimer">
+                If you didn't try to sign in to tadaify, you can safely ignore this email — your account is unchanged. We never share your address.
+              </div>
+              <div class="meta">
+                tadaify · sent via Supabase Auth · <a href="https://tadaify.com">tadaify.com</a><br/>
+                Need help? Reply to this email — a human reads every reply.
+              </div>
+            </footer>
+          </article>
+        </div>
+      </div>
+
+      <!-- DARK MODE EMAIL CLIENT -->
+      <div class="inbucket dark">
+        <div class="inbucket-chrome">
+          <span class="dot r"></span>
+          <span class="dot y"></span>
+          <span class="dot g"></span>
+          <span class="url">Apple Mail (dark)</span>
+          <span class="badge">dark client</span>
+        </div>
+        <div class="inbucket-headers">
+          <div class="row"><span class="key">From</span><span class="val"><span class="from-name">tadaify</span> &lt;noreply@tadaify.com&gt;</span></div>
+          <div class="row"><span class="key">To</span><span class="val">waserek@local.test</span></div>
+          <div class="row"><span class="key">Subject</span><span class="val">Sign in to tadaify: 502718</span></div>
+          <div class="row"><span class="key">Date</span><span class="val">2026-05-02 13:21:42 UTC</span></div>
+          <div class="row"><span class="key">Type</span><span class="val">multipart/alternative</span></div>
+        </div>
+        <div class="inbucket-tab-strip">
+          <div class="inbucket-tab active">HTML</div>
+          <div class="inbucket-tab">Plain text</div>
+          <div class="inbucket-tab">Raw source</div>
+        </div>
+        <div class="inbucket-body-wrap">
+          <article class="email-body" role="article" aria-label="Login OTP email (dark client)">
+            <header class="email-body__hero">
+              <span class="email-body__wordmark" aria-label="tadaify">
+                <span class="ta">ta</span><span class="hyp">-</span><span class="da">da!</span><span class="ify">ify</span>
+              </span>
+              <h1 class="email-body__greeting">Welcome back, @waserek</h1>
+              <p class="email-body__sub">signing you in to tadaify.</p>
+            </header>
+
+            <div class="email-body__token-block">
+              <div class="email-body__token-label">Your sign-in code</div>
+              <div class="email-body__token">502718</div>
+              <div class="email-body__token-expiry">Code expires in 10 minutes</div>
+            </div>
+
+            <div class="email-body__copy">
+              <p class="lead">Type these <strong>6 digits</strong> back into the tadaify sign-in form to finish logging in.</p>
+              <p>No password, no link to click — just the code, then you're in.</p>
+            </div>
+
+            <div class="email-body__device-card">
+              <span class="icn">🖥</span>
+              <span>
+                <strong>Sign-in attempt detected</strong>
+                Chrome on macOS · Warsaw, PL · 2026-05-02 13:21 UTC<br/>
+                Didn't request this? Ignore this email — no action will be taken without the code above.
+              </span>
+            </div>
+
+            <div class="email-body__trust-strip">
+              <span>🔒 Price locked for life</span>
+              <span>💸 30-day money-back</span>
+              <span>🛡 GDPR-compliant</span>
+            </div>
+
+            <footer class="email-body__footer">
+              <div class="disclaimer">
+                If you didn't try to sign in to tadaify, you can safely ignore this email — your account is unchanged. We never share your address.
+              </div>
+              <div class="meta">
+                tadaify · sent via Supabase Auth · <a href="https://tadaify.com">tadaify.com</a><br/>
+                Need help? Reply to this email — a human reads every reply.
+              </div>
+            </footer>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <section class="plaintext-section">
+      <h3>What plain-text-only clients see (multipart/alternative — text/plain part)</h3>
+<pre>tadaify
+
+Welcome back, @waserek.
+
+Type these 6 digits back into the tadaify sign-in form to finish
+logging in:
+
+    502718
+
+Code expires in 10 minutes.
+
+No password, no link to click — just the code, then you're in.
+
+Sign-in attempt detected:
+  Chrome on macOS · Warsaw, PL · 2026-05-02 13:21 UTC
+  Didn't request this? Ignore this email — no action will be taken
+  without the code above.
+
+  Price locked for life · 30-day money-back · GDPR-compliant
+
+If you didn't try to sign in to tadaify, you can safely ignore this
+email — your account is unchanged. We never share your address.
+
+—
+tadaify
+https://tadaify.com
+Need help? Just reply — a human reads every reply.
+</pre>
+    </section>
+
+    <section class="spec-notes">
+      <div class="spec-notes-card">
+        <h3>Spec notes — what differs from signup OTP</h3>
+        <ul>
+          <li><strong>Greeting:</strong> <code>Welcome back, @&lt;handle&gt;</code> — handle is always known on the login path (DEC-307), so no fallback copy needed.</li>
+          <li><strong>Sub-line:</strong> <code>signing you in to tadaify</code> instead of <code>welcome to tadaify</code>.</li>
+          <li><strong>Subject:</strong> <code>Sign in to tadaify: {{ .Token }}</code> — set via <code>config.toml [auth.email.template.magic_link]</code> (Supabase reuses the magic-link slot for OTP-only login).</li>
+          <li><strong>Device card:</strong> shows browser + OS + city + UTC time; helps spot rogue sign-in attempts. Same data Supabase exposes via the auth event payload — values mocked in this preview.</li>
+          <li><strong>No magic link:</strong> still OTP-only — the device card is informational, not clickable.</li>
+          <li><strong>Token rendering, dark-mode parity, plain-text fallback, trust strip:</strong> identical to signup OTP — see <a href="./otp-signup.html">otp-signup.html</a>.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
