@@ -1,0 +1,284 @@
+<!--
+type: mockup
+project: tadaify
+title: Auth email — login OTP (token-only, multipart preview)
+created_at: 2026-05-02T13:05:00Z
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email mockup: login OTP</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    body { background: var(--bg-muted); padding: 32px clamp(16px,4vw,48px); }
+    .page-header { max-width: 1280px; margin: 0 auto 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    .page-header h1 { font-size: 28px; }
+    .page-header .crumbs { font-size: 13px; color: var(--fg-muted); }
+    .page-header .crumbs a { color: var(--brand-primary); }
+    .page-header .pill { padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--info-bg); color: var(--info); }
+    .page-intro { max-width: 1280px; margin: 0 auto 24px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; max-width: 840px; }
+
+    .pair-grid { max-width: 720px; margin: 0 auto; }
+
+    .scheme-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 8px 4px; }
+
+    .inbucket {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .inbucket-bar {
+      padding: 12px 18px;
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted);
+    }
+    .inbucket-bar .dev-badge {
+      background: #FEF3C7; color: #92400E;
+      padding: 2px 8px; border-radius: 4px; font-weight: 700;
+      font-size: 10px; letter-spacing: 0.04em;
+    }
+    .inbucket-bar .scheme-mark { margin-left: auto; padding: 2px 8px; border-radius: 4px; background: var(--bg-elevated); border: 1px solid var(--border-strong); }
+
+    .inbucket-headers {
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted);
+      display: grid; grid-template-columns: 70px 1fr; gap: 4px 14px;
+    }
+    .inbucket-headers .k { color: var(--fg-subtle); text-align: right; }
+    .inbucket-headers .v { color: var(--fg); word-break: break-all; }
+    .inbucket-headers .v strong { color: var(--fg); font-weight: 600; }
+
+    .email-canvas { padding: 32px 18px; background: #F3F4F6; }
+
+    .email {
+      max-width: 600px; margin: 0 auto;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #111827;
+      box-shadow: 0 4px 12px rgba(17,24,39,0.08);
+    }
+
+    .email-mark { padding: 28px 32px 8px; }
+    .email-mark .wordmark {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      font-size: 28px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: baseline;
+    }
+    .email-mark .wm-ta  { color: #6366F1; }
+    .email-mark .wm-da  { color: #F59E0B; }
+    .email-mark .wm-ify { color: #111827; }
+
+    .email-body { padding: 16px 32px 32px; }
+    .greeting {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600;
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin: 0 0 6px;
+      color: #111827;
+    }
+    .sub {
+      font-size: 15px;
+      color: #4B5563;
+      margin: 0 0 28px;
+      line-height: 1.55;
+    }
+
+    .otp-card {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 28px 24px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .otp-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #6B7280;
+      margin: 0 0 14px;
+    }
+
+    .otp-code {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600;
+      font-size: 56px;
+      letter-spacing: 0.1em;
+      color: #111827;
+      line-height: 1;
+      font-feature-settings: "tnum" 1, "lnum" 1;
+      margin: 0 0 14px;
+      user-select: all;
+    }
+
+    .otp-expiry {
+      font-size: 13px;
+      color: #6B7280;
+      margin: 0;
+    }
+    .otp-expiry strong { color: #111827; font-weight: 600; }
+
+    .body-copy {
+      font-size: 14px;
+      line-height: 1.65;
+      color: #374151;
+      margin: 0 0 18px;
+    }
+
+    .disclaimer {
+      margin-top: 22px;
+      padding-top: 22px;
+      border-top: 1px solid #E5E7EB;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #6B7280;
+    }
+
+    .email-footer {
+      padding: 18px 32px 22px;
+      border-top: 1px solid #F3F4F6;
+      font-size: 11px;
+      color: #9CA3AF;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    .plain-section { max-width: 1280px; margin: 36px auto 0; }
+    .plain-section h2 { font-size: 18px; margin-bottom: 6px; }
+    .plain-section p { font-size: 13px; color: var(--fg-muted); margin-bottom: 14px; }
+    .plain-frame {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+    .plain-frame .inbucket-bar { border-radius: var(--radius) var(--radius) 0 0; }
+    .plain-frame pre {
+      margin: 0;
+      padding: 22px 28px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--fg);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .footer-links { max-width: 1280px; margin: 32px auto 0; font-size: 12px; color: var(--fg-subtle); text-align: center; }
+    .footer-links a { color: var(--brand-primary); margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <span class="pill">Email mockup</span>
+    <h1>Login OTP — multipart preview</h1>
+    <span class="crumbs"><a href="./index.html">← email gallery</a></span>
+  </header>
+
+  <p class="page-intro">
+    Sent by Supabase GoTrue when an existing user requests a sign-in code (passwordless OTP, the only login path in tadaify Phase 1). Token-only delivery — no <code>{{ .ConfirmationURL }}</code>, no clickable auth link. Below: the email rendered in light + dark email clients side-by-side, then the plain-text fallback (multipart/alternative).
+  </p>
+
+  <div class="pair-grid">
+
+    <!-- LIGHT CLIENT -->
+    <div>
+      <div class="inbucket">
+        <div class="inbucket-bar">
+          <span class="dev-badge">🔧 LOCAL DEV</span>
+          <span>Inbucket http://localhost:54354</span>
+          <span class="scheme-mark">light</span>
+        </div>
+        <div class="inbucket-headers">
+          <span class="k">From:</span><span class="v"><strong>tadaify</strong> &lt;noreply@tadaify.com&gt;</span>
+          <span class="k">To:</span><span class="v">waserek@local.test</span>
+          <span class="k">Subject:</span><span class="v"><strong>Sign in to tadaify: 502718</strong></span>
+          <span class="k">Date:</span><span class="v">2026-05-02 12:41 UTC</span>
+        </div>
+        <div class="email-canvas">
+          <div class="email" role="article" aria-label="Login OTP email">
+            <div class="email-mark">
+              <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+            </div>
+            <div class="email-body">
+              <h1 class="greeting">Welcome back, @waserek</h1>
+              <p class="sub">signing you in to <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> — type the code below to continue.</p>
+
+              <div class="otp-card">
+                <p class="otp-label">Your sign-in code</p>
+                <p class="otp-code">502718</p>
+                <p class="otp-expiry">Code expires in <strong>10 minutes</strong></p>
+              </div>
+
+              <p class="body-copy">Type the 6 digits above into the login page that's still open in your browser. We never email a clickable login link — only this code, only to your inbox.</p>
+
+              <p class="disclaimer">If you didn't request this code, someone may have typed your email by mistake — you can safely ignore this message. If sign-in attempts continue, change your email's password as a precaution.</p>
+            </div>
+            <div class="email-footer">
+              tadaify · sent from noreply@tadaify.com · this address doesn't accept replies
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section class="plain-section">
+    <div class="scheme-label">multipart/alternative — text/plain fallback</div>
+    <h2>What plain-text-only clients see</h2>
+    <p>Clients without HTML rendering (terminal mailers, accessibility tools, low-bandwidth previews) get the plain-text part. Code is identical and unchanged.</p>
+    <div class="plain-frame">
+      <div class="inbucket-bar">
+        <span>Content-Type: text/plain; charset=UTF-8</span>
+        <span class="scheme-mark">plain</span>
+      </div>
+<pre>Welcome back, @waserek,
+
+signing you in to tadaify.com - type the code below to continue.
+
+Your sign-in code:
+
+    5 0 2 7 1 8
+
+Code expires in 10 minutes.
+
+Type the 6 digits above into the login page that's still open
+in your browser. We never email a clickable login link - only
+this code, only to your inbox.
+
+If you didn't request this code, someone may have typed your
+email by mistake - you can safely ignore this message. If
+sign-in attempts continue, change your email's password as
+a precaution.
+
+--
+tada!ify
+sent from noreply@tadaify.com
+this address doesn't accept replies</pre>
+    </div>
+  </section>
+
+  <p class="footer-links"><a href="./index.html">← back to email gallery</a> · <a href="./otp-signup.html">← signup OTP</a> · <a href="./_email-tokens-preview.html">tokens compare</a></p>
+
+</body>
+</html>
