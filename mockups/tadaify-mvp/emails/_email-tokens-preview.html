@@ -1,0 +1,360 @@
+<!--
+type: mockup
+project: tadaify
+title: Auth emails — design tokens compare (signup vs login side-by-side)
+created_at: 2026-05-02T13:10:00Z
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tadaify — Email tokens preview</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    body { background: var(--bg-muted); padding: 32px clamp(16px,4vw,48px); }
+    .page-header { max-width: 1480px; margin: 0 auto 18px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    .page-header h1 { font-size: 28px; }
+    .page-header .pill { padding: 4px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--info-bg); color: var(--info); }
+    .page-header .crumbs { font-size: 13px; color: var(--fg-muted); }
+    .page-header .crumbs a { color: var(--brand-primary); }
+    .page-intro { max-width: 980px; margin: 0 auto 28px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; }
+
+    .compare-grid { max-width: 1480px; margin: 0 auto 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 1100px) { .compare-grid { grid-template-columns: 1fr; } }
+    .scheme-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 8px 4px; }
+
+    /* compact email card (one-shot, no Inbucket frame here) */
+    .mini-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
+    .mini-card .head { padding: 14px 22px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .mini-card .head .subj { color: var(--fg); font-weight: 600; }
+    .mini-card .canvas { padding: 24px; background: #F3F4F6; }
+
+    .email {
+      max-width: 560px; margin: 0 auto;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #111827;
+      box-shadow: 0 4px 12px rgba(17,24,39,0.08);
+    }
+    .email-mark { padding: 24px 28px 6px; }
+    .email-mark .wordmark {
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-weight: 600; letter-spacing: -0.02em; font-size: 26px; line-height: 1;
+      display: inline-flex; align-items: baseline;
+    }
+    .email-mark .wm-ta  { color: #6366F1; }
+    .email-mark .wm-da  { color: #F59E0B; }
+    .email-mark .wm-ify { color: #111827; }
+
+    .email-body { padding: 12px 28px 28px; }
+    .greeting { font-family: 'Crimson Pro', Georgia, serif; font-weight: 600; font-size: 24px; line-height: 1.2; margin: 0 0 4px; color: #111827; }
+    .sub { font-size: 14px; color: #4B5563; margin: 0 0 22px; line-height: 1.55; }
+
+    .otp-card { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 22px 18px; text-align: center; margin-bottom: 18px; }
+    .otp-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #6B7280; margin: 0 0 12px; }
+    .otp-code { font-family: 'Crimson Pro', Georgia, serif; font-weight: 600; font-size: 48px; letter-spacing: 0.1em; color: #111827; line-height: 1; font-feature-settings: "tnum" 1, "lnum" 1; margin: 0 0 10px; }
+    .otp-expiry { font-size: 12px; color: #6B7280; margin: 0; }
+    .otp-expiry strong { color: #111827; font-weight: 600; }
+
+    .trust-strip { margin-top: 22px; padding: 14px 16px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 11px; color: #92400E; font-weight: 500; }
+
+    /* annotation strip */
+    .tokens-section { max-width: 1480px; margin: 0 auto; }
+    .tokens-section h2 { font-size: 22px; margin-bottom: 6px; }
+    .tokens-section p { font-size: 13px; color: var(--fg-muted); margin-bottom: 18px; max-width: 880px; line-height: 1.6; }
+
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .token {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .token .swatch {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      border: 1px solid var(--border-strong);
+    }
+    .token .meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .token .name { font-family: var(--font-mono); font-size: 12px; color: var(--fg); font-weight: 600; }
+    .token .val { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+    .token .role { font-size: 11px; color: var(--fg-subtle); }
+
+    .typography-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .typo {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .typo .label { font-family: var(--font-mono); font-size: 11px; color: var(--fg-subtle); margin-bottom: 8px; }
+    .typo .specimen { color: var(--fg); }
+    .typo .meta { font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); margin-top: 6px; }
+
+    .wm-spec { font-family: 'Crimson Pro', Georgia, serif; font-weight: 600; font-size: 28px; letter-spacing: -0.02em; line-height: 1; }
+    .wm-spec .wm-ta  { color: #6366F1; }
+    .wm-spec .wm-da  { color: #F59E0B; }
+    .wm-spec .wm-ify { color: #111827; }
+    .greet-spec { font-family: 'Crimson Pro', Georgia, serif; font-weight: 600; font-size: 22px; letter-spacing: -0.01em; }
+    .otp-spec { font-family: 'Crimson Pro', Georgia, serif; font-weight: 600; font-size: 36px; letter-spacing: 0.1em; font-feature-settings: "tnum" 1, "lnum" 1; }
+    .body-spec { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.65; color: #374151; }
+
+    .lock-callout {
+      max-width: 1480px; margin: 32px auto 0;
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.32);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      font-size: 13px;
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    .lock-callout strong { color: var(--brand-primary); }
+
+    .footer-links { max-width: 1480px; margin: 28px auto 0; font-size: 12px; color: var(--fg-subtle); text-align: center; }
+    .footer-links a { color: var(--brand-primary); margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <span class="pill">Tokens compare</span>
+    <h1>Email auth — design tokens at a glance</h1>
+    <span class="crumbs"><a href="./index.html">← email gallery</a></span>
+  </header>
+
+  <p class="page-intro">
+    Side-by-side reference of both Phase 1 auth emails (signup + login). Below: every CSS token used inside the email body. Email mockups are rendered with inline styles (no external stylesheet, no remote fonts, no remote images) — the values listed here are the source of truth that downstream Supabase GoTrue templates and Resend MJML templates must match exactly.
+  </p>
+
+  <div class="compare-grid">
+
+    <div>
+      <div class="scheme-label">Signup OTP — Subject: "Your tadaify code: 184629"</div>
+      <div class="mini-card">
+        <div class="head">
+          <span><strong>To:</strong> waserek@local.test</span>
+          <span class="subj">Your tadaify code: 184629</span>
+        </div>
+        <div class="canvas">
+          <div class="email">
+            <div class="email-mark">
+              <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+            </div>
+            <div class="email-body">
+              <h1 class="greeting">Hey @waserek 👋</h1>
+              <p class="sub">welcome to tada!ify — one quick step to confirm your email.</p>
+              <div class="otp-card">
+                <p class="otp-label">Your one-time code</p>
+                <p class="otp-code">184629</p>
+                <p class="otp-expiry">Code expires in <strong>10 minutes</strong></p>
+              </div>
+              <div class="trust-strip">
+                <span>🔒 Price locked for life</span>
+                <span>💸 30-day money-back</span>
+                <span>🛡 GDPR-compliant</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="scheme-label">Login OTP — Subject: "Sign in to tadaify: 502718"</div>
+      <div class="mini-card">
+        <div class="head">
+          <span><strong>To:</strong> waserek@local.test</span>
+          <span class="subj">Sign in to tadaify: 502718</span>
+        </div>
+        <div class="canvas">
+          <div class="email">
+            <div class="email-mark">
+              <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+            </div>
+            <div class="email-body">
+              <h1 class="greeting">Welcome back, @waserek</h1>
+              <p class="sub">signing you in to tada!ify — type the code below to continue.</p>
+              <div class="otp-card">
+                <p class="otp-label">Your sign-in code</p>
+                <p class="otp-code">502718</p>
+                <p class="otp-expiry">Code expires in <strong>10 minutes</strong></p>
+              </div>
+              <div class="trust-strip">
+                <span>🔒 Price locked for life</span>
+                <span>💸 30-day money-back</span>
+                <span>🛡 GDPR-compliant</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <section class="tokens-section">
+    <h2>Color tokens</h2>
+    <p>Hard-coded hex values inside the email body — no CSS custom properties (mail clients drop unsupported features). Mirrors <code>--wm-ta</code>, <code>--wm-da</code>, <code>--wm-ify</code> from <code>shared/tokens.css</code>.</p>
+    <div class="token-grid">
+      <div class="token">
+        <div class="swatch" style="background:#6366F1"></div>
+        <div class="meta">
+          <span class="name">wm-ta</span>
+          <span class="val">#6366F1</span>
+          <span class="role">Wordmark "ta" — indigo</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#F59E0B"></div>
+        <div class="meta">
+          <span class="name">wm-da</span>
+          <span class="val">#F59E0B</span>
+          <span class="role">Wordmark "da!" — warm yellow (incl. !)</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#111827"></div>
+        <div class="meta">
+          <span class="name">wm-ify</span>
+          <span class="val">#111827</span>
+          <span class="role">Wordmark "ify" — fg / dark</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#FFFFFF; border-color:#E5E7EB"></div>
+        <div class="meta">
+          <span class="name">email bg</span>
+          <span class="val">#FFFFFF</span>
+          <span class="role">Email card surface</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#F9FAFB"></div>
+        <div class="meta">
+          <span class="name">otp-card bg</span>
+          <span class="val">#F9FAFB</span>
+          <span class="role">Code container</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#FFFBEB"></div>
+        <div class="meta">
+          <span class="name">trust bg</span>
+          <span class="val">#FFFBEB</span>
+          <span class="role">Trust strip — warm tint</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#FDE68A"></div>
+        <div class="meta">
+          <span class="name">trust border</span>
+          <span class="val">#FDE68A</span>
+          <span class="role">Trust strip border</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#92400E"></div>
+        <div class="meta">
+          <span class="name">trust fg</span>
+          <span class="val">#92400E</span>
+          <span class="role">Trust strip text</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#4B5563"></div>
+        <div class="meta">
+          <span class="name">fg-muted</span>
+          <span class="val">#4B5563</span>
+          <span class="role">Sub copy</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#6B7280"></div>
+        <div class="meta">
+          <span class="name">fg-subtle</span>
+          <span class="val">#6B7280</span>
+          <span class="role">OTP label / disclaimer</span>
+        </div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#E5E7EB"></div>
+        <div class="meta">
+          <span class="name">border</span>
+          <span class="val">#E5E7EB</span>
+          <span class="role">Card + divider strokes</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tokens-section" style="margin-top:32px">
+    <h2>Typography tokens</h2>
+    <p>Three families only: <code>Crimson Pro</code> (display) → falls back to <code>Georgia</code> → <code>serif</code>. <code>Inter</code> (body) → falls back to system stack. <code>JetBrains Mono</code> never used inside the email body (it's only in the Inbucket chrome around the email). No remote font load — fallbacks must look acceptable in plain Outlook.</p>
+    <div class="typography-grid">
+      <div class="typo">
+        <div class="label">wordmark · Crimson Pro 600 · 28px · -0.02em</div>
+        <div class="specimen wm-spec"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></div>
+        <div class="meta">font-family: 'Crimson Pro', Georgia, serif</div>
+      </div>
+      <div class="typo">
+        <div class="label">greeting · Crimson Pro 600 · 26px · -0.01em</div>
+        <div class="specimen greet-spec">Hey @waserek 👋</div>
+        <div class="meta">line-height 1.2</div>
+      </div>
+      <div class="typo">
+        <div class="label">otp-code · Crimson Pro 600 · 56px · 0.1em · tnum</div>
+        <div class="specimen otp-spec">184629</div>
+        <div class="meta">font-feature-settings: "tnum" 1, "lnum" 1</div>
+      </div>
+      <div class="typo">
+        <div class="label">body · Inter 400 · 14px · 1.65</div>
+        <div class="specimen body-spec">Type the 6 digits above into the page that's still open in your browser.</div>
+        <div class="meta">font-family: 'Inter', system-ui, sans-serif</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tokens-section" style="margin-top:32px">
+    <h2>Spacing &amp; radius</h2>
+    <p>Email layout uses fixed pixel values (em / rem / clamp() unsupported in many mail clients). Card max-width 600px, padded 28-32px. Radius 14px on email card and OTP container, 12px on trust strip, 10px on plain section.</p>
+    <div class="token-grid">
+      <div class="token">
+        <div class="swatch" style="background:#E5E7EB; border-radius:14px"></div>
+        <div class="meta"><span class="name">card-radius</span><span class="val">14px</span><span class="role">Email + OTP card</span></div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#E5E7EB; border-radius:12px"></div>
+        <div class="meta"><span class="name">trust-radius</span><span class="val">12px</span><span class="role">Trust strip</span></div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#E5E7EB; width:60px"></div>
+        <div class="meta"><span class="name">card-pad</span><span class="val">28-32px</span><span class="role">Email body padding</span></div>
+      </div>
+      <div class="token">
+        <div class="swatch" style="background:#E5E7EB; width:80px; height:24px"></div>
+        <div class="meta"><span class="name">max-width</span><span class="val">600px</span><span class="role">Email canvas</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="lock-callout">
+    <strong>Brand lock — DEC-WORDMARK-01 (2026-04-24).</strong> Wordmark renders as <span class="wm-spec" style="font-size:18px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span> across every surface — zero separators, zero hyphen, zero middle-dot, zero <code>&lt;span class="hyp"&gt;</code>. The <code>!</code> belongs to the <code>da!</code> partition (warm yellow). No exceptions.
+  </div>
+
+  <p class="footer-links"><a href="./index.html">← back to email gallery</a> · <a href="./otp-signup.html">signup OTP</a> · <a href="./otp-login.html">login OTP</a></p>
+
+</body>
+</html>
