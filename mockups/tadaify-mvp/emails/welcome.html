@@ -1,7 +1,7 @@
 <!--
 type: mockup
 project: tadaify
-title: Lifecycle email — welcome (post-onboarding, multipart preview)
+title: Lifecycle email — welcome (handle-claim celebration, multipart preview)
 created_at: 2026-05-02T14:15:00Z
 -->
 <!DOCTYPE html>
@@ -165,7 +165,7 @@ created_at: 2026-05-02T14:15:00Z
   </header>
 
   <p class="page-intro">
-    Sent after onboarding completion (Slice C) — first time the user reaches a published page. <strong>No token, not auth.</strong> This is the one transactional surface where a clickable link is OK because the destination is the user's own page (not a credential / auth flow). Larger wordmark + softer copy reflect the celebratory tone. One soft trust line ("price locked for life") is allowed here; auth emails carry none. Below: rendered in a light email client; plain-text fallback (multipart/alternative) at the bottom.
+    Sent right after handle claim (post-OTP verification, before / regardless of onboarding completion) per <strong>DEC-332 = D</strong>. The email celebrates that <code>@handle</code> is now permanently the user's; it does NOT claim the page is live (page becomes live only after explicit Publish action — see DEC-332 = D semantics). Skip-the-onboarding users still receive this email; they own the handle either way. <strong>No token, not auth.</strong> No clickable links to a "live page" because the page is reserved-not-published; the only CTA is "Set up your page" deep-linking into the dashboard. One soft trust line ("price locked for life") is allowed; auth emails carry none. Below: rendered in a light email client; plain-text fallback (multipart/alternative) at the bottom.
   </p>
 
   <div class="pair-grid">
@@ -180,7 +180,7 @@ created_at: 2026-05-02T14:15:00Z
         <div class="inbucket-headers">
           <span class="k">From:</span><span class="v"><strong>tadaify</strong> &lt;noreply@tadaify.com&gt;</span>
           <span class="k">To:</span><span class="v">waserek@local.test</span>
-          <span class="k">Subject:</span><span class="v"><strong>Welcome to tadaify, @waserek!</strong></span>
+          <span class="k">Subject:</span><span class="v"><strong>@waserek is yours — welcome to tadaify</strong></span>
           <span class="k">Date:</span><span class="v">2026-05-02 12:34 UTC</span>
         </div>
         <div class="email-canvas">
@@ -189,21 +189,26 @@ created_at: 2026-05-02T14:15:00Z
               <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
             </div>
             <div class="email-body">
-              <h1 class="greeting">Welcome, @waserek 🎉</h1>
-              <p class="sub">your page is live at <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com/waserek</span></span>.</p>
+              <h1 class="greeting">@waserek is yours 🎉</h1>
+              <p class="sub">welcome to <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> — we're holding <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com/waserek</span></span> for you, forever.</p>
 
               <div class="hero-card">
                 <div class="hero-rows">
                   <div class="row"><span class="label">Your handle</span><span class="value"><code>@waserek</code></span></div>
-                  <div class="row"><span class="label">Your page</span><span class="value"><code>https://tadaify.com/waserek</code></span></div>
+                  <div class="row"><span class="label">Reserved URL</span><span class="value"><code>https://tadaify.com/waserek</code></span></div>
+                  <div class="row"><span class="label">Status</span><span class="value"><code>not yet published</code></span></div>
                 </div>
-                <a class="cta-button" href="https://tadaify.com/waserek">View your page →</a>
+                <a class="cta-button" href="https://tadaify.com/app/setup">Set up your page →</a>
               </div>
+
+              <p style="margin: 0 0 18px 0; font-size: 14px; color: #4B5563; line-height: 1.6;">
+                Your page goes live the moment you publish your first block. Until then, visitors who hit your URL see a "coming soon" placeholder — no empty page, no awkward first impression. Take your time.
+              </p>
 
               <ul class="tips-list">
                 <li>
                   <span class="step-num">1</span>
-                  <span class="step-text"><strong>Add your first link block.</strong> Drop a YouTube video, an external shop link, or a contact form — whatever your audience needs first.</span>
+                  <span class="step-text"><strong>Add your first link block.</strong> Drop a YouTube video, an external shop link, or a contact form — whatever your audience needs first. The page publishes automatically the moment you save.</span>
                 </li>
                 <li>
                   <span class="step-num">2</span>
@@ -211,7 +216,7 @@ created_at: 2026-05-02T14:15:00Z
                 </li>
                 <li>
                   <span class="step-num">3</span>
-                  <span class="step-text"><strong>Share your URL anywhere.</strong> Drop <code style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;background:#F3F4F6;padding:1px 5px;border-radius:4px;">tadaify.com/waserek</code> in your bio on Instagram, TikTok, X, YouTube, anywhere.</span>
+                  <span class="step-text"><strong>Share once you're ready.</strong> Drop <code style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;background:#F3F4F6;padding:1px 5px;border-radius:4px;">tadaify.com/waserek</code> in your bio on Instagram, TikTok, X, YouTube, anywhere — but only after you've published at least one block.</span>
                 </li>
               </ul>
 
@@ -238,27 +243,36 @@ created_at: 2026-05-02T14:15:00Z
         <span>Content-Type: text/plain; charset=UTF-8</span>
         <span class="scheme-mark">plain</span>
       </div>
-<pre>Welcome, @waserek!
+<pre>@waserek is yours.
 
-Your page is live at tadaify.com/waserek.
+Welcome to tadaify.com - we're holding tadaify.com/waserek
+for you, forever.
 
-  Your handle: @waserek
-  Your page:   https://tadaify.com/waserek
+  Your handle:   @waserek
+  Reserved URL:  https://tadaify.com/waserek
+  Status:        not yet published
 
-View your page:
-https://tadaify.com/waserek
+Set up your page:
+https://tadaify.com/app/setup
 
-Three quick steps to make it yours:
+Your page goes live the moment you publish your first block.
+Until then, visitors who hit your URL see a "coming soon"
+placeholder - no empty page, no awkward first impression.
+Take your time.
+
+Three quick steps when you're ready:
 
   1. Add your first link block. Drop a YouTube video, an
      external shop link, or a contact form - whatever your
-     audience needs first.
+     audience needs first. The page publishes automatically
+     the moment you save.
 
   2. Pick a theme. Light, dark, or your own colors. Switch
      any time from Settings -> Appearance.
 
-  3. Share your URL anywhere. Drop tadaify.com/waserek in
-     your bio on Instagram, TikTok, X, YouTube, anywhere.
+  3. Share once you're ready. Drop tadaify.com/waserek in
+     your bio on Instagram, TikTok, X, YouTube, anywhere -
+     but only after you've published at least one block.
 
 Price locked for life - your plan never increases. Whatever
 tier you pick today is what you pay forever.
