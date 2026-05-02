@@ -413,6 +413,10 @@ test("S6 — handle reservation expires after short TTL, becomes available again
   const continueBtn = pageB.getByRole("button", { name: /continue/i }).first();
   await expect(continueBtn).toBeEnabled({ timeout: 3_000 });
   await continueBtn.click();
+  // Method-selection step: click "Continue with Email" (same pattern as fillRegisterForm / S5)
+  const emailMethodBtn = pageB.getByRole("button", { name: /continue with email/i });
+  await expect(emailMethodBtn).toBeVisible({ timeout: 8_000 });
+  await emailMethodBtn.click();
   await expect(pageB.getByRole("textbox", { name: /email/i })).toBeVisible({ timeout: 8_000 });
 
   await ctxA.close();
