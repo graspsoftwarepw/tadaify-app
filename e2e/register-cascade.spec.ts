@@ -13,8 +13,8 @@
  * S6 requires HANDLE_RESERVATION_TTL_SECONDS<=30 (legitimate runtime gate).
  *
  * Layer 1: debounce-aware button-enabled wait (300ms debounce on handle check)
- * Layer 2: per-test handle isolation (fixed handles + beforeAll cleanup)
- * Layer 3: afterAll cleanup hook (DELETE from handle_reservations)
+ * Layer 2: per-test handle isolation (fixed handles + beforeAll/afterAll cleanup)
+ * Layer 3: beforeAll + afterAll cleanup hooks (DELETE from handle_reservations)
  * Layer 4: webServer env passthrough (in playwright.config.ts)
  * Layer 5: Mailpit API (replaces Inbucket — uses /api/v1/messages?query=to:<email>)
  * Layer 6: OTP grid input pattern (6 separate inputs, aria-label="Digit N")
@@ -206,8 +206,13 @@ async function enterOtp(page: Page, code: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Global cleanup
+// Global cleanup — before AND after suite (Layer 3)
 // ---------------------------------------------------------------------------
+
+// Pre-run cleanup: remove stale reservations from interrupted prior runs
+test.beforeAll(async () => {
+  await cleanupHandleReservations(HANDLE_PREFIX);
+});
 
 test.afterAll(async () => {
   await cleanupHandleReservations(HANDLE_PREFIX);
