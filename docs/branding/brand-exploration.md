@@ -8,6 +8,8 @@ tags: [branding, naming, mockup, alternatives]
 status: draft
 ---
 
+> **DEPRECATED 2026-04-24** — exploration era; canonical wordmark locked in [brand-lock.md](./brand-lock.md). All variants below are historical.
+
 # Alternative Brand Explorations — tada!ify and tadaa.page
 
 ## Purpose
