@@ -6,11 +6,11 @@
  * URL state:
  *   loader reads  → ?handle=<str> (pre-filled from registration)
  *   action emits  → /onboarding/social?handle=<str>&platforms=<csv>
- *                   OR /onboarding/template?handle=<str>  (skip)
+ *                   OR /onboarding/profile?handle=<str>  (skip)
  *
  * DEC trail:
  *   DEC-297=B  welcome is step 1/5; shows platform picker
- *   DEC-298=A  skip bypasses social → profile, goes straight to template
+ *   DEC-298=A  skip bypasses platform/social setup, lands on profile (step 3)
  *
  * Covers: BR-ONBOARDING-001 (step 1 platform picker)
  */
@@ -55,10 +55,10 @@ export async function action({ request }: Route.ActionArgs) {
   const handle = (form.get("handle") as string) ?? "";
 
   if (intent === "skip") {
-    // DEC-298=A: skip platforms → jump straight to template
+    // DEC-298=A: skip platforms/social → land on profile (required step 3)
     const params = new URLSearchParams();
     if (handle) params.set("handle", handle);
-    return redirect(`/onboarding/template?${params.toString()}`);
+    return redirect(`/onboarding/profile?${params.toString()}`);
   }
 
   // Collect selected platforms (checkboxes)

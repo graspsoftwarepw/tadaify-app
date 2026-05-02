@@ -7,7 +7,7 @@
  * U1: loader reads ?handle param
  * U2: action with no platforms returns error
  * U3: action with valid platforms redirects to /onboarding/social
- * U4: action with skip intent redirects to /onboarding/template
+ * U4: action with skip intent redirects to /onboarding/profile
  * U5: isValidPlatformId correctly validates
  */
 
@@ -118,7 +118,7 @@ describe("onboarding.welcome — U3: action redirect", () => {
 // ── U4: action — skip intent ───────────────────────────────────────────────────
 
 describe("onboarding.welcome — U4: skip intent", () => {
-  it("redirects to /onboarding/template on skip", async () => {
+  it("redirects to /onboarding/profile on skip", async () => {
     const req = makeRequest("/onboarding/welcome", "POST", {
       handle: "alice",
       intent: "skip",
@@ -126,7 +126,7 @@ describe("onboarding.welcome — U4: skip intent", () => {
     const result = await action({ request: req, params: {}, context: {} } as never);
     const res = result as Response;
     expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toMatch(/^\/onboarding\/template/);
+    expect(res.headers.get("Location")).toMatch(/^\/onboarding\/profile/);
   });
 
   it("skip preserves handle in redirect", async () => {
