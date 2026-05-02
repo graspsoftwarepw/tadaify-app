@@ -28,7 +28,8 @@
 | [TR-AUTH-05](requirements/technical/0018-tr-auth-05-supabase-profiles-table-service-role-insert-only.md) | MUST | `profiles` table: service-role INSERT only; RLS own-row for select/update |
 | [TR-AUTH-06](requirements/technical/0019-tr-auth-06-handle-otp-meta-stored-in-raw-user-meta-data.md) | MUST | Handle + tos\_version stored in `raw_user_meta_data` at OTP send time |
 | [TR-tadaify-001](requirements/technical/0020-tr-tadaify-001-unit-test-ci-gate.md) | MUST | Unit-test CI gate; Playwright stays local (supersedes TR-009) |
+| [TR-tadaify-002](requirements/technical/0021-tr-tadaify-002-auth-email-templates.md) | MUST | Auth email templates contract (plain-text fallback files / token-only OTP / local files / inline CSS only) — multipart MIME wire delivery PENDING text_path support / Edge Function dispatcher / Resend Phase 3 |
 
 ---
 
-*Generated from 20 MADR records in `docs/requirements/technical/`.*
+*Generated from 21 MADR records in `docs/requirements/technical/`.*

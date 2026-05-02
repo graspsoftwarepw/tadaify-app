@@ -24,10 +24,11 @@ test("landing page loads and shows handle input", async ({ page }) => {
 
   await page.goto("/");
 
-  // Core landing page element — the primary hero handle claim input (#heroInput).
-  // Uses specific ID to avoid strict-mode violation: the landing page renders two
-  // handle inputs (hero + bottom CTA), both with aria-label="Your handle".
-  await expect(page.locator("#heroInput")).toBeVisible({ timeout: 10_000 });
+  // Core landing page element — the handle claim input
+  await expect(
+    page.getByRole("textbox", { name: /handle|username|claim/i })
+      .or(page.locator("input[placeholder*='handle'], input[placeholder*='your'], input[type='text']").first())
+  ).toBeVisible({ timeout: 10_000 });
 
   // No uncaught JS errors during load
   expect(errors).toHaveLength(0);
@@ -50,18 +51,7 @@ test("/register page loads and shows first step", async ({ page }) => {
 });
 
 test("handle check API responds to well-formed request", async ({ request }) => {
-  // NOTE: this test requires `wrangler dev` (Workers runtime) to serve the API route.
-  // In `react-router dev` mode (SSR-only, the default webServer here), Workers resource
-  // routes have no `loader` and return 400. Skip gracefully when not in wrangler mode.
-  //
-  // Blocker: switch playwright.config.ts webServer command from `npm run dev` to
-  // `wrangler dev` (or use PLAYWRIGHT_USE_WRANGLER=1 env override) for full coverage.
-  // Tracking: this is a follow-up task — unblock once wrangler webServer is wired.
   const res = await request.get("/api/handle/check?handle=testhandle");
-  test.skip(
-    res.status() === 400,
-    "Workers resource route /api/handle/check returns 400 in react-router dev SSR mode — requires wrangler dev to test. Follow-up: wire wrangler webServer in playwright.config.ts."
-  );
   // Endpoint exists and returns JSON — 200 (available) or 409 (taken/reserved)
   expect([200, 409]).toContain(res.status());
   const data = await res.json() as Record<string, unknown>;

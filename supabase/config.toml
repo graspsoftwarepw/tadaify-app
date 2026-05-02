@@ -232,6 +232,24 @@ otp_expiry = 600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# TR-tadaify-002: production auth email templates — token-only OTP, inline CSS, multipart MIME
+# identity-linked and welcome are informational (no token); wired via Edge Function trigger, not here.
+[auth.email.template.signup]
+content_path = "./supabase/templates/auth/otp-signup.html"
+subject = "Your tadaify code: {{ .Token }}"
+
+[auth.email.template.magic_link]
+content_path = "./supabase/templates/auth/otp-login.html"
+subject = "Sign in to tadaify: {{ .Token }}"
+
+[auth.email.template.recovery]
+content_path = "./supabase/templates/auth/password-reset.html"
+subject = "Reset your tadaify password: {{ .Token }}"
+
+[auth.email.template.email_change]
+content_path = "./supabase/templates/auth/email-change-confirm.html"
+subject = "Confirm your new tadaify email: {{ .Token }}"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
