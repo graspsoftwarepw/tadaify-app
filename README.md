@@ -51,3 +51,30 @@ npm run preview
 - TypeScript everywhere
 
 See [docs/INDEX.md](docs/INDEX.md) for the full documentation map and [docs/decisions/INDEX.md](docs/decisions/INDEX.md) for all locked architectural decisions.
+
+## Local testing
+
+Unit tests (run in CI on every deploy):
+
+```bash
+npm test
+# → vitest run, 210 tests, ~300ms
+```
+
+E2E tests (LOCAL ONLY — never in GitHub Actions CI per `feedback_no_ci_tests.md`):
+
+```bash
+# Prerequisites: supabase start + .env + .dev.vars configured (see Quickstart above)
+
+npm run test:e2e          # headless chromium, list reporter
+npm run test:e2e:headed   # visible browser
+npm run test:e2e:ui       # Playwright UI mode (interactive)
+npm run test:e2e:debug    # PWDEBUG=1 step-through
+```
+
+The `webServer` block in `playwright.config.ts` auto-starts `npm run dev` (react-router SSR
+mode) when no server is already running. Tests that require the full Cloudflare Workers runtime
+(S1-S6 in `register-cascade.spec.ts`) self-skip with a cited blocker when `wrangler dev` is not
+the active server — see the skip messages for the follow-up task.
+
+For full S1-S6 coverage, start the server manually with `wrangler dev` before running tests.
