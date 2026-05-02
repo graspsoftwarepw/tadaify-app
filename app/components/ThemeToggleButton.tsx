@@ -15,39 +15,45 @@
  */
 
 import { useEffect, useState } from "react";
+import {
+  readInitialTheme,
+  applyTheme,
+  nextTheme,
+  type Theme,
+} from "~/lib/theme-utils";
 
-const STORAGE_KEY = "tadaify.theme";
-
-function readInitialTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
+function getBrowserStorage() {
+  if (typeof window === "undefined") return null;
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "light" || stored === "dark") return stored;
+    return window.localStorage;
   } catch {
-    // localStorage unavailable (private browsing, etc.) — fall through
+    return null;
   }
-  if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) return "dark";
-  return "light";
+}
+
+function getPrefersDarkMatcher() {
+  if (typeof window === "undefined" || !window.matchMedia) return null;
+  return window.matchMedia("(prefers-color-scheme: dark)");
+}
+
+function getBodyClassList() {
+  if (typeof document === "undefined") return null;
+  return document.body.classList;
 }
 
 export function ThemeToggleButton() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const initial = readInitialTheme();
+    const initial = readInitialTheme(getBrowserStorage(), getPrefersDarkMatcher());
     setTheme(initial);
-    document.body.classList.toggle("dark-mode", initial === "dark");
+    applyTheme(initial, getBodyClassList(), getBrowserStorage());
   }, []);
 
   function toggle() {
-    const next = theme === "light" ? "dark" : "light";
+    const next = nextTheme(theme);
     setTheme(next);
-    document.body.classList.toggle("dark-mode", next === "dark");
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore — toggle still works in-memory
-    }
+    applyTheme(next, getBodyClassList(), getBrowserStorage());
   }
 
   return (
