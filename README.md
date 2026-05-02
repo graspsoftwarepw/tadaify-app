@@ -18,18 +18,27 @@ SECRET="$(printf "v1,whsec_%s" "$(openssl rand -base64 32)")" \
   && sed -i.bak "s|^BEFORE_USER_CREATED_HOOK_SECRET=.*$|BEFORE_USER_CREATED_HOOK_SECRET=$SECRET|" .env \
   && rm .env.bak
 
-# 3. Start Supabase local (port-band 5435X)
+# 3. Configure Workers runtime env bindings (server-side routes read from .dev.vars)
+#    Workers does NOT read .env — it reads .dev.vars (Cloudflare wrangler convention).
+#    Both files are required for local dev. See .dev.vars.example for full comments.
+cp .dev.vars.example .dev.vars
+#    Fill in SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY after
+#    `supabase start` (next step): run `supabase status -o env` to get values.
+#    HANDLE_RESERVATION_TTL_SECONDS defaults to 600 (10 min); override for tests.
+
+# 4. Start Supabase local (port-band 5435X)
 supabase start
 # Inbucket UI: http://localhost:54354
+# Then: supabase status -o env  → copy values into .dev.vars
 
-# 4. Start dev server
+# 5. Start dev server
 npm run dev
 # App: http://localhost:5173
 
-# 5. Build
+# 6. Build
 npm run build
 
-# 6. Local preview of built artifact (Workers via Wrangler)
+# 7. Local preview of built artifact (Workers via Wrangler)
 npm run preview
 # (or: wrangler dev ./build/server/index.js)
 ```

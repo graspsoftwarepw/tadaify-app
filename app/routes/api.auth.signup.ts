@@ -67,9 +67,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const supabaseAnonKey = env?.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Local dev without bindings — return a stub response so UI can be tested
-    console.warn("[api.auth.signup] Supabase env vars not configured; stubbing OTP send");
-    return Response.json({ sent: true, stub: true }, { status: 200 });
+    console.warn("[api.auth.signup] Workers env bindings SUPABASE_URL / SUPABASE_ANON_KEY not set");
+    return new Response(
+      JSON.stringify({ error: "Workers env binding missing — see .dev.vars.example" }),
+      { status: 500, headers: { "content-type": "application/json" } }
+    );
   }
 
   // Call Supabase Auth REST API directly (no SDK bundle in Workers).
