@@ -3,6 +3,8 @@
 All notable changes to tadaify are documented here.
 Format: date · description · BR/TR refs · PR link.
 
+- 2026-05-02 · test infra: un-fixme S1-S5 register-cascade (Layer 1-7 fix: Mailpit API, debounce-aware selectors, per-test handle isolation, afterAll cleanup, method-selection step, OTP paste helper); fix critical-path strict-mode + POST handle/check — no new BR/TR (test-only, covers existing BUG-149-{1,2,3,4,6}) — Issue #163
+
 ---
 
 ## [unreleased]
