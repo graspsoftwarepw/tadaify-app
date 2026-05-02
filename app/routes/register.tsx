@@ -47,6 +47,7 @@ import {
   type OtpState,
 } from "~/lib/otp-state";
 import { MotionLogo } from "~/components/landing/MotionLogo";
+import { ThemeToggleButton } from "~/components/ThemeToggleButton";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -443,6 +444,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
           Already have an account?{" "}
           <strong style={{ color: "var(--brand-primary)" }}>Sign in</strong>
         </a>
+        <ThemeToggleButton />
       </nav>
 
       {/* Main register grid */}
@@ -569,6 +571,19 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
             minHeight: 400,
           }}
         >
+          {/* logo-corner — matches mockups/tadaify-mvp/register.html line 795 */}
+          <div
+            style={{
+              position: "absolute",
+              top: 24,
+              right: 24,
+              opacity: 0.9,
+              zIndex: 2,
+            }}
+            aria-hidden="true"
+          >
+            <MotionLogo size="nav" />
+          </div>
           <div
             style={{ position: "relative", textAlign: "center", maxWidth: 420, zIndex: 1 }}
           >
@@ -627,16 +642,30 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
               </span>
             </div>
 
-            <p
+            {/* preview-thumb skeleton — matches mockups/tadaify-mvp/register.html
+                lines 811-819 (3 dots + 5 lines: short / full / pill / pill / short). */}
+            <div
               style={{
-                marginTop: 28,
-                opacity: 0.85,
-                fontSize: 13,
-                lineHeight: 1.6,
+                marginTop: 32,
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: 14,
+                padding: 18,
+                textAlign: "left",
               }}
+              aria-hidden="true"
             >
-              This is how your brand shows up on every page, share card, and email receipt.
-            </p>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "rgba(255,255,255,0.3)" }} />
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "rgba(255,255,255,0.3)" }} />
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: "rgba(255,255,255,0.3)" }} />
+              </div>
+              <div style={{ height: 8, width: "60%", borderRadius: 4, background: "rgba(255,255,255,0.25)", marginTop: 10 }} />
+              <div style={{ height: 8, borderRadius: 4, background: "rgba(255,255,255,0.25)", marginTop: 10 }} />
+              <div style={{ height: 28, borderRadius: 4, background: "rgba(253,230,138,0.35)", marginTop: 10 }} />
+              <div style={{ height: 28, borderRadius: 4, background: "rgba(253,230,138,0.35)", marginTop: 10 }} />
+              <div style={{ height: 8, width: "60%", borderRadius: 4, background: "rgba(255,255,255,0.25)", marginTop: 10 }} />
+            </div>
           </div>
         </aside>
       </div>
