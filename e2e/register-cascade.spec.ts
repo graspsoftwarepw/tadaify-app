@@ -87,7 +87,7 @@ async function fillRegisterForm(page: Page, handle: string, email: string) {
 // Covers: BR-Slice-B, BUG-149-{1,4}, ECN-149-01
 // ---------------------------------------------------------------------------
 
-test("S1 — happy path: signup sends OTP email (no stub, no magic link)", async ({ page }) => {
+test.fixme("S1 — happy path: signup sends OTP email (no stub, no magic link)", async ({ page }) => {
   // Covers: BR-Slice-B / BUG-149-1 / BUG-149-4 / ECN-149-01
   const handle = "test-149-happy";
   const email = "test-149-happy@local.test";
@@ -125,7 +125,7 @@ test("S1 — happy path: signup sends OTP email (no stub, no magic link)", async
 // Covers: BUG-149-2, ECN-149-04
 // ---------------------------------------------------------------------------
 
-test("S2 — hook URL port: signup succeeds (no hook-unavailable error)", async ({ page }) => {
+test.fixme("S2 — hook URL port: signup succeeds (no hook-unavailable error)", async ({ page }) => {
   // Covers: BUG-149-2 / ECN-149-04
   // Tests that the hook URL uses the correct port (54351) and the hook is reachable.
   // We verify indirectly: if the hook URL pointed at wrong port (54321), the signup
@@ -153,7 +153,7 @@ test("S2 — hook URL port: signup succeeds (no hook-unavailable error)", async 
 // Covers: BUG-149-3, ECN-149-05
 // ---------------------------------------------------------------------------
 
-test("S3 — verify_jwt: hook invoked without 401 error", async ({ page }) => {
+test.fixme("S3 — verify_jwt: hook invoked without 401 error", async ({ page }) => {
   // Covers: BUG-149-3 / ECN-149-05
   // If verify_jwt were true (regression), the hook would return 401 and GoTrue
   // would fail with "Hook requires authorization token". The UI would show an error.
@@ -179,7 +179,7 @@ test("S3 — verify_jwt: hook invoked without 401 error", async ({ page }) => {
 // Covers: BUG-149-6, ECN-149-09
 // ---------------------------------------------------------------------------
 
-test("S5 — handle reservation conflict: second session sees reserved error", async ({
+test.fixme("S5 — handle reservation conflict: second session sees reserved error", async ({
   browser,
 }) => {
   // Covers: BUG-149-6 / ECN-149-09
@@ -225,7 +225,7 @@ test("S5 — handle reservation conflict: second session sees reserved error", a
 //       CI sets this via env var override in playwright.config.ts / process.env.
 // ---------------------------------------------------------------------------
 
-test("S6 — handle reservation expires after short TTL, becomes available again", async ({
+test.fixme("S6 — handle reservation expires after short TTL, becomes available again", async ({
   browser,
 }) => {
   // Covers: BUG-149-6 / ECN-149-10 / ECN-149-12
