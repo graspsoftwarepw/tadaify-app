@@ -9,7 +9,7 @@
  * AI credits: Free 5 / Creator 20 / Pro 100 / Business ∞ per DEC-AI-QUOTA-LADDER-01 / DEC-286 (0030).
  *
  * TADA-BUG-001 + DEC-DOMAIN-01: wordmark preview shows tadaify.com/<handle> (real URL format).
- * The brand lockup (tada!ify with ! and –) appears ONLY in the wordmark element, never in
+ * The brand lockup (tada!ify with !, no separators per DEC-WORDMARK-01) appears ONLY in the wordmark element, never in
  * URL-context surfaces (heroPreview / finalPreview).
  */
 
