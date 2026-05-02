@@ -86,6 +86,7 @@ describe("api.auth.signup — input validation", () => {
 });
 
 // ── U1: env binding validation (Bug 1 fix — hard-fail instead of silent stub) ─
+// Covers: BUG-149-1 / ECN-149-01 / ECN-149-02
 
 describe("api.auth.signup — U1: env binding validation", () => {
   it("returns 500 when context.cloudflare.env is undefined", async () => {
