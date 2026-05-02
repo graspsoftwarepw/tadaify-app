@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Identity linked — tadaify</title>
+  <style>
+    /* TR-tadaify-002: inline CSS only — no external resources, no CSS vars */
+    /* Covers: TR-tadaify-002 */
+    body { margin:0; padding:0; background:#F3F4F6; font-family:'Inter',system-ui,-apple-system,sans-serif; color:#111827; }
+    table { border-collapse:collapse; }
+    .wrapper { max-width:600px; margin:0 auto; padding:32px 18px; }
+    .email { background:#FFFFFF; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(17,24,39,0.08); }
+    .email-mark { padding:28px 32px 8px; }
+    .wordmark { font-family:'Crimson Pro',Georgia,serif; font-weight:600; letter-spacing:-0.02em; font-size:28px; line-height:1; }
+    .wm-ta { color:#6366F1; }
+    .wm-da { color:#F59E0B; }
+    .wm-ify { color:#111827; }
+    .email-body { padding:16px 32px 32px; }
+    .greeting { font-family:'Crimson Pro',Georgia,serif; font-weight:600; font-size:26px; line-height:1.2; letter-spacing:-0.01em; margin:0 0 6px; color:#111827; }
+    .sub { font-size:15px; color:#4B5563; margin:0 0 28px; line-height:1.55; }
+    .info-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:14px; padding:22px 24px; margin-bottom:24px; }
+    .info-rows { display:grid; gap:6px; font-size:14px; }
+    .info-row { display:grid; grid-template-columns:96px 1fr; gap:8px; align-items:baseline; padding:4px 0; }
+    .info-label { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#6B7280; }
+    .info-value { color:#111827; font-weight:500; }
+    .info-value-mono { font-family:ui-monospace,'Courier New',monospace; font-size:13px; color:#4B5563; }
+    .body-copy { font-size:14px; line-height:1.65; color:#374151; margin:0 0 18px; }
+    .alert-note { margin-top:22px; background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:14px 16px; font-size:13px; line-height:1.6; color:#7F1D1D; }
+    .alert-note strong { color:#991B1B; }
+    .disclaimer { margin-top:22px; padding-top:22px; border-top:1px solid #E5E7EB; font-size:12px; line-height:1.6; color:#6B7280; }
+    .email-footer { padding:18px 32px 22px; border-top:1px solid #F3F4F6; font-size:11px; color:#9CA3AF; text-align:center; letter-spacing:0.02em; }
+    @media (prefers-color-scheme: dark) {
+      body { background:#111827; }
+      .email { background:#1F2937; box-shadow:0 4px 12px rgba(0,0,0,0.3); }
+      .greeting { color:#F9FAFB; }
+      .sub { color:#9CA3AF; }
+      .info-card { background:#374151; border-color:#4B5563; }
+      .info-label { color:#9CA3AF; }
+      .info-value { color:#F9FAFB; }
+      .info-value-mono { color:#D1D5DB; }
+      .body-copy { color:#D1D5DB; }
+      .disclaimer { color:#9CA3AF; border-top-color:#374151; }
+      .email-footer { color:#6B7280; border-top-color:#374151; }
+    }
+  </style>
+</head>
+<body>
+<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" width="600" style="margin:0 auto;"><tr><td><![endif]-->
+<div class="wrapper">
+  <div class="email" role="article" aria-label="tadaify identity linked notification">
+    <div class="email-mark">
+      <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+    </div>
+    <div class="email-body">
+      <h1 class="greeting">Hey @{{ .Email }}</h1>
+      <p class="sub">we linked your {{ .Provider }} account to your <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> profile.</p>
+
+      <div class="info-card">
+        <div class="info-rows">
+          <div class="info-row">
+            <span class="info-label">Provider</span>
+            <span class="info-value">{{ .Provider }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Account</span>
+            <span class="info-value-mono">{{ .Email }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="body-copy">Future sign-ins via {{ .Provider }} will go straight in. You can still sign in with your email + 6-digit code at any time.</p>
+
+      <div class="alert-note">
+        🛡 <strong>Didn't link this?</strong> Contact support immediately at support@tadaify.com and open your security settings to revoke the linked account.
+      </div>
+
+      <p class="disclaimer">This is a security record — we email you whenever a new sign-in method is added so unauthorized links can be reviewed. We never share your address.</p>
+    </div>
+    <div class="email-footer">
+      tadaify · sent from noreply@tadaify.com · this address doesn't accept replies
+    </div>
+  </div>
+</div>
+<!--[if mso]></td></tr></table><![endif]-->
+</body>
+</html>

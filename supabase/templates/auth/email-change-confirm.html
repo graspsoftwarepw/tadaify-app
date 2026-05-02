@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Confirm your new tadaify email</title>
+  <style>
+    /* TR-tadaify-002: inline CSS only — no external resources, no CSS vars */
+    /* Covers: TR-tadaify-002 */
+    body { margin:0; padding:0; background:#F3F4F6; font-family:'Inter',system-ui,-apple-system,sans-serif; color:#111827; }
+    table { border-collapse:collapse; }
+    .wrapper { max-width:600px; margin:0 auto; padding:32px 18px; }
+    .email { background:#FFFFFF; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(17,24,39,0.08); }
+    .email-mark { padding:28px 32px 8px; }
+    .wordmark { font-family:'Crimson Pro',Georgia,serif; font-weight:600; letter-spacing:-0.02em; font-size:28px; line-height:1; }
+    .wm-ta { color:#6366F1; }
+    .wm-da { color:#F59E0B; }
+    .wm-ify { color:#111827; }
+    .email-body { padding:16px 32px 32px; }
+    .greeting { font-family:'Crimson Pro',Georgia,serif; font-weight:600; font-size:26px; line-height:1.2; letter-spacing:-0.01em; margin:0 0 6px; color:#111827; }
+    .sub { font-size:15px; color:#4B5563; margin:0 0 28px; line-height:1.55; }
+    .sub code { font-family:ui-monospace,'Courier New',monospace; font-size:13px; background:#F3F4F6; padding:1px 6px; border-radius:4px; color:#111827; }
+    .otp-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:14px; padding:28px 24px; text-align:center; margin-bottom:24px; }
+    .otp-label { font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#6B7280; margin:0 0 14px; }
+    .otp-code { font-family:'Crimson Pro',Georgia,serif; font-weight:600; font-size:56px; letter-spacing:0.1em; color:#111827; line-height:1; font-feature-settings:"tnum" 1,"lnum" 1; margin:0 0 14px; }
+    .otp-expiry { font-size:13px; color:#6B7280; margin:0; }
+    .otp-expiry strong { color:#111827; font-weight:600; }
+    .body-copy { font-size:14px; line-height:1.65; color:#374151; margin:0 0 18px; }
+    .alert-note { margin-top:22px; background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:14px 16px; font-size:13px; line-height:1.6; color:#78350F; }
+    .alert-note strong { color:#92400E; }
+    .disclaimer { margin-top:22px; padding-top:22px; border-top:1px solid #E5E7EB; font-size:12px; line-height:1.6; color:#6B7280; }
+    .email-footer { padding:18px 32px 22px; border-top:1px solid #F3F4F6; font-size:11px; color:#9CA3AF; text-align:center; letter-spacing:0.02em; }
+    @media (prefers-color-scheme: dark) {
+      body { background:#111827; }
+      .email { background:#1F2937; box-shadow:0 4px 12px rgba(0,0,0,0.3); }
+      .greeting { color:#F9FAFB; }
+      .sub { color:#9CA3AF; }
+      .sub code { background:#374151; color:#F9FAFB; }
+      .otp-card { background:#374151; border-color:#4B5563; }
+      .otp-code { color:#F9FAFB; }
+      .otp-label { color:#9CA3AF; }
+      .otp-expiry { color:#9CA3AF; }
+      .otp-expiry strong { color:#F9FAFB; }
+      .body-copy { color:#D1D5DB; }
+      .disclaimer { color:#9CA3AF; border-top-color:#374151; }
+      .email-footer { color:#6B7280; border-top-color:#374151; }
+    }
+  </style>
+</head>
+<body>
+<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" width="600" style="margin:0 auto;"><tr><td><![endif]-->
+<div class="wrapper">
+  <div class="email" role="article" aria-label="tadaify email change confirmation">
+    <div class="email-mark">
+      <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
+    </div>
+    <div class="email-body">
+      <h1 class="greeting">Hi 👋</h1>
+      <p class="sub">you asked to change your <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> email from <code>{{ .Email }}</code> to <code>{{ .NewEmail }}</code>.</p>
+
+      <div class="otp-card">
+        <p class="otp-label">Your confirmation code</p>
+        <p class="otp-code">{{ .Token }}</p>
+        <p class="otp-expiry">Code expires in <strong>10 minutes</strong>.</p>
+      </div>
+
+      <p class="body-copy">Enter the 6 digits above on the verification page to confirm the change. The new email becomes your primary login email after confirmation.</p>
+
+      <div class="alert-note">
+        🔔 <strong>Didn't request this change?</strong> Ignore this email and check your account security at tadaify.com/settings/security. The code expires automatically — no action required.
+      </div>
+
+      <p class="disclaimer">We never share your email address. This is a one-off confirmation; if you don't enter the code within 10 minutes, the change is discarded and your current email stays in place.</p>
+    </div>
+    <div class="email-footer">
+      tadaify · sent from noreply@tadaify.com · this address doesn't accept replies
+    </div>
+  </div>
+</div>
+<!--[if mso]></td></tr></table><![endif]-->
+</body>
+</html>
