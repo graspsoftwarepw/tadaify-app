@@ -64,7 +64,10 @@ npm test
 E2E tests (LOCAL ONLY — never in GitHub Actions CI per `feedback_no_ci_tests.md`):
 
 ```bash
-# Prerequisites: supabase start + .env + .dev.vars configured (see Quickstart above)
+# One-time on a fresh checkout (downloads Chromium ~150MB to ~/Library/Caches/ms-playwright):
+npm run test:e2e:install
+
+# Prerequisites for each run: supabase start + .env + .dev.vars configured (see Quickstart above)
 
 npm run test:e2e          # headless chromium, list reporter
 npm run test:e2e:headed   # visible browser
@@ -72,9 +75,11 @@ npm run test:e2e:ui       # Playwright UI mode (interactive)
 npm run test:e2e:debug    # PWDEBUG=1 step-through
 ```
 
-The `webServer` block in `playwright.config.ts` auto-starts `npm run dev` (react-router SSR
-mode) when no server is already running. Tests that require the full Cloudflare Workers runtime
-(S1-S6 in `register-cascade.spec.ts`) self-skip with a cited blocker when `wrangler dev` is not
-the active server — see the skip messages for the follow-up task.
+The `webServer` block in `playwright.config.ts` auto-starts `npm run dev` (Vite + the
+`@cloudflare/vite-plugin` SSR adapter that serves Workers routes) when no server is already
+running. The previous "wrangler dev required" diagnosis was wrong — Vite dev DOES serve
+`/api/*` Workers routes via SSR, verified manually 2026-05-02.
 
-For full S1-S6 coverage, start the server manually with `wrangler dev` before running tests.
+S1-S6 in `register-cascade.spec.ts` are currently `test.fixme()` (known-broken pending follow-up
+issue #163: debounce-aware selectors + per-test handle isolation + S6 env passthrough). Once
+#163 lands, they un-fixme and the full register flow is covered.
