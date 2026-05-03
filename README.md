@@ -10,38 +10,30 @@ Tadaify — link-in-bio + creator commerce SaaS (React Router 7 / Remix on Cloud
 # 1. Install
 npm install
 
-# 2. Configure local env — required because the before_user_created Auth Hook
-#    (DEC-294) needs an HMAC secret in your local .env before `supabase start`
-#    will succeed.
-cp .env.example .env
-SECRET="$(printf "v1,whsec_%s" "$(openssl rand -base64 32)")" \
-  && sed -i.bak "s|^BEFORE_USER_CREATED_HOOK_SECRET=.*$|BEFORE_USER_CREATED_HOOK_SECRET=$SECRET|" .env \
-  && rm .env.bak
-
-# 3. Configure Workers runtime env bindings (server-side routes read from .dev.vars)
-#    Workers does NOT read .env — it reads .dev.vars (Cloudflare wrangler convention).
-#    Both files are required for local dev. See .dev.vars.example for full comments.
-cp .dev.vars.example .dev.vars
-#    Fill in SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY after
-#    `supabase start` (next step): run `supabase status -o env` to get values.
-#    HANDLE_RESERVATION_TTL_SECONDS defaults to 600 (10 min); override for tests.
-
-# 4. Start Supabase local (port-band 5435X)
+# 2. Start Supabase local (port-band 5435X)
 supabase start
 # Inbucket UI: http://localhost:54354
-# Then: supabase status -o env  → copy values into .dev.vars
 
-# 5. Start dev server
+# 3. Bootstrap env files for this worktree (idempotent — re-run is always safe)
+#    Creates .env + .dev.vars, generates the HMAC hook secret, and fills in
+#    Supabase keys from `supabase status` automatically.
+./bin/worktree-env-init.sh
+
+# 4. Start dev server
 npm run dev
 # App: http://localhost:5173
 
-# 6. Build
+# 5. Build
 npm run build
 
-# 7. Local preview of built artifact (Workers via Wrangler)
+# 6. Local preview of built artifact (Workers via Wrangler)
 npm run preview
 # (or: wrangler dev ./build/server/index.js)
 ```
+
+> **worktree-env-init.sh** is idempotent — running it again in an already-bootstrapped
+> worktree is a no-op. It requires Supabase to be running (step 2 above) to fill in
+> the Supabase keys. For manual setup reference, see `.env.example` and `.dev.vars.example`.
 
 ### Stack
 
