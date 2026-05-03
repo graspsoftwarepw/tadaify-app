@@ -18,5 +18,11 @@ The full functional specification lives in `docs/specs/functional-spec.md`. This
 | BR-AUTH-06 | Handle availability check (live, 300 ms debounce) during registration | Issue #129 | Implemented |
 | BR-AUTH-07 | Handle reservation (15 min) prevents race on landing → register flow | Issue #129 | Implemented |
 | BR-AUTH-08 | 3-strike OTP lockout protects against brute-force attempts | Issue #129 | Implemented |
+| BR-ONBOARDING-001 | Post-registration wizard: step 1/5 — platform picker (welcome) | Issue #136 | Implemented |
+| BR-ONBOARDING-002 | Post-registration wizard: step 2/5 — social handle entry | Issue #136 | Implemented |
+| BR-ONBOARDING-003 | Post-registration wizard: step 3/5 — profile setup (name + bio) | Issue #136 | Implemented |
+| BR-ONBOARDING-004 | Post-registration wizard: step 4/5 — template picker | Issue #136 | Implemented |
+| BR-ONBOARDING-005 | Post-registration wizard: step 5/5 — plan overview (read-only, DEC-311=A) | Issue #136 | Implemented |
+| BR-ONBOARDING-006 | Post-registration wizard: success / complete screen (DEC-332=D page-coming-soon semantics) | Issue #136 | Implemented |
 
 > Add BRs as features are implemented. Every PR must cite the BRs it implements in the commit body and changelog entry.

@@ -3,6 +3,8 @@
 All notable changes to tadaify are documented here.
 Format: date · description · BR/TR refs · PR link.
 
+- 2026-05-03 · test: onboarding wizard e2e spec — 5 scenarios (S1 happy path, S2 back-nav URL state, S3 name-required validator, S4 tier=free DEC-311=A, S5 DEC-332=D complete page semantics); covers BR-ONBOARDING-001..006; no DB changes; afterAll cleanup hook — Issue #165
+
 - 2026-05-02 · test infra: un-fixme S1-S5 register-cascade (Layer 1-7 fix: Mailpit API, debounce-aware selectors, per-test handle isolation, afterAll cleanup, method-selection step, OTP paste helper); fix critical-path strict-mode + POST handle/check — no new BR/TR (test-only, covers existing BUG-149-{1,2,3,4,6}) — Issue #163
 
 ---
