@@ -115,6 +115,12 @@ export function otpReducer(state: OtpState, action: OtpAction): OtpState {
       return { ...state, email: action.email, error: null };
 
     case "SEND_CODE": {
+      // Note: isSubmitting MUST be reset here. handleSendCode dispatches
+      // SUBMIT_START before the /api/auth/signup fetch and SEND_CODE on
+      // success. Without resetting isSubmitting, the next screen's verify
+      // button stays disabled with the "Verifying…" label and blocks the
+      // entire OTP flow even though no verify request has been made.
+      // Regression caught by app-dashboard.spec.ts S2.
       return {
         ...state,
         section: "B-otp",
@@ -123,6 +129,7 @@ export function otpReducer(state: OtpState, action: OtpAction): OtpState {
         failedAttempts: 0,
         lockedUntil: null,
         error: null,
+        isSubmitting: false,
       };
     }
 

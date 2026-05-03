@@ -554,8 +554,11 @@ export function AppSidebar({
         )}
       </div>
 
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
+      {/* DIVIDER 4 */}
+      <div
+        style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
+        aria-hidden="true"
+      />
 
       {/* GROUP 4: Settings + Help + Feedback */}
       <div style={{ padding: "0 8px 12px" }}>

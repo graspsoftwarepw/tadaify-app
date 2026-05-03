@@ -310,10 +310,20 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
   const isPublished = page?.published_at != null;
 
   const handleWelcomeDismiss = useCallback(async () => {
+    // Optimistic local update first so the banner disappears instantly.
     setWelcomeDismissed(true);
-    // Persist dismiss to account_settings via REST
-    // (best-effort, no blocking on response)
-    // In production this would use a real fetch to PATCH account_settings.
+    // Persist via /api/account/dismiss-welcome so the next SSR loader sees
+    // welcome_dismissed=true and does not re-render the banner after reload.
+    // Best-effort; on transient failure the banner will reappear after reload
+    // and the user can dismiss again.
+    try {
+      await fetch("/api/account/dismiss-welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // Ignore — local state already hides the banner this session.
+    }
   }, []);
 
   return (

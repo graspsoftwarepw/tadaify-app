@@ -76,6 +76,25 @@ describe("section transitions — happy path", () => {
     expect(s.otpDigits.every((d) => d === "")).toBe(true);
   });
 
+  // Regression guard: handleSendCode dispatches SUBMIT_START before the
+  // /api/auth/signup fetch and SEND_CODE on success. Without resetting
+  // isSubmitting in SEND_CODE, the next screen's verify button stayed
+  // disabled with the "Verifying…" label and blocked the entire OTP flow
+  // even though no verify request was ever made.
+  // Caught by app-dashboard.spec.ts S2 during #171 escalation.
+  it("SEND_CODE clears isSubmitting (regression: SUBMIT_START leaks into B-otp)", () => {
+    const s = reduce(
+      createInitialState("alex"),
+      { type: "PROCEED_TO_METHOD" },
+      { type: "PROCEED_TO_EMAIL" },
+      { type: "SET_EMAIL", email: "user@example.com" },
+      { type: "SUBMIT_START" },
+      { type: "SEND_CODE", resendCooldownUntil: NOW + RESEND_COOLDOWN_MS }
+    );
+    expect(s.section).toBe("B-otp");
+    expect(s.isSubmitting).toBe(false);
+  });
+
   it("B-otp → B-password-toggle via OTP_SUCCESS", () => {
     const s = reduce(
       createInitialState("alex"),

@@ -239,5 +239,22 @@ export async function action({ request, context }: Route.ActionArgs) {
     console.warn("[api.auth.verify] handle_reservation cleanup failed:", err);
   });
 
-  return Response.json({ verified: true, handle, access_token: accessToken }, { status: 200 });
+  // ── Set session cookie so subsequent SSR loaders (e.g. /app) can auth ──────
+  // The /app loader reads sb-*-auth-token cookies and parses { access_token }.
+  // We set sb-local-auth-token which matches the sb-*-auth-token pattern.
+  const sessionJson = encodeURIComponent(JSON.stringify({ access_token: accessToken }));
+  const cookieParts = [
+    `sb-local-auth-token=${sessionJson}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    // Max-Age: 1 hour (Supabase JWTs are typically valid for 1h)
+    "Max-Age=3600",
+  ];
+  const headers = new Headers({ "Content-Type": "application/json" });
+  headers.set("Set-Cookie", cookieParts.join("; "));
+  return new Response(
+    JSON.stringify({ verified: true, handle, access_token: accessToken }),
+    { status: 200, headers }
+  );
 }

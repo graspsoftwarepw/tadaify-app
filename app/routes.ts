@@ -30,4 +30,7 @@ export default [
   route("/api/auth/login-otp", "routes/api.auth.login-otp.ts"),
   route("/api/auth/verify", "routes/api.auth.verify.ts"),
   route("/api/auth/password", "routes/api.auth.password.ts"),
+
+  // Account API (F-APP-DASHBOARD-001a, #171)
+  route("/api/account/dismiss-welcome", "routes/api.account.dismiss-welcome.ts"),
 ] satisfies RouteConfig;
