@@ -23,9 +23,7 @@ import { test, expect } from "@playwright/test";
 // ---------------------------------------------------------------------------
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 /** Handle prefix — all t165* rows cleaned up in afterAll */
 const HANDLE_PREFIX = "t165";
@@ -35,6 +33,13 @@ const HANDLE_PREFIX = "t165";
 // ---------------------------------------------------------------------------
 
 async function cleanupHandleReservations(prefix: string): Promise<void> {
+  if (!SERVICE_ROLE_KEY) {
+    console.warn(
+      "[cleanup] SUPABASE_SERVICE_ROLE_KEY not set — skipping handle_reservations cleanup. " +
+      "Set the env var via .dev.vars or export it before running tests."
+    );
+    return;
+  }
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/handle_reservations?handle=ilike.${encodeURIComponent(prefix + "*")}`,
