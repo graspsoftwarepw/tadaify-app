@@ -10,7 +10,7 @@
  *   - Mailpit accessible at http://localhost:54354 (Supabase local SMTP catcher)
  *
  * S4 (Bug 5 — email template) is deferred to #150.
- * S6 requires HANDLE_RESERVATION_TTL_SECONDS<=30 (legitimate runtime gate).
+ * S6 requires HANDLE_RESERVATION_TTL_SECONDS<=30 (reads .dev.vars as fallback).
  *
  * Layer 1: debounce-aware button-enabled wait (300ms debounce on handle check)
  * Layer 2: per-test handle isolation (fixed handles + beforeAll/afterAll cleanup)
@@ -24,6 +24,26 @@
  */
 
 import { test, expect, Page, BrowserContext } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// ---------------------------------------------------------------------------
+// Helper — read a key from .dev.vars when process.env doesn't have it.
+// .dev.vars is loaded by the Workers runtime but NOT by the Playwright Node
+// process, so we parse it ourselves as a fallback.
+// ---------------------------------------------------------------------------
+
+function readDevVar(key: string): string | undefined {
+  if (process.env[key]) return process.env[key];
+  try {
+    const devVarsPath = resolve(__dirname, "..", ".dev.vars");
+    const content = readFileSync(devVarsPath, "utf-8");
+    const match = content.match(new RegExp(`^${key}=(.+)$`, "m"));
+    return match?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Constants — Supabase local (from .dev.vars / env)
@@ -362,15 +382,15 @@ test("S5 — handle reservation conflict: second session sees reserved error", a
 // S6 — Handle reservation expires after TTL (env-overridden short TTL)
 // Covers: BUG-149-6, ECN-149-10, ECN-149-12
 // Note: Requires HANDLE_RESERVATION_TTL_SECONDS<=30 at test time.
-//       This is a LEGITIMATE runtime gate — NOT a fixme.
-//       Run with: HANDLE_RESERVATION_TTL_SECONDS=10 npm run test:e2e
+//       Reads from process.env first, then falls back to .dev.vars.
+//       Set HANDLE_RESERVATION_TTL_SECONDS=10 in .dev.vars or shell env.
 // ---------------------------------------------------------------------------
 
 test("S6 — handle reservation expires after short TTL, becomes available again", async ({
   browser,
 }) => {
   // Covers: BUG-149-6 / ECN-149-10 / ECN-149-12
-  const ttlSeconds = parseInt(process.env.HANDLE_RESERVATION_TTL_SECONDS ?? "600", 10);
+  const ttlSeconds = parseInt(readDevVar("HANDLE_RESERVATION_TTL_SECONDS") ?? "600", 10);
   test.skip(
     ttlSeconds > 30,
     `HANDLE_RESERVATION_TTL_SECONDS=${ttlSeconds} — skipping S6 (would wait ${ttlSeconds}s); set to ≤30 to run`
