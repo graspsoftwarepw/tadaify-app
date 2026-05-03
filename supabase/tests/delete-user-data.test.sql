@@ -13,13 +13,26 @@ SELECT plan(3);
 
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 -- Create two synthetic UUIDs that we use as stand-ins for user A and user B.
--- We do NOT insert real auth.users rows — we only test the ownership guard
--- logic at the function level.
+-- We seed auth.users first (FK parent) then profiles (FK child).
 
 DO $$
 BEGIN
-  -- Insert minimal profiles rows for the two test users so that the DELETE
-  -- statements inside the function have something to act on (profiles FK).
+  -- Seed minimal auth.users rows so profiles FK constraint is satisfied.
+  INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
+  VALUES
+    ('00000000-0000-0000-0000-000000000a01'::uuid,
+     '00000000-0000-0000-0000-000000000000'::uuid,
+     'authenticated', 'authenticated',
+     'test-p1-a@local.test', crypt('password', gen_salt('bf')),
+     now(), now()),
+    ('00000000-0000-0000-0000-000000000b02'::uuid,
+     '00000000-0000-0000-0000-000000000000'::uuid,
+     'authenticated', 'authenticated',
+     'test-p1-b@local.test', crypt('password', gen_salt('bf')),
+     now(), now())
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Insert profiles rows (FK child of auth.users).
   INSERT INTO public.profiles (id, handle, email, tos_version, tier)
   VALUES
     ('00000000-0000-0000-0000-000000000a01'::uuid,
