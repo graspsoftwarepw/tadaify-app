@@ -10,26 +10,16 @@ Tadaify — link-in-bio + creator commerce SaaS (React Router 7 / Remix on Cloud
 # 1. Install
 npm install
 
-# 2. Configure local env — required because the before_user_created Auth Hook
-#    (DEC-294) needs an HMAC secret in your local .env before `supabase start`
-#    will succeed.
-cp .env.example .env
-SECRET="$(printf "v1,whsec_%s" "$(openssl rand -base64 32)")" \
-  && sed -i.bak "s|^BEFORE_USER_CREATED_HOOK_SECRET=.*$|BEFORE_USER_CREATED_HOOK_SECRET=$SECRET|" .env \
-  && rm .env.bak
+# 2. Bootstrap env files (.env + .dev.vars) — safe to run before Supabase
+#    Generates the HMAC hook secret needed by supabase start.
+./bin/worktree-env-init.sh
 
-# 3. Configure Workers runtime env bindings (server-side routes read from .dev.vars)
-#    Workers does NOT read .env — it reads .dev.vars (Cloudflare wrangler convention).
-#    Both files are required for local dev. See .dev.vars.example for full comments.
-cp .dev.vars.example .dev.vars
-#    Fill in SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY after
-#    `supabase start` (next step): run `supabase status -o env` to get values.
-#    HANDLE_RESERVATION_TTL_SECONDS defaults to 600 (10 min); override for tests.
-
-# 4. Start Supabase local (port-band 5435X)
+# 3. Start Supabase local (port-band 5435X)
 supabase start
 # Inbucket UI: http://localhost:54354
-# Then: supabase status -o env  → copy values into .dev.vars
+
+# 4. Re-run to fill in Supabase keys (idempotent — re-run is always safe)
+./bin/worktree-env-init.sh
 
 # 5. Start dev server
 npm run dev
@@ -42,6 +32,11 @@ npm run build
 npm run preview
 # (or: wrangler dev ./build/server/index.js)
 ```
+
+> **worktree-env-init.sh** is idempotent — running it again is always safe.
+> Run it **before** `supabase start` to generate `.env` (the Auth Hook secret must exist
+> before Supabase boots). Re-run **after** `supabase start` to populate the Supabase keys
+> in `.dev.vars`. For manual setup reference, see `.env.example` and `.dev.vars.example`.
 
 ### Stack
 
