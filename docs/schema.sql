@@ -93,3 +93,105 @@ CREATE TRIGGER profile_created_cleanup_reservation
   AFTER INSERT ON profiles
   FOR EACH ROW
   EXECUTE FUNCTION on_profile_created_cleanup_reservation();
+
+-- Migration: 20260503000001_app_dashboard_tables.sql
+-- Added in Story F-APP-DASHBOARD-001a — home dashboard render shell (#171)
+
+CREATE TABLE IF NOT EXISTS account_settings (
+  id                  uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  theme_pref          text        NOT NULL DEFAULT 'light'
+                                  CHECK (theme_pref IN ('light', 'dark')),
+  welcome_dismissed   boolean     NOT NULL DEFAULT false,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE account_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY account_settings_own_select ON account_settings
+  FOR SELECT TO authenticated USING (auth.uid() = id);
+
+CREATE POLICY account_settings_own_update ON account_settings
+  FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+CREATE TRIGGER account_settings_updated_at
+  BEFORE UPDATE ON account_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TABLE IF NOT EXISTS pages (
+  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title           text        NOT NULL DEFAULT 'Home',
+  is_homepage     boolean     NOT NULL DEFAULT true,
+  published_at    timestamptz,
+  onboarding_resume_url text,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pages_user_id ON pages (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pages_user_homepage ON pages (user_id) WHERE is_homepage = true;
+
+ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY pages_own_select ON pages
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+CREATE POLICY pages_own_update ON pages
+  FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE TRIGGER pages_updated_at
+  BEFORE UPDATE ON pages
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TABLE IF NOT EXISTS blocks (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  page_id     uuid        NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  user_id     uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  block_type  text        NOT NULL DEFAULT 'link',
+  title       text        NOT NULL DEFAULT '',
+  url         text,
+  is_visible  boolean     NOT NULL DEFAULT true,
+  position    integer     NOT NULL DEFAULT 0,
+  meta        jsonb,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_blocks_page_id ON blocks (page_id);
+CREATE INDEX IF NOT EXISTS idx_blocks_user_id ON blocks (user_id);
+CREATE INDEX IF NOT EXISTS idx_blocks_page_position ON blocks (page_id, position);
+
+ALTER TABLE blocks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY blocks_own_select ON blocks
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+CREATE POLICY blocks_own_update ON blocks
+  FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE TRIGGER blocks_updated_at
+  BEFORE UPDATE ON blocks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- profiles: added onboarding_completed_at, bio, template_id, tier
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamptz,
+  ADD COLUMN IF NOT EXISTS bio                      text,
+  ADD COLUMN IF NOT EXISTS template_id              text,
+  ADD COLUMN IF NOT EXISTS tier                     text NOT NULL DEFAULT 'free'
+                                                    CHECK (tier IN ('free', 'creator', 'pro', 'business'));
+
+-- GDPR: delete_user_data RPC
+CREATE OR REPLACE FUNCTION delete_user_data(p_user_id uuid)
+  RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM blocks           WHERE user_id = p_user_id;
+  DELETE FROM pages            WHERE user_id = p_user_id;
+  DELETE FROM account_settings WHERE id      = p_user_id;
+  DELETE FROM profiles         WHERE id      = p_user_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION delete_user_data(uuid) TO authenticated;

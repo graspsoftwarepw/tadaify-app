@@ -11,6 +11,36 @@ Migrations apply automatically to DEV on merge to `main` (GitHub Actions
 
 ## Pending for PROD
 
+### 20260503000001_app_dashboard_tables.sql
+
+**Effect:** Creates `account_settings`, `pages`, `blocks` tables; alters `profiles` to add
+`onboarding_completed_at`, `bio`, `template_id`, `tier`; adds `delete_user_data(uuid)` RPC with
+full GDPR deletion cascade (blocks → pages → account_settings → profiles) and drops/recreates the
+function if it existed without the new tables.
+
+**Why:** Required for F-APP-DASHBOARD-001a (#171) — the post-onboarding dashboard, GDPR user
+deletion, and onboarding-state derivation.
+
+**Pre-steps:** none — all new tables/columns; no destructive changes to existing schema.
+
+**Post-steps:** deploy `user-export-data` Edge Function to Supabase (GDPR Art. 20 export).
+
+**Rollback:**
+```sql
+-- Undo in reverse dependency order
+DROP FUNCTION IF EXISTS delete_user_data(uuid);
+DROP TABLE IF EXISTS blocks;
+DROP TABLE IF EXISTS pages;
+DROP TABLE IF EXISTS account_settings;
+ALTER TABLE profiles
+  DROP COLUMN IF EXISTS onboarding_completed_at,
+  DROP COLUMN IF EXISTS bio,
+  DROP COLUMN IF EXISTS template_id,
+  DROP COLUMN IF EXISTS tier;
+```
+
+---
+
 ### 20260502000001_drop_handle_reservations_default.sql
 
 **Effect:** drops the SQL `DEFAULT` clause on `handle_reservations.expires_at`.

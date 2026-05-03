@@ -3,6 +3,8 @@
 All notable changes to tadaify are documented here.
 Format: date · description · BR/TR refs · PR link.
 
+- 2026-05-03 · feat: F-APP-DASHBOARD-001a Slice C — post-onboarding home dashboard (/app route, #171) — SSR-first loader (TR-tadaify-005); schema: `account_settings` + `pages` + `blocks` tables + `profiles` ALTER (onboarding_completed_at/bio/template_id/tier) + `delete_user_data()` GDPR RPC update; `user-export-data` Supabase Edge Function (GDPR Art. 20); 7 new components (AppAppbar, AppSidebar, HomepagePanel, LivePreviewPane, AppMobileTabs, WelcomeBanner + ThemeToggle); `lib/onboarding-state.ts` (6-state machine, DEC-332=D: never "your page is live"); `onboarding.complete.tsx` → redirects to /app; U1-U4 unit tests (47 tests); S1-S7 Playwright spec; responsive: sidebar hidden <600px, preview pane hidden 600-1023px; TR-tadaify-005 introduced — Issue #171
+
 - 2026-05-03 · test: onboarding wizard e2e spec — 5 scenarios (S1 happy path, S2 back-nav URL state, S3 name-required validator, S4 tier=free DEC-311=A, S5 DEC-332=D complete page semantics); covers BR-ONBOARDING-001..006; no DB changes; afterAll cleanup hook — Issue #165
 
 - 2026-05-02 · test infra: un-fixme S1-S5 register-cascade (Layer 1-7 fix: Mailpit API, debounce-aware selectors, per-test handle isolation, afterAll cleanup, method-selection step, OTP paste helper); fix critical-path strict-mode + POST handle/check — no new BR/TR (test-only, covers existing BUG-149-{1,2,3,4,6}) — Issue #163

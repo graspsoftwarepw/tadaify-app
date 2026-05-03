@@ -29,7 +29,8 @@
 | [TR-AUTH-06](requirements/technical/0019-tr-auth-06-handle-otp-meta-stored-in-raw-user-meta-data.md) | MUST | Handle + tos\_version stored in `raw_user_meta_data` at OTP send time |
 | [TR-tadaify-001](requirements/technical/0020-tr-tadaify-001-unit-test-ci-gate.md) | MUST | Unit-test CI gate; Playwright stays local (supersedes TR-009) |
 | [TR-tadaify-002](requirements/technical/0021-tr-tadaify-002-auth-email-templates.md) | MUST | Auth email templates contract (plain-text fallback files / token-only OTP / local files / inline CSS only) — multipart MIME wire delivery PENDING text_path support / Edge Function dispatcher / Resend Phase 3 |
+| [TR-tadaify-005](requirements/technical/0022-tr-tadaify-005-app-dashboard-ssr-contract.md) | MUST | App dashboard SSR-first contract: loader fetches profile + account_settings + pages + blocks in parallel; pure-function extractables for URL-param parsing; onboarding state derivation in `lib/onboarding-state.ts`; DEC-332=D enforced via type system |
 
 ---
 
-*Generated from 21 MADR records in `docs/requirements/technical/`.*
+*Generated from 22 MADR records in `docs/requirements/technical/`.*
