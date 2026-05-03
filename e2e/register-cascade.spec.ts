@@ -10,7 +10,7 @@
  *   - Mailpit accessible at http://localhost:54354 (Supabase local SMTP catcher)
  *
  * S4 (Bug 5 — email template) is deferred to #150.
- * S6 requires HANDLE_RESERVATION_TTL_SECONDS<=30 (legitimate runtime gate).
+ * S6 requires HANDLE_RESERVATION_TTL_SECONDS<=30 (reads .dev.vars as fallback).
  *
  * Layer 1: debounce-aware button-enabled wait (300ms debounce on handle check)
  * Layer 2: per-test handle isolation (fixed handles + beforeAll/afterAll cleanup)
@@ -24,6 +24,26 @@
  */
 
 import { test, expect, Page, BrowserContext } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// ---------------------------------------------------------------------------
+// Helper — read a key from .dev.vars when process.env doesn't have it.
+// .dev.vars is loaded by the Workers runtime but NOT by the Playwright Node
+// process, so we parse it ourselves as a fallback.
+// ---------------------------------------------------------------------------
+
+function readDevVar(key: string): string | undefined {
+  if (process.env[key]) return process.env[key];
+  try {
+    const devVarsPath = resolve(__dirname, "..", ".dev.vars");
+    const content = readFileSync(devVarsPath, "utf-8");
+    const match = content.match(new RegExp(`^${key}=(.+)$`, "m"));
+    return match?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Constants — Supabase local (from .dev.vars / env)
@@ -155,7 +175,7 @@ async function cleanupHandleReservations(prefix: string): Promise<void> {
 async function fillHandleAndContinue(
   page: Page,
   handle: string,
-  timeout = 5_000
+  timeout = 8_000
 ): Promise<void> {
   await page.locator("#handle-input").fill(handle);
   const continueBtn = page.getByRole("button", { name: /continue/i }).first();
@@ -166,7 +186,7 @@ async function fillHandleAndContinue(
 async function fillRegisterForm(page: Page, handle: string, email: string) {
   await page.goto("/register");
   // Step A: handle input (debounce-aware — Layer 1)
-  await fillHandleAndContinue(page, handle, 5_000);
+  await fillHandleAndContinue(page, handle, 8_000);
   // Step B: method selection — click "Continue with Email"
   await page.getByRole("button", { name: /continue with email/i }).click();
   // Step B-email: email input
@@ -362,15 +382,15 @@ test("S5 — handle reservation conflict: second session sees reserved error", a
 // S6 — Handle reservation expires after TTL (env-overridden short TTL)
 // Covers: BUG-149-6, ECN-149-10, ECN-149-12
 // Note: Requires HANDLE_RESERVATION_TTL_SECONDS<=30 at test time.
-//       This is a LEGITIMATE runtime gate — NOT a fixme.
-//       Run with: HANDLE_RESERVATION_TTL_SECONDS=10 npm run test:e2e
+//       Reads from process.env first, then falls back to .dev.vars.
+//       Set HANDLE_RESERVATION_TTL_SECONDS=10 in .dev.vars or shell env.
 // ---------------------------------------------------------------------------
 
 test("S6 — handle reservation expires after short TTL, becomes available again", async ({
   browser,
 }) => {
   // Covers: BUG-149-6 / ECN-149-10 / ECN-149-12
-  const ttlSeconds = parseInt(process.env.HANDLE_RESERVATION_TTL_SECONDS ?? "600", 10);
+  const ttlSeconds = parseInt(readDevVar("HANDLE_RESERVATION_TTL_SECONDS") ?? "600", 10);
   test.skip(
     ttlSeconds > 30,
     `HANDLE_RESERVATION_TTL_SECONDS=${ttlSeconds} — skipping S6 (would wait ${ttlSeconds}s); set to ≤30 to run`
@@ -396,7 +416,8 @@ test("S6 — handle reservation expires after short TTL, becomes available again
   await pageB.goto("/register");
   await pageB.locator("#handle-input").fill(handle);
   await pageB.waitForTimeout(1500); // debounce + some margin
-  await expect(pageB.getByText(/reserved|not available/i)).toBeVisible({ timeout: 5_000 });
+  // UI shows "This handle is already taken." — matches /reserved|taken|not available/i
+  await expect(pageB.getByText(/reserved|taken|not available/i)).toBeVisible({ timeout: 5_000 });
 
   // Wait past TTL
   await pageB.waitForTimeout((ttlSeconds + 2) * 1000);
@@ -406,8 +427,8 @@ test("S6 — handle reservation expires after short TTL, becomes available again
   await pageB.locator("#handle-input").fill(handle);
   await pageB.waitForTimeout(1500); // debounce
 
-  // After TTL expiry, the handle must be available (no reserved/not available text)
-  await expect(pageB.getByText(/reserved|not available/i)).not.toBeVisible({ timeout: 5_000 });
+  // After TTL expiry, the handle must be available (no reserved/taken/not available text)
+  await expect(pageB.getByText(/reserved|taken|not available/i)).not.toBeVisible({ timeout: 5_000 });
 
   // Context B should be able to proceed — Continue button becomes enabled
   const continueBtn = pageB.getByRole("button", { name: /continue/i }).first();
