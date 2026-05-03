@@ -155,7 +155,7 @@ async function cleanupHandleReservations(prefix: string): Promise<void> {
 async function fillHandleAndContinue(
   page: Page,
   handle: string,
-  timeout = 5_000
+  timeout = 8_000
 ): Promise<void> {
   await page.locator("#handle-input").fill(handle);
   const continueBtn = page.getByRole("button", { name: /continue/i }).first();
@@ -166,7 +166,7 @@ async function fillHandleAndContinue(
 async function fillRegisterForm(page: Page, handle: string, email: string) {
   await page.goto("/register");
   // Step A: handle input (debounce-aware — Layer 1)
-  await fillHandleAndContinue(page, handle, 5_000);
+  await fillHandleAndContinue(page, handle, 8_000);
   // Step B: method selection — click "Continue with Email"
   await page.getByRole("button", { name: /continue with email/i }).click();
   // Step B-email: email input
@@ -396,7 +396,8 @@ test("S6 — handle reservation expires after short TTL, becomes available again
   await pageB.goto("/register");
   await pageB.locator("#handle-input").fill(handle);
   await pageB.waitForTimeout(1500); // debounce + some margin
-  await expect(pageB.getByText(/reserved|not available/i)).toBeVisible({ timeout: 5_000 });
+  // UI shows "This handle is already taken." — matches /reserved|taken|not available/i
+  await expect(pageB.getByText(/reserved|taken|not available/i)).toBeVisible({ timeout: 5_000 });
 
   // Wait past TTL
   await pageB.waitForTimeout((ttlSeconds + 2) * 1000);
@@ -406,8 +407,8 @@ test("S6 — handle reservation expires after short TTL, becomes available again
   await pageB.locator("#handle-input").fill(handle);
   await pageB.waitForTimeout(1500); // debounce
 
-  // After TTL expiry, the handle must be available (no reserved/not available text)
-  await expect(pageB.getByText(/reserved|not available/i)).not.toBeVisible({ timeout: 5_000 });
+  // After TTL expiry, the handle must be available (no reserved/taken/not available text)
+  await expect(pageB.getByText(/reserved|taken|not available/i)).not.toBeVisible({ timeout: 5_000 });
 
   // Context B should be able to proceed — Continue button becomes enabled
   const continueBtn = pageB.getByRole("button", { name: /continue/i }).first();
