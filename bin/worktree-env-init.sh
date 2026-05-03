@@ -101,43 +101,53 @@ is_placeholder() {
 if is_placeholder "$ANON_VALUE"; then
   # Try to get real values from supabase status
   if ! supabase status >/dev/null 2>&1; then
-    err "Supabase is not running — run \`supabase start\` first, then re-run this script."
+    log "  ⚠ .dev.vars: Supabase is not running — keys left as placeholders."
+    log "    Run \`supabase start\` then re-run this script to fill them in."
+    SUPABASE_AVAILABLE=0
+  else
+    SUPABASE_AVAILABLE=1
   fi
 
-  STATUS_ENV="$(supabase status -o env 2>/dev/null)" || err "Failed to get supabase status. Is Supabase running? Run \`supabase start\` first."
+  if [[ "${SUPABASE_AVAILABLE:-1}" -eq 0 ]]; then
+    # Skip .dev.vars key population — will be filled on next run
+    :
+  elif ! STATUS_ENV="$(supabase status -o env 2>/dev/null)"; then
+    log "  ⚠ .dev.vars: Failed to read supabase status — keys left as placeholders."
+    log "    Re-run this script after Supabase is up."
+  else
+    # `supabase status -o env` key names differ across CLI versions:
+    #   older CLI:  SUPABASE_URL / SUPABASE_ANON_KEY / SERVICE_ROLE_KEY
+    #   newer CLI:  API_URL      / ANON_KEY           / SERVICE_ROLE_KEY
+    # Strip optional surrounding quotes from values.
+    extract_val() {
+      local key="$1"
+      local raw
+      raw="$(echo "$STATUS_ENV" | grep "^${key}=" | head -1 | cut -d= -f2-)"
+      # Strip leading/trailing double-quotes if present (newer CLI wraps values)
+      raw="${raw#\"}"
+      raw="${raw%\"}"
+      echo "$raw"
+    }
 
-  # `supabase status -o env` key names differ across CLI versions:
-  #   older CLI:  SUPABASE_URL / SUPABASE_ANON_KEY / SERVICE_ROLE_KEY
-  #   newer CLI:  API_URL      / ANON_KEY           / SERVICE_ROLE_KEY
-  # Strip optional surrounding quotes from values.
-  extract_val() {
-    local key="$1"
-    local raw
-    raw="$(echo "$STATUS_ENV" | grep "^${key}=" | head -1 | cut -d= -f2-)"
-    # Strip leading/trailing double-quotes if present (newer CLI wraps values)
-    raw="${raw#\"}"
-    raw="${raw%\"}"
-    echo "$raw"
-  }
+    # Try canonical keys first, fall back to alternate names
+    SB_URL="$(extract_val SUPABASE_URL)"
+    [[ -z "$SB_URL" ]] && SB_URL="$(extract_val API_URL)"
 
-  # Try canonical keys first, fall back to alternate names
-  SB_URL="$(extract_val SUPABASE_URL)"
-  [[ -z "$SB_URL" ]] && SB_URL="$(extract_val API_URL)"
+    SB_ANON="$(extract_val SUPABASE_ANON_KEY)"
+    [[ -z "$SB_ANON" ]] && SB_ANON="$(extract_val ANON_KEY)"
 
-  SB_ANON="$(extract_val SUPABASE_ANON_KEY)"
-  [[ -z "$SB_ANON" ]] && SB_ANON="$(extract_val ANON_KEY)"
+    SB_SERVICE="$(extract_val SERVICE_ROLE_KEY)"
 
-  SB_SERVICE="$(extract_val SERVICE_ROLE_KEY)"
+    [[ -n "$SB_URL" ]]     || err "supabase status did not return API_URL/SUPABASE_URL. Is Supabase running?"
+    [[ -n "$SB_ANON" ]]    || err "supabase status did not return ANON_KEY/SUPABASE_ANON_KEY. Is Supabase running?"
+    [[ -n "$SB_SERVICE" ]] || err "supabase status did not return SERVICE_ROLE_KEY. Is Supabase running?"
 
-  [[ -n "$SB_URL" ]]     || err "supabase status did not return API_URL/SUPABASE_URL. Is Supabase running?"
-  [[ -n "$SB_ANON" ]]    || err "supabase status did not return ANON_KEY/SUPABASE_ANON_KEY. Is Supabase running?"
-  [[ -n "$SB_SERVICE" ]] || err "supabase status did not return SERVICE_ROLE_KEY. Is Supabase running?"
-
-  sed -i.bak "s|^SUPABASE_URL=.*$|SUPABASE_URL=$SB_URL|" "$DEV_VARS_FILE"
-  sed -i.bak "s|^SUPABASE_ANON_KEY=.*$|SUPABASE_ANON_KEY=$SB_ANON|" "$DEV_VARS_FILE"
-  sed -i.bak "s|^SUPABASE_SERVICE_ROLE_KEY=.*$|SUPABASE_SERVICE_ROLE_KEY=$SB_SERVICE|" "$DEV_VARS_FILE"
-  rm -f "$DEV_VARS_FILE.bak"
-  log "  ✓ .dev.vars: Supabase keys populated from \`supabase status\`"
+    sed -i.bak "s|^SUPABASE_URL=.*$|SUPABASE_URL=$SB_URL|" "$DEV_VARS_FILE"
+    sed -i.bak "s|^SUPABASE_ANON_KEY=.*$|SUPABASE_ANON_KEY=$SB_ANON|" "$DEV_VARS_FILE"
+    sed -i.bak "s|^SUPABASE_SERVICE_ROLE_KEY=.*$|SUPABASE_SERVICE_ROLE_KEY=$SB_SERVICE|" "$DEV_VARS_FILE"
+    rm -f "$DEV_VARS_FILE.bak"
+    log "  ✓ .dev.vars: Supabase keys populated from \`supabase status\`"
+  fi
 else
   log "  ✓ .dev.vars: Supabase keys already set"
 fi
@@ -151,5 +161,9 @@ fi
 # ── 4. Summary ───────────────────────────────────────────────────────────────
 
 log ""
-log "Done. Both .env and .dev.vars are ready."
-log "Next: supabase start  →  npm run dev"
+log "Done. .env is ready."
+if is_placeholder "$(grep '^SUPABASE_ANON_KEY=' "$DEV_VARS_FILE" 2>/dev/null | cut -d= -f2-)"; then
+  log ".dev.vars still has placeholder keys — run \`supabase start\` then re-run this script."
+else
+  log ".dev.vars is ready."
+fi

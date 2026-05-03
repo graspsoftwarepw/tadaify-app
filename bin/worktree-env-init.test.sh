@@ -53,6 +53,12 @@ HANDLE_RESERVATION_TTL_SECONDS=600
 # Regex for valid hook secret
 VALID_SECRET_RE='^v1,whsec_[A-Za-z0-9+/=]{32,}$'
 
+# Placeholder check (mirrors function in worktree-env-init.sh)
+is_placeholder() {
+  local val="$1"
+  [[ -z "$val" ]] || [[ "$val" == *"replace-with"* ]] || [[ "$val" == "eyJ...replace"* ]]
+}
+
 # ── Mock supabase that reports as running with real-looking values ────────────
 # We put a fake `supabase` in the PATH for tests that need it.
 
@@ -215,28 +221,37 @@ else
 fi
 rm -rf "$TMP_D"
 
-# ── Test E: Supabase not running for .dev.vars resolution → exit 1 ───────────
+# ── Test E: Supabase not running → exit 0, .env valid, .dev.vars placeholder ──
 
 echo ""
-echo "E. Supabase not running → exit 1 with 'start supabase first' message"
+echo "E. Supabase not running → exit 0, .env valid, .dev.vars keys still placeholder"
 TMP_E="$(mktemp -d)"
 make_sandbox "$TMP_E" "$ENV_EXAMPLE_CONTENT" "$DEV_VARS_EXAMPLE_CONTENT"
 
-E_EXIT_FILE="$(mktemp)"
-ERR_OUT_E="$(
+(
   cd "$TMP_E"
-  PATH="$MOCK_SUPABASE_STOPPED_DIR:$PATH" bash "$SCRIPT" --quiet 2>&1
-  echo $? > "$E_EXIT_FILE"
-)"
-E_EXIT="$(cat "$E_EXIT_FILE")"
-rm -f "$E_EXIT_FILE"
+  PATH="$MOCK_SUPABASE_STOPPED_DIR:$PATH" bash "$SCRIPT" --quiet
+)
+E_EXIT=$?
 
-if [[ $E_EXIT -eq 0 ]]; then
-  fail "E: expected exit 1 when Supabase not running, got 0"
-elif echo "$ERR_OUT_E" | grep -qi "supabase\|start"; then
-  pass "E: exit 1 with Supabase start message"
+if [[ $E_EXIT -ne 0 ]]; then
+  fail "E: expected exit 0 when Supabase not running (pre-start safe path), got $E_EXIT"
 else
-  fail "E: exited $E_EXIT but message unclear: '$ERR_OUT_E'"
+  # .env must have a valid hook secret even without Supabase
+  SECRET_E=$(grep '^BEFORE_USER_CREATED_HOOK_SECRET=' "$TMP_E/.env" | cut -d= -f2-)
+  if [[ "$SECRET_E" =~ $VALID_SECRET_RE ]]; then
+    pass "E: .env has valid BEFORE_USER_CREATED_HOOK_SECRET without Supabase"
+  else
+    fail "E: .env secret '$SECRET_E' not valid without Supabase running"
+  fi
+
+  # .dev.vars should still have placeholder keys (not populated)
+  ANON_E=$(grep '^SUPABASE_ANON_KEY=' "$TMP_E/.dev.vars" | cut -d= -f2-)
+  if is_placeholder "$ANON_E"; then
+    pass "E: .dev.vars keys correctly left as placeholders"
+  else
+    fail "E: .dev.vars should have placeholder keys when Supabase not running, got: $ANON_E"
+  fi
 fi
 rm -rf "$TMP_E"
 
