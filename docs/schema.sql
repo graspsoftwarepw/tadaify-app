@@ -183,10 +183,17 @@ ALTER TABLE profiles
                                                     CHECK (tier IN ('free', 'creator', 'pro', 'business'));
 
 -- GDPR: delete_user_data RPC
-CREATE OR REPLACE FUNCTION delete_user_data(p_user_id uuid)
+-- Ownership guard added in 20260503000002_secure_delete_user_data.sql (Codex P1 fix, PR #174)
+CREATE OR REPLACE FUNCTION public.delete_user_data(p_user_id uuid)
   RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
+  -- Ownership guard: caller must be the same user they are deleting.
+  IF auth.uid() IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'permission denied: caller % cannot delete data for %',
+      auth.uid(), p_user_id
+      USING ERRCODE = '42501';
+  END IF;
   DELETE FROM blocks           WHERE user_id = p_user_id;
   DELETE FROM pages            WHERE user_id = p_user_id;
   DELETE FROM account_settings WHERE id      = p_user_id;
@@ -194,4 +201,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION delete_user_data(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_user_data(uuid) TO authenticated;

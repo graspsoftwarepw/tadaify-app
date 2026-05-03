@@ -14,14 +14,46 @@
  *
  * Story: F-APP-DASHBOARD-001a (#171)
  * GDPR Art. 20 (Right to Data Portability)
+ *
+ * Codex P2 fix (PR #174): per-table Supabase errors are now propagated —
+ * a read failure returns 500 with { error: "export_failed", failed_dataset }
+ * instead of silently returning null/[] for the broken dataset.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, PostgrestError } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// ── Error helper ─────────────────────────────────────────────────────────────
+
+class ExportError extends Error {
+  constructor(
+    public readonly dataset: string,
+    public readonly detail: string,
+  ) {
+    super(`export_failed: ${dataset} — ${detail}`);
+    this.name = "ExportError";
+  }
+}
+
+/**
+ * Unwrap a Supabase query result, throwing ExportError on any read failure.
+ * No internal DB details are forwarded to the response body.
+ */
+function unwrap<T>(
+  name: string,
+  res: { data: T | null; error: PostgrestError | null },
+): T {
+  if (res.error) {
+    throw new ExportError(name, res.error.message);
+  }
+  return res.data as T;
+}
+
+// ── Handler ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
@@ -59,32 +91,60 @@ Deno.serve(async (req: Request) => {
 
   const userId = userData.user.id;
 
-  // Collect data from all user-owned tables
-  const [profilesRes, settingsRes, pagesRes, blocksRes] = await Promise.all([
-    adminClient.from("profiles").select("*").eq("id", userId),
-    adminClient.from("account_settings").select("*").eq("id", userId),
-    adminClient.from("pages").select("*").eq("user_id", userId),
-    adminClient.from("blocks").select("*").eq("user_id", userId),
-  ]);
+  // Collect data from all user-owned tables.
+  // Any read failure returns 500 with the failing dataset name so the caller
+  // knows the export is incomplete (Codex P2 fix, PR #174).
+  try {
+    const [profilesRes, settingsRes, pagesRes, blocksRes] = await Promise.all([
+      adminClient.from("profiles").select("*").eq("id", userId),
+      adminClient.from("account_settings").select("*").eq("id", userId),
+      adminClient.from("pages").select("*").eq("user_id", userId),
+      adminClient.from("blocks").select("*").eq("user_id", userId),
+    ]);
 
-  const exportData = {
-    exported_at: new Date().toISOString(),
-    user_id: userId,
-    email: userData.user.email,
-    profile: profilesRes.data?.[0] ?? null,
-    account_settings: settingsRes.data?.[0] ?? null,
-    pages: pagesRes.data ?? [],
-    blocks: blocksRes.data ?? [],
-  };
+    // Unwrap all four — throws ExportError on any failure
+    const profiles = unwrap("profiles", profilesRes);
+    const accountSettings = unwrap("account_settings", settingsRes);
+    const pages = unwrap("pages", pagesRes);
+    const blocks = unwrap("blocks", blocksRes);
 
-  const filename = `tadaify-data-export-${userId.slice(0, 8)}-${Date.now()}.json`;
+    const exportData = {
+      exported_at: new Date().toISOString(),
+      user_id: userId,
+      email: userData.user.email,
+      profile: (profiles as unknown[])[0] ?? null,
+      account_settings: (accountSettings as unknown[])[0] ?? null,
+      pages: pages ?? [],
+      blocks: blocks ?? [],
+    };
 
-  return new Response(JSON.stringify(exportData, null, 2), {
-    status: 200,
-    headers: {
-      ...CORS_HEADERS,
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
-  });
+    const filename = `tadaify-data-export-${userId.slice(0, 8)}-${Date.now()}.json`;
+
+    return new Response(JSON.stringify(exportData, null, 2), {
+      status: 200,
+      headers: {
+        ...CORS_HEADERS,
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+      },
+    });
+  } catch (err) {
+    if (err instanceof ExportError) {
+      return new Response(
+        JSON.stringify({ error: "export_failed", failed_dataset: err.dataset }),
+        {
+          status: 500,
+          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        },
+      );
+    }
+    // Unexpected error — do not leak internals
+    return new Response(
+      JSON.stringify({ error: "internal_error" }),
+      {
+        status: 500,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      },
+    );
+  }
 });
