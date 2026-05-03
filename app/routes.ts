@@ -18,6 +18,9 @@ export default [
     route("/onboarding/complete", "routes/onboarding.complete.tsx"),
   ]),
 
+  // App dashboard (F-APP-DASHBOARD-001a, #171)
+  route("/app", "routes/app.tsx"),
+
   // Handle API (F-LANDING-001)
   route("/api/handle/check", "routes/api.handle.check.ts"),
   route("/api/handle/reserve", "routes/api.handle.reserve.ts"),

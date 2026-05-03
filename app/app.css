@@ -38,3 +38,46 @@ body.dark-mode .theme-icon-moon {
   opacity: 1 !important;
   transform: rotate(0) scale(1) !important;
 }
+
+/* ── App dashboard responsive layout ──────────────────────────────────────── */
+
+/* Sidebar: visible on tablet (≥600px) and desktop; hidden on mobile (<600px) */
+.app-sidebar {
+  display: flex;
+}
+
+/* Mobile bottom tabs: hidden by default; shown only on mobile (<600px) */
+.app-mobile-tabs {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  /* Mobile (≤599px): hide sidebar, show bottom tabs */
+  .app-sidebar {
+    display: none !important;
+  }
+  .app-mobile-tabs {
+    display: flex !important;
+  }
+}
+
+/* Tablet (600px – 1023px): sidebar visible, preview pane hidden to save space */
+@media (min-width: 600px) and (max-width: 1023px) {
+  /* Preview pane hidden at tablet — too narrow for 3-column layout */
+  aside[aria-label="Live preview"] {
+    display: none;
+  }
+}
+
+/* ── App layout fade-in animation ─────────────────────────────────────────── */
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes fadein {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 1; transform: none; }
+  }
+}
