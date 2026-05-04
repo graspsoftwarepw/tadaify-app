@@ -202,3 +202,21 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.delete_user_data(uuid) TO authenticated;
+
+-- OTP resend rate-limit audit table (BR-OTP-RATE-LIMIT-001, issue tadaify-app#179)
+-- Migration: 20260503000003_otp_rate_limit_attempts.sql
+CREATE TABLE public.otp_rate_limit_attempts (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email_hash   TEXT        NOT NULL,     -- sha256(lower(trim(email))) — raw email never stored
+  handle       TEXT,                     -- null for login flow (no handle at OTP time)
+  attempted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  outcome      TEXT        NOT NULL CHECK (outcome IN ('sent', 'rate_limited')),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_otp_rate_limit_email_hash_attempted_at
+  ON public.otp_rate_limit_attempts (email_hash, attempted_at DESC);
+ALTER TABLE public.otp_rate_limit_attempts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "otp_rate_limit_service_role_only"
+  ON public.otp_rate_limit_attempts FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');

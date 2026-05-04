@@ -14,14 +14,17 @@
  * Response:
  *   200 { sent: true }
  *   400 { error: string }
+ *   429 { error: "rate_limited", retry_after_seconds: number }
  *   502 { error: string }
  *
  * Story: F-REGISTER-001a — email-OTP + Auth Hook + handle binding
  * DEC trail: DEC-307 (separate login reuses email-OTP; returning user → dashboard)
+ *            DEC-342 (OTP resend rate-limit — BR-OTP-RATE-LIMIT-001)
  */
 
 import type { Route } from "./+types/api.auth.login-otp";
 import { validateEmail } from "~/lib/auth-validator";
+import { hashEmail, checkOtpRateLimit, recordOtpAttempt } from "~/lib/otp-rate-limit";
 
 export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "POST") {
@@ -46,17 +49,44 @@ export async function action({ request, context }: Route.ActionArgs) {
     return Response.json({ error: "invalid_email" }, { status: 400 });
   }
 
-  // ── Supabase OTP send ────────────────────────────────────────────────────
+  // ── Env / Supabase config ────────────────────────────────────────────────
 
   const env = context?.cloudflare?.env as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
   const supabaseAnonKey = env?.SUPABASE_ANON_KEY;
+  const supabaseServiceRoleKey = env?.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     // Local dev without bindings — return a stub response
     console.warn("[api.auth.login-otp] Supabase env vars not configured; stubbing OTP send");
     return Response.json({ sent: true, stub: true }, { status: 200 });
   }
+
+  // ── Backend rate-limit check (BR-OTP-RATE-LIMIT-001) ────────────────────
+
+  const emailHash = await hashEmail(rawEmail);
+
+  if (supabaseServiceRoleKey) {
+    const rateLimitResult = await checkOtpRateLimit(
+      supabaseUrl,
+      supabaseServiceRoleKey,
+      emailHash
+    );
+
+    if (!rateLimitResult.allowed) {
+      // Record denied attempt in audit trail (fire-and-forget).
+      void recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, null, "rate_limited");
+
+      return Response.json(
+        { error: "rate_limited", retry_after_seconds: rateLimitResult.retry_after_seconds ?? 86400 },
+        { status: 429 }
+      );
+    }
+  } else {
+    console.warn("[api.auth.login-otp] SUPABASE_SERVICE_ROLE_KEY not set — skipping rate-limit check");
+  }
+
+  // ── Supabase OTP send ────────────────────────────────────────────────────
 
   // Call Supabase Auth REST API with create_user: false — login only, no new account.
   const otpRes = await fetch(`${supabaseUrl}/auth/v1/otp`, {
@@ -92,6 +122,13 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     // All other upstream errors → generic server_error (no info leak).
     return Response.json({ error: "server_error" }, { status: 502 });
+  }
+
+  // ── Record successful send in audit table ────────────────────────────────
+
+  if (supabaseServiceRoleKey) {
+    // handle is null for login — no handle at OTP send time (BR-OTP-RATE-LIMIT-001).
+    void recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, null, "sent");
   }
 
   return Response.json({ sent: true }, { status: 200 });
