@@ -21,11 +21,7 @@
 import { redirect } from "react-router";
 import { Link } from "react-router";
 import type { Route } from "./+types/onboarding.tier";
-import { CREATOR_PRICE_MONTHLY } from "~/lib/tier-gate";
-
-/** Canonical pricing for Pro/Business — sourced here to keep one place to update. */
-const PRO_PRICE_MONTHLY = "$19";
-const BUSINESS_PRICE_MONTHLY = "$49";
+import { CREATOR_PRICE_MONTHLY, PRO_PRICE_MONTHLY, BUSINESS_PRICE_MONTHLY } from "~/lib/tier-gate";
 
 // ─── Tier data ─────────────────────────────────────────────────────────────────
 

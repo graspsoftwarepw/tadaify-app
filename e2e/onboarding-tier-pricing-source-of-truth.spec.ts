@@ -51,9 +51,9 @@ test("S7 — tier pricing: Creator shows $7.99 (CREATOR_PRICE_MONTHLY), $9 absen
   const dollarNineOccurrences = [...bodyText.matchAll(/\$9(?!\d)/g)];
   expect(dollarNineOccurrences.length).toBe(0);
 
-  // Pro ($19) and Business ($49) may appear — verify they're visible
-  await expect(page.getByText("$19")).toBeVisible({ timeout: 5_000 });
-  await expect(page.getByText("$49")).toBeVisible({ timeout: 5_000 });
+  // Pro ($19.99) and Business ($49.99) per DEC-279/287 — verify they're visible
+  await expect(page.getByText("$19.99")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("$49.99")).toBeVisible({ timeout: 5_000 });
 
   // Creator tier card must be present (by plan name)
   await expect(page.getByText(/^Creator$/i)).toBeVisible({ timeout: 5_000 });

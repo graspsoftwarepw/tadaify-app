@@ -20,7 +20,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { loader, action } from "./onboarding.tier";
-import { CREATOR_PRICE_MONTHLY } from "~/lib/tier-gate";
+import { CREATOR_PRICE_MONTHLY, PRO_PRICE_MONTHLY, BUSINESS_PRICE_MONTHLY } from "~/lib/tier-gate";
 
 const tierSrc = readFileSync(
   fileURLToPath(new URL("./onboarding.tier.tsx", import.meta.url)),
@@ -181,15 +181,29 @@ describe("onboarding.tier — U6: Creator price single source of truth (Bug #6b)
   });
 
   it("source does NOT hard-code '$9' as Creator price (must use CREATOR_PRICE_MONTHLY)", () => {
-    // The only $9 allowed is in a comment or string that is NOT the price field
-    // Strategy: confirm the constant reference exists and no bare "$9" in price assignments
     expect(tierSrc).toContain("CREATOR_PRICE_MONTHLY");
-    // Hard-coded dollar value must not appear as a string literal price assignment
     expect(tierSrc).not.toMatch(/price:\s*["']\$9["']/);
+  });
+
+  it("source does NOT hard-code Pro/Business prices (must import from tier-gate)", () => {
+    // No local const PRO_PRICE or BUSINESS_PRICE with hard-coded dollar values
+    expect(tierSrc).not.toMatch(/const\s+PRO_PRICE_MONTHLY\s*=/);
+    expect(tierSrc).not.toMatch(/const\s+BUSINESS_PRICE_MONTHLY\s*=/);
+    // Imports must come from tier-gate
+    expect(tierSrc).toContain("PRO_PRICE_MONTHLY");
+    expect(tierSrc).toContain("BUSINESS_PRICE_MONTHLY");
   });
 
   it("CREATOR_PRICE_MONTHLY equals $7.99 per DEC-279/287", () => {
     expect(CREATOR_PRICE_MONTHLY).toBe("$7.99");
+  });
+
+  it("PRO_PRICE_MONTHLY equals $19.99 per DEC-279/287", () => {
+    expect(PRO_PRICE_MONTHLY).toBe("$19.99");
+  });
+
+  it("BUSINESS_PRICE_MONTHLY equals $49.99 per DEC-279/287", () => {
+    expect(BUSINESS_PRICE_MONTHLY).toBe("$49.99");
   });
 });
 
