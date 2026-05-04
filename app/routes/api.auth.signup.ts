@@ -86,7 +86,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     const rateLimitResult = await checkOtpRateLimit(
       supabaseUrl,
       supabaseServiceRoleKey,
-      emailHash
+      emailHash,
+      rawHandle || null
     );
 
     if (!rateLimitResult.allowed) {

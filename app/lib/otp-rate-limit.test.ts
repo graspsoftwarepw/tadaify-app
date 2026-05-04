@@ -83,7 +83,7 @@ describe("checkOtpRateLimit", () => {
       { attempted_at: new Date(oldestSentAt + 120000).toISOString() },
     ]);
 
-    const result = await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, windowSeconds, 3);
+    const result = await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, null, windowSeconds, 3);
     expect(result.allowed).toBe(false);
     expect(result.retry_after_seconds).toBeGreaterThan(0);
     // retry_after_seconds should be close to windowSeconds - 5min = 86100s
@@ -111,6 +111,47 @@ describe("checkOtpRateLimit", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
     const result = await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
     expect(result.allowed).toBe(true);
+  });
+
+  it("includes handle=is.null filter when handle is null (login flow)", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, null);
+
+    const calledUrl = new URL(mockFetch.mock.calls[0][0] as string);
+    expect(calledUrl.searchParams.get("handle")).toBe("is.null");
+  });
+
+  it("includes handle=eq.<handle> filter when handle is provided (signup flow)", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "alice");
+
+    const calledUrl = new URL(mockFetch.mock.calls[0][0] as string);
+    expect(calledUrl.searchParams.get("handle")).toBe("eq.alice");
+  });
+
+  it("does not cross-block different handles sharing the same email (pair-keyed)", async () => {
+    // 3 'sent' rows for handle 'alice' — alice is blocked
+    mockFetchWithRows([
+      { attempted_at: new Date(Date.now() - 3000).toISOString() },
+      { attempted_at: new Date(Date.now() - 2000).toISOString() },
+      { attempted_at: new Date(Date.now() - 1000).toISOString() },
+    ]);
+    const aliceResult = await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "alice");
+    expect(aliceResult.allowed).toBe(false);
+
+    // 0 'sent' rows for handle 'bob' — bob is allowed (Supabase returns empty
+    // because the handle filter isolates per-handle rows).
+    mockFetchWithRows([]);
+    const bobResult = await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "bob");
+    expect(bobResult.allowed).toBe(true);
   });
 });
 

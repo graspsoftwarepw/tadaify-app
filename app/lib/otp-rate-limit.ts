@@ -50,6 +50,7 @@ export async function hashEmail(email: string): Promise<string> {
  * @param supabaseUrl        - SUPABASE_URL from Workers env
  * @param serviceRoleKey     - SUPABASE_SERVICE_ROLE_KEY from Workers env
  * @param emailHash          - sha256(lower(trim(email))) — from hashEmail()
+ * @param handle             - handle string for signup, null for login (pair-keyed per BR-OTP-RATE-LIMIT-001)
  * @param windowSeconds      - Rolling window size in seconds (default: 86400 = 24h)
  * @param maxAttempts        - Max allowed 'sent' rows in window (default: 3)
  */
@@ -57,15 +58,18 @@ export async function checkOtpRateLimit(
   supabaseUrl: string,
   serviceRoleKey: string,
   emailHash: string,
+  handle: string | null = null,
   windowSeconds: number = 24 * 3600,
   maxAttempts: number = 3
 ): Promise<RateLimitResult> {
   const windowStart = new Date(Date.now() - windowSeconds * 1000).toISOString();
 
   // Query only 'sent' rows — 'rate_limited' rows do not count toward the cap.
+  // Pair-keyed: email_hash + handle (BR-OTP-RATE-LIMIT-001).
   const url = new URL(`${supabaseUrl}/rest/v1/otp_rate_limit_attempts`);
   url.searchParams.set("select", "attempted_at");
   url.searchParams.set("email_hash", `eq.${emailHash}`);
+  url.searchParams.set("handle", handle ? `eq.${handle}` : "is.null");
   url.searchParams.set("outcome", "eq.sent");
   url.searchParams.set("attempted_at", `gte.${windowStart}`);
   url.searchParams.set("order", "attempted_at.asc");
