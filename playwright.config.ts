@@ -24,7 +24,9 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: "http://localhost:5173",
+    // Allow overriding via TEST_BASE_URL env var — used when running against
+    // a worktree dev server on a non-standard port (e.g. 5175 during PR validation).
+    baseURL: process.env.TEST_BASE_URL ?? "http://localhost:5173",
     trace: "on-first-retry",
   },
 
@@ -40,7 +42,7 @@ export default defineConfig({
   // Start dev server before running tests; reuse if already running
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:5173",
+    url: process.env.TEST_BASE_URL ?? "http://localhost:5173",
     reuseExistingServer: true,
     timeout: 120_000,
     env: {

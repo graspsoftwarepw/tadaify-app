@@ -32,6 +32,7 @@ import {
   RESEND_COOLDOWN_MS,
 } from "~/lib/otp-state";
 import { MotionLogo } from "~/components/landing/MotionLogo";
+import { OTP_GRID_TEMPLATE } from "~/lib/otp-grid-style";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -419,7 +420,7 @@ export default function LoginPage() {
               <div
                 role="group"
                 aria-label="6-digit verification code"
-                style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}
+                style={{ display: "grid", gridTemplateColumns: OTP_GRID_TEMPLATE, gap: 8 }}
               >
                 {state.otpDigits.map((digit, i) => (
                   <input
