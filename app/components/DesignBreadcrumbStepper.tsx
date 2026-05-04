@@ -44,6 +44,27 @@ export function deriveStepperWindow(current: string): {
   };
 }
 
+/**
+ * Returns true when the event target is an editable element (input, textarea,
+ * select, or contentEditable). Used to prevent the global arrow-key listener
+ * from hijacking caret movement inside form fields.
+ *
+ * Uses duck-typing on `tagName` / `isContentEditable` so it is testable in
+ * node environments without a DOM shim.
+ *
+ * Exported for unit testing.
+ */
+export function isEditableTarget(t: EventTarget | null): boolean {
+  if (t === null || typeof t !== "object") return false;
+  // Duck-type: real HTMLElement always has `tagName` (string) and
+  // `isContentEditable` (boolean).
+  const el = t as Record<string, unknown>;
+  const tag = typeof el["tagName"] === "string" ? el["tagName"] : "";
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (el["isContentEditable"] === true) return true;
+  return false;
+}
+
 interface DesignBreadcrumbStepperProps {
   activeSubTab: string;
   onSubTabChange: (subTab: SubTabId) => void;
@@ -73,22 +94,13 @@ export function DesignBreadcrumbStepper({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownOpen]);
 
-  // Keyboard ←/→ navigation — scoped to avoid interference with form inputs
+  // Keyboard ←/→ navigation.
+  // Guard: ignore the event when focus is on an editable target (input, textarea,
+  // select, contentEditable) so arrow keys in form fields are not hijacked.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Ignore when focus is on an editable element or modifier keys are held
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT" ||
-        target.isContentEditable ||
-        e.metaKey ||
-        e.ctrlKey ||
-        e.altKey
-      ) {
-        return;
-      }
+      if (isEditableTarget(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       if (e.key === "ArrowRight" && next) {
         e.preventDefault();
         onSubTabChange(next);

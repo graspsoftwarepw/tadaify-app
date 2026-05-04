@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { deriveStepperWindow, SUB_TABS } from "./DesignBreadcrumbStepper";
+import { deriveStepperWindow, SUB_TABS, isEditableTarget } from "./DesignBreadcrumbStepper";
 
 describe("deriveStepperWindow", () => {
   it("first sub-tab (theme) shows null prev", () => {
@@ -59,6 +59,42 @@ describe("deriveStepperWindow", () => {
       "colors",
       "footer",
     ]);
+  });
+});
+
+// isEditableTarget uses duck-typing on tagName/isContentEditable — testable
+// in a pure node environment without a DOM shim.
+function fakeEl(tagName: string, isContentEditable = false): EventTarget {
+  return { tagName: tagName.toUpperCase(), isContentEditable } as unknown as EventTarget;
+}
+
+describe("isEditableTarget — keyboard isolation gate (P2 fix)", () => {
+  it("returns true for INPUT element", () => {
+    expect(isEditableTarget(fakeEl("INPUT"))).toBe(true);
+  });
+
+  it("returns true for TEXTAREA element", () => {
+    expect(isEditableTarget(fakeEl("TEXTAREA"))).toBe(true);
+  });
+
+  it("returns true for SELECT element", () => {
+    expect(isEditableTarget(fakeEl("SELECT"))).toBe(true);
+  });
+
+  it("returns true for contentEditable element", () => {
+    expect(isEditableTarget(fakeEl("DIV", true))).toBe(true);
+  });
+
+  it("returns false for a plain button (arrow nav fires normally)", () => {
+    expect(isEditableTarget(fakeEl("BUTTON"))).toBe(false);
+  });
+
+  it("returns false for a span (non-editable)", () => {
+    expect(isEditableTarget(fakeEl("SPAN"))).toBe(false);
+  });
+
+  it("returns false for null (e.g. keyboard event with no target)", () => {
+    expect(isEditableTarget(null)).toBe(false);
   });
 });
 

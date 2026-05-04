@@ -322,12 +322,11 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Derive active tab/subtab from URL search params (SSR initial values as fallback)
+  // Derive active tab and subtab from URL (URL is source of truth after hydration).
+  // parseTab validates against VALID_TABS so invalid values fall back to "page".
+  // Fall back to loader-provided values on initial render.
   const activeTab = parseTab(searchParams) || initialTab;
-  const activeSubTab = normalizeSubTab(
-    searchParams.get("subtab") ?? initialSubTab
-  );
-
+  const activeSubTab = normalizeSubTab(searchParams.get("subtab") ?? initialSubTab);
   const [welcomeDismissed, setWelcomeDismissed] = useState(
     accountSettings.welcome_dismissed
   );
@@ -352,20 +351,20 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
   }, []);
 
   const handleTabChange = useCallback((tab: string) => {
+    // Update URL so tab/subtab are the single source of truth; browser back/fwd
+    // and deep-link / refresh all work correctly.
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("tab", tab);
-      if (tab === "design") {
-        // Default sub-tab when entering design
-        if (!next.get("subtab") || prev.get("tab") !== "design") {
-          next.set("subtab", DEFAULT_DESIGN_SUBTAB);
-        }
-      } else {
-        // Remove design-specific subtab when leaving design
+      if (tab !== "design") {
+        // Remove design-specific subtab when leaving design tab.
         next.delete("subtab");
+      } else if (!next.has("subtab")) {
+        // Entering Design without an explicit subtab → default to background.
+        next.set("subtab", DEFAULT_DESIGN_SUBTAB);
       }
       return next;
-    }, { replace: true });
+    }, { replace: false });
   }, [setSearchParams]);
 
   const handleSubTabChange = useCallback((subTab: SubTabId) => {
@@ -374,7 +373,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
       next.set("tab", "design");
       next.set("subtab", subTab);
       return next;
-    }, { replace: true });
+    }, { replace: false });
   }, [setSearchParams]);
 
   return (
