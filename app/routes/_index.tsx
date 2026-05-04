@@ -1954,8 +1954,9 @@ curl -H "Authorization: Bearer sk_tdf_..." \\
                 a: "Yes — three at MVP: theme matcher, bio rewrite, and page-copy suggestions. Free tier: 5 AI credits/month. Creator: 20/mo. Pro: 100/mo. Business: unlimited. Every AI edit shows a diff before applying — you approve, we never overwrite your voice silently.",
               },
               {
+                /* DEC-355=C (2026-05-04): F-001 guest-mode permanently dropped. Tadaify is signup-first (Linktree/Beacons model). */
                 q: "How fast can I launch?",
-                a: "30 seconds to claim your handle. You can build your whole page in guest mode without even signing up — only create an account when you're ready to publish. Most creators go live in under 5 minutes.",
+                a: "30 seconds to claim your handle and go live. Sign up, pick a template, add your links — most creators publish their first page in under 5 minutes.",
               },
             ].map(({ q, a }) => (
               <details
