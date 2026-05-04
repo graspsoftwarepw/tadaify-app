@@ -302,7 +302,7 @@ At 5 parallel × 6 useful agent-hours/day = 30 agent-hours/day. Across 20 build 
 | Day | F-XYZ batch | Agent type | Notes |
 |---|---|---|---|
 | 1 | Infra scaffolding (no F-XYZ yet) | Opus + Sonnet mix | Terraform + Supabase + Vite + CI |
-| 2 | F-001..011, F-180..199, F-170..179 GDPR | Sonnet (linkofme ports) | 4 PRs |
+| 2 | F-002..011, F-180..199, F-170..179 GDPR | Sonnet (linkofme ports) | 4 PRs (F-001 removed DEC-355=C) |
 | 3 | F-050 stub, F-015 shell, F-006 palette | Opus (Workers) + Sonnet | Workers SSR critical path |
 | 4 | F-020 editor shell + F-021 Link block + Stripe Connect stub | Opus + Sonnet | Block registry contract locked |
 | 5 | F-015 onboarding + F-CUSTOM-DOMAIN-001 stub + seed.sql | Sonnet | Week-1 close-out |

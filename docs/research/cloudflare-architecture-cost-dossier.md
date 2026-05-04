@@ -197,7 +197,7 @@ Pulled verbatim from `functional-spec.md` §1 L83-L113. All paths live under the
 | `tadaify.com/<handle>/<page-slug>` | RR7 SSR — multi-page (post-MVP) | SSR | public | DEC-MULTIPAGE-01 forward-compat |
 | `tadaify.com/app` | Cloudflare Pages SPA | CSR | authenticated | Dashboard, admin sub-routes |
 | `tadaify.com/admin` | Cloudflare Pages SPA | CSR | admin only | F-180+ |
-| `tadaify.com/try` | RR7 SSR — guest editor | SSR | public | F-001 |
+| ~~`tadaify.com/try`~~ | ~~RR7 SSR — guest editor~~ | — | — | **REMOVED** DEC-355=C |
 | `tadaify.com/register` | RR7 SSR — signup | SSR | public | F-002 |
 | `tadaify.com/login` | RR7 SSR — login | SSR | public | F-019 (Apple SSO) |
 | `tadaify.com/pricing` | RR7 SSR — pricing | SSR | public | |
