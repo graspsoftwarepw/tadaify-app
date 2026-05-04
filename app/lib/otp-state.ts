@@ -255,6 +255,29 @@ export function otpReducer(state: OtpState, action: OtpAction): OtpState {
       return { ...state, section: "C", isSubmitting: false, error: null };
 
     case "BACK": {
+      // When the per-session resend cap is reached on B-otp, the normal Back
+      // button MUST behave like BACK_TO_EMAIL — clear the email and reset
+      // attemptCount. Otherwise the user can re-enter the same email step with
+      // the email still populated and bypass the cap via "Send code".
+      // BR-OTP-RATE-LIMIT-001 / DEC-342 (Codex follow-up review F1).
+      if (
+        state.section === "B-otp" &&
+        state.attemptCount >= MAX_ATTEMPTS_PER_SESSION
+      ) {
+        return {
+          ...state,
+          section: "B-email",
+          email: "",
+          otpDigits: ["", "", "", "", "", ""],
+          resendCooldownUntil: null,
+          failedAttempts: 0,
+          lockedUntil: null,
+          error: null,
+          isSubmitting: false,
+          attemptCount: 0,
+        };
+      }
+
       const backMap: Partial<Record<RegisterSection, RegisterSection>> = {
         B: "A",
         "B-email": "B",

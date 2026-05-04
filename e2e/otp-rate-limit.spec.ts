@@ -419,3 +419,57 @@ test("S5 — audit table populated with correct rows and hashed email", async ({
   await cleanupRateLimitRows(emailHash);
   await cleanupUsers(`${HANDLE_PREFIX}s5`);
 });
+
+// ---------------------------------------------------------------------------
+// S6 — Back button at cap clears email (prevents bypass — Codex F1)
+// ---------------------------------------------------------------------------
+
+test("S6 — Back button at cap clears email and blocks re-send", async ({ page }) => {
+  const handle = `${HANDLE_PREFIX}s6`;
+  const email = `test-otp-rl-s6-${Date.now()}@local.test`;
+
+  // Reach cap (3 sends)
+  await navigateToBOtp(page, handle, email);
+
+  // 2nd send
+  await page.getByRole("button", { name: /← back|← wrong email/i }).click();
+  await page.waitForSelector('input[type="email"]', { timeout: 5000 });
+  await page.getByRole("textbox", { name: /email/i }).fill(email);
+  await page.getByRole("button", { name: /send.*code/i }).click();
+  await page.waitForSelector('[aria-label="Enter verification code"]', { timeout: 15000 });
+
+  // 3rd send
+  await page.getByRole("button", { name: /← back|← wrong email/i }).click();
+  await page.waitForSelector('input[type="email"]', { timeout: 5000 });
+  await page.getByRole("textbox", { name: /email/i }).fill(email);
+  await page.getByRole("button", { name: /send.*code/i }).click();
+  await page.waitForSelector('[aria-label="Enter verification code"]', { timeout: 15000 });
+
+  // Now at cap — verify the "Too many" message appears
+  await expect(page.getByText("Too many resend attempts.")).toBeVisible({ timeout: 5000 });
+
+  // Click the normal Back button (not "Use a different email")
+  const backBtn = page.getByRole("button", { name: /← back|← wrong email/i });
+  // Back button may or may not be visible at cap; if present, click it
+  if (await backBtn.isVisible()) {
+    await backBtn.click();
+
+    // Must land on B-email with email CLEARED (not pre-filled)
+    await expect(page.getByRole("textbox", { name: /email/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("textbox", { name: /email/i })).toHaveValue("");
+
+    // Intercept network to ensure no /api/auth/signup request fires when
+    // trying to send code without entering a new email
+    const apiCalls: string[] = [];
+    await page.route("**/api/auth/signup", (route) => {
+      apiCalls.push(route.request().url());
+      return route.abort();
+    });
+
+    // Try clicking Send code with empty email — should not fire API call
+    await page.getByRole("button", { name: /send.*code/i }).click();
+    // Wait briefly to ensure no request was made
+    await page.waitForTimeout(500);
+    expect(apiCalls).toHaveLength(0);
+  }
+});

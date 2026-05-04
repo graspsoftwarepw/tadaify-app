@@ -418,4 +418,40 @@ describe("per-session resend cap (BR-OTP-RATE-LIMIT-001)", () => {
     expect(s.otpDigits.every((d) => d === "")).toBe(true);
     expect(s.resendCooldownUntil).toBeNull();
   });
+
+  it("BACK from B-otp when cap reached behaves like BACK_TO_EMAIL (Codex F1)", () => {
+    let s = createInitialState();
+    s = {
+      ...s,
+      section: "B-otp",
+      email: "user@test.com",
+      handle: "alex",
+      attemptCount: MAX_ATTEMPTS_PER_SESSION,
+      otpDigits: ["1", "2", "3", "4", "5", "6"],
+      resendCooldownUntil: NOW + 30000,
+    };
+    s = otpReducer(s, { type: "BACK" });
+    // Must clear email and reset attemptCount (same as BACK_TO_EMAIL)
+    expect(s.section).toBe("B-email");
+    expect(s.email).toBe("");
+    expect(s.attemptCount).toBe(0);
+    expect(s.handle).toBe("alex"); // handle preserved
+    expect(s.otpDigits.every((d) => d === "")).toBe(true);
+    expect(s.resendCooldownUntil).toBeNull();
+  });
+
+  it("BACK from B-otp when cap NOT reached preserves email (normal back)", () => {
+    let s = createInitialState();
+    s = {
+      ...s,
+      section: "B-otp",
+      email: "user@test.com",
+      handle: "alex",
+      attemptCount: 2, // below cap
+    };
+    s = otpReducer(s, { type: "BACK" });
+    expect(s.section).toBe("B-email");
+    expect(s.email).toBe("user@test.com"); // preserved
+    expect(s.attemptCount).toBe(2); // unchanged
+  });
 });

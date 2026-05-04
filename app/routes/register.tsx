@@ -242,6 +242,10 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
   // ── Section B-email → B-otp ───────────────────────────────────────────────
 
   const handleSendCode = useCallback(async () => {
+    // Defensive guard: block send when per-session cap already reached
+    // (BR-OTP-RATE-LIMIT-001 / DEC-342 — Codex follow-up review F1).
+    if (isResendCapReached(state)) return;
+
     const emailResult = validateEmail(state.email);
     if (!emailResult.valid) {
       dispatch({ type: "SET_ERROR", error: EMAIL_ERROR_MESSAGES[emailResult.reason] });
