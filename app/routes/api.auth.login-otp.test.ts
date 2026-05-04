@@ -244,14 +244,22 @@ describe("api.auth.login-otp — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
   });
 
   it("records 'sent' row on successful Supabase send", async () => {
+    const reservationId = "550e8400-e29b-41d4-a716-446655440000";
     const mockFetch = vi
       .fn()
-      // rate-limit GET → 0 rows = allowed
-      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      // acquire_otp_slot RPC → allowed, returns reservation_id
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ allowed: true, reservation_id: reservationId }),
+          { status: 200 }
+        )
+      )
       // OTP send → 200
       .mockResolvedValueOnce(new Response("{}", { status: 200 }))
-      // audit INSERT for 'sent'
-      .mockResolvedValueOnce(new Response("", { status: 201 }));
+      // finalize_otp_slot RPC → marks 'sent'
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ finalized: true }), { status: 200 })
+      );
     vi.stubGlobal("fetch", mockFetch);
 
     const res = await action({
@@ -260,35 +268,28 @@ describe("api.auth.login-otp — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
     });
     expect(res.status).toBe(200);
 
-    // Allow fire-and-forget INSERT to settle
+    // Allow fire-and-forget finalize to settle
     await new Promise((r) => setTimeout(r, 10));
 
-    // The 3rd fetch call is the audit INSERT
-    const postCalls = (mockFetch.mock.calls as Array<[string, RequestInit]>).filter(
-      ([url, init]) =>
-        url.includes("otp_rate_limit_attempts") && init?.method === "POST"
+    // The 3rd fetch call is finalize_otp_slot RPC (marks reservation as 'sent')
+    const finalizeCalls = (mockFetch.mock.calls as Array<[string, RequestInit]>).filter(
+      ([url]) => url.includes("rpc/finalize_otp_slot")
     );
-    expect(postCalls.length).toBeGreaterThan(0);
-    const body = JSON.parse(postCalls[0][1].body as string) as Record<string, unknown>;
-    expect(body.outcome).toBe("sent");
+    expect(finalizeCalls.length).toBeGreaterThan(0);
+    const body = JSON.parse(finalizeCalls[0][1].body as string) as Record<string, unknown>;
+    expect(body.p_outcome).toBe("sent");
   });
 
   it("records 'rate_limited' row when denied (audit trail for abuse review)", async () => {
     const mockFetch = vi
       .fn()
-      // rate-limit GET → 3 rows = denied
+      // acquire_otp_slot RPC → denied (atomically inserts 'rate_limited' row in DB)
       .mockResolvedValueOnce(
         new Response(
-          JSON.stringify([
-            { attempted_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
-            { attempted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
-            { attempted_at: new Date(Date.now() - 1 * 3600 * 1000).toISOString() },
-          ]),
+          JSON.stringify({ allowed: false, retry_after_seconds: 3600 }),
           { status: 200 }
         )
-      )
-      // audit INSERT for 'rate_limited'
-      .mockResolvedValueOnce(new Response("", { status: 201 }));
+      );
     vi.stubGlobal("fetch", mockFetch);
 
     const res = await action({
@@ -297,16 +298,13 @@ describe("api.auth.login-otp — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
     });
     expect(res.status).toBe(429);
 
-    // Allow fire-and-forget
+    // Allow fire-and-forget to settle
     await new Promise((r) => setTimeout(r, 10));
-    // At minimum, an insert POST was made
-    const postCalls = mockFetch.mock.calls.filter(
-      (call: unknown[]) =>
-        String(call[0]).includes("otp_rate_limit_attempts") &&
-        (call[1] as RequestInit | undefined)?.method === "POST"
+    // The acquire_otp_slot RPC atomically records 'rate_limited' in Postgres —
+    // no separate REST POST is made by the route. Verify the RPC was called.
+    const acquireCalls = mockFetch.mock.calls.filter(
+      (call: unknown[]) => String(call[0]).includes("rpc/acquire_otp_slot")
     );
-    expect(postCalls.length).toBeGreaterThan(0);
-    const body = JSON.parse((postCalls[0][1] as RequestInit).body as string) as Record<string, unknown>;
-    expect(body.outcome).toBe("rate_limited");
+    expect(acquireCalls.length).toBeGreaterThan(0);
   });
 });
