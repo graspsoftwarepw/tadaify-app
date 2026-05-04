@@ -34,5 +34,6 @@ The full functional specification lives in `docs/specs/functional-spec.md`. This
 | BR-DASH-008 | Tablet viewport (600–1023px): sidebar visible, preview pane hidden | Issue #171 | Implemented |
 | BR-DASH-009 | Theme toggle: localStorage-persisted, body.dark-mode, graceful fallback if storage blocked | Issue #171 | Implemented |
 | BR-DASH-010 | GDPR: user-export-data Edge Function (Art. 20) + delete_user_data() RPC cascade | Issue #171 | Implemented |
+| BR-OTP-RATE-LIMIT-001 | OTP resend rate-limit: 3/session UI cap + 60s cooldown + 3/24h backend guard per email-handle pair | Issue #179, DEC-342=A | Implemented |
 
 > Add BRs as features are implemented. Every PR must cite the BRs it implements in the commit body and changelog entry.

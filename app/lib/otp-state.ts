@@ -13,8 +13,10 @@
  *   DEC-291  — B-modified flow; 6-digit OTP; inline toggle post-OTP
  *   DEC-295  — default "Send code next time"; opt-in "Set password"
  *   DEC-305  — 3 wrong codes → 15-min frontend lockout
+ *   DEC-342  — OTP resend rate-limit: 3/session UI cap + 60s cooldown
  *
  * Story: F-REGISTER-001a
+ * BR: BR-OTP-RATE-LIMIT-001 (issue tadaify-app#179)
  */
 
 export type RegisterSection =
@@ -52,12 +54,19 @@ export interface OtpState {
   isSubmitting: boolean;
   /** Error message to display */
   error: string | null;
+  /**
+   * Number of successful OTP sends in this browser session (DEC-342).
+   * Capped at MAX_ATTEMPTS_PER_SESSION (3). Once reached, the resend
+   * button is permanently replaced with the "Use a different email" fallback.
+   */
+  attemptCount: number;
 }
 
-export const MAX_FAILED_ATTEMPTS = 3; // DEC-305: 3 strikes
+export const MAX_FAILED_ATTEMPTS = 3; // DEC-305: 3 wrong codes → 15-min lockout
 export const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 min
 export const RESEND_COOLDOWN_MS = 60 * 1000; // 60 s
 export const SUCCESS_REDIRECT_DELAY_MS = 2000; // 2 s countdown
+export const MAX_ATTEMPTS_PER_SESSION = 3; // DEC-342: 3 sends per session (BR-OTP-RATE-LIMIT-001)
 
 export function createInitialState(handle = ""): OtpState {
   return {
@@ -73,6 +82,7 @@ export function createInitialState(handle = ""): OtpState {
     passwordConfirm: "",
     isSubmitting: false,
     error: null,
+    attemptCount: 0,
   };
 }
 
@@ -96,7 +106,14 @@ export type OtpAction =
   | { type: "SUBMIT_END" }
   | { type: "SET_ERROR"; error: string | null }
   | { type: "SUCCESS" }
-  | { type: "BACK" };
+  | { type: "BACK" }
+  /**
+   * BACK_TO_EMAIL — "Use a different email" fallback triggered when the
+   * per-session resend cap (MAX_ATTEMPTS_PER_SESSION) is reached.
+   * Resets email to '' and attemptCount to 0; handle is preserved.
+   * BR-OTP-RATE-LIMIT-001 / DEC-342.
+   */
+  | { type: "BACK_TO_EMAIL" };
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
 
@@ -121,6 +138,9 @@ export function otpReducer(state: OtpState, action: OtpAction): OtpState {
       // button stays disabled with the "Verifying…" label and blocks the
       // entire OTP flow even though no verify request has been made.
       // Regression caught by app-dashboard.spec.ts S2.
+      //
+      // Also increments attemptCount — the initial send counts toward the
+      // per-session cap (BR-OTP-RATE-LIMIT-001 / DEC-342).
       return {
         ...state,
         section: "B-otp",
@@ -130,6 +150,7 @@ export function otpReducer(state: OtpState, action: OtpAction): OtpState {
         lockedUntil: null,
         error: null,
         isSubmitting: false,
+        attemptCount: state.attemptCount + 1,
       };
     }
 
@@ -186,6 +207,24 @@ export function otpReducer(state: OtpState, action: OtpAction): OtpState {
         failedAttempts: 0,
         lockedUntil: null,
         error: null,
+        // Increment per-session send counter (BR-OTP-RATE-LIMIT-001 / DEC-342).
+        // canResend() will return false once this reaches MAX_ATTEMPTS_PER_SESSION.
+        attemptCount: state.attemptCount + 1,
+      };
+
+    case "BACK_TO_EMAIL":
+      // "Use a different email" — cap was hit; reset email + counter; preserve handle.
+      return {
+        ...state,
+        section: "B-email",
+        email: "",
+        otpDigits: ["", "", "", "", "", ""],
+        resendCooldownUntil: null,
+        failedAttempts: 0,
+        lockedUntil: null,
+        error: null,
+        isSubmitting: false,
+        attemptCount: 0,
       };
 
     case "SET_PASSWORD_MODE":
@@ -238,10 +277,31 @@ export function isLocked(state: OtpState, now: number): boolean {
   return state.lockedUntil !== null && now < state.lockedUntil;
 }
 
+/**
+ * Returns true when the user may click "Resend".
+ *
+ * Both conditions must be satisfied:
+ *   1. Per-session cap not reached (attemptCount < MAX_ATTEMPTS_PER_SESSION)
+ *   2. 60s cooldown expired (or no cooldown active)
+ *
+ * Note: when the cap IS reached the caller should render the "Too many
+ * resend attempts / Use a different email" fallback instead of the button.
+ * BR-OTP-RATE-LIMIT-001 / DEC-342.
+ */
 export function canResend(state: OtpState, now: number): boolean {
+  if (state.attemptCount >= MAX_ATTEMPTS_PER_SESSION) return false;
   return (
     state.resendCooldownUntil === null || now >= state.resendCooldownUntil
   );
+}
+
+/**
+ * Returns true when the per-session resend cap has been hit.
+ * At this point the UI must show the fallback CTA instead of a button.
+ * BR-OTP-RATE-LIMIT-001 / DEC-342.
+ */
+export function isResendCapReached(state: OtpState): boolean {
+  return state.attemptCount >= MAX_ATTEMPTS_PER_SESSION;
 }
 
 export function otpValue(state: OtpState): string {

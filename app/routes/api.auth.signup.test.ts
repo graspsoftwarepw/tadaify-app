@@ -2,7 +2,7 @@
  * Unit tests for api.auth.signup.ts
  * Run: npx vitest run app/routes/api.auth.signup.test.ts
  * Story: F-REGISTER-001a
- * U1: env binding validation (Bug 1 fix — hard-fail instead of silent stub)
+ * U4: OTP resend rate-limit (BR-OTP-RATE-LIMIT-001 / DEC-342 / issue tadaify-app#179)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -195,5 +195,107 @@ describe("api.auth.signup — Supabase OTP send", () => {
     const data = (await res.json()) as { error: string };
     expect(res.status).toBe(502);
     expect(data.error).toBeTruthy();
+  });
+});
+
+// ── Rate-limit (BR-OTP-RATE-LIMIT-001 / DEC-342) — U4 ───────────────────────
+
+describe("api.auth.signup — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
+  const supabaseEnvWithSR = {
+    SUPABASE_URL: "http://supabase.test",
+    SUPABASE_ANON_KEY: "anon_key",
+    SUPABASE_SERVICE_ROLE_KEY: "service_role_key",
+  };
+
+  const validBody = { email: "user@example.com", handle: "alex", tos_version: "v1" };
+
+  it("returns 429 with retry_after_seconds when rate-limit denies", async () => {
+    const mockFetch = vi
+      .fn()
+      // rate-limit GET → 3 rows = denied
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { attempted_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 1 * 3600 * 1000).toISOString() },
+          ]),
+          { status: 200 }
+        )
+      )
+      // audit INSERT for 'rate_limited'
+      .mockResolvedValueOnce(new Response("", { status: 201 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest(validBody),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    const data = (await res.json()) as { error: string; retry_after_seconds: number };
+    expect(res.status).toBe(429);
+    expect(data.error).toBe("rate_limited");
+    expect(typeof data.retry_after_seconds).toBe("number");
+    expect(data.retry_after_seconds).toBeGreaterThan(0);
+  });
+
+  it("records 'sent' row on successful Supabase send", async () => {
+    const mockFetch = vi
+      .fn()
+      // rate-limit GET → 0 rows = allowed
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      // OTP send → 200
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      // audit INSERT
+      .mockResolvedValueOnce(new Response("", { status: 201 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest(validBody),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+    const postCalls = mockFetch.mock.calls.filter(
+      ([url, init]: [string, RequestInit]) =>
+        (url as string).includes("otp_rate_limit_attempts") && init?.method === "POST"
+    );
+    expect(postCalls.length).toBeGreaterThan(0);
+    const body = JSON.parse((postCalls[0][1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(body.outcome).toBe("sent");
+  });
+
+  it("records 'rate_limited' row when denied (audit trail for abuse review)", async () => {
+    const mockFetch = vi
+      .fn()
+      // rate-limit GET → 3 rows = denied
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { attempted_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 1 * 3600 * 1000).toISOString() },
+          ]),
+          { status: 200 }
+        )
+      )
+      // audit INSERT
+      .mockResolvedValueOnce(new Response("", { status: 201 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest(validBody),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    expect(res.status).toBe(429);
+
+    await new Promise((r) => setTimeout(r, 10));
+    const postCalls = mockFetch.mock.calls.filter(
+      ([url, init]: [string, RequestInit]) =>
+        (url as string).includes("otp_rate_limit_attempts") && init?.method === "POST"
+    );
+    expect(postCalls.length).toBeGreaterThan(0);
+    const body = JSON.parse((postCalls[0][1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(body.outcome).toBe("rate_limited");
   });
 });

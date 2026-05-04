@@ -2,6 +2,7 @@
  * Unit tests for otp-state.ts
  * Run: npx vitest run app/lib/otp-state.test.ts
  * Story: F-REGISTER-001a
+ * BR: BR-OTP-RATE-LIMIT-001 (U2 block — issue tadaify-app#179)
  */
 
 import { describe, it, expect } from "vitest";
@@ -10,11 +11,13 @@ import {
   otpReducer,
   isLocked,
   canResend,
+  isResendCapReached,
   otpValue,
   isOtpComplete,
   MAX_FAILED_ATTEMPTS,
   LOCKOUT_DURATION_MS,
   RESEND_COOLDOWN_MS,
+  MAX_ATTEMPTS_PER_SESSION,
   type OtpState,
   type OtpAction,
 } from "./otp-state";
@@ -335,5 +338,84 @@ describe("password mode DEC-295", () => {
   it("SET_PASSWORD_CONFIRM updates confirm field", () => {
     const s = otpReducer(createInitialState(), { type: "SET_PASSWORD_CONFIRM", value: "Secure1!" });
     expect(s.passwordConfirm).toBe("Secure1!");
+  });
+});
+
+// ─── Per-session resend cap (BR-OTP-RATE-LIMIT-001 / DEC-342) — U2 ────────────
+
+describe("per-session resend cap (BR-OTP-RATE-LIMIT-001)", () => {
+  it("SEND_CODE increments attemptCount on first send", () => {
+    const s = otpReducer(createInitialState(), {
+      type: "SEND_CODE",
+      resendCooldownUntil: NOW + RESEND_COOLDOWN_MS,
+    });
+    expect(s.attemptCount).toBe(1);
+  });
+
+  it("RESEND_CODE increments attemptCount", () => {
+    let s = otpReducer(createInitialState(), {
+      type: "SEND_CODE",
+      resendCooldownUntil: NOW + RESEND_COOLDOWN_MS,
+    });
+    // expire the cooldown
+    s = otpReducer(s, { type: "RESEND_CODE", now: NOW + RESEND_COOLDOWN_MS + 1 });
+    expect(s.attemptCount).toBe(2);
+  });
+
+  it("canResend returns false when attemptCount === MAX_ATTEMPTS_PER_SESSION", () => {
+    let s = createInitialState();
+    // Simulate 3 sends — SEND_CODE for first, RESEND_CODE for subsequent
+    s = otpReducer(s, { type: "SEND_CODE", resendCooldownUntil: NOW + RESEND_COOLDOWN_MS });
+    // Expire cooldown between resends
+    s = { ...s, resendCooldownUntil: null };
+    s = otpReducer(s, { type: "RESEND_CODE", now: NOW });
+    s = { ...s, resendCooldownUntil: null };
+    s = otpReducer(s, { type: "RESEND_CODE", now: NOW });
+    expect(s.attemptCount).toBe(MAX_ATTEMPTS_PER_SESSION);
+    expect(canResend(s, NOW + RESEND_COOLDOWN_MS + 1)).toBe(false);
+  });
+
+  it("isResendCapReached returns true when attemptCount >= MAX_ATTEMPTS_PER_SESSION", () => {
+    let s = createInitialState();
+    s = otpReducer(s, { type: "SEND_CODE", resendCooldownUntil: NOW });
+    s = { ...s, resendCooldownUntil: null };
+    s = otpReducer(s, { type: "RESEND_CODE", now: NOW });
+    s = { ...s, resendCooldownUntil: null };
+    s = otpReducer(s, { type: "RESEND_CODE", now: NOW });
+    expect(isResendCapReached(s)).toBe(true);
+  });
+
+  it("canResend returns false when within cooldown AND attemptCount < cap (cooldown still wins)", () => {
+    // 1 send, cooldown still active
+    const s = otpReducer(createInitialState(), {
+      type: "SEND_CODE",
+      resendCooldownUntil: NOW + RESEND_COOLDOWN_MS,
+    });
+    expect(s.attemptCount).toBe(1);
+    expect(canResend(s, NOW + 5000)).toBe(false); // inside cooldown window
+  });
+
+  it("BACK_TO_EMAIL action resets attemptCount to 0 and email to ''", () => {
+    let s = createInitialState();
+    s = { ...s, email: "user@test.com", handle: "alex", attemptCount: 3, section: "B-otp" };
+    s = otpReducer(s, { type: "BACK_TO_EMAIL" });
+    expect(s.attemptCount).toBe(0);
+    expect(s.email).toBe("");
+    expect(s.handle).toBe("alex"); // handle preserved
+    expect(s.section).toBe("B-email");
+  });
+
+  it("BACK_TO_EMAIL also clears OTP digits and cooldown", () => {
+    let s = createInitialState();
+    s = {
+      ...s,
+      otpDigits: ["1", "2", "3", "4", "5", "6"],
+      resendCooldownUntil: NOW + 30000,
+      section: "B-otp",
+      attemptCount: 3,
+    };
+    s = otpReducer(s, { type: "BACK_TO_EMAIL" });
+    expect(s.otpDigits.every((d) => d === "")).toBe(true);
+    expect(s.resendCooldownUntil).toBeNull();
   });
 });
