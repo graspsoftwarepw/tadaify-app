@@ -38,7 +38,7 @@ This is the **canonical, merged functional specification** for tadaify. It super
 - EU regulatory wedge (VAT OSS, Przelewy24, BLIK, SEPA, EU/PL payment methods).
 - Brand lock (Indigo Serif palette, variant-F wordmark, Warm-orb motion, tagline "Turn your bio link into your best first impression.").
 - LinkOfMe-inherited port surface (~45 BRs ≈ 60-70% code reuse for analytics, auth, admin, moderation, rate-limits, GDPR, maintenance mode, social-icon auto-detect, QR share).
-- F-001 through F-019 onboarding units (with F-012 removed per DEC-TRIAL-01, see §3).
+- F-002 through F-019 onboarding units (F-001 dropped per DEC-355=C; F-012 removed per DEC-TRIAL-01; see §3).
 - F-020 through F-049 editor units (with gating updates per §4).
 - F-050 through F-063 public page rendering (with F-060 replaced by F-CUSTOM-DOMAIN-001..003).
 - F-070 through F-085 commerce (all gating flipped to Free per DEC-043).
@@ -86,7 +86,7 @@ tadaify.com/<handle>            → public creator page (PRIMARY creator asset)
 tadaify.com/<handle>/p/<slug>   → per-product page
 tadaify.com/app                 → authenticated creator dashboard (SPA routes)
 tadaify.com/admin               → admin panel (authenticated, admin-only)
-tadaify.com/try                 → guest-mode editor (pre-signup, F-001)
+/* tadaify.com/try REMOVED — DEC-355=C (2026-05-04): F-001 guest-mode permanently dropped; signup-first model */
 tadaify.com/register            → signup flow
 tadaify.com/login               → login
 tadaify.com/pricing             → pricing page
@@ -181,7 +181,7 @@ Domain `tadaify.com`, slug `tadaify`, wordmark `tada!ify` variant F, palette Ind
 
 | Area | Code | Feature units | MVP count | Note |
 |---|---|---|---|---|
-| Onboarding & Identity | `F-001..019` | 13 | 13 | F-012 removed per DEC-TRIAL-01 (see §3) |
+| Onboarding & Identity | `F-001..019` | 12 | 12 | F-001 dropped per DEC-355=C (guest-mode permanently killed); F-012 removed per DEC-TRIAL-01 (see §3) |
 | Editor & Block System | `F-020..049` | 18 | 15 | Gating flipped Free per DEC-043 |
 | Public Page Rendering | `F-050..069` | 14 | 12 | F-060 replaced by F-CUSTOM-DOMAIN-001..003 |
 | **Preview Generator** | `F-PREVIEW-001..012` | **10** | **7 MVP** + 3 M+0.5 | Admin-only sales tool; Linktree parser MVP only (DEC-Q5-C) |
@@ -271,25 +271,19 @@ DEC-MULTIPAGE-01 (post-MVP multi-page) + DEC-LAYOUT-01 (grid in MVP) + DEC-CREAT
 
 ## 3. Onboarding & Identity
 
-F-001 through F-019 ship as written in v1 §3 with the following updates:
+F-002 through F-019 ship as written in v1 §3 with the following updates (F-001 permanently dropped per DEC-355=C):
 
 - **F-012 — REMOVED per DEC-TRIAL-01 (2026-04-24).** Rationale: every Pro feature is sticky (team seats, custom CSS, API integrations, email campaigns, 365-day analytics). Reverting after 7 days creates data-loss UX + creator frustration + chargeback risk. Replaced by: (1) **Transparent feature preview in admin** — each Pro feature shown with `🔒 Pro $19.99/mo` pill + one-click pricing modal. (2) **30-day money-back guarantee** on Pro upgrade — full refund if creator upgrades and doesn't find value; zero data-loss revert pain. (3) **Subtle upsell F-UPSELL-001..006** covers discovery without time-bombed trial. Pattern AP-017 eliminated by removing the mechanism entirely.
 - **F-015 (onboarding checklist)** — gets a new row: "Buy your custom domain for $1.99/mo" as item 5.
 - Every reference to "€2–€3/mo" domain → **$1.99/mo** (DEC-036 USD).
 - "Pro" in v1 text → "Pro $19.99" in this spec.
 
-### 3.1 — F-001 · Guest-mode editor (build before signup)
+### 3.1 — F-001 · Guest-mode editor — **PERMANENTLY DROPPED (DEC-355=C)**
 
-- **Summary:** Visitor at `tadaify.com/try` (single-domain — no separate subdomain; DEC-DOMAIN-01) opens the editor, builds a real page preview, prompted to sign up only at Publish/Save.
-- **Why it's in scope:** Largest friction cut in the audit (`PAT-067`, Carrd-only). Stan + Linktree + Beacons all force signup before editor.
-- **Competitor baseline:** Carrd `/build` opens editor cold (`CRD-LAND-001`). Verdict `ADOPT`. All others signup-first. Verdict `AVOID`.
-- **Behavior:** `/try` route lands on editor preloaded with template starter + 3 sample blocks. Creator can add/remove blocks, reorder, edit copy, change theme, try entrance animations, preview mobile/desktop. Cannot publish to a real handle, attach a custom domain, sell a product, or persist beyond 7 days. Guest session persisted to `localStorage` + server-side anonymous `guest_drafts` row (60-day TTL rolling). Publish → signup modal (F-002). On signup: backend migrates `guest_drafts[uuid]` → `pages[user_id]`.
-- **Data model:** `guest_drafts(id uuid pk, session_cookie_id uuid, content jsonb, theme jsonb, created_at, updated_at, expires_at)` — net-new.
-- **APIs:** `POST /api/guest/draft`, `PATCH /api/guest/draft/:id`, `GET /api/guest/draft/:id`, `POST /api/guest/draft/:id/migrate`. Background: pg_cron nightly delete expired.
-- **Gating:** Free (and guest). No Pro/Business uplift.
-- **Eng effort:** **L** (2 weeks).
-- **Dependencies:** `F-020` editor shell; `F-025` theme engine; `F-002` signup modal.
-- **MVP**. Test: cold `/try` → editor loads → save + reopen → draft restored → signup → page intact + draft deleted.
+> **DEC-355=C (2026-05-04): F-001 guest-mode editor + `guest_drafts` data pattern permanently dropped from tadaify.**
+> Tadaify adopts the Linktree/Beacons signup-first model. Visitors must sign up before accessing the editor.
+> No `/try` route. No `guest_drafts` table. No draft migration on signup. No unauth editor surface.
+> See memory rule `feedback_tadaify_no_guest_mode_drafts.md`. Do NOT re-litigate.
 
 ### 3.2 — F-002 · Progressive username-first signup with live preview
 
@@ -1401,7 +1395,7 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 | # | Anti-pattern | Severity | Current status |
 |---|---|---|---|
 | **AP-021** | Phone number mandatory at signup | High | GREEN — DEC-SYN-01 progressive signup; no phone field |
-| **AP-022** | All-fields signup on one screen | High | GREEN — F-001/F-002 Beacons progressive (handle → creds → plan) |
+| **AP-022** | All-fields signup on one screen | High | GREEN — F-002 Beacons progressive (handle → creds → plan); F-001 dropped per DEC-355=C |
 | **AP-023** | Pricing not available publicly | High | GREEN — F-251 public pricing page in nav |
 | **AP-025** | Single opt-in email collection | High | GREEN — linkofme-inherited double-opt-in (subscribe / subscribe-confirm) |
 | **AP-034** | Manual-only social handle entry | Medium | GREEN — F-004 handle-based link generation (DEC-SOCIAL-01): multi-select platforms + handle input generates "Follow me on" blocks. ~~OAuth deferred to F-PRO-OAUTH-IMPORT Pro tier~~ → **F-PRO-OAUTH-IMPORT removed from roadmap per DEC-APIPAGES-01=C.** Creator API (F-PRO-CREATOR-API-001) is the power-user path. |
@@ -1444,7 +1438,7 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
 | **AP-044** | AI feature overwrites creator's voice without undo | Medium | GREEN — F-223 AI diff-approval UX: shows before/after before applying |
 | **AP-045** | No progressive disclosure — 30+ features dumped in editor | Medium | GREEN — F-020 §4a editor IA: 6-block Getting Started default, "More blocks" reveals rest |
 | **AP-047** | Signup-form pre-selects paid tier by default | Medium | GREEN — F-UPSELL-004: Recommended BADGE only; default radio stays Free always |
-| **AP-048** | Verified badge gated behind purchase (pay-to-verify) | Medium | GREEN — F-001 §6b: verified badge requires 2FA + social OAuth, NOT payment |
+| **AP-048** | Verified badge gated behind purchase (pay-to-verify) | Medium | GREEN — verified badge requires 2FA + social OAuth, NOT payment (F-001 dropped per DEC-355=C; badge logic moves to F-003) |
 
 **Domain: Feature availability**
 
@@ -1542,7 +1536,7 @@ Fixed costs at MVP launch: ~$305/mo (Cloudflare $200 + Supabase $25 + Resend $20
   - `tadaify.com/<handle>/p/<slug>` → product page (SSR)
   - `tadaify.com/app/*` → authenticated dashboard (CSR after first paint)
   - `tadaify.com/admin/*` → admin panel (CSR, `AdminRoute` guard checks `admin_users`)
-  - `tadaify.com/try` → guest editor (CSR)
+  - ~~`tadaify.com/try`~~ → **REMOVED** (DEC-355=C: F-001 guest-mode editor permanently dropped)
   - `tadaify.com/t/<name>` → template preview (SSR)
   - `tadaify.com/vs/<competitor>`, `tadaify.com/for/<niche>`, `tadaify.com/pricing`, etc. → marketing SSR routes
 - SSR for public pages (fast first paint + SEO indexable)

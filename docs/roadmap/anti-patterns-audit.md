@@ -196,7 +196,7 @@ These are already "locked" anti-patterns via the cross-competitor analysis; incl
 | # | Anti-pattern | Severity | Sources | Current tadaify status | Fix required |
 |---|---|---|---|---|---|
 | **AP-021** | Phone number mandatory at signup | **High** | Stan PAT-025; patterns-library AVOID | GREEN — DEC-SYN-01 progressive signup per Beacons pattern; no phone field | — |
-| **AP-022** | All-fields signup on one screen (5+ fields at once) | High | Stan PAT-024; patterns-library AVOID | GREEN — F-001/F-002 use Beacons progressive signup (handle → creds → plan) | — |
+| **AP-022** | All-fields signup on one screen (5+ fields at once) | High | Stan PAT-024; patterns-library AVOID | GREEN — F-002 Beacons progressive signup (handle → creds → plan); F-001 dropped per DEC-355=C | — |
 | **AP-023** | Pricing not available publicly (must sign up to see tiers) | **High** | Stan PAT-031; patterns-library AVOID | GREEN — landing-page pricing is explicit goal per DEC-SYN-xx; `/pricing` route required in marketing surfaces F-245 | Verify F-245 Pricing page is public, listed in nav. |
 | **AP-025** | Single opt-in email collection (no confirmation) | High | GDPR Article compliance | GREEN — linkofme-inherited `subscribe` / `subscribe-confirm` is double-opt-in | — |
 | **AP-034** | Manual-only social handle entry with no OAuth connect | Medium | Stan PAT-032; patterns-library AVOID | GREEN — F-007 OAuth connect for IG + TikTok + YouTube (DEC-SYN-02) | — |
