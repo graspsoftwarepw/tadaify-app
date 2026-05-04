@@ -73,9 +73,22 @@ export function DesignBreadcrumbStepper({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownOpen]);
 
-  // Keyboard ←/→ navigation
+  // Keyboard ←/→ navigation — scoped to avoid interference with form inputs
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Ignore when focus is on an editable element or modifier keys are held
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      ) {
+        return;
+      }
       if (e.key === "ArrowRight" && next) {
         e.preventDefault();
         onSubTabChange(next);

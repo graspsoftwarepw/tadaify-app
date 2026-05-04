@@ -27,7 +27,7 @@
  * Covers: BR-Slice-C, AC#1-AC#26, TR-tadaify-005, VE-26b-01..35
  */
 
-import { redirect } from "react-router";
+import { redirect, useSearchParams } from "react-router";
 import { useState, useCallback } from "react";
 import type { Route } from "./+types/app";
 import { AppAppbar } from "~/components/AppAppbar";
@@ -320,10 +320,14 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
     navExpanded: initialNavExpanded,
   } = loaderData;
 
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const [activeSubTab, setActiveSubTab] = useState<SubTabId>(
-    normalizeSubTab(initialSubTab)
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Derive active tab/subtab from URL search params (SSR initial values as fallback)
+  const activeTab = parseTab(searchParams) || initialTab;
+  const activeSubTab = normalizeSubTab(
+    searchParams.get("subtab") ?? initialSubTab
   );
+
   const [welcomeDismissed, setWelcomeDismissed] = useState(
     accountSettings.welcome_dismissed
   );
@@ -348,17 +352,30 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
   }, []);
 
   const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-    // When switching to design tab, default sub-tab to background if not already on design
-    if (tab === "design" && activeTab !== "design") {
-      setActiveSubTab(DEFAULT_DESIGN_SUBTAB);
-    }
-  }, [activeTab]);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", tab);
+      if (tab === "design") {
+        // Default sub-tab when entering design
+        if (!next.get("subtab") || prev.get("tab") !== "design") {
+          next.set("subtab", DEFAULT_DESIGN_SUBTAB);
+        }
+      } else {
+        // Remove design-specific subtab when leaving design
+        next.delete("subtab");
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const handleSubTabChange = useCallback((subTab: SubTabId) => {
-    setActiveTab("design");
-    setActiveSubTab(subTab);
-  }, []);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", "design");
+      next.set("subtab", subTab);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   return (
     <div
