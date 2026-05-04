@@ -24,7 +24,7 @@
 import type { Route } from "./+types/api.auth.signup";
 import { validateEmail } from "~/lib/auth-validator";
 import { validateHandle } from "~/lib/handle-validator";
-import { hashEmail, acquireOtpSlot } from "~/lib/otp-rate-limit";
+import { hashEmail, acquireOtpSlot, finalizeOtpSlot, recordOtpAttempt } from "~/lib/otp-rate-limit";
 
 const TOS_VERSION_CURRENT = "v1";
 
@@ -82,11 +82,13 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const emailHash = await hashEmail(rawEmail);
 
+  let rateLimitResult: Awaited<ReturnType<typeof acquireOtpSlot>> | null = null;
+
   if (supabaseServiceRoleKey) {
-    // acquireOtpSlot atomically checks + reserves/denies in one DB call.
-    // On allowed=true a 'sent' row is already recorded; on allowed=false a
-    // 'rate_limited' row is already recorded. No separate recordOtpAttempt needed.
-    const rateLimitResult = await acquireOtpSlot(
+    // acquireOtpSlot atomically reserves a slot (outcome='reserved') and returns
+    // its UUID. Caller MUST finalize after Auth send via finalizeOtpSlot.
+    // In legacy fallback mode, caller MUST call recordOtpAttempt instead.
+    rateLimitResult = await acquireOtpSlot(
       supabaseUrl,
       supabaseServiceRoleKey,
       emailHash,
@@ -135,11 +137,24 @@ export async function action({ request, context }: Route.ActionArgs) {
       // use default message
     }
     console.error("[api.auth.signup] Supabase OTP send failed:", signupRes.status, errText);
+
+    // Finalize the reserved slot as 'failed' — does NOT consume a successful-send cap slot.
+    if (supabaseServiceRoleKey && rateLimitResult?.reservation_id && rateLimitResult.mode === "atomic") {
+      finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "failed");
+    }
+
     return Response.json({ error: errMsg }, { status: 502 });
   }
 
-  // Note: the 'sent' audit row is already recorded atomically by acquireOtpSlot.
-  // No separate recordOtpAttempt call needed.
+  // Finalize the slot as 'sent' — completes the two-phase reservation.
+  if (supabaseServiceRoleKey && rateLimitResult) {
+    if (rateLimitResult.mode === "atomic" && rateLimitResult.reservation_id) {
+      finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "sent");
+    } else if (rateLimitResult.mode === "legacy") {
+      // Fallback path: RPC was unavailable, so record the successful send via REST.
+      recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, rawHandle || null, "sent");
+    }
+  }
 
   return Response.json({ sent: true }, { status: 200 });
 }

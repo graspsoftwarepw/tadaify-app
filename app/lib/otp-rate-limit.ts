@@ -19,12 +19,16 @@
  * BR: BR-OTP-RATE-LIMIT-001
  */
 
-export type OtpAttemptOutcome = "sent" | "rate_limited";
+export type OtpAttemptOutcome = "sent" | "rate_limited" | "reserved" | "failed";
 
 export interface RateLimitResult {
   allowed: boolean;
   /** Seconds until the oldest 'sent' row in the window falls out. Only set when allowed=false. */
   retry_after_seconds?: number;
+  /** UUID of the reserved row. Present when allowed=true and mode='atomic'. Caller MUST finalize. */
+  reservation_id?: string;
+  /** 'atomic' = RPC reserved the slot; 'legacy' = fallback check only (caller must record separately). */
+  mode?: "atomic" | "legacy";
 }
 
 /**
@@ -46,12 +50,14 @@ export async function hashEmail(email: string): Promise<string> {
  *
  * Calls the `acquire_otp_slot` Postgres RPC which uses advisory locks to
  * serialize concurrent requests for the same pair, preventing TOCTOU races.
- * On success the RPC pre-records a 'sent' row; on denial it records
- * 'rate_limited'. The caller does NOT need to call recordOtpAttempt separately
- * when using this function.
+ * On success the RPC inserts a 'reserved' row and returns its UUID. The caller
+ * MUST finalize via finalizeOtpSlot(id, 'sent') after Auth succeeds, or
+ * finalizeOtpSlot(id, 'failed') on Auth error. On denial it records
+ * 'rate_limited'.
  *
  * Falls back to a non-atomic REST check if the RPC call fails (e.g. function
- * not yet deployed), logging a warning.
+ * not yet deployed), logging a warning. In fallback mode the caller MUST call
+ * recordOtpAttempt('sent') after a successful Auth send.
  *
  * @param supabaseUrl        - SUPABASE_URL from Workers env
  * @param serviceRoleKey     - SUPABASE_SERVICE_ROLE_KEY from Workers env
@@ -86,20 +92,62 @@ export async function acquireOtpSlot(
 
     if (!res.ok) {
       // RPC not available (not yet migrated) — fall back to legacy check.
+      // Legacy mode: caller MUST call recordOtpAttempt after successful Auth send.
       console.warn(
         "[otp-rate-limit] acquire_otp_slot RPC failed, falling back to legacy check:",
         res.status,
         await res.text().catch(() => "")
       );
-      return checkOtpRateLimitLegacy(supabaseUrl, serviceRoleKey, emailHash, handle, windowSeconds, maxAttempts);
+      const legacyResult = await checkOtpRateLimitLegacy(supabaseUrl, serviceRoleKey, emailHash, handle, windowSeconds, maxAttempts);
+      return { ...legacyResult, mode: "legacy" as const };
     }
 
-    const result = (await res.json()) as { allowed: boolean; retry_after_seconds?: number };
-    return result;
+    const result = (await res.json()) as { allowed: boolean; retry_after_seconds?: number; reservation_id?: string };
+    return { ...result, mode: "atomic" as const };
   } catch (err) {
     // Network error — fail open.
     console.error("[otp-rate-limit] acquireOtpSlot fetch error:", err);
     return { allowed: true };
+  }
+}
+
+/**
+ * Finalize a reserved OTP slot after Supabase Auth responds.
+ *
+ * Call with outcome='sent' after Auth succeeds, or 'failed' after Auth error.
+ * Failed slots do NOT consume the successful-send cap.
+ *
+ * Fire-and-forget: errors are logged but do not propagate.
+ */
+export async function finalizeOtpSlot(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  reservationId: string,
+  outcome: "sent" | "failed"
+): Promise<void> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/finalize_otp_slot`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_reservation_id: reservationId,
+        p_outcome: outcome,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(
+        "[otp-rate-limit] finalizeOtpSlot RPC failed:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+    }
+  } catch (err) {
+    console.error("[otp-rate-limit] finalizeOtpSlot fetch error:", err);
   }
 }
 
