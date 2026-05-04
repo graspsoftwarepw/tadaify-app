@@ -24,7 +24,7 @@
 import type { Route } from "./+types/api.auth.signup";
 import { validateEmail } from "~/lib/auth-validator";
 import { validateHandle } from "~/lib/handle-validator";
-import { hashEmail, checkOtpRateLimit, recordOtpAttempt } from "~/lib/otp-rate-limit";
+import { hashEmail, acquireOtpSlot } from "~/lib/otp-rate-limit";
 
 const TOS_VERSION_CURRENT = "v1";
 
@@ -78,12 +78,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     );
   }
 
-  // ── Backend rate-limit check (BR-OTP-RATE-LIMIT-001) ────────────────────
+  // ── Backend rate-limit — atomic slot acquisition (BR-OTP-RATE-LIMIT-001) ─
 
   const emailHash = await hashEmail(rawEmail);
 
   if (supabaseServiceRoleKey) {
-    const rateLimitResult = await checkOtpRateLimit(
+    // acquireOtpSlot atomically checks + reserves/denies in one DB call.
+    // On allowed=true a 'sent' row is already recorded; on allowed=false a
+    // 'rate_limited' row is already recorded. No separate recordOtpAttempt needed.
+    const rateLimitResult = await acquireOtpSlot(
       supabaseUrl,
       supabaseServiceRoleKey,
       emailHash,
@@ -91,9 +94,6 @@ export async function action({ request, context }: Route.ActionArgs) {
     );
 
     if (!rateLimitResult.allowed) {
-      // Record denied attempt in audit trail (fire-and-forget).
-      void recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, rawHandle || null, "rate_limited");
-
       return Response.json(
         { error: "rate_limited", retry_after_seconds: rateLimitResult.retry_after_seconds ?? 86400 },
         { status: 429 }
@@ -138,11 +138,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     return Response.json({ error: errMsg }, { status: 502 });
   }
 
-  // ── Record successful send in audit table ────────────────────────────────
-
-  if (supabaseServiceRoleKey) {
-    void recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, rawHandle || null, "sent");
-  }
+  // Note: the 'sent' audit row is already recorded atomically by acquireOtpSlot.
+  // No separate recordOtpAttempt call needed.
 
   return Response.json({ sent: true }, { status: 200 });
 }

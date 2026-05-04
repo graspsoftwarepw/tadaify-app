@@ -42,10 +42,16 @@ export async function hashEmail(email: string): Promise<string> {
 }
 
 /**
- * Check whether a new OTP send is allowed for the given email hash.
+ * Atomically acquire an OTP send slot for the given email hash + handle pair.
  *
- * Queries the `otp_rate_limit_attempts` table via the Supabase REST API
- * (service_role key) and counts 'sent' rows within the sliding window.
+ * Calls the `acquire_otp_slot` Postgres RPC which uses advisory locks to
+ * serialize concurrent requests for the same pair, preventing TOCTOU races.
+ * On success the RPC pre-records a 'sent' row; on denial it records
+ * 'rate_limited'. The caller does NOT need to call recordOtpAttempt separately
+ * when using this function.
+ *
+ * Falls back to a non-atomic REST check if the RPC call fails (e.g. function
+ * not yet deployed), logging a warning.
  *
  * @param supabaseUrl        - SUPABASE_URL from Workers env
  * @param serviceRoleKey     - SUPABASE_SERVICE_ROLE_KEY from Workers env
@@ -54,7 +60,65 @@ export async function hashEmail(email: string): Promise<string> {
  * @param windowSeconds      - Rolling window size in seconds (default: 86400 = 24h)
  * @param maxAttempts        - Max allowed 'sent' rows in window (default: 3)
  */
+export async function acquireOtpSlot(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  emailHash: string,
+  handle: string | null = null,
+  windowSeconds: number = 24 * 3600,
+  maxAttempts: number = 3
+): Promise<RateLimitResult> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/acquire_otp_slot`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_email_hash: emailHash,
+        p_handle: handle,
+        p_window_seconds: windowSeconds,
+        p_max_attempts: maxAttempts,
+      }),
+    });
+
+    if (!res.ok) {
+      // RPC not available (not yet migrated) — fall back to legacy check.
+      console.warn(
+        "[otp-rate-limit] acquire_otp_slot RPC failed, falling back to legacy check:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+      return checkOtpRateLimitLegacy(supabaseUrl, serviceRoleKey, emailHash, handle, windowSeconds, maxAttempts);
+    }
+
+    const result = (await res.json()) as { allowed: boolean; retry_after_seconds?: number };
+    return result;
+  } catch (err) {
+    // Network error — fail open.
+    console.error("[otp-rate-limit] acquireOtpSlot fetch error:", err);
+    return { allowed: true };
+  }
+}
+
+/**
+ * Legacy non-atomic check (fallback when RPC is unavailable).
+ * @deprecated Use acquireOtpSlot instead. Kept for graceful degradation during migration rollout.
+ */
 export async function checkOtpRateLimit(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  emailHash: string,
+  handle: string | null = null,
+  windowSeconds: number = 24 * 3600,
+  maxAttempts: number = 3
+): Promise<RateLimitResult> {
+  return checkOtpRateLimitLegacy(supabaseUrl, serviceRoleKey, emailHash, handle, windowSeconds, maxAttempts);
+}
+
+async function checkOtpRateLimitLegacy(
   supabaseUrl: string,
   serviceRoleKey: string,
   emailHash: string,
@@ -88,14 +152,14 @@ export async function checkOtpRateLimit(
 
     if (!res.ok) {
       // On Supabase error, fail open (allow the send) to avoid blocking legitimate users.
-      console.error("[otp-rate-limit] checkOtpRateLimit query failed:", res.status, await res.text().catch(() => ""));
+      console.error("[otp-rate-limit] checkOtpRateLimitLegacy query failed:", res.status, await res.text().catch(() => ""));
       return { allowed: true };
     }
 
     rows = (await res.json()) as Array<{ attempted_at: string }>;
   } catch (err) {
     // Network error — fail open.
-    console.error("[otp-rate-limit] checkOtpRateLimit fetch error:", err);
+    console.error("[otp-rate-limit] checkOtpRateLimitLegacy fetch error:", err);
     return { allowed: true };
   }
 

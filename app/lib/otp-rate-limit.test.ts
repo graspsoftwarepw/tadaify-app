@@ -16,7 +16,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { checkOtpRateLimit, recordOtpAttempt, hashEmail } from "./otp-rate-limit";
+import { acquireOtpSlot, checkOtpRateLimit, recordOtpAttempt, hashEmail } from "./otp-rate-limit";
 
 const SUPABASE_URL = "http://supabase.test";
 const SERVICE_ROLE_KEY = "service_role_test";
@@ -152,6 +152,83 @@ describe("checkOtpRateLimit", () => {
     mockFetchWithRows([]);
     const bobResult = await checkOtpRateLimit(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "bob");
     expect(bobResult.allowed).toBe(true);
+  });
+});
+
+// ── acquireOtpSlot ──────────────────────────────────────────────────────────────
+
+describe("acquireOtpSlot", () => {
+  it("returns allowed:true when RPC responds with allowed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ allowed: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+    );
+    const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
+    expect(result.allowed).toBe(true);
+  });
+
+  it("returns allowed:false + retry_after_seconds when RPC denies", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ allowed: false, retry_after_seconds: 85000 }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      )
+    );
+    const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "alice");
+    expect(result.allowed).toBe(false);
+    expect(result.retry_after_seconds).toBe(85000);
+  });
+
+  it("calls RPC with correct body params", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ allowed: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "bob", 3600, 5);
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/rest/v1/rpc/acquire_otp_slot");
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body.p_email_hash).toBe(EMAIL_HASH);
+    expect(body.p_handle).toBe("bob");
+    expect(body.p_window_seconds).toBe(3600);
+    expect(body.p_max_attempts).toBe(5);
+  });
+
+  it("falls back to legacy check when RPC returns non-200", async () => {
+    // First call = RPC (fails), second call = legacy REST query (succeeds empty)
+    const mockFetch = vi.fn()
+      .mockResolvedValueOnce(new Response("not found", { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
+    expect(result.allowed).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails open on network error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
+    const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
+    expect(result.allowed).toBe(true);
   });
 });
 

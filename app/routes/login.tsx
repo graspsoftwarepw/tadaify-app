@@ -27,6 +27,7 @@ import {
   otpReducer,
   isLocked,
   canResend,
+  isResendCapReached,
   otpValue,
   isOtpComplete,
   RESEND_COOLDOWN_MS,
@@ -97,6 +98,10 @@ export default function LoginPage() {
   // ── Email flow ────────────────────────────────────────────────────────────
 
   const handleSendCode = useCallback(async () => {
+    // Defensive guard: block send when per-session cap already reached
+    // (BR-OTP-RATE-LIMIT-001 / DEC-342 — Codex follow-up review F1).
+    if (isResendCapReached(state)) return;
+
     // Clear stale no-account state before every submission attempt (Codex review F1).
     setNoAccountEmail(null);
 
