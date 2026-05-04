@@ -27,6 +27,8 @@ interface AppSidebarProps {
   tier?: string;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  /** Design accordion slot — rendered between Pages and Insights groups. */
+  designAccordion?: React.ReactNode;
 }
 
 export function AppSidebar({
@@ -35,8 +37,8 @@ export function AppSidebar({
   tier = "free",
   activeTab,
   onTabChange,
+  designAccordion,
 }: AppSidebarProps) {
-  const [designExpanded, setDesignExpanded] = useState(false);
   const [adminExpanded, setAdminExpanded] = useState(false);
 
   // Avatar initial from display name or handle
@@ -266,112 +268,8 @@ export function AppSidebar({
         aria-hidden="true"
       />
 
-      {/* GROUP 2: Configuration (accordion) */}
-      <div style={{ padding: "0 8px" }}>
-        <button
-          type="button"
-          onClick={() => setDesignExpanded((v) => !v)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: activeTab === "design" ? "var(--fg)" : "var(--fg-muted)",
-            fontSize: 13.5,
-            fontWeight: activeTab === "design" ? 600 : 400,
-          }}
-          aria-expanded={designExpanded}
-          aria-controls="nav-design-sub"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-            <path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z" />
-          </svg>
-          <span style={{ flex: 1, textAlign: "left" }}>Configuration</span>
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            style={{ transform: designExpanded ? "rotate(90deg)" : "none", transition: "transform .15s" }}
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
-
-        {designExpanded && (
-          <div id="nav-design-sub" role="group" aria-label="Design sub-sections" style={{ paddingLeft: 8 }}>
-            {["Theme", "Profile", "Background", "Text", "Buttons", "Animations", "Colors", "Footer"].map(
-              (label) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => onTabChange("design")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: "6px 10px",
-                    background: "transparent",
-                    border: "none",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    color: "var(--fg-muted)",
-                    fontSize: 13,
-                  }}
-                >
-                  <span>{label}</span>
-                </button>
-              )
-            )}
-            {/* Domain sub-item */}
-            <button
-              type="button"
-              onClick={() => onTabChange("design")}
-              title="Custom domain — universal $1.99/mo add-on"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                width: "100%",
-                padding: "6px 10px",
-                background: "transparent",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                color: "var(--fg-muted)",
-                fontSize: 13,
-              }}
-            >
-              <span>Domain</span>
-            </button>
-          </div>
-        )}
-      </div>
+      {/* GROUP 2: Design accordion — rendered by AppSidebarDesignAccordion (slot) */}
+      {designAccordion}
 
       {/* DIVIDER 2 */}
       <div
