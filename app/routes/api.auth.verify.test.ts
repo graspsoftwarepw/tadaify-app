@@ -132,6 +132,11 @@ describe("api.auth.verify — OTP verification (mocked fetch)", () => {
     expect(data.handle).toBe("alex");
     // F2: access_token must be present in response
     expect(data.access_token).toBe("tok123");
+    // F4: Set-Cookie header must be present with sb-local-auth-token containing access_token
+    const setCookie = res.headers.get("Set-Cookie");
+    expect(setCookie).toBeTruthy();
+    expect(setCookie).toContain("sb-local-auth-token=");
+    expect(setCookie).toContain("tok123");
 
     // Verify profiles handle pre-check was called (GET with handle filter)
     const preCheckCall = mockFetch.mock.calls[1];

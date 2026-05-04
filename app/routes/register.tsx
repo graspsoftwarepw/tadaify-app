@@ -10,7 +10,7 @@
  *   B-email          → B-otp
  *   B-otp            → B-password-toggle
  *   B-password-toggle → C (success)
- *   C                → /onboarding-welcome?handle=<value>  (2s auto-advance)
+ *   C                → /onboarding/welcome?handle=<value>  (2s auto-advance)
  *
  * DEC trail applied in this file:
  *   DEC-291   B-modified flow
@@ -136,7 +136,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
       setSuccessCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(countId);
-          navigate(`/onboarding-welcome?handle=${encodeURIComponent(state.handle)}`);
+          navigate(`/onboarding/welcome?handle=${encodeURIComponent(state.handle)}`);
           return 0;
         }
         return prev - 1;
@@ -548,7 +548,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
                 countdown={successCountdown}
                 onGoNow={() =>
                   navigate(
-                    `/onboarding-welcome?handle=${encodeURIComponent(state.handle)}`
+                    `/onboarding/welcome?handle=${encodeURIComponent(state.handle)}`
                   )
                 }
               />

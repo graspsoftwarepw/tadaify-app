@@ -13,9 +13,16 @@
  * Covers: BR-ONBOARDING-006 (post-wizard success)
  */
 
-import { Link } from "react-router";
+import { Link, redirect } from "react-router";
 import type { Route } from "./+types/onboarding.complete";
 import { MotionLogo } from "~/components/landing/MotionLogo";
+
+// ─── Action ────────────────────────────────────────────────────────────────────
+// POST from the "Go to dashboard →" button redirects to /app (#171 spec).
+
+export async function action({ request }: Route.ActionArgs) {
+  return redirect("/app");
+}
 
 // ─── Loader ────────────────────────────────────────────────────────────────────
 
@@ -171,7 +178,7 @@ export default function CompletePage({ loaderData }: Route.ComponentProps) {
           }}
         >
           <Link
-            to="/dashboard"
+            to="/app"
             style={{
               display: "block",
               padding: "14px 24px",
