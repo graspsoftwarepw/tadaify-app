@@ -31,7 +31,7 @@ const SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
 const MAILPIT_URL = "http://localhost:54354";
-const APP_URL = "http://localhost:5173";
+const APP_URL = process.env.APP_URL ?? "http://localhost:5173";
 
 /** All test handles share this prefix — cleaned up in afterAll */
 const HANDLE_PREFIX = "t179rl";
@@ -339,23 +339,16 @@ test("S4 — backend rate-limit returns 429 on 4th API call within 24h", async (
     expect(json.sent).toBe(true);
   }
 
-  // Request 4: should return 429 { error: "rate_limited", retry_after_seconds: number }
+  // Request 4: MUST return 429 { error: "rate_limited", retry_after_seconds: number }
+  // This test requires a fully configured e2e environment with SUPABASE_SERVICE_ROLE_KEY.
+  // If the backend limiter is missing or disabled, this test must FAIL (not silently pass).
   const res4 = await request.post(endpoint, { data: body });
 
-  // Note: if SUPABASE_SERVICE_ROLE_KEY is not set in .dev.vars, the rate-limit
-  // check is skipped (fail-open). This test verifies the backend path.
-  // If running without the service role key, the 4th request may still return 200.
-  // The test succeeds in a fully configured env (with service role key).
-  if (res4.status() === 429) {
-    const json4 = (await res4.json()) as { error: string; retry_after_seconds: number };
-    expect(json4.error).toBe("rate_limited");
-    expect(typeof json4.retry_after_seconds).toBe("number");
-    expect(json4.retry_after_seconds).toBeGreaterThan(0);
-  } else {
-    // Stub or no service_role_key — mark as known skip
-    console.warn("S4: rate-limit not triggered (likely stub mode / no SUPABASE_SERVICE_ROLE_KEY)");
-    expect([200, 429]).toContain(res4.status());
-  }
+  expect(res4.status()).toBe(429);
+  const json4 = (await res4.json()) as { error: string; retry_after_seconds: number };
+  expect(json4.error).toBe("rate_limited");
+  expect(typeof json4.retry_after_seconds).toBe("number");
+  expect(json4.retry_after_seconds).toBeGreaterThan(0);
 
   // Cleanup
   await cleanupRateLimitRows(emailHash);
@@ -399,11 +392,9 @@ test("S5 — audit table populated with correct rows and hashed email", async ({
     }
   );
 
-  if (!queryRes.ok) {
-    // Table not created yet (migration not applied) — note and skip
-    console.warn("S5: otp_rate_limit_attempts table not accessible (migration not applied?)");
-    return;
-  }
+  // The audit table MUST be accessible and populated. If not, this test must FAIL
+  // to surface missing migrations or misconfigured service role key.
+  expect(queryRes.ok).toBe(true);
 
   const rows = (await queryRes.json()) as Array<{
     email_hash: string;
@@ -411,11 +402,8 @@ test("S5 — audit table populated with correct rows and hashed email", async ({
     attempted_at: string;
   }>;
 
-  if (rows.length === 0) {
-    // Stub mode — service role key not configured, INSERTs not happening
-    console.warn("S5: no audit rows (likely stub mode / no SUPABASE_SERVICE_ROLE_KEY)");
-    return;
-  }
+  // Rows MUST exist — if 0 rows, the backend audit trail is not working.
+  expect(rows.length).toBeGreaterThan(0);
 
   // All rows should have the correct email_hash
   expect(rows.every((r) => r.email_hash === emailHash)).toBe(true);
