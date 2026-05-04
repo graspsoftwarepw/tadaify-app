@@ -31,6 +31,7 @@ import {
   isOtpComplete,
   RESEND_COOLDOWN_MS,
 } from "~/lib/otp-state";
+import { buildRegisterCtaHref, mapLoginOtpResponse } from "~/lib/login-otp-error";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
@@ -52,6 +53,8 @@ export default function LoginPage() {
   const [state, dispatch] = useReducer(otpReducer, createInitialState());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
+  // no_account: { email } | null — drives the friendly "no account found" CTA block
+  const [noAccountEmail, setNoAccountEmail] = useState<string | null>(null);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null, null]);
 
@@ -92,6 +95,9 @@ export default function LoginPage() {
   // ── Email flow ────────────────────────────────────────────────────────────
 
   const handleSendCode = useCallback(async () => {
+    // Clear stale no-account state before every submission attempt (Codex review F1).
+    setNoAccountEmail(null);
+
     const emailResult = validateEmail(state.email);
     if (!emailResult.valid) {
       dispatch({ type: "SET_ERROR", error: EMAIL_ERROR_MESSAGES[emailResult.reason] });
@@ -107,8 +113,15 @@ export default function LoginPage() {
         body: JSON.stringify({ email: state.email }),
       });
       const data = (await res.json()) as { sent?: boolean; error?: string };
-      if (!res.ok || !data.sent) {
-        dispatch({ type: "SET_ERROR", error: data.error ?? "Failed to send code." });
+      const action = mapLoginOtpResponse(res.ok, data, state.email);
+      if (action.kind === "no_account") {
+        // Friendly UX: show the no-account block with a sign-up CTA (issue tadaify-app#176).
+        setNoAccountEmail(action.email);
+        dispatch({ type: "SET_ERROR", error: "" });
+        return;
+      }
+      if (action.kind === "inline") {
+        dispatch({ type: "SET_ERROR", error: action.text });
         return;
       }
       dispatch({
@@ -353,7 +366,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 value={state.email}
-                onChange={(e) => dispatch({ type: "SET_EMAIL", email: e.target.value })}
+                onChange={(e) => { setNoAccountEmail(null); dispatch({ type: "SET_EMAIL", email: e.target.value }); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSendCode(); }}
                 style={{
                   width: "100%",
@@ -369,10 +382,46 @@ export default function LoginPage() {
                 }}
               />
 
-              {state.error && (
+              {state.error && !noAccountEmail && (
                 <p role="alert" style={{ marginTop: 8, fontSize: 13, color: "var(--danger)" }}>
                   {state.error}
                 </p>
+              )}
+
+              {/* No-account friendly block (issue tadaify-app#176) */}
+              {noAccountEmail && (
+                <div
+                  role="alert"
+                  data-testid="no-account-block"
+                  style={{
+                    marginTop: 10,
+                    padding: "14px 16px",
+                    borderRadius: "var(--radius)",
+                    background: "var(--bg-muted)",
+                    border: "1px solid var(--border-strong)",
+                  }}
+                >
+                  <p style={{ fontSize: 13, color: "var(--fg)", marginBottom: 10 }}>
+                    No account found for{" "}
+                    <strong>{noAccountEmail}</strong>.
+                  </p>
+                  <a
+                    href={buildRegisterCtaHref(noAccountEmail)}
+                    data-testid="create-account-cta"
+                    style={{
+                      display: "inline-block",
+                      padding: "10px 18px",
+                      background: "var(--brand-primary)",
+                      color: "#FFF",
+                      borderRadius: "var(--radius)",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Create your account →
+                  </a>
+                </div>
               )}
 
               <button

@@ -124,19 +124,68 @@ describe("api.auth.login-otp — Supabase OTP send", () => {
     expect(body.handle).toBeUndefined();
   });
 
-  it("returns 502 when Supabase OTP send fails", async () => {
+  it("returns 502 + 'server_error' on unexpected Supabase failure", async () => {
+    // A genuinely unexpected upstream error (e.g. Supabase 500 / unrelated 4xx)
+    // → mapped to generic server_error so we don't leak internal text. issue tadaify-app#176.
     const mockFetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ msg: "User not found" }), { status: 400 })
+      new Response(JSON.stringify({ msg: "Internal error" }), { status: 500 })
     );
     vi.stubGlobal("fetch", mockFetch);
 
     const res = await action({
-      request: makeRequest({ email: "unknown@example.com" }),
+      request: makeRequest({ email: "user@example.com" }),
       context: makeContext(supabaseEnv),
     });
     const data = (await res.json()) as { error: string };
     expect(res.status).toBe(502);
-    expect(data.error).toBeTruthy();
+    expect(data.error).toBe("server_error");
+  });
+
+  it("returns 200 + sent:true on existing user happy path", async () => {
+    // Supabase 200 → Resend OTP delivered → JSON contract { sent: true }. issue tadaify-app#176.
+    const mockFetch = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "existing@example.com" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { sent: boolean };
+    expect(res.status).toBe(200);
+    expect(data.sent).toBe(true);
+  });
+
+  it("returns 400 + error code 'no_account' when Supabase responds with `Signups not allowed for otp`", async () => {
+    // The canonical Supabase phrase for "this email is not registered when create_user=false".
+    // Our handler maps it to a stable client contract: { error: "no_account" }. issue tadaify-app#176.
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ msg: "Signups not allowed for otp" }),
+        { status: 400 }
+      )
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "noaccount@example.com" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(400);
+    expect(data.error).toBe("no_account");
+  });
+
+  it("returns 400 + 'invalid_email' on malformed email", async () => {
+    // Note: validation runs before Supabase fetch; the contract here is that the
+    // 400 response carries an error string the client can branch on. issue tadaify-app#176.
+    // The client's login.tsx falls through to the generic-error branch for this code.
+    const res = await action({
+      request: makeRequest({ email: "not-an-email" }),
+      context: makeContext(supabaseEnv),
+    });
+    const data = (await res.json()) as { error: string };
+    expect(res.status).toBe(400);
+    expect(data.error).toBe("invalid_email");
   });
 
   it("trims and lowercases email before sending", async () => {

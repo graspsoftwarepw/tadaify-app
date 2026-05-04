@@ -46,6 +46,7 @@ import {
   SUCCESS_REDIRECT_DELAY_MS,
   type OtpState,
 } from "~/lib/otp-state";
+import { normalizePrefillEmail } from "~/lib/register-prefill";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 import { ThemeToggleButton } from "~/components/ThemeToggleButton";
 
@@ -66,13 +67,16 @@ export function meta(_: Route.MetaArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const handle = url.searchParams.get("handle") ?? "";
-  return { prefillHandle: handle };
+  // ?email= pre-fill — populated by the /login "no account found" CTA (issue tadaify-app#176).
+  // Validated defensively before use in the component.
+  const rawEmail = url.searchParams.get("email") ?? "";
+  return { prefillHandle: handle, prefillEmail: rawEmail };
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function RegisterPage({ loaderData }: Route.ComponentProps) {
-  const { prefillHandle } = loaderData;
+  const { prefillHandle, prefillEmail } = loaderData;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -103,6 +107,16 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
       setHandleAvailable(true); // already validated on landing
     }
   }, [prefillHandle]);
+
+  // ── Prefill email from ?email= query param (login→register CTA, issue tadaify-app#176) ──
+
+  useEffect(() => {
+    const normalized = normalizePrefillEmail(prefillEmail);
+    if (normalized) {
+      dispatch({ type: "SET_EMAIL", email: normalized });
+    }
+    // If invalid, silently ignore — do not crash or show an error.
+  }, [prefillEmail]);
 
   // ── Toast helper ──────────────────────────────────────────────────────────
 

@@ -41,10 +41,9 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const emailResult = validateEmail(rawEmail);
   if (!emailResult.valid) {
-    return Response.json(
-      { error: "A valid email address is required." },
-      { status: 400 }
-    );
+    // Stable error code (not human text) so login.tsx can branch reliably.
+    // issue tadaify-app#176.
+    return Response.json({ error: "invalid_email" }, { status: 400 });
   }
 
   // ── Supabase OTP send ────────────────────────────────────────────────────
@@ -74,17 +73,25 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (!otpRes.ok) {
     const errText = await otpRes.text().catch(() => "");
-    let errMsg = "Failed to send verification code. Please try again.";
-    try {
-      const parsed = JSON.parse(errText) as { msg?: string; message?: string };
-      if (parsed.msg || parsed.message) {
-        errMsg = parsed.msg ?? parsed.message ?? errMsg;
-      }
-    } catch {
-      // use default message
-    }
     console.error("[api.auth.login-otp] Supabase OTP send failed:", otpRes.status, errText);
-    return Response.json({ error: errMsg }, { status: 502 });
+
+    // Pattern-match on the Supabase "signups not allowed for otp" phrase.
+    // We intentionally do substring/case-insensitive matching so minor Supabase
+    // wording tweaks don't regress the detection (issue tadaify-app#176).
+    const lowerErrText = errText.toLowerCase();
+    if (
+      lowerErrText.includes("signups not allowed") ||
+      lowerErrText.includes("signup not allowed") ||
+      lowerErrText.includes("user not found") ||
+      lowerErrText.includes("no user found") ||
+      lowerErrText.includes("otp not available") ||
+      lowerErrText.includes("only existing users")
+    ) {
+      return Response.json({ error: "no_account" }, { status: 400 });
+    }
+
+    // All other upstream errors → generic server_error (no info leak).
+    return Response.json({ error: "server_error" }, { status: 502 });
   }
 
   return Response.json({ sent: true }, { status: 200 });
