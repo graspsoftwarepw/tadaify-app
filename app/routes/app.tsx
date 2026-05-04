@@ -1,5 +1,5 @@
 /**
- * /app — Post-onboarding home dashboard (F-APP-DASHBOARD-001a)
+ * /app — Post-onboarding home dashboard (F-APP-DASHBOARD-001a + 001b)
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html (canonical primary)
  *
@@ -8,7 +8,8 @@
  *
  * URL params:
  *   ?tab=page (default) | design | insights | shop | settings
- *   ?subtab=...   (forward-compat — renders placeholder panel if tab≠page)
+ *   ?subtab=background (default for design) | theme | profile | text | buttons | animations | colors | footer
+ *   ?nav=expanded  (auto-expand design accordion)
  *   ?device=mobile|tablet|desktop (default mobile)
  *   ?state=ready|empty (default derived from blocks.count > 0)
  *
@@ -22,8 +23,8 @@
  *   DEC-332=D  page Publish-gated; welcome banner copy "Add your first block to publish"
  *   TR-tadaify-005  dashboard SSR-first contract
  *
- * Story: F-APP-DASHBOARD-001a (#171)
- * Covers: BR-Slice-C, AC#1-AC#26, TR-tadaify-005
+ * Story: F-APP-DASHBOARD-001a (#171), F-APP-DASHBOARD-001b (#173)
+ * Covers: BR-Slice-C, AC#1-AC#26, TR-tadaify-005, VE-26b-01..35
  */
 
 import { redirect } from "react-router";
@@ -36,6 +37,9 @@ import type { Block } from "~/components/HomepagePanel";
 import { LivePreviewPane } from "~/components/LivePreviewPane";
 import type { DeviceSize } from "~/components/LivePreviewPane";
 import { AppMobileTabs } from "~/components/AppMobileTabs";
+import { DesignPanel, DEFAULT_DESIGN_SUBTAB, normalizeSubTab } from "~/components/DesignPanel";
+import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
+import type { SubTabId } from "~/components/DesignBreadcrumbStepper";
 import { deriveOnboardingState } from "~/lib/onboarding-state";
 import type { OnboardingState } from "~/lib/onboarding-state";
 
@@ -73,12 +77,20 @@ export interface DashboardViewModel {
   activeTab: string;
   activeSubTab: string;
   activeDevice: DeviceSize;
+  navExpanded: boolean;
 }
 
 // ─── Helpers — URL param parsing ────────────────────────────────────────────
 
 const VALID_TABS = ["page", "design", "insights", "shop", "settings", "affiliate"] as const;
 const VALID_DEVICES = ["mobile", "tablet", "desktop"] as const;
+
+/**
+ * Parses nav=expanded from URL params.
+ */
+export function parseNavExpanded(searchParams: URLSearchParams): boolean {
+  return searchParams.get("nav") === "expanded";
+}
 
 /**
  * Parses tab from URL params — returns 'page' for invalid/missing values.
@@ -114,6 +126,7 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
   const activeTab = parseTab(url.searchParams);
   const activeDevice = parseDevice(url.searchParams);
   const activeSubTab = parseSubTab(url.searchParams);
+  const navExpanded = parseNavExpanded(url.searchParams);
 
   const env = context?.cloudflare?.env as unknown as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
@@ -156,7 +169,7 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
   // If no env or no service key configured → stub mode (dev without env vars)
   if (!supabaseUrl || !serviceKey) {
     console.warn("[app loader] Supabase env vars not configured — returning stub view-model");
-    return buildStubViewModel(activeTab, activeDevice, activeSubTab);
+    return buildStubViewModel(activeTab, activeDevice, activeSubTab, navExpanded);
   }
 
   // Verify JWT
@@ -259,6 +272,7 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
     activeTab,
     activeDevice,
     activeSubTab,
+    navExpanded,
   };
 }
 
@@ -267,7 +281,8 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
 function buildStubViewModel(
   activeTab: string,
   activeDevice: DeviceSize,
-  activeSubTab: string
+  activeSubTab: string,
+  navExpanded = false
 ): DashboardViewModel {
   return {
     profile: {
@@ -286,6 +301,7 @@ function buildStubViewModel(
     activeTab,
     activeDevice,
     activeSubTab,
+    navExpanded,
   };
 }
 
@@ -300,9 +316,14 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
     onboardingState,
     activeTab: initialTab,
     activeDevice: initialDevice,
+    activeSubTab: initialSubTab,
+    navExpanded: initialNavExpanded,
   } = loaderData;
 
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeSubTab, setActiveSubTab] = useState<SubTabId>(
+    normalizeSubTab(initialSubTab)
+  );
   const [welcomeDismissed, setWelcomeDismissed] = useState(
     accountSettings.welcome_dismissed
   );
@@ -324,6 +345,19 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
     } catch {
       // Ignore — local state already hides the banner this session.
     }
+  }, []);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    // When switching to design tab, default sub-tab to background if not already on design
+    if (tab === "design" && activeTab !== "design") {
+      setActiveSubTab(DEFAULT_DESIGN_SUBTAB);
+    }
+  }, [activeTab]);
+
+  const handleSubTabChange = useCallback((subTab: SubTabId) => {
+    setActiveTab("design");
+    setActiveSubTab(subTab);
   }, []);
 
   return (
@@ -348,7 +382,16 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           displayName={profile.display_name}
           tier={profile.tier}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
+          designAccordion={
+            <AppSidebarDesignAccordion
+              activeTab={activeTab}
+              activeSubTab={activeSubTab}
+              navExpanded={initialNavExpanded}
+              onTabChange={handleTabChange}
+              onSubTabChange={handleSubTabChange}
+            />
+          }
         />
 
         {/* Main content area */}
@@ -356,7 +399,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           data-testid="app-main"
           style={{ flex: 1, overflowY: "auto" }}
         >
-          {activeTab === "page" ? (
+          {activeTab === "page" && (
             <HomepagePanel
               handle={profile.handle}
               displayName={profile.display_name}
@@ -366,7 +409,15 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
               welcomeDismissed={welcomeDismissed}
               onWelcomeDismiss={handleWelcomeDismiss}
             />
-          ) : (
+          )}
+          {activeTab === "design" && (
+            <DesignPanel
+              activeSubTab={activeSubTab}
+              currentTier={profile.tier}
+              onSubTabChange={handleSubTabChange}
+            />
+          )}
+          {activeTab !== "page" && activeTab !== "design" && (
             /* Placeholder panel for other tabs */
             <div
               style={{
@@ -383,7 +434,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
                   {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} panel
                 </div>
                 <div style={{ fontSize: 13.5 }}>
-                  Full content coming in #26b / #26c / #26d
+                  Full content coming in #26c / #26d / #26e
                 </div>
               </div>
             </div>
@@ -403,7 +454,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
       {/* Mobile bottom tab bar (visible only on mobile via CSS) */}
       <AppMobileTabs
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
       />
     </div>
   );
