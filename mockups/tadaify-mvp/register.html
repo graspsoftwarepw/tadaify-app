@@ -1,11 +1,11 @@
 <!--
   type: mockup
   project: tadaify
-  title: Register — auth screen (5-section flow)
+  title: Register — auth screen (5-section flow, 3 providers: Google + X + Email)
   created_at: 2026-04-25
-  updated_at: 2026-04-29
+  updated_at: 2026-05-04
   author: orchestrator
-  status: draft-for-review
+  status: accepted
 
   Brand: Indigo Serif palette, Crimson Pro display + Inter sans, wordmark ta/da!/ify, Motion v10 logo, light/dark mode toggle.
 
@@ -14,16 +14,17 @@
     - DEC-PRICELOCK-01/02 (price-locked-for-life trust chip)
     - DEC-AI-QUOTA-LADDER-01 / DEC-286 (Free 5 AI credits)
     - DEC-290 (answered) — REMOVE try.html and "Try without an account →" link entirely
-    - DEC-291 (answered) — Auth flow Option B-modified; 4 providers MVP; OAuth → email auto-confirmed (no password); Email path → 6-digit OTP → inline toggle (code vs password)
-    - DEC-294 (answered) — 4 providers parallel: X / Google / Apple / Email-OTP. Force-email Auth Hook ON. Apple gated $99/yr. X gated on email scope.
+    - DEC-291 (answered) — Auth flow Option B-modified; 3 providers MVP; OAuth → email auto-confirmed (no password); Email path → 6-digit OTP → inline toggle (code vs password)
+    - DEC-294 (answered) — 3 providers parallel: X / Google / Email-OTP. Force-email Auth Hook ON. X gated on email scope.
     - DEC-295 (pending; mocked = A) — Inline-toggle screen between OTP confirm and onboarding. Default = "send code next time". Opt-in = "set password".
-    - DEC-292 (pending; mocked = A parallel) — 4 buttons side-by-side, NOT email-first discovery / Notion-style.
+    - DEC-292 (pending; mocked = A parallel) — 3 buttons stacked, NOT email-first discovery / Notion-style.
     - DEC-293 (pending; mocked = auto-link ON) — Identity linking via email; UI doesn't surface explicitly.
+    - DEC-346=C (2026-05-04) — Apple SSO DROPPED entirely from MVP; layout collapses to 3 providers.
 
   Section state machine:
     A handle      → B method
-    B method      → (Google/Apple/X) → OAuth round-trip → C success
-    B method      → (Email)          → B-email
+    B method      → (Google/X) → OAuth round-trip → C success
+    B method      → (Email)    → B-email
     B-email       → B-otp
     B-otp         → B-password-toggle  (only on email path)
     B-password-toggle → C success
@@ -213,13 +214,10 @@
     .auth-btn .label-main { font-size: 14px; font-weight: 600; line-height: 1.2; color: var(--fg); }
     .auth-btn .label-hint { font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--fg-subtle); }
 
-    /* Visual hierarchy: Google + Apple slightly more prominent (thicker border) */
+    /* Visual hierarchy: Google slightly more prominent (thicker border) */
     .auth-btn.tier-1 { border-width: 1.5px; }
     .auth-btn.tier-2 { background: transparent; }
 
-    /* Apple icon adapts to dark mode */
-    .icon-apple { fill: #000; }
-    body.dark-mode .icon-apple { fill: #FFF; }
     /* X icon adapts to dark mode */
     .icon-x { fill: #000; }
     body.dark-mode .icon-x { fill: #FFF; }
@@ -573,20 +571,7 @@
               </span>
             </button>
 
-            <!-- 2. Apple — tier 1 -->
-            <button class="auth-btn tier-1" onclick="oauthFlow('apple')">
-              <span class="icon-wrap">
-                <svg class="icon-apple" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                </svg>
-              </span>
-              <span class="label-wrap">
-                <span class="label-main">Continue with Apple</span>
-                <span class="label-hint">iOS users + privacy</span>
-              </span>
-            </button>
-
-            <!-- 3. X (Twitter) — tier 2 -->
+            <!-- 2. X (Twitter) — tier 2 -->
             <button class="auth-btn tier-2" onclick="oauthFlow('x')">
               <span class="icon-wrap">
                 <svg class="icon-x" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -599,7 +584,7 @@
               </span>
             </button>
 
-            <!-- 4. Email — tier 2 -->
+            <!-- 3. Email — tier 2 -->
             <button class="auth-btn tier-2" onclick="emailFlow()">
               <span class="icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -708,7 +693,7 @@
 
         <!-- ============ SECTION B-PASSWORD-TOGGLE — INLINE POST-OTP CHOICE (DEC-295=A) ============ -->
         <!-- Only shown on email-OTP path, after successful verifyOtp.
-             OAuth users (Google/Apple/X) skip this entirely. -->
+             OAuth users (Google/X) skip this entirely. -->
         <section id="section-b-pwtoggle" class="reg-section">
           <p class="section-header-mini">How do you want to log in next time?</p>
           <p style="font-size:14px; color: var(--fg-muted); margin-bottom:20px;">
@@ -961,11 +946,12 @@
     }
 
     // ----------------------------------------------------------------
-    // OAuth path (Google / Apple / X) — skip B-email / B-otp / B-pwtoggle.
+    // OAuth path (Google / X) — skip B-email / B-otp / B-pwtoggle. Apple dropped (DEC-346=C).
     // Per DEC-291: OAuth users get email auto-confirmed by provider, NO password.
-    // Per DEC-294: Apple gated on $99/yr Developer Program; X gated on email scope.
-    //   In production, "Continue with Apple"/"Continue with X" buttons may render
-    //   with a "Coming soon" pill if launch gate isn't met. Mockup shows all 4 active.
+    // Per DEC-294: X gated on email scope.
+    // Per DEC-346=C: Apple SSO dropped entirely from MVP (2026-05-04).
+    //   In production, "Continue with X" button may render with a "Coming soon" pill.
+    //   Mockup shows Google + X + Email (3 providers).
     // ----------------------------------------------------------------
     function oauthFlow(provider) {
       if (!ensureTos()) return;
