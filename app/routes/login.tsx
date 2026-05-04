@@ -95,6 +95,9 @@ export default function LoginPage() {
   // ── Email flow ────────────────────────────────────────────────────────────
 
   const handleSendCode = useCallback(async () => {
+    // Clear stale no-account state before every submission attempt (Codex review F1).
+    setNoAccountEmail(null);
+
     const emailResult = validateEmail(state.email);
     if (!emailResult.valid) {
       dispatch({ type: "SET_ERROR", error: EMAIL_ERROR_MESSAGES[emailResult.reason] });
@@ -121,7 +124,6 @@ export default function LoginPage() {
         dispatch({ type: "SET_ERROR", error: action.text });
         return;
       }
-      setNoAccountEmail(null);
       dispatch({
         type: "SEND_CODE",
         resendCooldownUntil: Date.now() + RESEND_COOLDOWN_MS,
@@ -364,7 +366,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 value={state.email}
-                onChange={(e) => dispatch({ type: "SET_EMAIL", email: e.target.value })}
+                onChange={(e) => { setNoAccountEmail(null); dispatch({ type: "SET_EMAIL", email: e.target.value }); }}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSendCode(); }}
                 style={{
                   width: "100%",

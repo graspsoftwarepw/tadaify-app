@@ -252,3 +252,51 @@ test("S4 — server_error renders generic text, NOT email-specific CTA", async (
   await expect(page.getByTestId("no-account-block")).not.toBeVisible();
   await expect(page.getByTestId("create-account-cta")).not.toBeVisible();
 });
+
+// ---------------------------------------------------------------------------
+// S5 — Stale no-account block regression (Codex review F1)
+// After a no_account response, a subsequent non-no_account response (e.g.
+// server_error or invalid_email) MUST clear the no-account block and show the
+// inline error instead.
+// ---------------------------------------------------------------------------
+
+test("S5 — stale no-account block clears on subsequent non-no_account submit", async ({ page }) => {
+  const email = `${HANDLE_PREFIX}-stale-${Date.now()}@local.test`;
+  let callCount = 0;
+
+  // First call → no_account; second call → server_error
+  await page.route("**/api/auth/login-otp", async (route) => {
+    callCount++;
+    if (callCount === 1) {
+      await route.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "no_account" }),
+      });
+    } else {
+      await route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "server_error" }),
+      });
+    }
+  });
+
+  await page.goto("/login");
+  await page.locator("#login-email").fill(email);
+  await page.getByRole("button", { name: /send me a code/i }).click();
+
+  // First submit — no-account block MUST appear
+  await expect(page.getByTestId("no-account-block")).toBeVisible({ timeout: 5_000 });
+
+  // Second submit (same email) — simulate retry that hits server_error
+  await page.getByRole("button", { name: /send me a code/i }).click();
+
+  // No-account block MUST be gone; inline generic error MUST be visible
+  const inlineError = page.getByRole("alert").filter({
+    hasText: /something went wrong/i,
+  });
+  await expect(inlineError).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByTestId("no-account-block")).not.toBeVisible();
+  await expect(page.getByTestId("create-account-cta")).not.toBeVisible();
+});
