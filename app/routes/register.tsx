@@ -49,6 +49,7 @@ import {
 import { normalizePrefillEmail } from "~/lib/register-prefill";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 import { ThemeToggleButton } from "~/components/ThemeToggleButton";
+import { OTP_GRID_TEMPLATE } from "~/lib/otp-grid-style";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -1176,7 +1177,7 @@ function SectionBOtp({
         aria-label="6-digit verification code"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
+          gridTemplateColumns: OTP_GRID_TEMPLATE,
           gap: 8,
           margin: "24px 0 0",
         }}
