@@ -3,7 +3,7 @@
  *
  * DEC-355=C (2026-05-04): F-001 guest-mode permanently dropped.
  * FAQ answer for "How fast can I launch?" must never promise guest mode.
- * See: docs/decisions/0048-drop-f001-guest-mode-signup-first.md
+ * See: docs/decisions/0049-drop-f001-guest-mode-signup-first.md
  * See: feedback_tadaify_no_guest_mode_drafts.md
  */
 

@@ -1,5 +1,5 @@
 ---
-id: 0048
+id: 0049
 aliases: ["DEC-355"]
 status: accepted
 date: 2026-05-04
