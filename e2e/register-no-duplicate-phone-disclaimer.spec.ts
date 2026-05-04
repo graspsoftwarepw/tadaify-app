@@ -41,7 +41,7 @@ async function cleanupHandleReservations(prefix: string): Promise<void> {
 
 /** Generate a unique handle per run to avoid stale reservations across reruns */
 function uniqueHandle(testInfo: { workerIndex: number }): string {
-  return `${HANDLE_PREFIX}-${Date.now()}-${testInfo.workerIndex}`;
+  return `${HANDLE_PREFIX}_${testInfo.workerIndex}_${Date.now().toString(36)}`;
 }
 
 test.beforeAll(async () => {
