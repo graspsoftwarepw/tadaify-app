@@ -2,7 +2,7 @@
  * Unit tests for api.auth.signup.ts
  * Run: npx vitest run app/routes/api.auth.signup.test.ts
  * Story: F-REGISTER-001a
- * U1: env binding validation (Bug 1 fix — hard-fail instead of silent stub)
+ * U4: OTP resend rate-limit (BR-OTP-RATE-LIMIT-001 / DEC-342 / issue tadaify-app#179)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -195,5 +195,108 @@ describe("api.auth.signup — Supabase OTP send", () => {
     const data = (await res.json()) as { error: string };
     expect(res.status).toBe(502);
     expect(data.error).toBeTruthy();
+  });
+});
+
+// ── Rate-limit (BR-OTP-RATE-LIMIT-001 / DEC-342) — U4 ───────────────────────
+
+describe("api.auth.signup — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
+  const supabaseEnvWithSR = {
+    SUPABASE_URL: "http://supabase.test",
+    SUPABASE_ANON_KEY: "anon_key",
+    SUPABASE_SERVICE_ROLE_KEY: "service_role_key",
+  };
+
+  const validBody = { email: "user@example.com", handle: "alex", tos_version: "v1" };
+
+  it("returns 429 with retry_after_seconds when rate-limit denies", async () => {
+    const mockFetch = vi
+      .fn()
+      // rate-limit GET → 3 rows = denied
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { attempted_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 1 * 3600 * 1000).toISOString() },
+          ]),
+          { status: 200 }
+        )
+      )
+      // audit INSERT for 'rate_limited'
+      .mockResolvedValueOnce(new Response("", { status: 201 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest(validBody),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    const data = (await res.json()) as { error: string; retry_after_seconds: number };
+    expect(res.status).toBe(429);
+    expect(data.error).toBe("rate_limited");
+    expect(typeof data.retry_after_seconds).toBe("number");
+    expect(data.retry_after_seconds).toBeGreaterThan(0);
+  });
+
+  it("records 'sent' row on successful Supabase send", async () => {
+    const reservationId = "550e8400-e29b-41d4-a716-446655440001";
+    const mockFetch = vi
+      .fn()
+      // acquire_otp_slot RPC → allowed, returns reservation_id
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ allowed: true, reservation_id: reservationId }),
+          { status: 200 }
+        )
+      )
+      // OTP send → 200
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      // finalize_otp_slot RPC → marks 'sent'
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ finalized: true }), { status: 200 })
+      );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest(validBody),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+    // The 3rd fetch call is finalize_otp_slot RPC (marks reservation as 'sent')
+    const finalizeCalls = (mockFetch.mock.calls as Array<[string, RequestInit]>).filter(
+      ([url]) => url.includes("rpc/finalize_otp_slot")
+    );
+    expect(finalizeCalls.length).toBeGreaterThan(0);
+    const body = JSON.parse(finalizeCalls[0][1].body as string) as Record<string, unknown>;
+    expect(body.p_outcome).toBe("sent");
+  });
+
+  it("records 'rate_limited' row when denied (audit trail for abuse review)", async () => {
+    const mockFetch = vi
+      .fn()
+      // acquire_otp_slot RPC → denied (atomically inserts 'rate_limited' row in DB)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ allowed: false, retry_after_seconds: 3600 }),
+          { status: 200 }
+        )
+      );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest(validBody),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    expect(res.status).toBe(429);
+
+    await new Promise((r) => setTimeout(r, 10));
+    // The acquire_otp_slot RPC atomically records 'rate_limited' in Postgres —
+    // no separate REST POST is made by the route. Verify the RPC was called.
+    const acquireCalls = mockFetch.mock.calls.filter(
+      (call: unknown[]) => String(call[0]).includes("rpc/acquire_otp_slot")
+    );
+    expect(acquireCalls.length).toBeGreaterThan(0);
   });
 });

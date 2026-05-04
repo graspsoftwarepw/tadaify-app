@@ -1,0 +1,277 @@
+/**
+ * OTP resend rate-limit utility
+ *
+ * Provides backend rate-limit checking and audit-trail recording for the
+ * email-OTP resend flow on /register and /login.
+ *
+ * Policy (BR-OTP-RATE-LIMIT-001):
+ *   - 3 successful sends per email-handle pair per rolling 24-hour window
+ *   - Counted against 'sent' rows only ('rate_limited' rows do not count)
+ *   - Returns retry_after_seconds when denied
+ *
+ * Privacy:
+ *   - Raw email is never stored; only sha256(lower(trim(email))) hex string
+ *   - Table is service_role only (RLS)
+ *
+ * Runtime: Cloudflare Workers (Web Crypto API for hashing — no Node crypto)
+ *
+ * Story: F-REGISTER-001a / issue tadaify-app#179
+ * BR: BR-OTP-RATE-LIMIT-001
+ */
+
+export type OtpAttemptOutcome = "sent" | "rate_limited" | "reserved" | "failed";
+
+export interface RateLimitResult {
+  allowed: boolean;
+  /** Seconds until the oldest 'sent' row in the window falls out. Only set when allowed=false. */
+  retry_after_seconds?: number;
+  /** UUID of the reserved row. Present when allowed=true and mode='atomic'. Caller MUST finalize. */
+  reservation_id?: string;
+  /** 'atomic' = RPC reserved the slot; 'legacy' = fallback check only (caller must record separately). */
+  mode?: "atomic" | "legacy";
+}
+
+/**
+ * Hash an email address using sha256(lower(trim(email))).
+ * Uses the Web Crypto API (available in all Workers + modern browsers).
+ * Returns a lowercase hex string.
+ */
+export async function hashEmail(email: string): Promise<string> {
+  const normalised = email.toLowerCase().trim();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalised);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Atomically acquire an OTP send slot for the given email hash + handle pair.
+ *
+ * Calls the `acquire_otp_slot` Postgres RPC which uses advisory locks to
+ * serialize concurrent requests for the same pair, preventing TOCTOU races.
+ * On success the RPC inserts a 'reserved' row and returns its UUID. The caller
+ * MUST finalize via finalizeOtpSlot(id, 'sent') after Auth succeeds, or
+ * finalizeOtpSlot(id, 'failed') on Auth error. On denial it records
+ * 'rate_limited'.
+ *
+ * Falls back to a non-atomic REST check if the RPC call fails (e.g. function
+ * not yet deployed), logging a warning. In fallback mode the caller MUST call
+ * recordOtpAttempt('sent') after a successful Auth send.
+ *
+ * @param supabaseUrl        - SUPABASE_URL from Workers env
+ * @param serviceRoleKey     - SUPABASE_SERVICE_ROLE_KEY from Workers env
+ * @param emailHash          - sha256(lower(trim(email))) — from hashEmail()
+ * @param handle             - handle string for signup, null for login (pair-keyed per BR-OTP-RATE-LIMIT-001)
+ * @param windowSeconds      - Rolling window size in seconds (default: 86400 = 24h)
+ * @param maxAttempts        - Max allowed 'sent' rows in window (default: 3)
+ */
+export async function acquireOtpSlot(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  emailHash: string,
+  handle: string | null = null,
+  windowSeconds: number = 24 * 3600,
+  maxAttempts: number = 3
+): Promise<RateLimitResult> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/acquire_otp_slot`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_email_hash: emailHash,
+        p_handle: handle,
+        p_window_seconds: windowSeconds,
+        p_max_attempts: maxAttempts,
+      }),
+    });
+
+    if (!res.ok) {
+      // RPC not available (not yet migrated) — fall back to legacy check.
+      // Legacy mode: caller MUST call recordOtpAttempt after successful Auth send.
+      console.warn(
+        "[otp-rate-limit] acquire_otp_slot RPC failed, falling back to legacy check:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+      const legacyResult = await checkOtpRateLimitLegacy(supabaseUrl, serviceRoleKey, emailHash, handle, windowSeconds, maxAttempts);
+      return { ...legacyResult, mode: "legacy" as const };
+    }
+
+    const result = (await res.json()) as { allowed: boolean; retry_after_seconds?: number; reservation_id?: string };
+    return { ...result, mode: "atomic" as const };
+  } catch (err) {
+    // Network error — fail open.
+    console.error("[otp-rate-limit] acquireOtpSlot fetch error:", err);
+    return { allowed: true };
+  }
+}
+
+/**
+ * Finalize a reserved OTP slot after Supabase Auth responds.
+ *
+ * Call with outcome='sent' after Auth succeeds, or 'failed' after Auth error.
+ * Failed slots do NOT consume the successful-send cap.
+ *
+ * Fire-and-forget: errors are logged but do not propagate.
+ */
+export async function finalizeOtpSlot(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  reservationId: string,
+  outcome: "sent" | "failed"
+): Promise<void> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/finalize_otp_slot`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_reservation_id: reservationId,
+        p_outcome: outcome,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(
+        "[otp-rate-limit] finalizeOtpSlot RPC failed:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+    }
+  } catch (err) {
+    console.error("[otp-rate-limit] finalizeOtpSlot fetch error:", err);
+  }
+}
+
+/**
+ * Legacy non-atomic check (fallback when RPC is unavailable).
+ * @deprecated Use acquireOtpSlot instead. Kept for graceful degradation during migration rollout.
+ */
+export async function checkOtpRateLimit(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  emailHash: string,
+  handle: string | null = null,
+  windowSeconds: number = 24 * 3600,
+  maxAttempts: number = 3
+): Promise<RateLimitResult> {
+  return checkOtpRateLimitLegacy(supabaseUrl, serviceRoleKey, emailHash, handle, windowSeconds, maxAttempts);
+}
+
+async function checkOtpRateLimitLegacy(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  emailHash: string,
+  handle: string | null = null,
+  windowSeconds: number = 24 * 3600,
+  maxAttempts: number = 3
+): Promise<RateLimitResult> {
+  const windowStart = new Date(Date.now() - windowSeconds * 1000).toISOString();
+
+  // Query only 'sent' rows — 'rate_limited' rows do not count toward the cap.
+  // Pair-keyed: email_hash + handle (BR-OTP-RATE-LIMIT-001).
+  const url = new URL(`${supabaseUrl}/rest/v1/otp_rate_limit_attempts`);
+  url.searchParams.set("select", "attempted_at");
+  url.searchParams.set("email_hash", `eq.${emailHash}`);
+  url.searchParams.set("handle", handle ? `eq.${handle}` : "is.null");
+  url.searchParams.set("outcome", "eq.sent");
+  url.searchParams.set("attempted_at", `gte.${windowStart}`);
+  url.searchParams.set("order", "attempted_at.asc");
+  url.searchParams.set("limit", String(maxAttempts));
+
+  let rows: Array<{ attempted_at: string }>;
+  try {
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      // On Supabase error, fail open (allow the send) to avoid blocking legitimate users.
+      console.error("[otp-rate-limit] checkOtpRateLimitLegacy query failed:", res.status, await res.text().catch(() => ""));
+      return { allowed: true };
+    }
+
+    rows = (await res.json()) as Array<{ attempted_at: string }>;
+  } catch (err) {
+    // Network error — fail open.
+    console.error("[otp-rate-limit] checkOtpRateLimitLegacy fetch error:", err);
+    return { allowed: true };
+  }
+
+  if (rows.length < maxAttempts) {
+    return { allowed: true };
+  }
+
+  // Denied: compute retry_after_seconds from the oldest 'sent' row in window.
+  // When that row's timestamp + windowSeconds passes, one slot opens up.
+  const oldestSentAt = new Date(rows[0].attempted_at).getTime();
+  const windowEndsAt = oldestSentAt + windowSeconds * 1000;
+  const retryAfterMs = Math.max(0, windowEndsAt - Date.now());
+  const retry_after_seconds = Math.ceil(retryAfterMs / 1000);
+
+  return { allowed: false, retry_after_seconds };
+}
+
+/**
+ * Record an OTP attempt in the audit table.
+ *
+ * Always called:
+ *   - outcome='sent'         after Supabase OTP send succeeds
+ *   - outcome='rate_limited' when the check denies the request
+ *
+ * Failures are logged but do NOT propagate — the primary response
+ * (429 or 200) has already been determined by the caller.
+ *
+ * @param supabaseUrl    - SUPABASE_URL from Workers env
+ * @param serviceRoleKey - SUPABASE_SERVICE_ROLE_KEY from Workers env
+ * @param emailHash      - sha256(lower(trim(email)))
+ * @param handle         - handle string or null (login flow has no handle yet)
+ * @param outcome        - 'sent' | 'rate_limited'
+ */
+export async function recordOtpAttempt(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  emailHash: string,
+  handle: string | null,
+  outcome: OtpAttemptOutcome
+): Promise<void> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/otp_rate_limit_attempts`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        email_hash: emailHash,
+        handle: handle ?? null,
+        outcome,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(
+        "[otp-rate-limit] recordOtpAttempt INSERT failed:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+    }
+  } catch (err) {
+    console.error("[otp-rate-limit] recordOtpAttempt fetch error:", err);
+  }
+}

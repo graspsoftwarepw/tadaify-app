@@ -41,12 +41,14 @@ import {
   otpReducer,
   isLocked,
   canResend,
+  isResendCapReached,
   otpValue,
   isOtpComplete,
   RESEND_COOLDOWN_MS,
   SUCCESS_REDIRECT_DELAY_MS,
   type OtpState,
 } from "~/lib/otp-state";
+import { OtpResendControl } from "~/components/OtpResendControl";
 import { normalizePrefillEmail } from "~/lib/register-prefill";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 import { ThemeToggleButton } from "~/components/ThemeToggleButton";
@@ -240,6 +242,10 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
   // ── Section B-email → B-otp ───────────────────────────────────────────────
 
   const handleSendCode = useCallback(async () => {
+    // Defensive guard: block send when per-session cap already reached
+    // (BR-OTP-RATE-LIMIT-001 / DEC-342 — Codex follow-up review F1).
+    if (isResendCapReached(state)) return;
+
     const emailResult = validateEmail(state.email);
     if (!emailResult.valid) {
       dispatch({ type: "SET_ERROR", error: EMAIL_ERROR_MESSAGES[emailResult.reason] });
@@ -533,12 +539,13 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
                 otpInputRefs={otpInputRefs}
                 otpComplete={otpComplete}
                 locked={locked}
-                resendable={resendable}
+                now={now}
                 resendSecondsLeft={resendSecondsLeft}
                 onDigitChange={handleOtpDigitChange}
                 onKeyDown={handleOtpKeyDown}
                 onVerify={handleVerifyOtp}
                 onResend={handleResend}
+                onUseDifferentEmail={() => dispatch({ type: "BACK_TO_EMAIL" })}
                 onBack={() => dispatch({ type: "BACK" })}
                 visible={state.section === "B-otp"}
               />
@@ -1112,12 +1119,13 @@ function SectionBOtp({
   otpInputRefs,
   otpComplete,
   locked,
-  resendable,
+  now,
   resendSecondsLeft,
   onDigitChange,
   onKeyDown,
   onVerify,
   onResend,
+  onUseDifferentEmail,
   onBack,
   visible,
 }: {
@@ -1125,12 +1133,13 @@ function SectionBOtp({
   otpInputRefs: React.MutableRefObject<(HTMLInputElement | null)[]>;
   otpComplete: boolean;
   locked: boolean;
-  resendable: boolean;
+  now: number;
   resendSecondsLeft: number;
   onDigitChange: (i: number, v: string) => void;
   onKeyDown: (i: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
   onVerify: () => void;
   onResend: () => void;
+  onUseDifferentEmail: () => void;
   onBack: () => void;
   visible: boolean;
 }) {
@@ -1232,25 +1241,13 @@ function SectionBOtp({
         {state.isSubmitting ? "Verifying…" : "Verify code →"}
       </button>
 
-      <div style={{ marginTop: 14, fontSize: 13, color: "var(--fg-muted)", textAlign: "center" }}>
-        Didn't get the code?{" "}
-        <button
-          type="button"
-          onClick={onResend}
-          disabled={!resendable}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: resendable ? "pointer" : "not-allowed",
-            fontSize: 13,
-            fontWeight: 600,
-            color: resendable ? "var(--brand-primary)" : "var(--fg-muted)",
-            padding: 0,
-          }}
-        >
-          {resendable ? "Resend code" : `Resend in ${resendSecondsLeft}s`}
-        </button>
-      </div>
+      <OtpResendControl
+        state={state}
+        now={now}
+        resendSecondsLeft={resendSecondsLeft}
+        onResend={onResend}
+        onUseDifferentEmail={onUseDifferentEmail}
+      />
 
       <button
         type="button"

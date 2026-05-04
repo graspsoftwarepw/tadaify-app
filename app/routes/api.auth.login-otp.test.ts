@@ -202,3 +202,109 @@ describe("api.auth.login-otp — Supabase OTP send", () => {
     expect(body.email).toBe("user@example.com");
   });
 });
+
+// ── Rate-limit (BR-OTP-RATE-LIMIT-001 / DEC-342) — U3 ───────────────────────
+
+describe("api.auth.login-otp — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
+  const supabaseEnvWithSR = {
+    SUPABASE_URL: "http://supabase.test",
+    SUPABASE_ANON_KEY: "anon_key",
+    SUPABASE_SERVICE_ROLE_KEY: "service_role_key",
+  };
+
+  it("returns 429 with retry_after_seconds when rate-limit denies", async () => {
+    // First fetch call = rate-limit check (GET) → returns 3 rows = denied
+    // Second fetch call would be OTP send — should NOT happen
+    const mockFetch = vi
+      .fn()
+      // rate-limit GET — returns 3 'sent' rows → denied
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify([
+            { attempted_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+            { attempted_at: new Date(Date.now() - 1 * 3600 * 1000).toISOString() },
+          ]),
+          { status: 200 }
+        )
+      )
+      // audit INSERT for rate_limited outcome
+      .mockResolvedValueOnce(new Response("", { status: 201 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "blocked@example.com" }),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    const data = (await res.json()) as { error: string; retry_after_seconds: number };
+    expect(res.status).toBe(429);
+    expect(data.error).toBe("rate_limited");
+    expect(typeof data.retry_after_seconds).toBe("number");
+    expect(data.retry_after_seconds).toBeGreaterThan(0);
+  });
+
+  it("records 'sent' row on successful Supabase send", async () => {
+    const reservationId = "550e8400-e29b-41d4-a716-446655440000";
+    const mockFetch = vi
+      .fn()
+      // acquire_otp_slot RPC → allowed, returns reservation_id
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ allowed: true, reservation_id: reservationId }),
+          { status: 200 }
+        )
+      )
+      // OTP send → 200
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      // finalize_otp_slot RPC → marks 'sent'
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ finalized: true }), { status: 200 })
+      );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "user@example.com" }),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    expect(res.status).toBe(200);
+
+    // Allow fire-and-forget finalize to settle
+    await new Promise((r) => setTimeout(r, 10));
+
+    // The 3rd fetch call is finalize_otp_slot RPC (marks reservation as 'sent')
+    const finalizeCalls = (mockFetch.mock.calls as Array<[string, RequestInit]>).filter(
+      ([url]) => url.includes("rpc/finalize_otp_slot")
+    );
+    expect(finalizeCalls.length).toBeGreaterThan(0);
+    const body = JSON.parse(finalizeCalls[0][1].body as string) as Record<string, unknown>;
+    expect(body.p_outcome).toBe("sent");
+  });
+
+  it("records 'rate_limited' row when denied (audit trail for abuse review)", async () => {
+    const mockFetch = vi
+      .fn()
+      // acquire_otp_slot RPC → denied (atomically inserts 'rate_limited' row in DB)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ allowed: false, retry_after_seconds: 3600 }),
+          { status: 200 }
+        )
+      );
+    vi.stubGlobal("fetch", mockFetch);
+
+    const res = await action({
+      request: makeRequest({ email: "blocked@example.com" }),
+      context: makeContext(supabaseEnvWithSR),
+    });
+    expect(res.status).toBe(429);
+
+    // Allow fire-and-forget to settle
+    await new Promise((r) => setTimeout(r, 10));
+    // The acquire_otp_slot RPC atomically records 'rate_limited' in Postgres —
+    // no separate REST POST is made by the route. Verify the RPC was called.
+    const acquireCalls = mockFetch.mock.calls.filter(
+      (call: unknown[]) => String(call[0]).includes("rpc/acquire_otp_slot")
+    );
+    expect(acquireCalls.length).toBeGreaterThan(0);
+  });
+});

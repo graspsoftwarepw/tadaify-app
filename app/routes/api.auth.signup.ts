@@ -13,15 +13,18 @@
  * Response:
  *   200 { sent: true }
  *   400 { error: string }
- *   500 { error: string }
+ *   429 { error: "rate_limited", retry_after_seconds: number }
+ *   500 | 502 { error: string }
  *
  * Story: F-REGISTER-001a — email-OTP + Auth Hook + handle binding
  * DEC trail: DEC-291 (B-modified flow), DEC-294 (force-email), DEC-306 (implicit ToS)
+ *            DEC-342 (OTP resend rate-limit — BR-OTP-RATE-LIMIT-001)
  */
 
 import type { Route } from "./+types/api.auth.signup";
 import { validateEmail } from "~/lib/auth-validator";
 import { validateHandle } from "~/lib/handle-validator";
+import { hashEmail, acquireOtpSlot, finalizeOtpSlot, recordOtpAttempt } from "~/lib/otp-rate-limit";
 
 const TOS_VERSION_CURRENT = "v1";
 
@@ -60,11 +63,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     );
   }
 
-  // ── Supabase OTP send ────────────────────────────────────────────────────
+  // ── Env / Supabase config ────────────────────────────────────────────────
 
   const env = context?.cloudflare?.env as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
   const supabaseAnonKey = env?.SUPABASE_ANON_KEY;
+  const supabaseServiceRoleKey = env?.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn("[api.auth.signup] Workers env bindings SUPABASE_URL / SUPABASE_ANON_KEY not set");
@@ -73,6 +77,35 @@ export async function action({ request, context }: Route.ActionArgs) {
       { status: 500, headers: { "content-type": "application/json" } }
     );
   }
+
+  // ── Backend rate-limit — atomic slot acquisition (BR-OTP-RATE-LIMIT-001) ─
+
+  const emailHash = await hashEmail(rawEmail);
+
+  let rateLimitResult: Awaited<ReturnType<typeof acquireOtpSlot>> | null = null;
+
+  if (supabaseServiceRoleKey) {
+    // acquireOtpSlot atomically reserves a slot (outcome='reserved') and returns
+    // its UUID. Caller MUST finalize after Auth send via finalizeOtpSlot.
+    // In legacy fallback mode, caller MUST call recordOtpAttempt instead.
+    rateLimitResult = await acquireOtpSlot(
+      supabaseUrl,
+      supabaseServiceRoleKey,
+      emailHash,
+      rawHandle || null
+    );
+
+    if (!rateLimitResult.allowed) {
+      return Response.json(
+        { error: "rate_limited", retry_after_seconds: rateLimitResult.retry_after_seconds ?? 86400 },
+        { status: 429 }
+      );
+    }
+  } else {
+    console.warn("[api.auth.signup] SUPABASE_SERVICE_ROLE_KEY not set — skipping rate-limit check");
+  }
+
+  // ── Supabase OTP send ────────────────────────────────────────────────────
 
   // Call Supabase Auth REST API directly (no SDK bundle in Workers).
   // signInWithOtp(email) with data payload → lands in raw_user_meta_data (DEC-306).
@@ -104,7 +137,23 @@ export async function action({ request, context }: Route.ActionArgs) {
       // use default message
     }
     console.error("[api.auth.signup] Supabase OTP send failed:", signupRes.status, errText);
+
+    // Finalize the reserved slot as 'failed' — does NOT consume a successful-send cap slot.
+    if (supabaseServiceRoleKey && rateLimitResult?.reservation_id && rateLimitResult.mode === "atomic") {
+      await finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "failed");
+    }
+
     return Response.json({ error: errMsg }, { status: 502 });
+  }
+
+  // Finalize the slot as 'sent' — completes the two-phase reservation.
+  if (supabaseServiceRoleKey && rateLimitResult) {
+    if (rateLimitResult.mode === "atomic" && rateLimitResult.reservation_id) {
+      await finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "sent");
+    } else if (rateLimitResult.mode === "legacy") {
+      // Fallback path: RPC was unavailable, so record the successful send via REST.
+      await recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, rawHandle || null, "sent");
+    }
   }
 
   return Response.json({ sent: true }, { status: 200 });

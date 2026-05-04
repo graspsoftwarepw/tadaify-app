@@ -28,6 +28,7 @@ import {
   otpReducer,
   isLocked,
   canResend,
+  isResendCapReached,
   otpValue,
   isOtpComplete,
   RESEND_COOLDOWN_MS,
@@ -35,6 +36,7 @@ import {
 import { buildRegisterCtaHref, mapLoginOtpResponse } from "~/lib/login-otp-error";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 import { OTP_GRID_TEMPLATE } from "~/lib/otp-grid-style";
+import { OtpResendControl } from "~/components/OtpResendControl";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -96,6 +98,10 @@ export default function LoginPage() {
   // ── Email flow ────────────────────────────────────────────────────────────
 
   const handleSendCode = useCallback(async () => {
+    // Defensive guard: block send when per-session cap already reached
+    // (BR-OTP-RATE-LIMIT-001 / DEC-342 — Codex follow-up review F1).
+    if (isResendCapReached(state)) return;
+
     // Clear stale no-account state before every submission attempt (Codex review F1).
     setNoAccountEmail(null);
 
@@ -517,25 +523,13 @@ export default function LoginPage() {
                 {state.isSubmitting ? "Signing in…" : "Verify code →"}
               </button>
 
-              <div style={{ marginTop: 12, fontSize: 13, color: "var(--fg-muted)", textAlign: "center" }}>
-                Didn't get it?{" "}
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={!resendable}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: resendable ? "pointer" : "not-allowed",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: resendable ? "var(--brand-primary)" : "var(--fg-muted)",
-                    padding: 0,
-                  }}
-                >
-                  {resendable ? "Resend code" : `Resend in ${resendSecondsLeft}s`}
-                </button>
-              </div>
+              <OtpResendControl
+                state={state}
+                now={now}
+                resendSecondsLeft={resendSecondsLeft}
+                onResend={handleResend}
+                onUseDifferentEmail={() => dispatch({ type: "BACK_TO_EMAIL" })}
+              />
 
               <button
                 type="button"
