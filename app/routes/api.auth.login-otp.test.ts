@@ -299,13 +299,11 @@ describe("api.auth.login-otp — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
 
     // Allow fire-and-forget
     await new Promise((r) => setTimeout(r, 10));
-    const insertCall = mockFetch.mock.calls.find(([url]: [string]) =>
-      (url as string).includes("otp_rate_limit_attempts") && mockFetch.mock.calls.indexOf([url]) > 0
-    );
     // At minimum, an insert POST was made
     const postCalls = mockFetch.mock.calls.filter(
-      ([url, init]: [string, RequestInit]) =>
-        (url as string).includes("otp_rate_limit_attempts") && init?.method === "POST"
+      (call: unknown[]) =>
+        String(call[0]).includes("otp_rate_limit_attempts") &&
+        (call[1] as RequestInit | undefined)?.method === "POST"
     );
     expect(postCalls.length).toBeGreaterThan(0);
     const body = JSON.parse((postCalls[0][1] as RequestInit).body as string) as Record<string, unknown>;

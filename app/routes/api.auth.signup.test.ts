@@ -257,8 +257,9 @@ describe("api.auth.signup — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
 
     await new Promise((r) => setTimeout(r, 10));
     const postCalls = mockFetch.mock.calls.filter(
-      ([url, init]: [string, RequestInit]) =>
-        (url as string).includes("otp_rate_limit_attempts") && init?.method === "POST"
+      (call: unknown[]) =>
+        String(call[0]).includes("otp_rate_limit_attempts") &&
+        (call[1] as RequestInit | undefined)?.method === "POST"
     );
     expect(postCalls.length).toBeGreaterThan(0);
     const body = JSON.parse((postCalls[0][1] as RequestInit).body as string) as Record<string, unknown>;
@@ -291,8 +292,9 @@ describe("api.auth.signup — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {
 
     await new Promise((r) => setTimeout(r, 10));
     const postCalls = mockFetch.mock.calls.filter(
-      ([url, init]: [string, RequestInit]) =>
-        (url as string).includes("otp_rate_limit_attempts") && init?.method === "POST"
+      (call: unknown[]) =>
+        String(call[0]).includes("otp_rate_limit_attempts") &&
+        (call[1] as RequestInit | undefined)?.method === "POST"
     );
     expect(postCalls.length).toBeGreaterThan(0);
     const body = JSON.parse((postCalls[0][1] as RequestInit).body as string) as Record<string, unknown>;
