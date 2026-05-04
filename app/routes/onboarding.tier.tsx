@@ -21,6 +21,11 @@
 import { redirect } from "react-router";
 import { Link } from "react-router";
 import type { Route } from "./+types/onboarding.tier";
+import { CREATOR_PRICE_MONTHLY } from "~/lib/tier-gate";
+
+/** Canonical pricing for Pro/Business — sourced here to keep one place to update. */
+const PRO_PRICE_MONTHLY = "$19";
+const BUSINESS_PRICE_MONTHLY = "$49";
 
 // ─── Tier data ─────────────────────────────────────────────────────────────────
 
@@ -44,7 +49,7 @@ const TIERS = [
   {
     id: "creator",
     name: "Creator",
-    price: "$9",
+    price: CREATOR_PRICE_MONTHLY,
     period: "/mo",
     highlight: false,
     ribbon: null,
@@ -60,7 +65,7 @@ const TIERS = [
   {
     id: "pro",
     name: "Pro",
-    price: "$19",
+    price: PRO_PRICE_MONTHLY,
     period: "/mo",
     highlight: false,
     ribbon: null,
@@ -76,7 +81,7 @@ const TIERS = [
   {
     id: "business",
     name: "Business",
-    price: "$49",
+    price: BUSINESS_PRICE_MONTHLY,
     period: "/mo",
     highlight: false,
     ribbon: null,
@@ -322,7 +327,7 @@ export default function TierPage({ loaderData }: Route.ComponentProps) {
               cursor: "pointer",
             }}
           >
-            Start for free →
+            Take me to my page →
           </button>
         </div>
       </form>

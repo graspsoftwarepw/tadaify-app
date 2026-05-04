@@ -958,10 +958,6 @@ function SectionB({
         />
       </div>
 
-      <p style={{ fontSize: 13, color: "var(--fg-muted)", marginTop: 16 }}>
-        ✉️ All paths confirm your email. We never ask for your phone.
-      </p>
-
       {/* DEC-306 implicit ToS microcopy */}
       <p style={{ fontSize: 13, color: "var(--fg-muted)", marginTop: 12 }}>
         By continuing, you agree to the{" "}
