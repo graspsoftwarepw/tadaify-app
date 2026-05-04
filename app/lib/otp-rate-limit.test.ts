@@ -13,10 +13,17 @@
  *   - checkOtpRateLimit ignores 'rate_limited' rows (only 'sent' counts toward cap)
  *   - checkOtpRateLimit ignores attempts outside window
  *   - hashEmail is deterministic + lowercases + trims
+ *
+ * U2 bundle — Codex F1/F2 regression tests:
+ *   - acquireOtpSlot returns reservation_id and mode='atomic' when RPC succeeds
+ *   - acquireOtpSlot returns mode='legacy' when RPC falls back
+ *   - finalizeOtpSlot calls RPC with correct params
+ *   - finalizeOtpSlot does not throw on error (fire-and-forget)
+ *   - fallback path: legacy mode enables caller to record via recordOtpAttempt
  */
 
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { acquireOtpSlot, checkOtpRateLimit, recordOtpAttempt, hashEmail } from "./otp-rate-limit";
+import { acquireOtpSlot, checkOtpRateLimit, recordOtpAttempt, finalizeOtpSlot, hashEmail } from "./otp-rate-limit";
 
 const SUPABASE_URL = "http://supabase.test";
 const SERVICE_ROLE_KEY = "service_role_test";
@@ -158,11 +165,11 @@ describe("checkOtpRateLimit", () => {
 // ── acquireOtpSlot ──────────────────────────────────────────────────────────────
 
 describe("acquireOtpSlot", () => {
-  it("returns allowed:true when RPC responds with allowed", async () => {
+  it("returns allowed:true + reservation_id + mode='atomic' when RPC succeeds", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ allowed: true }), {
+        new Response(JSON.stringify({ allowed: true, reservation_id: "uuid-123" }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         })
@@ -170,9 +177,11 @@ describe("acquireOtpSlot", () => {
     );
     const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
     expect(result.allowed).toBe(true);
+    expect(result.reservation_id).toBe("uuid-123");
+    expect(result.mode).toBe("atomic");
   });
 
-  it("returns allowed:false + retry_after_seconds when RPC denies", async () => {
+  it("returns allowed:false + retry_after_seconds + mode='atomic' when RPC denies", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -185,11 +194,12 @@ describe("acquireOtpSlot", () => {
     const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH, "alice");
     expect(result.allowed).toBe(false);
     expect(result.retry_after_seconds).toBe(85000);
+    expect(result.mode).toBe("atomic");
   });
 
   it("calls RPC with correct body params", async () => {
     const mockFetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ allowed: true }), {
+      new Response(JSON.stringify({ allowed: true, reservation_id: "uuid-456" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       })
@@ -208,7 +218,7 @@ describe("acquireOtpSlot", () => {
     expect(body.p_max_attempts).toBe(5);
   });
 
-  it("falls back to legacy check when RPC returns non-200", async () => {
+  it("falls back to legacy check with mode='legacy' when RPC returns non-200", async () => {
     // First call = RPC (fails), second call = legacy REST query (succeeds empty)
     const mockFetch = vi.fn()
       .mockResolvedValueOnce(new Response("not found", { status: 404 }))
@@ -222,13 +232,70 @@ describe("acquireOtpSlot", () => {
 
     const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
     expect(result.allowed).toBe(true);
+    expect(result.mode).toBe("legacy");
+    expect(result.reservation_id).toBeUndefined();
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
-  it("fails open on network error", async () => {
+  it("fails open on network error (no mode set)", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
     const result = await acquireOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, EMAIL_HASH);
     expect(result.allowed).toBe(true);
+    expect(result.mode).toBeUndefined();
+  });
+});
+
+// ── finalizeOtpSlot ──────────────────────────────────────────────────────────
+
+describe("finalizeOtpSlot", () => {
+  it("calls finalize_otp_slot RPC with correct params", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ finalized: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    await finalizeOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, "uuid-789", "sent");
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("/rest/v1/rpc/finalize_otp_slot");
+    const body = JSON.parse(init.body as string) as Record<string, unknown>;
+    expect(body.p_reservation_id).toBe("uuid-789");
+    expect(body.p_outcome).toBe("sent");
+  });
+
+  it("calls RPC with 'failed' outcome on Auth error", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ finalized: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    await finalizeOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, "uuid-fail", "failed");
+
+    const body = JSON.parse(
+      (mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string
+    ) as Record<string, unknown>;
+    expect(body.p_outcome).toBe("failed");
+  });
+
+  it("does not throw on RPC error (fire-and-forget)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("err", { status: 500 })));
+    await expect(
+      finalizeOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, "uuid-err", "sent")
+    ).resolves.toBeUndefined();
+  });
+
+  it("does not throw on network error (fire-and-forget)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+    await expect(
+      finalizeOtpSlot(SUPABASE_URL, SERVICE_ROLE_KEY, "uuid-err", "failed")
+    ).resolves.toBeUndefined();
   });
 });
 

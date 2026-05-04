@@ -24,7 +24,7 @@
 
 import type { Route } from "./+types/api.auth.login-otp";
 import { validateEmail } from "~/lib/auth-validator";
-import { hashEmail, acquireOtpSlot } from "~/lib/otp-rate-limit";
+import { hashEmail, acquireOtpSlot, finalizeOtpSlot, recordOtpAttempt } from "~/lib/otp-rate-limit";
 
 export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "POST") {
@@ -66,11 +66,13 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const emailHash = await hashEmail(rawEmail);
 
+  let rateLimitResult: Awaited<ReturnType<typeof acquireOtpSlot>> | null = null;
+
   if (supabaseServiceRoleKey) {
-    // acquireOtpSlot atomically checks + reserves/denies in one DB call.
-    // On allowed=true a 'sent' row is already recorded; on allowed=false a
-    // 'rate_limited' row is already recorded. No separate recordOtpAttempt needed.
-    const rateLimitResult = await acquireOtpSlot(
+    // acquireOtpSlot atomically reserves a slot (outcome='reserved') and returns
+    // its UUID. Caller MUST finalize after Auth send via finalizeOtpSlot.
+    // In legacy fallback mode, caller MUST call recordOtpAttempt instead.
+    rateLimitResult = await acquireOtpSlot(
       supabaseUrl,
       supabaseServiceRoleKey,
       emailHash,
@@ -106,6 +108,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     const errText = await otpRes.text().catch(() => "");
     console.error("[api.auth.login-otp] Supabase OTP send failed:", otpRes.status, errText);
 
+    // Finalize the reserved slot as 'failed' — does NOT consume a successful-send cap slot.
+    if (supabaseServiceRoleKey && rateLimitResult?.reservation_id && rateLimitResult.mode === "atomic") {
+      finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "failed");
+    }
+
     // Pattern-match on the Supabase "signups not allowed for otp" phrase.
     // We intentionally do substring/case-insensitive matching so minor Supabase
     // wording tweaks don't regress the detection (issue tadaify-app#176).
@@ -125,8 +132,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     return Response.json({ error: "server_error" }, { status: 502 });
   }
 
-  // Note: the 'sent' audit row is already recorded atomically by acquireOtpSlot.
-  // No separate recordOtpAttempt call needed.
+  // Finalize the slot as 'sent' — completes the two-phase reservation.
+  if (supabaseServiceRoleKey && rateLimitResult) {
+    if (rateLimitResult.mode === "atomic" && rateLimitResult.reservation_id) {
+      finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "sent");
+    } else if (rateLimitResult.mode === "legacy") {
+      // Fallback path: RPC was unavailable, so record the successful send via REST.
+      recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, null, "sent");
+    }
+  }
 
   return Response.json({ sent: true }, { status: 200 });
 }
