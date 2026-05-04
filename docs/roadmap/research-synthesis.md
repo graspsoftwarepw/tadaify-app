@@ -559,14 +559,10 @@ User picks A / B / C / D. Default if no decision in 48h: **B** (Claude's recomme
 
 The audit surfaced product wedges not covered by the original 43 DEC-SYN. These are candidates for the next round of user approval.
 
-#### DEC-SYN-44 — Guest-mode editor (Carrd-pattern)
+#### DEC-SYN-44 — Guest-mode editor (Carrd-pattern) — **SUPERSEDED by DEC-355=C**
 
-- **What:** Visitor at `tadaify.com/try` can build a mockup of their public page without signup; account gate fires at Publish / Save.
-- **Competitors:** None of the 7 audited ship this. Carrd alone.
-- **Why:** Massive friction reduction. Creator commits to product before committing to credentials.
-- **Cost:** Local-storage persistence + account-migration-on-signup flow. 1-2 weeks of eng.
-- **Cross-ref:** feature-mix §1.1.1, PAT-067
-- **Claude recommends:** APPROVE. MVP nice-to-have, Y1 candidate if MVP timing tight.
+- ~~**What:** Visitor at `tadaify.com/try` can build a mockup of their public page without signup; account gate fires at Publish / Save.~~
+- **Status:** Permanently dropped. DEC-355=C (2026-05-04) adopted signup-first model; F-001 and `/try` route removed. See `docs/decisions/0049-drop-f001-guest-mode-signup-first.md`.
 
 #### DEC-SYN-45 — Public self-serve creator API + webhooks + OpenAPI docs day 1
 
