@@ -58,6 +58,7 @@ Full rationale lives in the per-file record. This table is the navigation layer.
 | 0045 | DEC-082 | accepted | Polling architecture for Pro live-view — no Durable Objects push (Option 6) | analytics, architecture, durable-objects, polling | [0045-polling-architecture-no-do-for-pro.md](0045-polling-architecture-no-do-for-pro.md) |
 | 0046 | DEC-083-insights | **superseded** by 0009 | Pro and Business tier pricing from insights session (superseded by DEC-083 spec lock) | pricing, business-tier, insights | [0046-insights-pro-business-tier-pricing.md](0046-insights-pro-business-tier-pricing.md) |
 | 0047 | DEC-287 | accepted | Business pricing: $49.99/mo (.99 alignment, partial supersede of 0009 Business line) | pricing, business-tier | [0047-business-pricing-49.99.md](0047-business-pricing-49.99.md) |
+| 0048 | DEC-346, DEC-346=C | accepted | Apple SSO permanently dropped from MVP — layout collapses to 3 providers (Google + X + Email) | auth, sso, apple, providers | [0048-apple-sso-dropped-entirely-dec346.md](0048-apple-sso-dropped-entirely-dec346.md) |
 | 0049 | DEC-355 | accepted | Drop F-001 guest-mode editor — tadaify is signup-first (Linktree/Beacons model) | onboarding, guest-mode, signup-flow, f-001 | [0049-drop-f001-guest-mode-signup-first.md](0049-drop-f001-guest-mode-signup-first.md) |
 
 ---

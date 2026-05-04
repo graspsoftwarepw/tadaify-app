@@ -4,6 +4,7 @@ All notable changes to tadaify are documented here.
 Format: date · description · BR/TR refs · PR link.
 
 - 2026-05-04 · cleanup: drop F-001 guest-mode + `guest_drafts` ENTIRELY (DEC-355=C) — landing FAQ "How fast can I launch?" answer reworded to remove guest-mode promise; `docs/specs/functional-spec.md` §3.1 tombstoned; routing table `tadaify.com/try` marked REMOVED; `docs/decisions/0049-drop-f001-guest-mode-signup-first.md` (DEC-355) added; U1 unit test + S1/S2 Playwright spec verify absence — Issue tadaify-app#184
+- 2026-05-04 · cleanup: drop Apple SSO entirely from MVP (DEC-346=C) — provider grid collapses 4→3 (Google + X + Email); Apple button removed from `app/routes/login.tsx` + `app/routes/register.tsx`; mockups `login.html` + `register.html` updated; DEC-0048 added to decisions; issue tadaify-app#131 closed wontfix — Issue tadaify-app#183
 
 - 2026-05-03 · feat: F-APP-DASHBOARD-001b — Design panel: 8 sub-tabs (Theme/Profile/Background/Text/Buttons/Animations/Colors/Footer) + accordion sidebar + breadcrumb stepper + URL routing (?tab=design&subtab=<x>, default=background); tier-gate at SAVE (Image/Video→Creator $7.99, DEC-043/279/287); AP-001 enforced; DEC-OPT-BADGE default OFF; Animations 2-section per DEC-ANIMATIONS-SPLIT-01=A; VE-26b-01..35 visual checklist; 4 unit test suites U1-U4 + S1-S7 Playwright spec; no DB changes (visual-only slice); wordmark 3-span DEC-WORDMARK-01 — Issue tadaify-app#173
 
