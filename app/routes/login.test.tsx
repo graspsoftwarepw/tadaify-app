@@ -13,10 +13,10 @@
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { resolve } from "path";
+import { fileURLToPath } from "url";
 
 const loginSrc = readFileSync(
-  resolve(__dirname, "login.tsx"),
+  fileURLToPath(new URL("./login.tsx", import.meta.url)),
   "utf8",
 );
 
