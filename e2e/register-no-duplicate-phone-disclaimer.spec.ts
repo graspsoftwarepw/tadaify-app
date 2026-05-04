@@ -39,6 +39,11 @@ async function cleanupHandleReservations(prefix: string): Promise<void> {
   }
 }
 
+/** Generate a unique handle per run to avoid stale reservations across reruns */
+function uniqueHandle(testInfo: { workerIndex: number }): string {
+  return `${HANDLE_PREFIX}-${Date.now()}-${testInfo.workerIndex}`;
+}
+
 test.beforeAll(async () => {
   await cleanupHandleReservations(HANDLE_PREFIX);
 });
@@ -52,12 +57,12 @@ test.afterAll(async () => {
 // Covers: Bug #1 (tadaify-app#188)
 // ---------------------------------------------------------------------------
 
-test("S1 — phone disclaimer renders exactly once on Section B (Bug #1)", async ({ page }) => {
+test("S1 — phone disclaimer renders exactly once on Section B (Bug #1)", async ({ page }, testInfo) => {
   // Navigate to /register
   await page.goto("/register");
 
-  // Section A: claim a handle to advance to Section B
-  const handle = `${HANDLE_PREFIX}a`;
+  // Section A: claim a unique handle to advance to Section B (unique per run)
+  const handle = uniqueHandle(testInfo);
   await expect(page.locator("input#handle")).toBeVisible({ timeout: 10_000 });
   await page.locator("input#handle").fill(handle);
 

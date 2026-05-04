@@ -16,6 +16,8 @@
  *     checked={isSelected} correctly (action path tested via U3-U5).
  */
 
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
 import { describe, it, expect } from "vitest";
 import {
   isValidTemplateId,
@@ -23,6 +25,13 @@ import {
   loader,
   action,
 } from "./onboarding.template";
+
+// ── Shared source read (ESM-compatible) ──────────────────────────────────────
+
+const templateSrc = readFileSync(
+  fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
+  "utf8"
+);
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -158,40 +167,22 @@ describe("onboarding.template — U3: each template card has a styled mini-previ
     // Verify that each PRESET_TEMPLATES entry has a corresponding CSS class
     // .preview-<id> defined in the component source (static source assertion).
     // This is a regression lock: previous impl only rendered emoji+tagline.
-    const { readFileSync } = require("fs");
-    const { fileURLToPath } = require("url");
-    const src = readFileSync(
-      fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
-      "utf8"
-    );
     for (const t of PRESET_TEMPLATES) {
-      expect(src).toContain(`preview-${t.id}`);
+      expect(templateSrc).toContain(`preview-${t.id}`);
     }
   });
 
   it("source contains expected font-family per template (Chopin → Georgia/Crimson Pro, Neon → Inter, etc.)", () => {
-    const { readFileSync } = require("fs");
-    const { fileURLToPath } = require("url");
-    const src = readFileSync(
-      fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
-      "utf8"
-    );
     // Chopin / Minimal / Nightfall use serif fonts
-    expect(src).toMatch(/preview-chopin.*?font-family.*?Georgia|font-family.*?Georgia.*?preview-chopin/s);
+    expect(templateSrc).toMatch(/preview-chopin.*?font-family.*?Georgia|font-family.*?Georgia.*?preview-chopin/s);
     // Neon / Sunrise use Inter
-    expect(src).toMatch(/preview-neon.*?font-family.*?Inter|Inter.*?preview-neon/s);
+    expect(templateSrc).toMatch(/preview-neon.*?font-family.*?Inter|Inter.*?preview-neon/s);
   });
 
   it("source contains preview-inner wrapper class within template cards", () => {
-    const { readFileSync } = require("fs");
-    const { fileURLToPath } = require("url");
-    const src = readFileSync(
-      fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
-      "utf8"
-    );
-    expect(src).toContain("preview-inner");
+    expect(templateSrc).toContain("preview-inner");
     // Sample link element in preview (→ Latest post)
-    expect(src).toContain("preview-link");
+    expect(templateSrc).toContain("preview-link");
   });
 });
 
@@ -199,24 +190,12 @@ describe("onboarding.template — U3: each template card has a styled mini-previ
 
 describe("onboarding.template — U4: no deferred-feature copy (Bug #4b)", () => {
   it("page does not render 'coming in a future update' deferred-feature copy", () => {
-    const { readFileSync } = require("fs");
-    const { fileURLToPath } = require("url");
-    const src = readFileSync(
-      fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
-      "utf8"
-    );
-    expect(src).not.toMatch(/coming in a future update/i);
+    expect(templateSrc).not.toMatch(/coming in a future update/i);
   });
 
   it("source does not contain 'Live preview' deferred right-pane copy", () => {
-    const { readFileSync } = require("fs");
-    const { fileURLToPath } = require("url");
-    const src = readFileSync(
-      fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
-      "utf8"
-    );
     // The previous stub rendered "Live preview · Coming in a future update."
-    expect(src).not.toMatch(/Live preview[\s·]*Coming/i);
+    expect(templateSrc).not.toMatch(/Live preview[\s·]*Coming/i);
   });
 });
 
@@ -253,15 +232,9 @@ describe("onboarding.template — U5: controlled radio selection (Bug #5)", () =
   });
 
   it("source uses checked={isSelected} (controlled) not defaultChecked (uncontrolled)", () => {
-    const { readFileSync } = require("fs");
-    const { fileURLToPath } = require("url");
-    const src = readFileSync(
-      fileURLToPath(new URL("./onboarding.template.tsx", import.meta.url)),
-      "utf8"
-    );
     // Bug #5 was caused by defaultChecked (uncontrolled). Fix uses checked={}.
-    expect(src).toContain("checked={isSelected}");
-    expect(src).not.toContain("defaultChecked={isSelected}");
+    expect(templateSrc).toContain("checked={isSelected}");
+    expect(templateSrc).not.toContain("defaultChecked={isSelected}");
   });
 });
 
