@@ -110,7 +110,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     // Finalize the reserved slot as 'failed' — does NOT consume a successful-send cap slot.
     if (supabaseServiceRoleKey && rateLimitResult?.reservation_id && rateLimitResult.mode === "atomic") {
-      finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "failed");
+      await finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "failed");
     }
 
     // Pattern-match on the Supabase "signups not allowed for otp" phrase.
@@ -135,10 +135,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   // Finalize the slot as 'sent' — completes the two-phase reservation.
   if (supabaseServiceRoleKey && rateLimitResult) {
     if (rateLimitResult.mode === "atomic" && rateLimitResult.reservation_id) {
-      finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "sent");
+      await finalizeOtpSlot(supabaseUrl, supabaseServiceRoleKey, rateLimitResult.reservation_id, "sent");
     } else if (rateLimitResult.mode === "legacy") {
       // Fallback path: RPC was unavailable, so record the successful send via REST.
-      recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, null, "sent");
+      await recordOtpAttempt(supabaseUrl, supabaseServiceRoleKey, emailHash, null, "sent");
     }
   }
 
