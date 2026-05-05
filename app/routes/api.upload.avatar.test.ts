@@ -10,6 +10,25 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { action, detectImageType } from "./api.upload.avatar";
 import { mockR2 } from "~/lib/mock-r2";
 
+// ── Fetch mock helpers (hermetic — no real Supabase required) ─────────────────
+
+/**
+ * Stub global fetch to simulate Supabase /auth/v1/user returning the given
+ * HTTP status. Used by tests that exercise the JWT-verification path without
+ * MOCK_R2 mode (i.e. tokens that don't start with "mock-user-").
+ */
+function mockAuthFetch(status: number, body: unknown = {}) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      })
+    )
+  );
+}
+
 // ── Test fixtures: minimal valid magic bytes ───────────────────────────────────
 
 // JPG: FF D8 FF + padding
@@ -111,6 +130,7 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
 
   afterEach(() => {
     mockR2.clear();
+    vi.restoreAllMocks();
   });
 
   // ── Method check ────────────────────────────────────────────────────────────
@@ -130,7 +150,9 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   it("rejects 401 on invalid JWT (non-mock-user format with MOCK_R2)", async () => {
-    // Malformed token that doesn't match the mock-user-<id> pattern
+    // Malformed token — doesn't match "mock-user-<id>", so code falls through to
+    // verifyJwt(). Stub fetch to simulate Supabase returning 401 (no real network).
+    mockAuthFetch(401, { message: "Invalid JWT" });
     const req = await makeMultipartRequest(JPG_BYTES, { bearer: "invalid-jwt-token" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
