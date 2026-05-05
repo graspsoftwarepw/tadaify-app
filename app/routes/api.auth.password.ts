@@ -58,7 +58,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   // ── Supabase password update ─────────────────────────────────────────────
 
-  const env = context?.cloudflare?.env as Record<string, string> | undefined;
+  const env = context?.cloudflare?.env as unknown as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
   const supabaseAnonKey = env?.SUPABASE_ANON_KEY;
 

@@ -77,7 +77,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     );
   }
 
-  const env = context?.cloudflare?.env as Record<string, string> | undefined;
+  const env = context?.cloudflare?.env as unknown as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
   const serviceKey = env?.SUPABASE_SERVICE_ROLE_KEY;
 

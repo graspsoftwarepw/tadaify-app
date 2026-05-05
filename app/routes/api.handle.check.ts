@@ -51,7 +51,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   // In Workers runtime, Supabase client is constructed from env bindings.
   // We use a lightweight fetch-based query to avoid bundling the Supabase SDK
   // (it's large). The service-role key is injected via Cloudflare secret.
-  const env = context?.cloudflare?.env as Record<string, string> | undefined;
+  const env = context?.cloudflare?.env as unknown as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
   const serviceKey = env?.SUPABASE_SERVICE_ROLE_KEY;
 
