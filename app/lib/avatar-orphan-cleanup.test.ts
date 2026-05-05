@@ -21,13 +21,13 @@ import {
 // ── Mock R2 bucket ────────────────────────────────────────────────────────────
 
 class MockBucket implements R2BucketLike {
-  private store = new Map<string, { key: string; uploadedAt: Date }>();
+  private store = new Map<string, { key: string; uploaded: Date }>();
   public deletedKeys: string[] = [];
 
   seed(key: string, ageMs: number) {
     this.store.set(key, {
       key,
-      uploadedAt: new Date(Date.now() - ageMs),
+      uploaded: new Date(Date.now() - ageMs),
     });
   }
 

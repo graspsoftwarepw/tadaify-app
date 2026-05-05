@@ -24,7 +24,7 @@ export const ORPHAN_TTL_MS = 24 * 60 * 60 * 1000;
 // ── Interface ──────────────────────────────────────────────────────────────────
 
 export interface R2ListResult {
-  objects: Array<{ key: string; uploadedAt: Date }>;
+  objects: Array<{ key: string; uploaded: Date }>;
 }
 
 export interface R2BucketLike {
@@ -66,7 +66,7 @@ export async function runOrphanCleanup(deps: AvatarCleanupDeps): Promise<Cleanup
   ]);
 
   for (const obj of listResult.objects) {
-    const ageMs = now - obj.uploadedAt.getTime();
+    const ageMs = now - obj.uploaded.getTime();
 
     // Keep objects that are still "fresh" (within TTL)
     if (ageMs < ORPHAN_TTL_MS) {
