@@ -177,16 +177,19 @@ test.describe("S2 — signup OTP email greets @handle (DEC-364=A)", () => {
     const email = await getMailpitEmailContent(SIGNUP_EMAIL, 30_000);
     expect(email).not.toBeNull();
 
-    const fullContent = (email?.html ?? "") + (email?.text ?? "");
+    // Check HTML and text bodies INDEPENDENTLY (not concatenated)
+    const htmlBody = email?.html ?? "";
+    const textBody = email?.text ?? "";
 
-    // MUST contain @handle — not @email
-    expect(fullContent).toContain(`@${SIGNUP_HANDLE}`);
+    // HTML part MUST contain @handle
+    expect(htmlBody).toContain(`@${SIGNUP_HANDLE}`);
+    // Text part MUST contain @handle
+    expect(textBody).toContain(`@${SIGNUP_HANDLE}`);
 
-    // Regression-lock: email address must NOT appear as the @ greeting
-    // (the email address IS in "to:" header — just not in the greeting body)
-    const emailDomain = SIGNUP_EMAIL.split("@")[1];
-    // The greeting line specifically should not show "@user@domain" pattern
-    expect(fullContent).not.toMatch(new RegExp(`@${SIGNUP_EMAIL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i"));
+    // Regression-lock: email address must NOT appear as the @ greeting in EITHER part
+    const emailPattern = new RegExp(`@${SIGNUP_EMAIL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i");
+    expect(htmlBody).not.toMatch(emailPattern);
+    expect(textBody).not.toMatch(emailPattern);
   });
 });
 
@@ -263,14 +266,18 @@ test.describe("S3 — login OTP email greets @handle from profile lookup (DEC-36
     const loginEmail = await getMailpitEmailContent(LOGIN_EMAIL, 30_000);
     expect(loginEmail).not.toBeNull();
 
-    const loginFullContent = (loginEmail?.html ?? "") + (loginEmail?.text ?? "");
+    // Check HTML and text bodies INDEPENDENTLY (not concatenated)
+    const loginHtmlBody = loginEmail?.html ?? "";
+    const loginTextBody = loginEmail?.text ?? "";
 
-    // MUST greet with @handle — not @email address
-    expect(loginFullContent).toContain(`@${LOGIN_HANDLE}`);
+    // HTML part MUST greet with @handle
+    expect(loginHtmlBody).toContain(`@${LOGIN_HANDLE}`);
+    // Text part MUST greet with @handle
+    expect(loginTextBody).toContain(`@${LOGIN_HANDLE}`);
 
-    // Regression-lock: email address must NOT appear as the greeting target
-    expect(loginFullContent).not.toMatch(
-      new RegExp(`@${LOGIN_EMAIL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i")
-    );
+    // Regression-lock: email address must NOT appear as the greeting target in EITHER part
+    const loginEmailPattern = new RegExp(`@${LOGIN_EMAIL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i");
+    expect(loginHtmlBody).not.toMatch(loginEmailPattern);
+    expect(loginTextBody).not.toMatch(loginEmailPattern);
   });
 });
