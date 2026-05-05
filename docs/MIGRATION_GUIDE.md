@@ -11,6 +11,32 @@ Migrations apply automatically to DEV on merge to `main` (GitHub Actions
 
 ## Pending for PROD
 
+### 20260505182021_profile_extras_base.sql
+
+**Effect:** Creates `public.profile_extras` table (TR-tadaify-007 base contract): PK `user_id UUID`
+references `auth.users(id) ON DELETE CASCADE`; `tier_slug TEXT NOT NULL DEFAULT 'free'` CHECK enum;
+`created_at`/`updated_at` timestamps; `updated_at` trigger; RLS own-row SELECT/INSERT/UPDATE.
+Also updates `delete_user_data()` RPC to include `DELETE FROM profile_extras`.
+
+**Why:** Required for F-ONBOARDING-001d (#139) — tier-step DB persistence. Sister migration
+for tadaify-app#138 (R2 avatar) depends on this table existing first.
+
+**Pre-steps:** none — new table; no destructive changes to existing schema.
+
+**Post-steps:**
+- Re-deploy `user-export-data` Edge Function (now includes `profile_extras` in GDPR export).
+- Sister migration tadaify-app#138 (ALTER ADD COLUMN avatar_r2_key) must be applied AFTER this one.
+
+**Rollback:**
+```sql
+-- WARNING: drops all profile_extras data including any future columns from #138
+DROP TABLE IF EXISTS public.profile_extras CASCADE;
+DROP FUNCTION IF EXISTS public.profile_extras_set_updated_at() CASCADE;
+-- Also restore delete_user_data() to previous version (remove profile_extras DELETE line)
+```
+
+---
+
 ### 20260503000001_app_dashboard_tables.sql
 
 **Effect:** Creates `account_settings`, `pages`, `blocks` tables; alters `profiles` to add

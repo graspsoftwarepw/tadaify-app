@@ -337,3 +337,50 @@ COMMENT ON FUNCTION public.finalize_otp_slot IS
   'Finalizes a reserved OTP slot to sent (Auth succeeded) or failed (Auth error). '
   'Idempotent: returns finalized=false if already finalized or not found. '
   'Part of the two-phase OTP rate-limit pattern (BR-OTP-RATE-LIMIT-001).';
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- profile_extras — shared onboarding/profile extras
+-- F-ONBOARDING-001d (#139) — TR-tadaify-007 base contract
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS public.profile_extras (
+  user_id     UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  tier_slug   TEXT NOT NULL DEFAULT 'free'
+              CHECK (tier_slug IN ('free', 'creator', 'pro', 'business')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.profile_extras ENABLE ROW LEVEL SECURITY;
+
+-- RLS: own-row SELECT / INSERT / UPDATE; service_role bypass (default Supabase behavior)
+CREATE POLICY "profile_extras_own_select" ON public.profile_extras
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "profile_extras_own_insert" ON public.profile_extras
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "profile_extras_own_update" ON public.profile_extras
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- updated_at trigger
+CREATE OR REPLACE FUNCTION public.profile_extras_set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER profile_extras_set_updated_at
+  BEFORE UPDATE ON public.profile_extras
+  FOR EACH ROW EXECUTE FUNCTION public.profile_extras_set_updated_at();
+
+-- Note: avatar_r2_key TEXT NULL column added by tadaify-app#138 migration (ALTER TABLE)
+
+COMMENT ON TABLE public.profile_extras IS
+  'Shared profile-side extras keyed on user_id. Incrementally extended per sub-feature. '
+  'Initial column: tier_slug (billing tier, always ''free'' at onboarding). '
+  'TR-tadaify-007. F-ONBOARDING-001d (#139).';

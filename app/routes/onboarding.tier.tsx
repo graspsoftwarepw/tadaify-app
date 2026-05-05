@@ -12,17 +12,94 @@
  *   Button label changed to "Take me to my dashboard →" — "my page" was
  *   misleading since the page is not published at this point.
  *
+ * TR-tadaify-004: action UPSERTs tier_slug='free' into profile_extras via
+ *   service-role REST. tier param in URL/body is IGNORED — server enforces
+ *   'free' regardless (DEC-311=A enforcement). If user is unauthenticated
+ *   (no session cookie), the DB write is skipped and the redirect still goes
+ *   to /app (which itself will gate auth and redirect to /login if needed).
+ *
  * URL state:
  *   loader reads → all accumulated params (for back-link construction only)
- *   action emits → /app directly (DEC-366=A)
+ *   action emits → /app directly (DEC-366=A), after profile_extras UPSERT
  *
  * Covers: BR-ONBOARDING-005 (step 5 plan overview)
+ * Story: F-ONBOARDING-001d (#139), TR-tadaify-007 + TR-tadaify-004
  */
 
 import { redirect } from "react-router";
 import { Link } from "react-router";
 import type { Route } from "./+types/onboarding.tier";
 import { CREATOR_PRICE_MONTHLY, PRO_PRICE_MONTHLY, BUSINESS_PRICE_MONTHLY } from "~/lib/tier-gate";
+
+// ─── Worker env interface ──────────────────────────────────────────────────────
+
+interface WorkerEnv {
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+}
+
+// ─── Auth helpers (shared pattern with app.tsx / api.account.dismiss-welcome.ts) ─
+
+/**
+ * Extracts the Supabase JWT from the Authorization header or sb-*-auth-token cookie.
+ * Returns null if no token is found.
+ */
+export function extractAccessToken(request: Request): string | null {
+  const authHeader = request.headers.get("Authorization") ?? "";
+  if (authHeader.startsWith("Bearer ")) return authHeader.slice(7);
+
+  const cookieHeader = request.headers.get("Cookie") ?? "";
+  for (const pair of cookieHeader.split(";").map((c) => c.trim())) {
+    const eqIdx = pair.indexOf("=");
+    if (eqIdx < 0) continue;
+    const key = pair.slice(0, eqIdx).trim();
+    const val = pair.slice(eqIdx + 1).trim();
+    if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(val));
+        if (parsed?.access_token) return parsed.access_token as string;
+      } catch {
+        // Not JSON — skip
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Persists tier_slug='free' into profile_extras for the authenticated user.
+ * Uses an UPSERT (ON CONFLICT DO UPDATE) so re-runs are idempotent (ECN-139-02).
+ * Returns true on success or if env vars are missing (action still proceeds to /app).
+ * TR-tadaify-004: tier param is NEVER used here — always writes 'free'.
+ */
+export async function upsertTierFree(userId: string, env: WorkerEnv): Promise<void> {
+  const supabaseUrl = env.SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    console.warn("[onboarding.tier] SUPABASE env vars missing — skipping profile_extras UPSERT");
+    return;
+  }
+
+  const res = await fetch(`${supabaseUrl}/rest/v1/profile_extras`, {
+    method: "POST",
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      tier_slug: "free",
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[onboarding.tier] profile_extras UPSERT failed:", res.status, body);
+    // Non-fatal: user still lands on /app; tier defaults to 'free' in DB via DEFAULT
+  }
+}
 
 // ─── Tier data ─────────────────────────────────────────────────────────────────
 
@@ -110,9 +187,33 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 // ─── Action ────────────────────────────────────────────────────────────────────
 // DEC-366=A: CTA submits form → action redirects directly to /app.
-// No form data processing needed — onboarding accumulation is complete.
+// TR-tadaify-004: action UPSERTs tier_slug='free' into profile_extras BEFORE redirect.
+// tier param in URL/body is IGNORED — server always writes 'free' (DEC-311=A / ECN-139-01).
 
-export async function action(_: Route.ActionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
+  const env = (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {};
+
+  // Verify JWT and extract user ID so we can write to profile_extras.
+  const accessToken = extractAccessToken(request);
+  if (accessToken) {
+    const supabaseUrl = env.SUPABASE_URL;
+    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceKey) {
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (userRes.ok) {
+        const userData = (await userRes.json()) as { id?: string };
+        if (userData?.id) {
+          await upsertTierFree(userData.id, env);
+        }
+      }
+    }
+  }
+  // Always redirect to /app — unauthenticated case is handled by /app loader itself.
   return redirect("/app");
 }
 
@@ -255,6 +356,27 @@ export default function TierPage({ loaderData }: Route.ComponentProps) {
             </ul>
           </div>
         ))}
+      </div>
+
+      {/* Plan-lock confidence chip — DEC-311=A / issue requirement: "🔒 Price locked for life" */}
+      <div
+        aria-label="Price locked for life guarantee"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          background: "rgba(245,158,11,0.08)",
+          border: "1px solid rgba(245,158,11,0.25)",
+          borderRadius: "var(--radius-full, 9999px)",
+          padding: "6px 14px",
+          fontSize: 13,
+          fontWeight: 600,
+          color: "var(--warning, #B45309)",
+          marginBottom: 16,
+        }}
+      >
+        <span aria-hidden>🔒</span>
+        When you do upgrade — your price is locked for life
       </div>
 
       <p style={{ fontSize: 13, color: "var(--fg-muted)", marginBottom: 24, lineHeight: 1.5 }}>
