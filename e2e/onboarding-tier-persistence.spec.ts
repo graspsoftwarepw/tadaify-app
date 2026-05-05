@@ -95,13 +95,26 @@ async function signInUser(email: string): Promise<string> {
 
 /**
  * Deletes all test users whose emails start with the given prefix (cleanup).
+ * Uses the Admin API (/auth/v1/admin/users) — NOT the PostgREST auth.users table.
  */
 async function cleanupUsersByEmailPrefix(prefix: string): Promise<void> {
   if (!SERVICE_ROLE_KEY) return;
   try {
-    const users = (await serviceRoleGet(
-      `auth.users?email=ilike.${encodeURIComponent(prefix + "*")}&select=id`,
-    )) as Array<{ id: string }>;
+    // List users via Admin API (paginated, but test volumes are small)
+    const listRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`, {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    });
+    if (!listRes.ok) {
+      console.warn("[cleanup] Admin user list failed:", listRes.status);
+      return;
+    }
+    const data = (await listRes.json()) as { users?: Array<{ id: string; email?: string }> };
+    const users = (data.users ?? []).filter(
+      (u) => u.email && u.email.startsWith(prefix),
+    );
     for (const u of users) {
       await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${u.id}`, {
         method: "DELETE",
@@ -321,14 +334,9 @@ test("S4 — GDPR delete cascades profile_extras: delete_user_data() removes row
     expect(afterRpc.length).toBe(0);
 
     // Also verify FK cascade: insert a fresh row and test auth.users DELETE
-    await createTestUser("test-t139s4cascade@local.test");
-    const cascadeId = (
-      (await serviceRoleGet(
-        `auth.users?email=eq.test-t139s4cascade%40local.test&select=id`,
-      )) as Array<{ id: string }>
-    )[0]?.id;
+    const cascadeId = await createTestUser("test-t139s4cascade@local.test");
 
-    if (cascadeId) {
+    {
       // Insert profile_extras row directly via service_role
       await fetch(`${SUPABASE_URL}/rest/v1/profile_extras`, {
         method: "POST",
@@ -386,10 +394,13 @@ test("S5 — GDPR export: user-export-data Edge Function returns tier_slug='free
       },
     });
 
-    // Edge function is deployed locally via supabase start — if not available, skip gracefully
+    // Edge function must be deployed when SERVICE_ROLE_KEY is set (full local env).
+    // 404/503 = missing deployment → test failure, not a silent skip.
     if (exportRes.status === 404 || exportRes.status === 503) {
-      console.warn("S5: user-export-data Edge Function not available locally — skipping body assertion");
-      return;
+      throw new Error(
+        `S5: user-export-data Edge Function unavailable (${exportRes.status}). ` +
+        `Deploy it via 'supabase functions serve' before running this test.`,
+      );
     }
 
     expect(exportRes.status).toBe(200);

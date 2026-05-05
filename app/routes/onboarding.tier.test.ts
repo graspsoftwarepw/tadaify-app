@@ -319,7 +319,7 @@ describe("onboarding.tier — U_TIER_DB_1: upsertTierFree calls Supabase with ti
     expect(body.tier_slug).toBe("free");
   });
 
-  it("uses merge-duplicates Prefer header for idempotent UPSERT", async () => {
+  it("uses ignore-duplicates Prefer header to avoid overwriting existing rows", async () => {
     mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
 
     await upsertTierFree("user-abc-123", {
@@ -329,7 +329,8 @@ describe("onboarding.tier — U_TIER_DB_1: upsertTierFree calls Supabase with ti
 
     const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
     const preferHeader = (opts.headers as Record<string, string>)["Prefer"] ?? "";
-    expect(preferHeader).toContain("merge-duplicates");
+    expect(preferHeader).toContain("ignore-duplicates");
+    expect(preferHeader).not.toContain("merge-duplicates");
   });
 });
 
@@ -377,8 +378,8 @@ describe("onboarding.tier — U_TIER_DB_3: upsertTierFree idempotent on 2nd call
     globalThis.fetch = originalFetch;
   });
 
-  it("second upsert does not throw even if server returns 409 (merge-duplicates handles it)", async () => {
-    // First call returns 201, second call returns 200 (merge-duplicates)
+  it("second insert succeeds (ignore-duplicates returns 200 for existing row)", async () => {
+    // First call returns 201, second call returns 200 (ignore-duplicates: row exists, no-op)
     mockFetch
       .mockResolvedValueOnce(new Response("", { status: 201 }))
       .mockResolvedValueOnce(new Response("", { status: 200 }));
@@ -388,6 +389,71 @@ describe("onboarding.tier — U_TIER_DB_3: upsertTierFree idempotent on 2nd call
     await expect(upsertTierFree("user-dup", env)).resolves.not.toThrow();
     await expect(upsertTierFree("user-dup", env)).resolves.not.toThrow();
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_8: upsertTierFree throws on Supabase failure", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("throws when Supabase returns 500 (server error)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("internal error", { status: 500 }),
+    );
+
+    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    await expect(upsertTierFree("user-fail", env)).rejects.toThrow(
+      /profile_extras INSERT failed: 500/,
+    );
+  });
+
+  it("throws when Supabase returns 403 (RLS/permission error)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("permission denied", { status: 403 }),
+    );
+
+    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    await expect(upsertTierFree("user-denied", env)).rejects.toThrow(
+      /profile_extras INSERT failed: 403/,
+    );
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_9: existing non-free tier is not overwritten", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("uses ignore-duplicates so existing row is preserved (not merge-duplicates)", async () => {
+    // ignore-duplicates returns 200 with empty body when row already exists
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 200 }));
+
+    await upsertTierFree("user-existing-pro", {
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "sk",
+    });
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const preferHeader = (opts.headers as Record<string, string>)["Prefer"] ?? "";
+    // Must use ignore-duplicates (INSERT ... ON CONFLICT DO NOTHING)
+    expect(preferHeader).toContain("ignore-duplicates");
+    // Must NOT use merge-duplicates (which would overwrite tier_slug)
+    expect(preferHeader).not.toContain("merge-duplicates");
   });
 });
 

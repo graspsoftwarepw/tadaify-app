@@ -68,15 +68,18 @@ export function extractAccessToken(request: Request): string | null {
 
 /**
  * Persists tier_slug='free' into profile_extras for the authenticated user.
- * Uses an UPSERT (ON CONFLICT DO UPDATE) so re-runs are idempotent (ECN-139-02).
- * Returns true on success or if env vars are missing (action still proceeds to /app).
+ * Uses INSERT with ON CONFLICT DO NOTHING (ignore-duplicates) so an existing
+ * row (potentially with a non-free tier) is never overwritten (ECN-139-02).
+ * Throws on real persistence failures so the action cannot claim completion
+ * while no row was created.
+ * Graceful skip: returns silently when env vars are missing (dev/test).
  * TR-tadaify-004: tier param is NEVER used here — always writes 'free'.
  */
 export async function upsertTierFree(userId: string, env: WorkerEnv): Promise<void> {
   const supabaseUrl = env.SUPABASE_URL;
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) {
-    console.warn("[onboarding.tier] SUPABASE env vars missing — skipping profile_extras UPSERT");
+    console.warn("[onboarding.tier] SUPABASE env vars missing — skipping profile_extras INSERT");
     return;
   }
 
@@ -86,7 +89,7 @@ export async function upsertTierFree(userId: string, env: WorkerEnv): Promise<vo
       apikey: serviceKey,
       Authorization: `Bearer ${serviceKey}`,
       "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=minimal",
+      Prefer: "resolution=ignore-duplicates,return=minimal",
     },
     body: JSON.stringify({
       user_id: userId,
@@ -96,8 +99,9 @@ export async function upsertTierFree(userId: string, env: WorkerEnv): Promise<vo
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error("[onboarding.tier] profile_extras UPSERT failed:", res.status, body);
-    // Non-fatal: user still lands on /app; tier defaults to 'free' in DB via DEFAULT
+    throw new Error(
+      `[onboarding.tier] profile_extras INSERT failed: ${res.status} ${body}`,
+    );
   }
 }
 
@@ -187,8 +191,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 // ─── Action ────────────────────────────────────────────────────────────────────
 // DEC-366=A: CTA submits form → action redirects directly to /app.
-// TR-tadaify-004: action UPSERTs tier_slug='free' into profile_extras BEFORE redirect.
+// TR-tadaify-004: action INSERTs tier_slug='free' into profile_extras BEFORE redirect.
 // tier param in URL/body is IGNORED — server always writes 'free' (DEC-311=A / ECN-139-01).
+// Codex Finding 1: authenticated users with env configured → throw on failed DB write.
+// Graceful skip only for: missing env vars or missing session (unauthenticated).
 
 export async function action({ request, context }: Route.ActionArgs) {
   const env = (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {};
@@ -208,6 +214,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       if (userRes.ok) {
         const userData = (await userRes.json()) as { id?: string };
         if (userData?.id) {
+          // upsertTierFree throws on real DB failures — let it propagate (500).
           await upsertTierFree(userData.id, env);
         }
       }
