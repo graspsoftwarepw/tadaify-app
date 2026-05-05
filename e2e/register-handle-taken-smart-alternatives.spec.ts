@@ -38,19 +38,22 @@ const TAKEN_HANDLE = "t190s1taken";
 // ---------------------------------------------------------------------------
 
 async function reserveHandle(handle: string): Promise<void> {
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/handle_reservations`, {
-      method: "POST",
-      headers: {
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates",
-      },
-      body: JSON.stringify({ handle, status: "reserved" }),
-    });
-  } catch {
-    // best-effort
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/handle_reservations`, {
+    method: "POST",
+    headers: {
+      apikey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates",
+    },
+    body: JSON.stringify({
+      handle,
+      expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`reserveHandle failed (${res.status}): ${body}`);
   }
 }
 

@@ -33,11 +33,12 @@ const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-// Unique seeds for this spec (prefix t190s2)
-const SIGNUP_HANDLE = `t190s2sig${Date.now()}`;
-const SIGNUP_EMAIL = `t190s2sig${Date.now()}@local.test`;
-const LOGIN_HANDLE = "t190s3login"; // pre-seeded user (created in beforeAll)
-const LOGIN_EMAIL = `t190s3login@local.test`;
+// Unique seeds for this spec (prefix t190s2/s3) — unique per run for idempotency
+const RUN_ID = Date.now();
+const SIGNUP_HANDLE = `t190s2s${RUN_ID}`.slice(0, 30);
+const SIGNUP_EMAIL = `t190s2s${RUN_ID}@local.test`;
+const LOGIN_HANDLE = `t190s3l${RUN_ID}`.slice(0, 30);
+const LOGIN_EMAIL = `t190s3l${RUN_ID}@local.test`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -104,6 +105,29 @@ async function deleteHandleReservation(handle: string): Promise<void> {
   } catch { /* best-effort */ }
 }
 
+async function cleanupAuthUserByEmail(email: string): Promise<void> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=100`, {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as { users?: Array<{ id: string; email?: string }> };
+    const match = (data.users ?? []).find((u) => u.email === email);
+    if (match) {
+      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${match.id}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        },
+      });
+    }
+  } catch { /* best-effort */ }
+}
+
 // ---------------------------------------------------------------------------
 // S2 — signup OTP email greets @{handle}, not @{email}
 // Covers Bug #2a (tadaify-app#190)
@@ -111,11 +135,13 @@ async function deleteHandleReservation(handle: string): Promise<void> {
 
 test.describe("S2 — signup OTP email greets @handle (DEC-364=A)", () => {
   test.beforeAll(async () => {
+    await cleanupAuthUserByEmail(SIGNUP_EMAIL);
     await clearMailpitForEmail(SIGNUP_EMAIL);
     await deleteHandleReservation(SIGNUP_HANDLE);
   });
 
   test.afterAll(async () => {
+    await cleanupAuthUserByEmail(SIGNUP_EMAIL);
     await deleteHandleReservation(SIGNUP_HANDLE);
     await clearMailpitForEmail(SIGNUP_EMAIL);
   });
@@ -171,13 +197,13 @@ test.describe("S2 — signup OTP email greets @handle (DEC-364=A)", () => {
 
 test.describe("S3 — login OTP email greets @handle from profile lookup (DEC-364=A)", () => {
   test.beforeAll(async () => {
-    // Seed a user with a known handle for the login test.
-    // We need them registered first — use the signup API directly.
+    await cleanupAuthUserByEmail(LOGIN_EMAIL);
     await clearMailpitForEmail(LOGIN_EMAIL);
     await deleteHandleReservation(LOGIN_HANDLE);
   });
 
   test.afterAll(async () => {
+    await cleanupAuthUserByEmail(LOGIN_EMAIL);
     await deleteHandleReservation(LOGIN_HANDLE);
     await clearMailpitForEmail(LOGIN_EMAIL);
   });

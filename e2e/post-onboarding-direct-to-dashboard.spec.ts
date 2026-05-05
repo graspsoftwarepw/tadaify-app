@@ -34,8 +34,9 @@ const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-const HANDLE = "t190s5onboard";
-const EMAIL = `t190s5onboard@local.test`;
+const RUN_ID = Date.now();
+const HANDLE = `t190s5o${RUN_ID}`.slice(0, 30);
+const EMAIL = `t190s5o${RUN_ID}@local.test`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -100,16 +101,41 @@ async function deleteHandleReservation(handle: string): Promise<void> {
   } catch { /* best-effort */ }
 }
 
+async function cleanupAuthUserByEmail(email: string): Promise<void> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=100`, {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as { users?: Array<{ id: string; email?: string }> };
+    const match = (data.users ?? []).find((u) => u.email === email);
+    if (match) {
+      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${match.id}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        },
+      });
+    }
+  } catch { /* best-effort */ }
+}
+
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
 
 test.beforeAll(async () => {
+  await cleanupAuthUserByEmail(EMAIL);
   await clearMailpit(EMAIL);
   await deleteHandleReservation(HANDLE);
 });
 
 test.afterAll(async () => {
+  await cleanupAuthUserByEmail(EMAIL);
   await deleteHandleReservation(HANDLE);
   await clearMailpit(EMAIL);
 });
