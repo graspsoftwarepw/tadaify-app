@@ -29,8 +29,13 @@ const SERVICE_ROLE_KEY =
 
 const MAILPIT_URL = "http://localhost:54354";
 
-// Unique per-test handle prefix to avoid collisions with parallel test runs
-const HANDLE_S1 = "t002as1hdr";
+// Unique per-test handle to avoid collisions with parallel test runs.
+// Each S1 test that clicks Continue gets its own handle so handle
+// reservation from one test cannot block another (Codex follow-up F1).
+const HANDLE_S1_A = "t002as1a";
+const HANDLE_S1_B = "t002as1b";
+const HANDLE_S1_BE = "t002as1be";
+const HANDLE_S1_FULL = "t002as1fl";
 const HANDLE_S4 = "t002as4upd";
 
 // ---------------------------------------------------------------------------
@@ -149,31 +154,40 @@ async function enterOtp(page: Page, code: string): Promise<void> {
 test.describe("S1: desktop 1440px — persistent welcome header", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  const S1_EMAIL = `t002as1hdr-${Date.now()}@local.test`;
+  // Each test uses its own handle + email to avoid order-dependent
+  // handle-reservation collisions (Codex follow-up Finding 1).
+  const S1_FULL_EMAIL = `t002as1fl-${Date.now()}@local.test`;
 
   test.afterAll(async () => {
-    await clearHandleReservation(HANDLE_S1);
-    await deleteAuthUserByEmail(S1_EMAIL);
-    await clearMailpitForEmail(S1_EMAIL);
+    // Best-effort cleanup of all per-test handles
+    await Promise.all([
+      clearHandleReservation(HANDLE_S1_A),
+      clearHandleReservation(HANDLE_S1_B),
+      clearHandleReservation(HANDLE_S1_BE),
+      clearHandleReservation(HANDLE_S1_FULL),
+      deleteAuthUserByEmail(S1_FULL_EMAIL),
+      clearMailpitForEmail(S1_FULL_EMAIL),
+    ]);
   });
 
   test("welcome header visible on Section A with correct handle + brand wordmark", async ({ page }) => {
     await page.goto("/register");
 
-    // Type handle
-    await page.fill("#handle-input", HANDLE_S1);
+    // Type handle — Section A only, no Continue click, no reservation
+    await page.fill("#handle-input", HANDLE_S1_A);
 
     // Wait for header to update (real-time, no debounce on header)
     await expect(page.locator("header.welcome-header")).toBeVisible();
-    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1_A}`);
 
     // Brand wordmark must have all 3 spans
     await expect(page.locator("header.welcome-header .brand-wordmark")).toBeVisible();
   });
 
   test("welcome header persists on Section B after Continue click", async ({ page }) => {
+    await clearHandleReservation(HANDLE_S1_B);
     await page.goto("/register");
-    await page.fill("#handle-input", HANDLE_S1);
+    await page.fill("#handle-input", HANDLE_S1_B);
 
     // Wait for availability check (300ms debounce + DB round-trip)
     await expect(page.locator("#handle-availability")).toContainText("Available!", { timeout: 5000 });
@@ -184,12 +198,13 @@ test.describe("S1: desktop 1440px — persistent welcome header", () => {
 
     // Header must still be visible with the same handle
     await expect(page.locator("header.welcome-header")).toBeVisible();
-    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1_B}`);
   });
 
   test("welcome header persists on Section B-email after Email click", async ({ page }) => {
+    await clearHandleReservation(HANDLE_S1_BE);
     await page.goto("/register");
-    await page.fill("#handle-input", HANDLE_S1);
+    await page.fill("#handle-input", HANDLE_S1_BE);
     await expect(page.locator("#handle-availability")).toContainText("Available!", { timeout: 5000 });
     await page.click("button:has-text('Continue')");
     await expect(page.locator("[aria-label='Choose sign-in method']")).toBeVisible();
@@ -200,13 +215,14 @@ test.describe("S1: desktop 1440px — persistent welcome header", () => {
 
     // Header still visible + same handle
     await expect(page.locator("header.welcome-header")).toBeVisible();
-    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1_BE}`);
   });
 
   test("welcome header persists through B-otp → B-password-toggle → C (full email OTP flow)", async ({ page }) => {
-    await clearMailpitForEmail(S1_EMAIL);
+    await clearHandleReservation(HANDLE_S1_FULL);
+    await clearMailpitForEmail(S1_FULL_EMAIL);
     await page.goto("/register");
-    await page.fill("#handle-input", HANDLE_S1);
+    await page.fill("#handle-input", HANDLE_S1_FULL);
     await expect(page.locator("#handle-availability")).toContainText("Available!", { timeout: 5000 });
     await page.click("button:has-text('Continue')");
     await expect(page.locator("[aria-label='Choose sign-in method']")).toBeVisible();
@@ -214,23 +230,23 @@ test.describe("S1: desktop 1440px — persistent welcome header", () => {
     // Email flow → enter email → send code
     await page.click("button:has-text('Continue with Email')");
     await expect(page.locator("[aria-label='Enter email']")).toBeVisible();
-    await page.fill("input[type='email']", S1_EMAIL);
+    await page.fill("input[type='email']", S1_FULL_EMAIL);
     await page.click("button:has-text('Send')");
 
     // ── B-otp: header persists ──
     await page.waitForSelector("[aria-label='Enter verification code']", { timeout: 15000 });
     await expect(page.locator("header.welcome-header")).toBeVisible();
-    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1_FULL}`);
 
     // Fetch OTP from Mailpit and enter it
-    const otp = await getMailpitOtp(S1_EMAIL);
+    const otp = await getMailpitOtp(S1_FULL_EMAIL);
     expect(otp).not.toBeNull();
     await enterOtp(page, otp!);
 
     // ── B-password-toggle: header persists ──
     await expect(page.locator("[aria-label='Login preference']")).toBeVisible({ timeout: 15000 });
     await expect(page.locator("header.welcome-header")).toBeVisible();
-    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1_FULL}`);
 
     // Continue with default OTP mode
     await page.click("button:has-text('Continue →')");
@@ -238,7 +254,7 @@ test.describe("S1: desktop 1440px — persistent welcome header", () => {
     // ── Section C (success): header persists ──
     await expect(page.locator("[aria-label='Registration complete']")).toBeVisible({ timeout: 15000 });
     await expect(page.locator("header.welcome-header")).toBeVisible();
-    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1_FULL}`);
   });
 });
 
