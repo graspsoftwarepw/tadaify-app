@@ -62,11 +62,30 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
+function buildSocialLinksHtml(
+  platforms: string[],
+  socials: Record<string, string>,
+  fgMuted: string,
+  brand: string
+): string {
+  const entries = platforms
+    .filter((p) => socials[p] && socials[p].trim() !== "")
+    .map(
+      (p) =>
+        `<div class="social-row" data-platform="${escapeHtml(p)}">` +
+        `<span class="social-platform">${escapeHtml(p)}</span>` +
+        `<span class="social-value">${escapeHtml(socials[p])}</span>` +
+        `</div>`
+    );
+  if (entries.length === 0) return "";
+  return `<div class="social-links">${entries.join("")}</div>`;
+}
+
 function buildSrcdoc(
   state: OnboardingPreviewState,
   darkMode: boolean
 ): string {
-  const { handle, name, bio, av, tpl } = state;
+  const { handle, name, bio, av, platforms, socials, tpl } = state;
 
   const avatarInitial = (name || handle || "?").charAt(0).toUpperCase();
 
@@ -79,6 +98,10 @@ function buildSrcdoc(
 
   // Template hint for the preview
   const tplNote = tpl ? `Template: <em>${escapeHtml(tpl)}</em>` : "";
+
+  // Social links — rendered in platform order
+  const socialLinksHtml = buildSocialLinksHtml(platforms, socials, fgMuted, brand);
+  const hasBlocks = socialLinksHtml.length > 0;
 
   return `<!DOCTYPE html>
 <html lang="en" ${darkMode ? 'class="dark"' : ""}>
@@ -118,6 +141,22 @@ function buildSrcdoc(
       display: flex; flex-direction: column; align-items: center;
       margin-top: 0;
     }
+    .social-links {
+      margin-top: 16px; width: 100%; display: flex;
+      flex-direction: column; gap: 8px;
+    }
+    .social-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 8px;
+      background: ${darkMode ? "#374151" : "#f3f4f6"};
+    }
+    .social-platform {
+      font-size: 12px; font-weight: 600; color: ${brand};
+      text-transform: capitalize; min-width: 70px;
+    }
+    .social-value {
+      font-size: 12px; color: ${fg}; word-break: break-all;
+    }
     .empty-blocks {
       margin-top: 20px; font-size: 12px; color: ${fgMuted};
       text-align: center; opacity: 0.7;
@@ -134,7 +173,8 @@ function buildSrcdoc(
     <div class="handle">tadaify.com/${escapeHtml(handle)}</div>
     ${bio ? `<div class="bio">${escapeHtml(bio)}</div>` : ""}
     ${tplNote ? `<div class="tpl-note">${tplNote}</div>` : ""}
-    <div class="empty-blocks">Your blocks will appear here</div>
+    ${socialLinksHtml}
+    ${!hasBlocks ? `<div class="empty-blocks">Your blocks will appear here</div>` : ""}
   </div>
 </body>
 </html>`;

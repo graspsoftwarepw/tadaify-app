@@ -127,6 +127,39 @@ test("S2: state broadcast updates iframe within 200ms (debounce contract)", asyn
 });
 
 // ---------------------------------------------------------------------------
+// S6 — Social input propagates to iframe preview
+// ---------------------------------------------------------------------------
+
+test("S6: social input updates iframe preview with social handle after debounce", async ({
+  page,
+}) => {
+  // Covers: Finding 1 from Codex follow-up review — platforms/socials rendering.
+  const handle = "t137s6";
+
+  await page.goto(
+    `http://localhost:5173/onboarding/social?handle=${handle}&platforms=instagram`
+  );
+
+  // Wait for preview pane
+  await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
+
+  // Type into the instagram social input
+  const instagramInput = page.locator("[data-platform='instagram'] input, input[name='instagram'], input[placeholder*='instagram' i]").first();
+  await instagramInput.fill("@mycoolhandle");
+
+  // Wait for debounce (150ms) + render buffer
+  await page.waitForTimeout(400);
+
+  // Verify the iframe srcdoc contains the social handle
+  const srcdoc = await page.locator("iframe[data-onboarding-preview]").evaluate(
+    (el) => (el as HTMLIFrameElement).srcdoc ?? ""
+  );
+
+  expect(srcdoc).toContain("@mycoolhandle");
+  expect(srcdoc).toContain("instagram");
+});
+
+// ---------------------------------------------------------------------------
 // S3 — 3-viewport switcher persists across steps via sessionStorage
 // ---------------------------------------------------------------------------
 
