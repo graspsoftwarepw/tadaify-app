@@ -364,14 +364,26 @@ CREATE POLICY "profile_extras_own_insert" ON public.profile_extras
 CREATE POLICY "profile_extras_own_update" ON public.profile_extras
   FOR UPDATE
   USING (auth.uid() = user_id)
-  WITH CHECK (
-    auth.uid() = user_id
-    AND tier_slug = (
-      SELECT pe.tier_slug
-      FROM public.profile_extras pe
-      WHERE pe.user_id = auth.uid()
-    )
-  );
+  WITH CHECK (auth.uid() = user_id);
+
+-- Guard trigger: tier_slug immutability for authenticated users
+-- Non-recursive replacement for the self-referential RLS subquery (Codex follow-up P1).
+CREATE OR REPLACE FUNCTION public.profile_extras_guard_tier_slug()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF current_setting('role') = 'authenticated'
+     AND OLD.tier_slug IS DISTINCT FROM NEW.tier_slug THEN
+    RAISE EXCEPTION 'tier_slug is immutable for authenticated users; only service_role may change it'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER profile_extras_guard_tier_slug
+  BEFORE UPDATE ON public.profile_extras
+  FOR EACH ROW
+  EXECUTE FUNCTION public.profile_extras_guard_tier_slug();
 
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION public.profile_extras_set_updated_at()

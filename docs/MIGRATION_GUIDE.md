@@ -37,6 +37,52 @@ DROP FUNCTION IF EXISTS public.profile_extras_set_updated_at() CASCADE;
 
 ---
 
+### 20260506000001_profile_extras_rls_tier_lockdown.sql
+
+**Depends on:** `20260505182021_profile_extras_base.sql` — MUST run after it.
+
+**Effect:** Hardens RLS on `public.profile_extras` for tier-escalation prevention (TR-tadaify-004):
+- INSERT policy tightened: `WITH CHECK` enforces `tier_slug = 'free'` for authenticated users.
+- UPDATE policy simplified to ownership-only (no self-referential subquery).
+- New BEFORE UPDATE trigger `profile_extras_guard_tier_slug` enforces tier_slug immutability
+  for the `authenticated` role; `service_role`/`postgres` bypass the guard (Stripe webhook path).
+
+**Why:** Codex P1 finding — the original UPDATE policy used a self-referential subquery
+(`SELECT tier_slug FROM profile_extras` inside an RLS policy on `profile_extras`) which risks
+PostgreSQL policy recursion. The trigger approach is non-recursive and separates ownership RLS
+from column immutability.
+
+**Pre-steps:** `20260505182021_profile_extras_base.sql` must already be applied.
+
+**Post-steps:** none.
+
+**Verification:**
+```bash
+supabase db reset && supabase test db
+# Or: pg_prove supabase/tests/profile-extras-rls.test.sql
+# Verify T5 (own non-tier update OK), T9 (INSERT non-free blocked),
+# T10 (UPDATE tier escalation blocked), T11 (service_role tier update OK).
+```
+
+**Rollback:**
+```sql
+-- Remove the guard trigger and function
+DROP TRIGGER IF EXISTS profile_extras_guard_tier_slug ON public.profile_extras;
+DROP FUNCTION IF EXISTS public.profile_extras_guard_tier_slug() CASCADE;
+
+-- Restore original permissive UPDATE policy from base migration
+DROP POLICY IF EXISTS "profile_extras_own_update" ON public.profile_extras;
+CREATE POLICY "profile_extras_own_update" ON public.profile_extras
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Restore original permissive INSERT policy from base migration
+DROP POLICY IF EXISTS "profile_extras_own_insert" ON public.profile_extras;
+CREATE POLICY "profile_extras_own_insert" ON public.profile_extras
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+```
+
+---
+
 ### 20260503000001_app_dashboard_tables.sql
 
 **Effect:** Creates `account_settings`, `pages`, `blocks` tables; alters `profiles` to add
