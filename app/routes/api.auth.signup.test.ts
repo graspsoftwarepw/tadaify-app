@@ -198,6 +198,57 @@ describe("api.auth.signup — Supabase OTP send", () => {
   });
 });
 
+// ── U2 (issue tadaify-app#190 Bug #2a): signup-otp passes data.handle to Supabase ─────────────
+// DEC-364=A: email template greeted @email — fix is to pass handle in data payload
+
+describe("api.auth.signup — U2: signup-otp passes data.handle from request body (DEC-364=A)", () => {
+  const supabaseEnv = {
+    SUPABASE_URL: "http://supabase.test",
+    SUPABASE_ANON_KEY: "anon_key",
+  };
+
+  it("signup-otp passes data.handle from request body to Supabase signInWithOtp call", async () => {
+    // DEC-364=A: the OTP send body must include data.handle so the email template
+    // can greet "@alex" instead of "@user@example.com".
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 })
+    );
+    vi.stubGlobal("fetch", mockFetch);
+
+    await action({
+      request: makeRequest({ email: "user@example.com", handle: "alex", tos_version: "v1" }),
+      context: makeContext(supabaseEnv),
+    });
+
+    // Find the OTP send call (to /auth/v1/otp)
+    const otpCalls = (mockFetch.mock.calls as Array<[string, RequestInit]>).filter(
+      ([url]) => url.includes("/auth/v1/otp")
+    );
+    expect(otpCalls.length).toBeGreaterThan(0);
+    const [, fetchInit] = otpCalls[0];
+    const body = JSON.parse(fetchInit.body as string) as Record<string, unknown>;
+    // Must include data.handle === "alex"
+    expect(body.data).toBeDefined();
+    expect((body.data as Record<string, unknown>).handle).toBe("alex");
+  });
+
+  it("signup-otp data.handle matches the handle from request body exactly", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    await action({
+      request: makeRequest({ email: "creator@test.com", handle: "mycreator", tos_version: "v1" }),
+      context: makeContext(supabaseEnv),
+    });
+
+    const otpCalls = (mockFetch.mock.calls as Array<[string, RequestInit]>).filter(
+      ([url]) => url.includes("/auth/v1/otp")
+    );
+    const body = JSON.parse(otpCalls[0][1].body as string) as Record<string, unknown>;
+    expect((body.data as Record<string, unknown>).handle).toBe("mycreator");
+  });
+});
+
 // ── Rate-limit (BR-OTP-RATE-LIMIT-001 / DEC-342) — U4 ───────────────────────
 
 describe("api.auth.signup — rate-limit (BR-OTP-RATE-LIMIT-001)", () => {

@@ -174,6 +174,38 @@ describe("TR-tadaify-002 §1+§2 — OTP token present in .txt plain-text files"
   }
 });
 
+// --- DEC-364=A: .txt greeting uses @handle, not @email ---
+
+describe("DEC-364=A — .txt greeting uses handle placeholder, not @{{ .Email }}", () => {
+  const HANDLE_GREETING_TXT = ["otp-signup.txt", "otp-login.txt", "identity-linked.txt"];
+
+  for (const name of HANDLE_GREETING_TXT) {
+    it(`${name} greeting does NOT contain @{{ .Email }}`, () => {
+      const txt = read(name);
+      assert.ok(
+        !txt.includes("@{{ .Email }}"),
+        `${name} greeting must NOT use @{{ .Email }} — DEC-364=A requires @handle`
+      );
+    });
+
+    it(`${name} greeting contains .Data.handle placeholder`, () => {
+      const txt = read(name);
+      assert.ok(
+        txt.includes(".Data.handle"),
+        `${name} must use .Data.handle for greeting — DEC-364=A handle contract`
+      );
+    });
+
+    it(`${name} greeting contains @creator fallback`, () => {
+      const txt = read(name);
+      assert.ok(
+        txt.includes("@creator"),
+        `${name} must contain @creator fallback when handle is empty — DEC-364=A`
+      );
+    });
+  }
+});
+
 // --- welcome.html DEC-332=D semantics ---
 
 describe("DEC-332=D — welcome.html handle-claim semantics", () => {

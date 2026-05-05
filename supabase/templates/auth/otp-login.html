@@ -51,7 +51,8 @@
       <span class="wordmark"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span></span>
     </div>
     <div class="email-body">
-      <h1 class="greeting">Welcome back, @{{ .Email }}</h1>
+      <!-- DEC-364=A: greet with @handle (looked up from profiles in api.auth.login-otp.ts), not @email -->
+      <h1 class="greeting">Welcome back, {{ if .Data.handle }}@{{ .Data.handle }}{{ else }}@creator{{ end }}</h1>
       <p class="sub">signing you in to <span class="wordmark" style="font-size:15px;"><span class="wm-ta">ta</span><span class="wm-da">da!</span><span class="wm-ify">ify</span><span class="wm-ify">.com</span></span> — type the code below to continue.</p>
 
       <div class="otp-card">

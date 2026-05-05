@@ -27,7 +27,7 @@
 import { useReducer, useEffect, useRef, useCallback, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import type { Route } from "./+types/register";
-import { validateHandle } from "~/lib/handle-validator";
+import { validateHandle, generateAlternatives } from "~/lib/handle-validator";
 import {
   validateEmail,
   validatePassword,
@@ -99,6 +99,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
   );
   const [handleAvailable, setHandleAvailable] = useState<boolean | null>(null);
   const [handleError, setHandleError] = useState<string | null>(null);
+  const [handleAlternatives, setHandleAlternatives] = useState<string[]>([]);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null, null]);
   const handleCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,7 +182,16 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
         });
         const data = (await res.json()) as { available: boolean };
         setHandleAvailable(data.available);
-        setHandleError(data.available ? null : "This handle is already taken.");
+        if (data.available) {
+          setHandleError(null);
+          setHandleAlternatives([]);
+        } else {
+          // DEC-363=A: show alternatives as clickable chips (not static "Taken" message)
+          const locale = navigator.language?.startsWith("pl") ? "pl" : "en";
+          const alts = generateAlternatives(handle, locale);
+          setHandleAlternatives(alts);
+          setHandleError("Already taken. Try:");
+        }
       } catch {
         // Network error — allow proceed, server validates on submit
       }
@@ -193,6 +203,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
     dispatch({ type: "SET_HANDLE", handle: lower });
     setHandleAvailable(null);
     setHandleError(null);
+    setHandleAlternatives([]);
     checkHandleAvailability(lower);
   };
 
@@ -494,10 +505,14 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
               state={state}
               handleAvailable={handleAvailable}
               handleError={handleError}
+              handleAlternatives={handleAlternatives}
               onHandleChange={handleHandleChange}
               onHandleKeyDown={handleHandleKeyDown}
               onContinue={handleProceedToMethod}
               handleValid={handleValid}
+              onAlternativeClick={(alt) => {
+                handleHandleChange(alt);
+              }}
             />
 
             {/* ── SECTION B — Method selection ───────────────────────────── */}
@@ -709,18 +724,22 @@ function SectionA({
   state,
   handleAvailable,
   handleError,
+  handleAlternatives,
   onHandleChange,
   onHandleKeyDown,
   onContinue,
   handleValid,
+  onAlternativeClick,
 }: {
   state: OtpState;
   handleAvailable: boolean | null;
   handleError: string | null;
+  handleAlternatives: string[];
   onHandleChange: (v: string) => void;
   onHandleKeyDown: (e: React.KeyboardEvent) => void;
   onContinue: () => void;
   handleValid: boolean;
+  onAlternativeClick: (alt: string) => void;
 }) {
   return (
     <section aria-label="Choose your handle" style={{ marginBottom: state.section !== "A" ? 0 : undefined }}>
@@ -825,21 +844,49 @@ function SectionA({
               marginTop: 10,
               fontSize: 14,
               minHeight: 22,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
               fontWeight: 500,
-              color:
-                handleAvailable === true
-                  ? "var(--success)"
-                  : handleAvailable === false
-                  ? "var(--danger)"
-                  : "var(--fg-subtle)",
             }}
           >
-            {handleAvailable === true && state.handle && "✓ Available!"}
-            {handleAvailable === false && (handleError ?? "Handle unavailable.")}
-            {handleAvailable === null && state.handle && "Checking…"}
+            {handleAvailable === true && state.handle && (
+              <span style={{ color: "var(--success)", display: "flex", alignItems: "center", gap: 8 }}>
+                ✓ Available!
+              </span>
+            )}
+            {handleAvailable === false && handleAlternatives.length > 0 && (
+              /* DEC-363=A: "Already taken. Try: <chip1> · <chip2> · <chip3>" */
+              <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", color: "var(--danger)" }}>
+                <span>✦ Already taken. Try:</span>
+                {handleAlternatives.map((alt, i) => (
+                  <button
+                    key={alt}
+                    type="button"
+                    aria-label={`Try handle ${alt}`}
+                    onClick={() => onAlternativeClick(alt)}
+                    style={{
+                      padding: "2px 10px",
+                      border: "1.5px solid var(--danger)",
+                      borderRadius: "var(--radius-full, 9999px)",
+                      background: "transparent",
+                      color: "var(--danger)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {alt}
+                  </button>
+                ))}
+              </span>
+            )}
+            {handleAvailable === false && handleAlternatives.length === 0 && (
+              <span style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: 8 }}>
+                {handleError ?? "Handle unavailable."}
+              </span>
+            )}
+            {handleAvailable === null && state.handle && (
+              <span style={{ color: "var(--fg-subtle)" }}>Checking…</span>
+            )}
           </div>
 
           {/* Error message */}

@@ -89,9 +89,39 @@ export async function action({ request, context }: Route.ActionArgs) {
     console.warn("[api.auth.login-otp] SUPABASE_SERVICE_ROLE_KEY not set — skipping rate-limit check");
   }
 
+  // ── Handle lookup for email template personalisation (DEC-364=A) ───────────
+  // Look up the user's handle from the profiles table so the OTP email can
+  // greet them as "@handle" rather than "@email" (Bug #2b).
+  // Requires SUPABASE_SERVICE_ROLE_KEY to bypass RLS.
+  // Falls back to null on any error — template falls back to "@creator".
+
+  let lookedUpHandle: string | null = null;
+
+  if (supabaseServiceRoleKey) {
+    try {
+      const profilesRes = await fetch(
+        `${supabaseUrl}/rest/v1/profiles?email=eq.${encodeURIComponent(rawEmail)}&select=handle&limit=1`,
+        {
+          headers: {
+            apikey: supabaseServiceRoleKey,
+            Authorization: `Bearer ${supabaseServiceRoleKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (profilesRes.ok) {
+        const rows = (await profilesRes.json()) as Array<{ handle: string }>;
+        lookedUpHandle = rows[0]?.handle ?? null;
+      }
+    } catch {
+      // Non-fatal — template fallback "@creator" will be shown
+    }
+  }
+
   // ── Supabase OTP send ────────────────────────────────────────────────────
 
   // Call Supabase Auth REST API with create_user: false — login only, no new account.
+  // Pass data.handle so the email template can personalise the greeting (DEC-364=A).
   const otpRes = await fetch(`${supabaseUrl}/auth/v1/otp`, {
     method: "POST",
     headers: {
@@ -101,6 +131,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     body: JSON.stringify({
       email: rawEmail,
       create_user: false,
+      ...(lookedUpHandle !== null ? { data: { handle: lookedUpHandle } } : {}),
     }),
   });
 

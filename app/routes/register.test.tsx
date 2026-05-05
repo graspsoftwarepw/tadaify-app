@@ -9,10 +9,15 @@
  * U2 — Apple SSO removal verification (DEC-346=C):
  *   Verifies 3 SSO providers (Google, X, Email) and zero Apple references.
  *
+ * U1-190 — Bug #1 (issue tadaify-app#190, DEC-363=A):
+ *   Handle-taken error region must show new "Already taken. Try:" copy +
+ *   3 clickable chips from generateAlternatives(). Old "Taken — someone beat
+ *   you to it." text must be absent.
+ *
  * These are static-analysis tests against the route source. We use fs.readFileSync
  * so they run under vitest node environment without jsdom/React rendering.
  *
- * Story: F-REGISTER-001a cleanup (issue tadaify-app#183, tadaify-app#188)
+ * Story: F-REGISTER-001a cleanup (issue tadaify-app#183, tadaify-app#188, tadaify-app#190)
  */
 
 import { describe, it, expect } from "vitest";
@@ -90,5 +95,48 @@ describe("register.tsx — no user-facing Apple copy (DEC-346=C)", () => {
   it("ProviderButton Apple SVG path is absent from source", () => {
     // Apple icon path prefix: d="M17.05 20.28
     expect(registerSrc).not.toMatch(/M17\.05 20\.28/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// U1-190: Bug #1 (issue tadaify-app#190) — handle-taken renders new copy + 3 chips
+// DEC-363=A: "Already taken. Try: <chip1> · <chip2> · <chip3>"
+// ---------------------------------------------------------------------------
+
+describe("register.tsx — U1-190: handle-taken 'Already taken. Try:' copy + chip rendering (DEC-363=A)", () => {
+  it("source contains 'Already taken. Try:' copy (DEC-363=A)", () => {
+    // New copy per DEC-363=A must be present in source
+    expect(registerSrc).toContain("Already taken. Try:");
+  });
+
+  it("source does NOT contain legacy 'someone beat you to it' copy (regression-lock)", () => {
+    // Old text that appeared before DEC-363=A fix
+    expect(registerSrc).not.toMatch(/someone beat you to it/i);
+  });
+
+  it("source does NOT contain legacy 'Taken —' prefix (regression-lock)", () => {
+    expect(registerSrc).not.toMatch(/Taken —\s/i);
+  });
+
+  it("source imports generateAlternatives from handle-validator (chips source)", () => {
+    // generateAlternatives must be imported (not inlined) for testability
+    expect(registerSrc).toContain("generateAlternatives");
+    expect(registerSrc).toMatch(/from ["']~\/lib\/handle-validator["']/);
+  });
+
+  it("source renders handleAlternatives as clickable buttons (chips)", () => {
+    // Each chip must be a <button> element with onClick handler
+    expect(registerSrc).toContain("handleAlternatives");
+    expect(registerSrc).toMatch(/onAlternativeClick/);
+  });
+
+  it("handleAlternatives state is reset when user changes handle input", () => {
+    // Regression-lock: chips must clear when user types a new handle
+    expect(registerSrc).toMatch(/setHandleAlternatives\(\[\]\)/);
+  });
+
+  it("source uses ✦ brand marker for taken copy (DEC-363=A)", () => {
+    // The ✦ (sparkle) marker is the brand indicator for the taken state
+    expect(registerSrc).toContain("✦ Already taken. Try:");
   });
 });
