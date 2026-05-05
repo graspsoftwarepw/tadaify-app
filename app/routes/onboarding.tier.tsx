@@ -6,14 +6,15 @@
  * DEC-311=A refined: read-only plan comparison.
  *   - No billing UI, no tier selection.
  *   - Every user starts on Free.
- *   - The single CTA always routes to /onboarding/complete?tier=free.
- *   - If URL contains ?tier=<anything>, it is IGNORED — complete always
- *     receives tier=free. This is the DEC-311 refinement: S4 test verifies
- *     that tier=premium in the URL still produces tier=free in the output.
+ *
+ * DEC-366=A (2026-05-05): action redirects directly to /app, bypassing the
+ *   intermediate /onboarding/complete celebration screen (DEC-332=D UI removed).
+ *   Button label changed to "Take me to my dashboard →" — "my page" was
+ *   misleading since the page is not published at this point.
  *
  * URL state:
- *   loader reads → all accumulated params + optional tier (ignored)
- *   action emits → /onboarding/complete?<all params>&tier=free
+ *   loader reads → all accumulated params (for back-link construction only)
+ *   action emits → /app directly (DEC-366=A)
  *
  * Covers: BR-ONBOARDING-005 (step 5 plan overview)
  */
@@ -108,29 +109,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 // ─── Action ────────────────────────────────────────────────────────────────────
+// DEC-366=A: CTA submits form → action redirects directly to /app.
+// No form data processing needed — onboarding accumulation is complete.
 
-export async function action({ request }: Route.ActionArgs) {
-  const form = await request.formData();
-  const handle = (form.get("handle") as string) ?? "";
-  const platforms = (form.get("platforms") as string) ?? "";
-  const socials = (form.get("socials") as string) ?? "";
-  const name = (form.get("name") as string) ?? "";
-  const bio = (form.get("bio") as string) ?? "";
-  const av = (form.get("av") as string) ?? "";
-  const tpl = (form.get("tpl") as string) ?? "";
-
-  // DEC-311=A: always free — ignore any tier value from form or URL
-  const params = new URLSearchParams();
-  if (handle) params.set("handle", handle);
-  if (platforms) params.set("platforms", platforms);
-  if (socials) params.set("socials", socials);
-  if (name) params.set("name", name);
-  if (bio) params.set("bio", bio);
-  if (av) params.set("av", av);
-  if (tpl) params.set("tpl", tpl);
-  params.set("tier", "free"); // always free — DEC-311=A
-
-  return redirect(`/onboarding/complete?${params.toString()}`);
+export async function action(_: Route.ActionArgs) {
+  return redirect("/app");
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -279,14 +262,8 @@ export default function TierPage({ loaderData }: Route.ComponentProps) {
         any paid tier.
       </p>
 
+      {/* DEC-366=A: action redirects to /app directly — no form data needed */}
       <form method="post">
-        <input type="hidden" name="handle" value={handle} />
-        <input type="hidden" name="platforms" value={platforms} />
-        <input type="hidden" name="socials" value={socials} />
-        <input type="hidden" name="name" value={name} />
-        <input type="hidden" name="bio" value={bio} />
-        <input type="hidden" name="av" value={av} />
-        <input type="hidden" name="tpl" value={tpl} />
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <Link
@@ -323,7 +300,7 @@ export default function TierPage({ loaderData }: Route.ComponentProps) {
               cursor: "pointer",
             }}
           >
-            Take me to my page →
+            Take me to my dashboard →
           </button>
         </div>
       </form>

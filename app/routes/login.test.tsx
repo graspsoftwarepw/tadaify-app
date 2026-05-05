@@ -4,11 +4,14 @@
  * Verifies that the /login route source contains exactly 3 SSO provider references
  * (Google, X, Email) and zero Apple references after cleanup (issue tadaify-app#183).
  *
+ * U5 (issue tadaify-app#190 Bug #3, DEC-307 canonical route fix):
+ *   successful OTP verify navigates to /app, NOT /dashboard (which 404s).
+ *
  * These are static-analysis tests against the route source. We use fs.readFileSync
  * so they run under vitest node environment without jsdom/React rendering.
  *
- * Story: F-REGISTER-001a cleanup (issue tadaify-app#183)
- * Covers: U1 per issue spec
+ * Story: F-REGISTER-001a cleanup (issue tadaify-app#183, tadaify-app#190)
+ * Covers: U1, U5 per issue spec
  */
 
 import { describe, it, expect } from "vitest";
@@ -70,5 +73,29 @@ describe("login.tsx — no user-facing Apple copy (DEC-346=C)", () => {
 
   it("apple key is absent from the coming-soon messages map", () => {
     expect(loginSrc).not.toMatch(/apple:\s*["']Apple sign-in/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// U5 (issue tadaify-app#190 Bug #3): successful OTP verify navigates to /app
+// DEC-307: returning user → dashboard — canonical route is /app, not /dashboard
+// ---------------------------------------------------------------------------
+
+describe("login.tsx — U5: successful OTP verify navigates to /app (Bug #3 DEC-307)", () => {
+  it("source contains navigate('/app') for OTP verify success", () => {
+    // After OTP verify success, navigate must go to /app (not /dashboard which 404s)
+    expect(loginSrc).toContain('navigate("/app")');
+  });
+
+  it("source does NOT contain navigate('/dashboard') (regression-lock — /dashboard 404s)", () => {
+    // Regression-lock: /dashboard route does not exist; /app is the canonical dashboard.
+    expect(loginSrc).not.toContain('navigate("/dashboard")');
+  });
+
+  it("DEC-307 comment still present but references /app as canonical route", () => {
+    // The DEC-307 comment may reference 'dashboard' semantically — that's OK.
+    // The literal navigate call must be /app.
+    const navigateDashboard = /navigate\(["']\/dashboard["']\)/.test(loginSrc);
+    expect(navigateDashboard).toBe(false);
   });
 });

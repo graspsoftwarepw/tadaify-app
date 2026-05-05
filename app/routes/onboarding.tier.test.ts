@@ -73,10 +73,10 @@ describe("onboarding.tier — U1: loader", () => {
   });
 });
 
-// ── U2: action always free ────────────────────────────────────────────────────
+// ── U2: action redirects to /app (DEC-366=A — supersedes DEC-311=A intermediate) ─────────
 
-describe("onboarding.tier — U2: action always free (DEC-311=A)", () => {
-  it("redirects to /onboarding/complete with tier=free", async () => {
+describe("onboarding.tier — U2: action redirects to /app (DEC-366=A)", () => {
+  it("action returns 302 redirect to /app regardless of form data", async () => {
     const req = makeRequest("/onboarding/tier", "POST", {
       handle: "alice",
       platforms: "instagram",
@@ -91,58 +91,40 @@ describe("onboarding.tier — U2: action always free (DEC-311=A)", () => {
     const res = result as Response;
     expect(res.status).toBe(302);
     const loc = res.headers.get("Location") ?? "";
-    expect(loc).toMatch(/^\/onboarding\/complete/);
-    const u = new URL(`http://localhost${loc}`);
-    expect(u.searchParams.get("tier")).toBe("free");
+    // DEC-366=A: goes directly to /app, not /onboarding/complete
+    expect(loc).toBe("/app");
+    expect(loc).not.toContain("/onboarding/complete");
   });
 
-  it("always sets tier=free even if form would try to set premium", async () => {
-    // Even if someone manually submits tier=premium via form, action always sets free
+  it("action always redirects to /app even with empty form (DEC-366=A)", async () => {
     const fd = new FormData();
-    fd.append("handle", "alice");
-    fd.append("tpl", "chopin");
-    fd.append("platforms", "");
-    fd.append("socials", "");
-    fd.append("name", "Alice");
-    fd.append("bio", "");
-    fd.append("av", "");
-    // No "tier" field in form data since tier is not a form field in the component
     const req = new Request("http://localhost/onboarding/tier", { method: "POST", body: fd });
     const result = await action({ request: req, params: {}, context: {} } as never);
     const res = result as Response;
-    const u = new URL(`http://localhost${res.headers.get("Location") ?? ""}`);
-    expect(u.searchParams.get("tier")).toBe("free");
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
   });
 });
 
-// ── U3: action carries all params ────────────────────────────────────────────
+// ── U3: loader still reads params (for back-link) ────────────────────────────
 
-describe("onboarding.tier — U3: action param propagation", () => {
-  it("carries all accumulated params to complete step", async () => {
-    const req = makeRequest("/onboarding/tier", "POST", {
-      handle: "bob",
-      platforms: "tiktok,youtube",
-      socials: '{"tiktok":"bobtok"}',
-      name: "Bob",
-      bio: "Video creator",
-      av: "",
-      tpl: "neon",
-    });
-    const result = await action({ request: req, params: {}, context: {} } as never);
-    const res = result as Response;
-    const u = new URL(`http://localhost${res.headers.get("Location") ?? ""}`);
-    expect(u.searchParams.get("handle")).toBe("bob");
-    expect(u.searchParams.get("platforms")).toBe("tiktok,youtube");
-    expect(u.searchParams.get("name")).toBe("Bob");
-    expect(u.searchParams.get("tpl")).toBe("neon");
-    expect(u.searchParams.get("tier")).toBe("free");
+describe("onboarding.tier — U3: loader reads params for back-link", () => {
+  it("loader still reads handle and other params (used for back-link URL)", async () => {
+    const req = makeRequest(
+      "/onboarding/tier?handle=bob&platforms=tiktok%2Cyoutube&name=Bob&tpl=neon"
+    );
+    const result = await loader({ request: req, params: {}, context: {} } as never);
+    expect(result.handle).toBe("bob");
+    expect(result.platforms).toBe("tiktok,youtube");
+    expect(result.name).toBe("Bob");
+    expect(result.tpl).toBe("neon");
   });
 });
 
-// ── U4: action with minimal params ───────────────────────────────────────────
+// ── U4: action ignores all form state ────────────────────────────────────────
 
-describe("onboarding.tier — U4: action with minimal params", () => {
-  it("still redirects with tier=free when no params provided", async () => {
+describe("onboarding.tier — U4: action ignores form state (DEC-366=A)", () => {
+  it("action still redirects to /app even if someone submits unexpected fields", async () => {
     const req = makeRequest("/onboarding/tier", "POST", {
       handle: "",
       platforms: "",
@@ -155,20 +137,77 @@ describe("onboarding.tier — U4: action with minimal params", () => {
     const result = await action({ request: req, params: {}, context: {} } as never);
     expect(result).toBeInstanceOf(Response);
     const res = result as Response;
-    const u = new URL(`http://localhost${res.headers.get("Location") ?? ""}`);
-    expect(u.searchParams.get("tier")).toBe("free");
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
   });
 });
 
 // ── U5: submit button text — Bug #6a regression (issue tadaify-app#188) ──────
 
-describe("onboarding.tier — U5: submit button text (Bug #6a)", () => {
-  it("source contains button text matching /Take me to my page/", () => {
-    expect(tierSrc).toMatch(/Take me to my page/);
-  });
-
+describe("onboarding.tier — U5: submit button text (Bug #6a / updated for DEC-366=A)", () => {
   it("source does NOT contain old 'Start for free →' button text", () => {
     expect(tierSrc).not.toContain("Start for free");
+  });
+
+  // U5 regression-lock updated: old "Take me to my page" replaced by "Take me to my dashboard"
+  // per DEC-366=A (issue tadaify-app#190 Bug #4). The original assertion is replaced.
+  it("source does NOT contain legacy 'Take me to my page' text (DEC-366=A)", () => {
+    expect(tierSrc).not.toMatch(/Take me to my page/);
+  });
+});
+
+// ── U6: CTA button text === "Take me to my dashboard →" (Bug #4, issue tadaify-app#190) ─────
+
+describe("onboarding.tier — U6: CTA button text 'Take me to my dashboard →' (Bug #4)", () => {
+  it("source contains button text 'Take me to my dashboard →'", () => {
+    expect(tierSrc).toContain("Take me to my dashboard →");
+  });
+
+  it("source does NOT contain legacy 'Take me to my page →' copy", () => {
+    // Regression-lock: old label was "Take me to my page →"
+    expect(tierSrc).not.toMatch(/Take me to my page/i);
+  });
+
+  it("source does NOT contain 'Go to dashboard →' (that was the complete-screen label)", () => {
+    // Regression-lock: ensure we didn't accidentally use the old complete-screen CTA text
+    expect(tierSrc).not.toMatch(/Go to dashboard/i);
+  });
+});
+
+// ── U7: action redirects to /app, NOT to /onboarding/complete (Bug #4, issue tadaify-app#190) ─
+
+describe("onboarding.tier — U7: action redirects to /app (DEC-366=A, Bug #4)", () => {
+  it("submitting tier form redirects to /app, NOT to /onboarding/complete", async () => {
+    const req = new Request("http://localhost/onboarding/tier", { method: "POST", body: new FormData() });
+    const result = await action({ request: req, params: {}, context: {} } as never);
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location") ?? "";
+    expect(location).toBe("/app");
+    // Regression-lock: must NOT redirect to /onboarding/complete
+    expect(location).not.toContain("/onboarding/complete");
+    expect(location).not.toContain("/dashboard");
+  });
+
+  it("action redirects to /app even with empty form", async () => {
+    const fd = new FormData();
+    const req = new Request("http://localhost/onboarding/tier", { method: "POST", body: fd });
+    const result = await action({ request: req, params: {}, context: {} } as never);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+  });
+
+  it("action code does NOT produce a redirect to /onboarding/complete (DEC-366=A)", async () => {
+    // Behavioural regression-lock: the action must redirect to /app, never to /onboarding/complete.
+    // (Source may mention /onboarding/complete in comments — test against runtime behaviour.)
+    const req = new Request("http://localhost/onboarding/tier", { method: "POST", body: new FormData() });
+    const result = await action({ request: req, params: {}, context: {} } as never);
+    const res = result as Response;
+    const location = res.headers.get("Location") ?? "";
+    expect(location).not.toContain("/onboarding/complete");
+    expect(location).toBe("/app");
   });
 });
 

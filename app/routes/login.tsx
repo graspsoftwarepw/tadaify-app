@@ -183,8 +183,8 @@ export default function LoginPage() {
         dispatch({ type: "OTP_FAILURE", now });
         return;
       }
-      // DEC-307: returning user → dashboard
-      navigate("/dashboard");
+      // DEC-307: returning user → dashboard (canonical route is /app, not /dashboard)
+      navigate("/app");
     } catch {
       dispatch({ type: "SET_ERROR", error: "Network error. Please try again." });
     }
