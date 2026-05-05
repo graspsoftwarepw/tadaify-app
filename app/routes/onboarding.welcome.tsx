@@ -13,11 +13,14 @@
  *   DEC-298=A  skip bypasses platform/social setup, lands on profile (step 3)
  *
  * Covers: BR-ONBOARDING-001 (step 1 platform picker)
+ * State broadcast: tdf:onboarding:state-update (TR-tadaify-006, tadaify-app#137)
  */
 
 import { redirect } from "react-router";
 import { Link } from "react-router";
+import { useEffect } from "react";
 import type { Route } from "./+types/onboarding.welcome";
+import { publish } from "~/lib/onboarding-preview-bus";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -148,6 +151,19 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
 export default function WelcomePage({ loaderData, actionData }: Route.ComponentProps) {
   const { handle } = loaderData;
   const error = actionData?.error;
+
+  // Broadcast initial state on mount — handle only; name/bio/tpl not yet known
+  useEffect(() => {
+    publish({
+      handle,
+      name: null,
+      bio: null,
+      av: null,
+      platforms: [],
+      socials: {},
+      tpl: null,
+    });
+  }, [handle]);
 
   return (
     <div style={{ maxWidth: 600 }}>

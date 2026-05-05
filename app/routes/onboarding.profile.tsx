@@ -14,11 +14,14 @@
  *   DEC-298=A  manual-only; no platform scraping
  *
  * Covers: BR-ONBOARDING-003 (step 3 profile setup)
+ * State broadcast: tdf:onboarding:state-update (TR-tadaify-006, tadaify-app#137)
  */
 
 import { redirect } from "react-router";
 import { Link } from "react-router";
+import { useEffect, useCallback } from "react";
 import type { Route } from "./+types/onboarding.profile";
+import { publish } from "~/lib/onboarding-preview-bus";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -103,6 +106,33 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
   const currentName = prefilled?.name ?? prefillName;
   const currentBio = prefilled?.bio ?? prefillBio;
 
+  // Broadcast initial state on mount + whenever controlled values change
+  const broadcastState = useCallback(
+    (name: string, bio: string) => {
+      publish({
+        handle,
+        name: name || null,
+        bio: bio || null,
+        av: null, // R2 upload pending tadaify-app#138
+        platforms: platforms ? platforms.split(",").filter(Boolean) : [],
+        socials: (() => {
+          try {
+            return socials ? (JSON.parse(socials) as Record<string, string>) : {};
+          } catch {
+            return {};
+          }
+        })(),
+        tpl: null,
+      });
+    },
+    [handle, platforms, socials]
+  );
+
+  // Broadcast initial state on mount
+  useEffect(() => {
+    broadcastState(currentName, currentBio);
+  }, [broadcastState, currentName, currentBio]);
+
   // Back URL preserves accumulated state
   const backParams = new URLSearchParams();
   if (handle) backParams.set("handle", handle);
@@ -148,6 +178,10 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
             maxLength={80}
             aria-describedby={error?.field === "name" ? "name-error" : undefined}
             aria-invalid={error?.field === "name"}
+            onChange={(e) => {
+              const bioEl = document.getElementById("bio") as HTMLTextAreaElement | null;
+              broadcastState(e.target.value, bioEl?.value ?? currentBio);
+            }}
             style={{
               width: "100%",
               minHeight: 44,
@@ -192,6 +226,10 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
             placeholder="A short intro about you or your brand…"
             aria-describedby={error?.field === "bio" ? "bio-error" : "bio-counter"}
             aria-invalid={error?.field === "bio"}
+            onChange={(e) => {
+              const nameEl = document.getElementById("name") as HTMLInputElement | null;
+              broadcastState(nameEl?.value ?? currentName, e.target.value);
+            }}
             style={{
               width: "100%",
               border: `1.5px solid ${error?.field === "bio" ? "var(--danger)" : "var(--border-strong)"}`,

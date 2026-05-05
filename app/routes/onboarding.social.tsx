@@ -15,12 +15,15 @@
  *   DEC-298=A  no scraping; manual entry only
  *
  * Covers: BR-ONBOARDING-002 (step 2 social handle entry)
+ * State broadcast: tdf:onboarding:state-update (TR-tadaify-006, tadaify-app#137)
  */
 
 import { redirect } from "react-router";
 import { Link } from "react-router";
+import { useCallback, useEffect } from "react";
 import type { Route } from "./+types/onboarding.social";
 import { PLATFORM_LIST, isValidPlatformId, type PlatformId } from "./onboarding.welcome";
+import { publish } from "~/lib/onboarding-preview-bus";
 
 // ─── Validators ────────────────────────────────────────────────────────────────
 
@@ -129,6 +132,35 @@ export default function SocialPage({ loaderData, actionData }: Route.ComponentPr
   const { handle, platforms, platformsCsv, existingSocials } = loaderData;
   const error = actionData?.error;
 
+  // Build the current socials map from live DOM inputs (trimmed, non-empty, keyed by platform)
+  const collectLiveSocials = useCallback((): Record<string, string> => {
+    const result: Record<string, string> = {};
+    for (const pid of platforms) {
+      const el = document.getElementById(`social_${pid}`) as HTMLInputElement | null;
+      const trimmed = el?.value.trim() ?? "";
+      if (trimmed) result[pid] = trimmed;
+    }
+    return result;
+  }, [platforms]);
+
+  // Broadcast current state to the preview bus
+  const broadcastSocialState = useCallback(() => {
+    publish({
+      handle,
+      name: null,
+      bio: null,
+      av: null,
+      platforms: [...platforms],
+      socials: collectLiveSocials(),
+      tpl: null,
+    });
+  }, [handle, platforms, collectLiveSocials]);
+
+  // Broadcast initial state on mount
+  useEffect(() => {
+    broadcastSocialState();
+  }, [broadcastSocialState]);
+
   // Build back URL
   const backParams = new URLSearchParams();
   if (handle) backParams.set("handle", handle);
@@ -221,6 +253,7 @@ export default function SocialPage({ loaderData, actionData }: Route.ComponentPr
                       autoComplete="off"
                       aria-describedby={fieldError ? `error_${platformId}` : undefined}
                       aria-invalid={!!fieldError}
+                      onChange={() => broadcastSocialState()}
                       style={{
                         flex: 1,
                         border: 0,
