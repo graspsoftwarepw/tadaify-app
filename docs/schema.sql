@@ -354,16 +354,24 @@ CREATE TABLE IF NOT EXISTS public.profile_extras (
 ALTER TABLE public.profile_extras ENABLE ROW LEVEL SECURITY;
 
 -- RLS: own-row SELECT / INSERT / UPDATE; service_role bypass (default Supabase behavior)
+-- tier_slug is immutable for authenticated users (TR-tadaify-004: only service_role/Stripe may set paid tiers)
 CREATE POLICY "profile_extras_own_select" ON public.profile_extras
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "profile_extras_own_insert" ON public.profile_extras
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND tier_slug = 'free');
 
 CREATE POLICY "profile_extras_own_update" ON public.profile_extras
   FOR UPDATE
   USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND tier_slug = (
+      SELECT pe.tier_slug
+      FROM public.profile_extras pe
+      WHERE pe.user_id = auth.uid()
+    )
+  );
 
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION public.profile_extras_set_updated_at()

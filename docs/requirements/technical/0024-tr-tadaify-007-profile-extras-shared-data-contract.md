@@ -35,7 +35,9 @@ CREATE TABLE public.profile_extras (
 1. **PK + FK**: `user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE`.
 2. **Incremental extension**: each sub-feature ALTERs to add its own NULLABLE column.
 3. **RLS**: own-row SELECT / INSERT / UPDATE; `service_role` bypasses (for Stripe webhook,
-   admin ops, GDPR delete).
+   admin ops, GDPR delete). **Tier lockdown (TR-tadaify-004):** authenticated INSERT
+   enforces `tier_slug = 'free'`; authenticated UPDATE enforces `tier_slug` stays unchanged
+   (immutable for authenticated users — only `service_role` may set paid tiers).
 4. **updated_at trigger**: fires `BEFORE UPDATE` on every row mutation.
 5. **GDPR Art. 17**: `ON DELETE CASCADE` removes row when `auth.users` row deleted (belt);
    `delete_user_data()` RPC also explicitly DELETEs (suspenders).

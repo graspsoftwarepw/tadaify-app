@@ -9,7 +9,10 @@
 --   - Single table, incrementally extended via ALTER ADD COLUMN per sub-feature.
 --   - FK ON DELETE CASCADE covers GDPR Art. 17 (right to erasure) automatically.
 --   - RLS: own-row SELECT / INSERT / UPDATE; service_role bypass for Stripe
---     webhook (F-PRICING-001 future) and admin ops.
+--     webhook (F-PRICING-001 future) and admin ops. Tier lockdown
+--     (TR-tadaify-004) applied in 20260506000001 migration: INSERT enforces
+--     tier_slug='free', UPDATE enforces tier_slug immutability for
+--     authenticated users.
 --   - updated_at trigger fires on every row mutation.
 --   - IF NOT EXISTS / CREATE OR REPLACE guards for idempotency across
 --     supabase db reset cycles and manual re-runs.

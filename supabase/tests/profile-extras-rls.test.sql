@@ -11,6 +11,9 @@
 --   T6: user CANNOT UPDATE other user's row
 --   T7: service_role can SELECT all rows
 --   T8: service_role can UPDATE any row (Stripe webhook future path)
+--   T9: user CANNOT INSERT with tier_slug != 'free' (tier lockdown)
+--   T10: user CANNOT UPDATE own tier_slug from 'free' to 'pro' (tier lockdown)
+--   T11: service_role CAN UPDATE tier_slug to paid tier (Stripe path)
 --
 -- Run locally:
 --   supabase db reset
@@ -20,7 +23,7 @@
 
 BEGIN;
 
-SELECT plan(8);
+SELECT plan(12);
 
 -- ── Seed test users ───────────────────────────────────────────────────────────
 
@@ -100,7 +103,8 @@ SELECT throws_ok(
   'T4: user A CANNOT INSERT profile_extras row with user_id=B (WITH CHECK violation)'
 );
 
--- ── T5: user can UPDATE own row ───────────────────────────────────────────────
+-- ── T5: user can UPDATE own row (non-tier columns) ───────────────────────────
+-- tier_slug stays unchanged ('free' → 'free') — the WITH CHECK allows this.
 
 SELECT lives_ok(
   $t$
@@ -108,7 +112,7 @@ SELECT lives_ok(
     SET tier_slug = 'free'
     WHERE user_id = '00000000-0139-0001-0000-000000000a01'::uuid;
   $t$,
-  'T5: user A can UPDATE their own profile_extras row'
+  'T5: user A can UPDATE their own profile_extras row (tier_slug unchanged)'
 );
 
 -- ── T6: user CANNOT UPDATE other user's row ───────────────────────────────────
@@ -156,6 +160,69 @@ SELECT is(
   ),
   1,
   'T8: postgres/service_role can UPDATE any row (Stripe webhook future path, bypasses RLS)'
+);
+
+-- ── T9: user CANNOT INSERT with tier_slug != 'free' (tier lockdown) ──────────
+-- Codex P1: authenticated INSERT must enforce tier_slug = 'free'.
+
+-- Clean up user A's row so we can test INSERT again
+SET LOCAL role TO postgres;
+DELETE FROM public.profile_extras WHERE user_id = '00000000-0139-0001-0000-000000000a01'::uuid;
+
+SET LOCAL request.jwt.claims TO '{"sub":"00000000-0139-0001-0000-000000000a01","role":"authenticated"}';
+SET LOCAL role TO authenticated;
+
+SELECT throws_ok(
+  $t$
+    INSERT INTO public.profile_extras (user_id, tier_slug)
+    VALUES ('00000000-0139-0001-0000-000000000a01'::uuid, 'pro');
+  $t$,
+  '42501',
+  NULL,
+  'T9: user A CANNOT INSERT with tier_slug=pro (WITH CHECK enforces free-only)'
+);
+
+-- Re-insert user A with free tier for subsequent tests
+SELECT lives_ok(
+  $t$
+    INSERT INTO public.profile_extras (user_id, tier_slug)
+    VALUES ('00000000-0139-0001-0000-000000000a01'::uuid, 'free');
+  $t$,
+  'T9b: user A CAN INSERT with tier_slug=free (baseline re-established)'
+);
+
+-- ── T10: user CANNOT UPDATE own tier_slug from 'free' to 'pro' ──────────────
+-- Codex P1: authenticated UPDATE must not allow tier_slug self-escalation.
+
+SELECT throws_ok(
+  $t$
+    UPDATE public.profile_extras
+    SET tier_slug = 'pro'
+    WHERE user_id = '00000000-0139-0001-0000-000000000a01'::uuid;
+  $t$,
+  '42501',
+  NULL,
+  'T10: user A CANNOT UPDATE tier_slug from free to pro (WITH CHECK blocks escalation)'
+);
+
+-- ── T11: service_role CAN update tier_slug to paid tier ──────────────────────
+-- Confirms the Stripe webhook path (service_role bypass) still works.
+
+SET LOCAL role TO postgres;
+SET LOCAL request.jwt.claims TO '{"sub":"00000000-0000-0000-0000-000000000000"}';
+
+SELECT is(
+  (
+    WITH updated AS (
+      UPDATE public.profile_extras
+      SET tier_slug = 'business'
+      WHERE user_id = '00000000-0139-0001-0000-000000000a01'::uuid
+      RETURNING user_id
+    )
+    SELECT COUNT(*)::int FROM updated
+  ),
+  1,
+  'T11: service_role CAN update tier_slug to business (Stripe webhook path)'
 );
 
 SELECT finish();
