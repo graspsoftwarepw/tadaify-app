@@ -20,7 +20,7 @@
 
 import { redirect } from "react-router";
 import { Link } from "react-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import type { Route } from "./+types/onboarding.social";
 import { PLATFORM_LIST, isValidPlatformId, type PlatformId } from "./onboarding.welcome";
 import { publish } from "~/lib/onboarding-preview-bus";
@@ -132,18 +132,34 @@ export default function SocialPage({ loaderData, actionData }: Route.ComponentPr
   const { handle, platforms, platformsCsv, existingSocials } = loaderData;
   const error = actionData?.error;
 
-  // Broadcast initial state on mount — handle + platforms; socials not fully entered yet
-  useEffect(() => {
+  // Build the current socials map from live DOM inputs (trimmed, non-empty, keyed by platform)
+  const collectLiveSocials = useCallback((): Record<string, string> => {
+    const result: Record<string, string> = {};
+    for (const pid of platforms) {
+      const el = document.getElementById(`social_${pid}`) as HTMLInputElement | null;
+      const trimmed = el?.value.trim() ?? "";
+      if (trimmed) result[pid] = trimmed;
+    }
+    return result;
+  }, [platforms]);
+
+  // Broadcast current state to the preview bus
+  const broadcastSocialState = useCallback(() => {
     publish({
       handle,
       name: null,
       bio: null,
       av: null,
       platforms: [...platforms],
-      socials: existingSocials,
+      socials: collectLiveSocials(),
       tpl: null,
     });
-  }, [handle, platforms, existingSocials]);
+  }, [handle, platforms, collectLiveSocials]);
+
+  // Broadcast initial state on mount
+  useEffect(() => {
+    broadcastSocialState();
+  }, [broadcastSocialState]);
 
   // Build back URL
   const backParams = new URLSearchParams();
@@ -237,6 +253,7 @@ export default function SocialPage({ loaderData, actionData }: Route.ComponentPr
                       autoComplete="off"
                       aria-describedby={fieldError ? `error_${platformId}` : undefined}
                       aria-invalid={!!fieldError}
+                      onChange={() => broadcastSocialState()}
                       style={{
                         flex: 1,
                         border: 0,

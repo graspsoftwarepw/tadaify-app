@@ -1,15 +1,15 @@
 /**
  * Unit tests for onboarding-preview-bus — debounced state broadcast.
  *
- * Tests use a manual fake-window approach (no jsdom required) to exercise
- * the publish/subscribe logic with injected event-listener stubs.
+ * Tests exercise the real publish/subscribe exports with a stubbed
+ * globalThis.window and globalThis.CustomEvent so no jsdom is needed.
  *
  * Story: F-ONBOARDING-001b (tadaify-app#137)
  * Covers: U1
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { PREVIEW_EVENT, type OnboardingPreviewState } from "./onboarding-preview-bus";
+import type { OnboardingPreviewState } from "./onboarding-preview-bus";
 
 // ---------------------------------------------------------------------------
 // Minimal fake-window that supports addEventListener / removeEventListener /
@@ -42,40 +42,6 @@ function makeFakeWindow() {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers that work with the fake window
-// ---------------------------------------------------------------------------
-
-/** Build a CustomEvent-like object (plain object; no real DOM needed) */
-function makeEvent<T>(type: string, detail: T): CustomEvent<T> {
-  return { type, detail, bubbles: true } as unknown as CustomEvent<T>;
-}
-
-/** Minimal publish/subscribe re-implementation for isolated tests */
-function makeTestBus(fakeWindow: ReturnType<typeof makeFakeWindow>) {
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  function publish(state: OnboardingPreviewState, debounceMs = 150) {
-    if (debounceTimer !== null) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      debounceTimer = null;
-      const event = makeEvent(PREVIEW_EVENT, state);
-      fakeWindow.dispatchEvent(event as unknown as Event);
-    }, debounceMs);
-  }
-
-  function subscribe(listener: (state: OnboardingPreviewState) => void) {
-    const handler = (e: Event) => {
-      const ce = e as CustomEvent<OnboardingPreviewState>;
-      listener(ce.detail);
-    };
-    fakeWindow.addEventListener(PREVIEW_EVENT, handler);
-    return () => fakeWindow.removeEventListener(PREVIEW_EVENT, handler);
-  }
-
-  return { publish, subscribe };
-}
-
-// ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
@@ -90,27 +56,63 @@ const SAMPLE: OnboardingPreviewState = {
 };
 
 // ---------------------------------------------------------------------------
-// Tests
+// Tests — each test freshly imports the real module via vi.resetModules()
+// so the module-level debounceTimer is clean.
 // ---------------------------------------------------------------------------
 
 describe("onboarding-preview-bus", () => {
+  let fakeWindow: ReturnType<typeof makeFakeWindow>;
+  let originalWindow: typeof globalThis.window;
+  let originalCustomEvent: typeof globalThis.CustomEvent;
+
   beforeEach(() => {
     vi.useFakeTimers();
+
+    fakeWindow = makeFakeWindow();
+    originalWindow = globalThis.window;
+    originalCustomEvent = globalThis.CustomEvent;
+
+    // Stub globalThis.window so the real module's typeof window !== "undefined"
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).window = fakeWindow;
+
+    // Stub CustomEvent constructor to produce objects our fakeWindow can dispatch
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).CustomEvent = class FakeCustomEvent {
+      type: string;
+      detail: unknown;
+      bubbles: boolean;
+      constructor(type: string, init?: { detail?: unknown; bubbles?: boolean }) {
+        this.type = type;
+        this.detail = init?.detail;
+        this.bubbles = init?.bubbles ?? false;
+      }
+    };
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.resetModules();
+    // Restore originals
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).window = originalWindow;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).CustomEvent = originalCustomEvent;
   });
 
-  it("debounces multiple rapid updates into single fire (150ms)", () => {
-    const fakeWindow = makeFakeWindow();
-    const { publish, subscribe } = makeTestBus(fakeWindow);
+  async function loadBus() {
+    const mod = await import("./onboarding-preview-bus");
+    return { publish: mod.publish, subscribe: mod.subscribe, PREVIEW_EVENT: mod.PREVIEW_EVENT };
+  }
+
+  it("debounces multiple rapid updates into single fire (150ms)", async () => {
+    const { publish, subscribe } = await loadBus();
     const listener = vi.fn();
     const unsub = subscribe(listener);
 
-    // 5 rapid publishes within 100ms, each with a debounce of 150ms
+    // 5 rapid publishes within 100ms, each with default 150ms debounce
     for (let i = 0; i < 5; i++) {
-      publish({ ...SAMPLE, name: `Update ${i}` }, 150);
+      publish({ ...SAMPLE, name: `Update ${i}` });
     }
 
     // Before 150ms: listener not yet called
@@ -124,14 +126,10 @@ describe("onboarding-preview-bus", () => {
     unsub();
   });
 
-  it("fires immediately on first call after idle", () => {
-    const fakeWindow = makeFakeWindow();
-    const { publish, subscribe } = makeTestBus(fakeWindow);
+  it("fires after debounce window on first call", async () => {
+    const { publish, subscribe } = await loadBus();
     const listener = vi.fn();
     const unsub = subscribe(listener);
-
-    // Let 200ms pass (no pending debounce)
-    vi.advanceTimersByTime(200);
 
     // Single publish with 10ms debounce
     publish({ ...SAMPLE, name: "Immediate" }, 10);
@@ -147,9 +145,8 @@ describe("onboarding-preview-bus", () => {
     unsub();
   });
 
-  it("preserves latest payload on burst", () => {
-    const fakeWindow = makeFakeWindow();
-    const { publish, subscribe } = makeTestBus(fakeWindow);
+  it("preserves latest payload on burst", async () => {
+    const { publish, subscribe } = await loadBus();
     const listener = vi.fn();
     const unsub = subscribe(listener);
 
@@ -159,7 +156,7 @@ describe("onboarding-preview-bus", () => {
       { ...SAMPLE, name: "Last" },
     ];
     for (const p of payloads) {
-      publish(p, 150);
+      publish(p);
     }
 
     vi.advanceTimersByTime(200);
@@ -171,9 +168,8 @@ describe("onboarding-preview-bus", () => {
     unsub();
   });
 
-  it("cleanup unsubscribes listener", () => {
-    const fakeWindow = makeFakeWindow();
-    const { publish, subscribe } = makeTestBus(fakeWindow);
+  it("cleanup unsubscribes listener", async () => {
+    const { publish, subscribe } = await loadBus();
     const listener = vi.fn();
     const unsub = subscribe(listener);
 
@@ -185,5 +181,19 @@ describe("onboarding-preview-bus", () => {
 
     // Listener should NOT have been called after unsubscribe
     expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("dispatches event with correct event name", async () => {
+    const { publish, PREVIEW_EVENT } = await loadBus();
+    expect(PREVIEW_EVENT).toBe("tdf:onboarding:state-update");
+
+    const dispatchSpy = vi.spyOn(fakeWindow, "dispatchEvent");
+
+    publish({ ...SAMPLE }, 0);
+    vi.advanceTimersByTime(1);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    const dispatched = dispatchSpy.mock.calls[0][0] as unknown as { type: string };
+    expect(dispatched.type).toBe("tdf:onboarding:state-update");
   });
 });
