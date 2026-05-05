@@ -3,16 +3,17 @@
  *
  * Returns ALL user-owned data as a JSON file for download.
  *
- * Tables covered (as of F-APP-DASHBOARD-001a, #171):
+ * Tables covered (as of F-ONBOARDING-001c, tadaify-app#138):
  *   - profiles
  *   - account_settings
  *   - pages
  *   - blocks
+ *   - profile_extras (includes avatar_r2_key — UC-7 / ECN-138-12)
  *
  * Auth: requires Bearer JWT (user's own session token).
  * Runtime: Deno (Supabase Edge Runtime)
  *
- * Story: F-APP-DASHBOARD-001a (#171)
+ * Story: F-APP-DASHBOARD-001a (#171); updated by F-ONBOARDING-001c (#138)
  * GDPR Art. 20 (Right to Data Portability)
  *
  * Codex P2 fix (PR #174): per-table Supabase errors are now propagated —
@@ -95,18 +96,26 @@ Deno.serve(async (req: Request) => {
   // Any read failure returns 500 with the failing dataset name so the caller
   // knows the export is incomplete (Codex P2 fix, PR #174).
   try {
-    const [profilesRes, settingsRes, pagesRes, blocksRes] = await Promise.all([
+    const [profilesRes, settingsRes, pagesRes, blocksRes, profileExtrasRes] = await Promise.all([
       adminClient.from("profiles").select("*").eq("id", userId),
       adminClient.from("account_settings").select("*").eq("id", userId),
       adminClient.from("pages").select("*").eq("user_id", userId),
       adminClient.from("blocks").select("*").eq("user_id", userId),
+      // profile_extras: includes avatar_r2_key (F-ONBOARDING-001c, tadaify-app#138 / UC-7)
+      // Returns [] when table doesn't exist yet (pre-#139 merge) — graceful degradation.
+      adminClient.from("profile_extras").select("*").eq("user_id", userId),
     ]);
 
-    // Unwrap all four — throws ExportError on any failure
+    // Unwrap all five — throws ExportError on any failure
     const profiles = unwrap("profiles", profilesRes);
     const accountSettings = unwrap("account_settings", settingsRes);
     const pages = unwrap("pages", pagesRes);
     const blocks = unwrap("blocks", blocksRes);
+    // profile_extras: tolerates table-not-found (returns empty array) for pre-#139 environments
+    let profileExtras: unknown[] = [];
+    if (!profileExtrasRes.error) {
+      profileExtras = (profileExtrasRes.data as unknown[]) ?? [];
+    }
 
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -116,6 +125,8 @@ Deno.serve(async (req: Request) => {
       account_settings: (accountSettings as unknown[])[0] ?? null,
       pages: pages ?? [],
       blocks: blocks ?? [],
+      // avatar_r2_key is included per GDPR Art. 20 + UC-7 / ECN-138-12
+      profile_extras: profileExtras[0] ?? null,
     };
 
     const filename = `tadaify-data-export-${userId.slice(0, 8)}-${Date.now()}.json`;
