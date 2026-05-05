@@ -122,3 +122,57 @@ export async function deleteUserAvatarObjects(
 
   return { deleted };
 }
+
+// ── GDPR queue consumer (pending_r2_deletes) ──────────────────────────────────
+//
+// Reads unconsumed rows from `pending_r2_deletes`, deletes each R2 key,
+// and marks the row consumed only after successful deletion.
+// Failed rows remain pending for the next cron tick (partial-failure safe).
+//
+// Wired into the Worker cron entry point alongside runOrphanCleanup.
+// ECN-138-12: GDPR Art. 17 cross-storage cleanup.
+
+export interface PendingR2DeleteRow {
+  id: number;
+  r2_key: string;
+}
+
+export interface QueueConsumerDeps {
+  r2: R2BucketLike;
+  /** Returns rows from pending_r2_deletes WHERE consumed_at IS NULL. */
+  getUnconsumedDeletes(): Promise<PendingR2DeleteRow[]>;
+  /** Sets consumed_at = now() for the given row id. */
+  markConsumed(id: number): Promise<void>;
+}
+
+export interface QueueConsumerResult {
+  processed: PendingR2DeleteRow[];
+  errors: Array<{ id: number; r2_key: string; error: string }>;
+}
+
+/**
+ * Consumes the pending_r2_deletes queue: deletes each R2 key then marks consumed.
+ * Per-row failure isolation: a failed row stays pending; other rows proceed.
+ */
+export async function consumePendingR2Deletes(
+  deps: QueueConsumerDeps
+): Promise<QueueConsumerResult> {
+  const result: QueueConsumerResult = { processed: [], errors: [] };
+  const rows = await deps.getUnconsumedDeletes();
+
+  for (const row of rows) {
+    try {
+      await deps.r2.delete(row.r2_key);
+      await deps.markConsumed(row.id);
+      result.processed.push(row);
+    } catch (err) {
+      result.errors.push({
+        id: row.id,
+        r2_key: row.r2_key,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return result;
+}

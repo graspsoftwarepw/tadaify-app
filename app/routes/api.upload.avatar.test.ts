@@ -142,10 +142,22 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   // ── Auth checks ─────────────────────────────────────────────────────────────
-  it("rejects 401 on missing Authorization header", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, {});
+  it("accepts MOCK_R2 anonymous fallback (no auth header, no cookie) — dev/test only", async () => {
+    // In MOCK_R2 mode, when no auth is available, server falls back to a mock user.
+    const req = await makeMultipartRequest(JPG_BYTES, {}); // no bearer
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
+    expect(res.status).toBe(200);
+    const body = await res.json() as { r2_key: string };
+    expect(body.r2_key).toMatch(/^avatars\/00000000-0000-0000-0000-00000000mock\//);
+  });
+
+  it("rejects 401 on missing auth when MOCK_R2 is NOT set", async () => {
+    // Non-MOCK_R2 mode: no Authorization header and no cookie → 401
+    const req = await makeMultipartRequest(JPG_BYTES, {});
+    const ctx = makeContext({ MOCK_R2: undefined });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = (await action({ request: req, context: ctx } as any)) as Response;
     expect(res.status).toBe(401);
   });
 
@@ -157,6 +169,28 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(401);
+  });
+
+  it("accepts auth from Supabase session cookie (server-side parsing)", async () => {
+    // Simulate a Supabase auth cookie containing a mock-user-* access token.
+    // Server parses Cookie header when Authorization is absent.
+    const cookieValue = encodeURIComponent(JSON.stringify({ access_token: MOCK_TOKEN }));
+    const req = new Request("http://localhost/api/upload/avatar", {
+      method: "POST",
+      headers: {
+        Cookie: `sb-test-auth-token=${cookieValue}`,
+      },
+      body: (() => {
+        const fd = new FormData();
+        fd.append("file", new Blob([JPG_BYTES], { type: "application/octet-stream" }), "test.jpg");
+        return fd;
+      })(),
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = (await action({ request: req, context: makeContext() } as any)) as Response;
+    expect(res.status).toBe(200);
+    const body = await res.json() as { r2_key: string };
+    expect(body.r2_key).toMatch(/^avatars\//);
   });
 
   // ── Content-Length pre-check (ECN-138-01) ────────────────────────────────────

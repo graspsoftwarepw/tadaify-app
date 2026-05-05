@@ -10,9 +10,12 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   runOrphanCleanup,
   deleteUserAvatarObjects,
+  consumePendingR2Deletes,
   ORPHAN_TTL_MS,
   type R2BucketLike,
   type R2ListResult,
+  type PendingR2DeleteRow,
+  type QueueConsumerDeps,
 } from "./avatar-orphan-cleanup";
 
 // ── Mock R2 bucket ────────────────────────────────────────────────────────────
@@ -187,5 +190,102 @@ describe("deleteUserAvatarObjects — GDPR delete helper — U3", () => {
 
     // Assert SDK was called (mock bucket records deleted keys)
     expect(bucket.deletedKeys).toContain(KEY_A1);
+  });
+});
+
+// ── consumePendingR2Deletes tests (GDPR queue consumer) ──────────────────────
+
+describe("consumePendingR2Deletes — GDPR queue consumer — U3", () => {
+  let bucket: MockBucket;
+
+  beforeEach(() => {
+    bucket = new MockBucket();
+  });
+
+  function makeDeps(
+    rows: PendingR2DeleteRow[],
+    overrides?: Partial<QueueConsumerDeps>
+  ): QueueConsumerDeps {
+    const consumedIds: number[] = [];
+    return {
+      r2: bucket,
+      getUnconsumedDeletes: async () => rows,
+      markConsumed: async (id: number) => { consumedIds.push(id); },
+      ...overrides,
+      // Expose consumedIds for assertions via closure
+      _consumedIds: consumedIds,
+    } as QueueConsumerDeps & { _consumedIds: number[] };
+  }
+
+  it("deletes R2 keys and marks rows consumed on success", async () => {
+    bucket.seed(KEY_A1, 1000);
+    bucket.seed(KEY_B1, 1000);
+
+    const rows: PendingR2DeleteRow[] = [
+      { id: 1, r2_key: KEY_A1 },
+      { id: 2, r2_key: KEY_B1 },
+    ];
+    const deps = makeDeps(rows);
+    const result = await consumePendingR2Deletes(deps);
+
+    expect(result.processed).toHaveLength(2);
+    expect(result.errors).toHaveLength(0);
+    expect(bucket.has(KEY_A1)).toBe(false);
+    expect(bucket.has(KEY_B1)).toBe(false);
+    expect((deps as unknown as { _consumedIds: number[] })._consumedIds).toEqual([1, 2]);
+  });
+
+  it("returns empty result when no unconsumed rows exist", async () => {
+    const deps = makeDeps([]);
+    const result = await consumePendingR2Deletes(deps);
+
+    expect(result.processed).toHaveLength(0);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it("isolates per-row failures — failed rows stay pending, others proceed", async () => {
+    bucket.seed(KEY_A1, 1000);
+    bucket.seed(KEY_B1, 1000);
+
+    // Patch delete to fail on KEY_A1
+    const originalDelete = bucket.delete.bind(bucket);
+    bucket.delete = async (key: string) => {
+      if (key === KEY_A1) throw new Error("R2 network error");
+      return originalDelete(key);
+    };
+
+    const rows: PendingR2DeleteRow[] = [
+      { id: 1, r2_key: KEY_A1 },
+      { id: 2, r2_key: KEY_B1 },
+    ];
+    const deps = makeDeps(rows);
+    const result = await consumePendingR2Deletes(deps);
+
+    // KEY_A1 failed — error recorded, not marked consumed
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].id).toBe(1);
+    expect(result.errors[0].r2_key).toBe(KEY_A1);
+
+    // KEY_B1 succeeded — processed and marked consumed
+    expect(result.processed).toHaveLength(1);
+    expect(result.processed[0].id).toBe(2);
+    expect(bucket.has(KEY_B1)).toBe(false);
+    expect((deps as unknown as { _consumedIds: number[] })._consumedIds).toEqual([2]);
+  });
+
+  it("does not mark consumed if markConsumed throws (R2 deleted but DB update failed)", async () => {
+    bucket.seed(KEY_A1, 1000);
+
+    const rows: PendingR2DeleteRow[] = [{ id: 1, r2_key: KEY_A1 }];
+    const deps = makeDeps(rows, {
+      markConsumed: async () => { throw new Error("DB write failed"); },
+    });
+
+    const result = await consumePendingR2Deletes(deps);
+
+    // R2 object was deleted but markConsumed failed — recorded as error
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].error).toContain("DB write failed");
+    expect(result.processed).toHaveLength(0);
   });
 });

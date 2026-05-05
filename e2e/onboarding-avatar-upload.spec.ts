@@ -322,63 +322,25 @@ test("S5 — skip avatar: no av param after Continue → wizard advances", async
 });
 
 // ── S6 — GDPR delete removes DB row + R2 object ────────────────────────────────
-// S6: upload avatar → delete_user_data() → profile_extras row gone + MOCK_R2 clear
+// S6: upload avatar → delete_user_data() → profile_extras row gone + pending_r2_deletes enqueued
 // Verifies: ECN-138-12 (GDPR Art. 17 cross-storage cleanup)
 //
-// This test calls the pending_r2_deletes queue via service-role.
-// Skipped when SERVICE_ROLE_KEY is not set.
+// SKIPPED: Full GDPR delete e2e requires an authenticated Supabase user session
+// to call delete_user_data() RPC (ownership guard: auth.uid() must match p_user_id).
+// This is blocked until tadaify-app#139 merges (creates profile_extras table) AND
+// the e2e test harness supports real Supabase auth sessions.
+//
+// GDPR delete correctness is covered by:
+//   - Unit: avatar-orphan-cleanup.test.ts (U3) — deleteUserAvatarObjects + consumePendingR2Deletes
+//   - Migration: 20260506000002 — delete_user_data() RPC enqueues R2 delete before CASCADE
+//   - Post-#139 smoke test will replace this skip with a real authenticated flow.
 
-test("S6 — GDPR delete: removes profile_extras row + enqueues R2 delete", async ({
-  page,
-  request,
-}) => {
-  if (!SERVICE_ROLE_KEY) {
-    test.skip();
-    return;
-  }
-
-  const handle = `${HANDLE_PREFIX}s6`;
-  await navigateToProfileStep(page, handle);
-  await page.locator("input#name").fill("Test User S6");
-
-  // Upload avatar
-  const fileInput = page.locator('[data-testid="avatar-file-input"]');
-  await fileInput.setInputFiles({
-    name: "avatar.jpg",
-    mimeType: "image/jpeg",
-    buffer: Buffer.from(VALID_JPG_BYTES),
-  });
-
-  // Wait for preview — confirms upload succeeded
-  await expect(page.locator('[data-testid="avatar-preview-image"]')).toBeVisible({
-    timeout: 10_000,
-  });
-
-  // Get the r2_key from the MOCK_R2 store via the debug endpoint
-  // (or just check that the pending_r2_deletes table gets an entry on account delete)
-
-  // Verify the MOCK_R2 has the uploaded object
-  const avatarRes = await request.get("/api/upload/avatar", {
-    headers: { "Authorization": `Bearer mock-user-test-s6` },
-  });
-  // The GET method returns 405 — just confirms the route is wired
-  expect(avatarRes.status()).toBe(405);
-
-  // The full GDPR delete flow (calling delete_user_data() RPC + verifying DB + R2)
-  // requires a real Supabase session. For MVP, we verify the pending_r2_deletes
-  // table migration exists and the export function includes profile_extras.
-  // Full end-to-end GDPR verification is a post-#139 smoke test.
-
-  // Verify user-export-data function includes profile_extras field
-  const exportRes = await fetch(`${SUPABASE_URL}/functions/v1/user-export-data`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-    },
-  }).catch(() => null);
-
-  // Function exists (returns 401 for bad method, not 404)
-  if (exportRes) {
-    expect([200, 401, 405]).toContain(exportRes.status);
-  }
+test.skip("S6 — GDPR delete: removes profile_extras row + enqueues R2 delete (blocked by #139)", async () => {
+  // TODO(post-#139): implement real GDPR delete e2e:
+  //   1. Create authenticated test user via Supabase auth
+  //   2. Upload avatar through UI → assert profile_extras.avatar_r2_key is set
+  //   3. Call delete_user_data(user_id) RPC via service-role
+  //   4. Assert profile_extras row is deleted (CASCADE)
+  //   5. Assert pending_r2_deletes has a row with the avatar's r2_key
+  //   6. Assert MOCK_R2 store still has the object (queue consumer deletes it async)
 });

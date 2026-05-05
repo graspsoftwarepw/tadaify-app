@@ -187,23 +187,47 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────
+  // Primary: Authorization header (API consumers, unit tests, MOCK_R2 mock-user-* tokens).
+  // Fallback: Supabase session cookie from same-origin browser request (real users).
+  // This keeps auth resolution server-side — client code never parses document.cookie.
 
+  let accessToken = "";
   const authHeader = request.headers.get("Authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) {
-    return Response.json({ error: "Missing authorization header" }, { status: 401 });
+  if (authHeader.startsWith("Bearer ")) {
+    accessToken = authHeader.slice(7);
+  } else {
+    // Fallback: parse Supabase auth cookie (sb-<ref>-auth-token) server-side
+    const cookieHeader = request.headers.get("Cookie") ?? "";
+    const sbCookie = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("sb-") && c.includes("-auth-token="));
+    if (sbCookie) {
+      const eqIdx = sbCookie.indexOf("=");
+      const val = sbCookie.slice(eqIdx + 1);
+      try {
+        const parsed = JSON.parse(decodeURIComponent(val));
+        if (parsed?.access_token) accessToken = parsed.access_token as string;
+      } catch {
+        // Cookie value not JSON — ignore
+      }
+    }
   }
-  const accessToken = authHeader.slice(7);
 
   // In MOCK_R2 mode with no real Supabase, accept a stub token "mock-user-<id>"
   let userId: string | null = null;
   if (mockR2Mode && accessToken.startsWith("mock-user-")) {
     userId = accessToken.slice("mock-user-".length);
-  } else {
+  } else if (mockR2Mode && !accessToken) {
+    // Dev/test fallback: anonymous mock user when no auth is available (MOCK_R2 only).
+    // Allows browser uploads in local dev without a real Supabase session.
+    userId = "00000000-0000-0000-0000-00000000mock";
+  } else if (accessToken) {
     userId = await verifyJwt(accessToken, supabaseUrl, serviceKey);
   }
 
   if (!userId) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Missing or invalid authorization" }, { status: 401 });
   }
 
   // ── Content-Length pre-check (reject before reading body) ─────────────────

@@ -202,32 +202,14 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
     setAvatarState({ status: "loading", progress: 0 });
 
     try {
-      // Get access token from Supabase session cookie (or use mock token in MOCK_R2 mode)
-      const sessionCookie = document.cookie
-        .split(";")
-        .map((c) => c.trim())
-        .find((c) => c.startsWith("sb-") && c.includes("-auth-token="));
-
-      let accessToken = "";
-      if (sessionCookie) {
-        const eqIdx = sessionCookie.indexOf("=");
-        const val = sessionCookie.slice(eqIdx + 1);
-        try {
-          const parsed = JSON.parse(decodeURIComponent(val));
-          if (parsed?.access_token) accessToken = parsed.access_token as string;
-        } catch {
-          // not JSON
-        }
-      }
-
       const formData = new FormData();
       formData.append("file", file);
 
+      // Auth is resolved server-side from the request Cookie header.
+      // Same-origin XHR sends cookies automatically — no client-side
+      // document.cookie parsing needed (Codex F1 fix).
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload/avatar");
-      if (accessToken) {
-        xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
-      }
 
       // Progress tracking (visual checklist item 4)
       xhr.upload.onprogress = (event) => {

@@ -111,9 +111,22 @@ Deno.serve(async (req: Request) => {
     const accountSettings = unwrap("account_settings", settingsRes);
     const pages = unwrap("pages", pagesRes);
     const blocks = unwrap("blocks", blocksRes);
-    // profile_extras: tolerates table-not-found (returns empty array) for pre-#139 environments
+    // profile_extras: tolerate ONLY the missing-table error (pre-#139 compatibility).
+    // PostgREST returns code "42P01" for undefined relations; Supabase JS surfaces
+    // this as error.code. Any OTHER error (permission, schema, runtime) is propagated
+    // via unwrap() so exports are never silently incomplete (Codex P2 fix, PR #195).
     let profileExtras: unknown[] = [];
-    if (!profileExtrasRes.error) {
+    if (profileExtrasRes.error) {
+      const isMissingTable =
+        profileExtrasRes.error.code === "42P01" ||
+        (profileExtrasRes.error.message?.includes("relation") &&
+         profileExtrasRes.error.message?.includes("does not exist"));
+      if (!isMissingTable) {
+        // Real read error — propagate (fail-closed per PR #174 contract)
+        throw new ExportError("profile_extras", profileExtrasRes.error.message);
+      }
+      // Missing table is expected pre-#139 — return empty gracefully
+    } else {
       profileExtras = (profileExtrasRes.data as unknown[]) ?? [];
     }
 
