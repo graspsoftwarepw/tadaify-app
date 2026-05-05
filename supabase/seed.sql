@@ -42,3 +42,30 @@ INSERT INTO auth.users (
   'authenticated',
   'authenticated'
 ) ON CONFLICT (id) DO NOTHING;
+
+-- Matching auth.identities row for the email provider — required by GoTrue
+-- for signInWithPassword to succeed. Without this row the local auth stack
+-- returns "Invalid login credentials" even though the users row exists.
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  provider_id,
+  provider,
+  identity_data,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000138',
+  '00000000-0000-0000-0000-000000000138',
+  'test-br138-avatar-upload@local.test',
+  'email',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000138',
+    'email', 'test-br138-avatar-upload@local.test',
+    'email_verified', true
+  ),
+  now(),
+  now(),
+  now()
+) ON CONFLICT (provider_id, provider) DO NOTHING;

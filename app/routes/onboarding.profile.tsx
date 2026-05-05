@@ -231,6 +231,11 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
               reject(new Error("Invalid server response"));
             }
             resolve();
+          } else if (xhr.status === 503) {
+            // Avatar uploads disabled (R2 not provisioned yet) — treat as
+            // graceful skip, not an error. User can add avatar later.
+            setAvatarState({ status: "idle" });
+            resolve();
           } else {
             let msg = "Upload failed — please retry";
             try {

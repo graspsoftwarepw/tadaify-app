@@ -4,7 +4,11 @@
   "compatibility_date": "2026-04-04",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
-  "vars": {},
+  "vars": {
+    // Disable avatar uploads in deployed envs until the R2 bucket is provisioned
+    // (tadaify-aws infra story). Remove this line when AVATARS_R2 is declared below.
+    "AVATAR_UPLOADS_ENABLED": "false"
+  },
 
   // R2 bucket binding for avatar uploads (TR-tadaify-003)
   // INTENTIONALLY omitted from this file — wrangler deploy reads this config,

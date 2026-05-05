@@ -250,9 +250,8 @@ test("S2 — too-large file: client rejects before POST (no Worker call)", async
 // Note on auth in S3:
 //   - The oversized test (413) fires from the Content-Length pre-check BEFORE auth —
 //     no Authorization header needed.
-//   - The magic-byte test (415) fires after auth — uses SUPABASE_SERVICE_ROLE_KEY
-//     as a Supabase-verified bearer token (the local stack accepts it for /auth/v1/user).
-//     Skipped gracefully when SERVICE_ROLE_KEY is unset.
+//   - The magic-byte test (415) fires after auth — signs in the seeded test user
+//     to obtain a real access_token JWT via signInSeedUser().
 
 test("S3 — bypassed client validation: Worker rejects oversized file with 413", async ({
   request,
@@ -278,14 +277,12 @@ test("S3 — bypassed client validation: Worker rejects oversized file with 413"
 });
 
 test("S3 — bypassed client validation: Worker rejects PDF disguised as JPG with 415", async ({
+  page,
   request,
 }) => {
-  // 415 fires after auth — requires a valid Supabase session
-  // Uses SERVICE_ROLE_KEY as bearer (local Supabase verifies it)
-  if (!SERVICE_ROLE_KEY) {
-    test.skip();
-    return;
-  }
+  // 415 fires after auth — requires a real Supabase user session.
+  // Sign in the seeded test user to obtain a valid access_token JWT.
+  const accessToken = await signInSeedUser(page);
 
   const pdfBytes = makePdfBytes();
 
@@ -298,7 +295,7 @@ test("S3 — bypassed client validation: Worker rejects PDF disguised as JPG wit
       },
     },
     headers: {
-      "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+      "Authorization": `Bearer ${accessToken}`,
     },
   });
 
