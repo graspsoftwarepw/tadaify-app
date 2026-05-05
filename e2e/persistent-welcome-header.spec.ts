@@ -4,7 +4,7 @@
  * Story: F-002a — persistent welcome header + universal alternatives (tadaify-app#187)
  * Covers: DEC-352=A (lift to route-level) + DEC-358=A (stable copy on every section)
  *
- * S1: Desktop 1440 — welcome header persists through A → B → B-email → B-otp
+ * S1: Desktop 1440 — welcome header persists through A → B → B-email → B-otp → B-password-toggle → C
  * S2: Tablet 768×1024 — welcome header visible + non-overlapping on all sections
  * S3: Mobile 375×812 — header height ≤56px + aria-live="polite"
  * S4: Real-time handle update — header text tracks handle input character-by-character
@@ -16,7 +16,7 @@
  * Run: npx playwright test e2e/persistent-welcome-header.spec.ts
  */
 
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -26,6 +26,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+
+const MAILPIT_URL = "http://localhost:54354";
 
 // Unique per-test handle prefix to avoid collisions with parallel test runs
 const HANDLE_S1 = "t002as1hdr";
@@ -53,15 +55,106 @@ async function clearHandleReservation(handle: string): Promise<void> {
   }
 }
 
+async function deleteAuthUserByEmail(email: string): Promise<void> {
+  try {
+    const listRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?page=1&per_page=200`, {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    });
+    if (!listRes.ok) return;
+    const data = (await listRes.json()) as { users?: Array<{ id: string; email: string }> };
+    const user = (data.users ?? []).find((u) => u.email === email.toLowerCase());
+    if (!user) return;
+    await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${user.id}`, {
+      method: "DELETE",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    });
+  } catch {
+    // best-effort cleanup
+  }
+}
+
+async function clearMailpitForEmail(email: string): Promise<void> {
+  try {
+    const listRes = await fetch(
+      `${MAILPIT_URL}/api/v1/messages?query=${encodeURIComponent(`to:${email}`)}`
+    );
+    if (!listRes.ok) return;
+    const data = (await listRes.json()) as { messages?: Array<{ ID: string }> };
+    for (const msg of data.messages ?? []) {
+      await fetch(`${MAILPIT_URL}/api/v1/messages`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ IDs: [msg.ID] }),
+      });
+    }
+  } catch {
+    // Mailpit not running — test will fail naturally at OTP step
+  }
+}
+
+async function getMailpitOtp(email: string, timeoutMs = 30_000): Promise<string | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const listRes = await fetch(
+        `${MAILPIT_URL}/api/v1/messages?query=${encodeURIComponent(`to:${email}`)}`
+      );
+      if (listRes.ok) {
+        const data = (await listRes.json()) as { messages?: Array<{ ID: string }> };
+        const msgs = data.messages ?? [];
+        if (msgs.length > 0) {
+          const msgRes = await fetch(`${MAILPIT_URL}/api/v1/message/${msgs[0].ID}`);
+          if (msgRes.ok) {
+            const msg = (await msgRes.json()) as { Text?: string; HTML?: string };
+            const text = msg.Text ?? msg.HTML ?? "";
+            const match = text.match(/\b(\d{6})\b/);
+            if (match) return match[1];
+          }
+        }
+      }
+    } catch {
+      // retry
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return null;
+}
+
+async function enterOtp(page: Page, code: string): Promise<void> {
+  const firstDigit = page.getByRole("textbox", { name: /digit 1/i });
+  await firstDigit.click();
+  await firstDigit.evaluate((el, value) => {
+    const dt = new DataTransfer();
+    dt.setData("text", value);
+    const evt = new ClipboardEvent("paste", {
+      clipboardData: dt,
+      bubbles: true,
+      cancelable: true,
+    });
+    el.dispatchEvent(evt);
+  }, code);
+}
+
 // ---------------------------------------------------------------------------
-// S1 — Desktop 1440px: welcome header persists through A → B → B-email → B-otp
+// S1 — Desktop 1440px: welcome header persists through full flow
+//      A → B → B-email → B-otp → B-password-toggle → C
 // ---------------------------------------------------------------------------
 
 test.describe("S1: desktop 1440px — persistent welcome header", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
+  const S1_EMAIL = `t002as1hdr-${Date.now()}@local.test`;
+
   test.afterAll(async () => {
     await clearHandleReservation(HANDLE_S1);
+    await deleteAuthUserByEmail(S1_EMAIL);
+    await clearMailpitForEmail(S1_EMAIL);
   });
 
   test("welcome header visible on Section A with correct handle + brand wordmark", async ({ page }) => {
@@ -106,6 +199,44 @@ test.describe("S1: desktop 1440px — persistent welcome header", () => {
     await expect(page.locator("[aria-label='Enter email']")).toBeVisible();
 
     // Header still visible + same handle
+    await expect(page.locator("header.welcome-header")).toBeVisible();
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+  });
+
+  test("welcome header persists through B-otp → B-password-toggle → C (full email OTP flow)", async ({ page }) => {
+    await clearMailpitForEmail(S1_EMAIL);
+    await page.goto("/register");
+    await page.fill("#handle-input", HANDLE_S1);
+    await expect(page.locator("#handle-availability")).toContainText("Available!", { timeout: 5000 });
+    await page.click("button:has-text('Continue')");
+    await expect(page.locator("[aria-label='Choose sign-in method']")).toBeVisible();
+
+    // Email flow → enter email → send code
+    await page.click("button:has-text('Continue with Email')");
+    await expect(page.locator("[aria-label='Enter email']")).toBeVisible();
+    await page.fill("input[type='email']", S1_EMAIL);
+    await page.click("button:has-text('Send')");
+
+    // ── B-otp: header persists ──
+    await page.waitForSelector("[aria-label='Enter verification code']", { timeout: 15000 });
+    await expect(page.locator("header.welcome-header")).toBeVisible();
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+
+    // Fetch OTP from Mailpit and enter it
+    const otp = await getMailpitOtp(S1_EMAIL);
+    expect(otp).not.toBeNull();
+    await enterOtp(page, otp!);
+
+    // ── B-password-toggle: header persists ──
+    await expect(page.locator("[aria-label='Login preference']")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("header.welcome-header")).toBeVisible();
+    await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
+
+    // Continue with default OTP mode
+    await page.click("button:has-text('Continue →')");
+
+    // ── Section C (success): header persists ──
+    await expect(page.locator("[aria-label='Registration complete']")).toBeVisible({ timeout: 15000 });
     await expect(page.locator("header.welcome-header")).toBeVisible();
     await expect(page.locator("header.welcome-header")).toContainText(`@${HANDLE_S1}`);
   });
