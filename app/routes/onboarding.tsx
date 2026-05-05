@@ -173,8 +173,8 @@ export default function OnboardingLayout() {
             padding: "clamp(24px, 4vw, 48px) clamp(16px, 4vw, 48px)",
           }}
         >
-          {/* Step title header */}
-          {!isComplete && stepTitle && (
+          {/* Step title header — suppressed on welcome (owns its own h1) */}
+          {!isComplete && stepTitle && currentStep?.path !== "/onboarding/welcome" && (
             <h1
               className="font-display"
               style={{
@@ -195,7 +195,7 @@ export default function OnboardingLayout() {
         {!isComplete && (
           <aside
             className="ob-preview-hide-mobile"
-            aria-label="Page preview (coming soon)"
+            aria-label="Page preview"
             style={{
               width: 360,
               background: "var(--bg-muted)",
@@ -216,8 +216,8 @@ export default function OnboardingLayout() {
               <div style={{ fontSize: 32, marginBottom: 12 }} aria-hidden>
                 📄
               </div>
-              <p style={{ fontWeight: 500, marginBottom: 4 }}>Live preview</p>
-              <p style={{ color: "var(--fg-muted)" }}>Coming in a future update.</p>
+              <p style={{ fontWeight: 500, marginBottom: 4 }}>Preview</p>
+              <p style={{ color: "var(--fg-muted)" }}>Your page will appear here.</p>
             </div>
           </aside>
         )}

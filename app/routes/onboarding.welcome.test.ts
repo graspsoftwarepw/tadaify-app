@@ -9,10 +9,14 @@
  * U3: action with valid platforms redirects to /onboarding/social
  * U4: action with skip intent redirects to /onboarding/profile
  * U5: isValidPlatformId correctly validates
+ *
+ * Bug #3 regression tests (issue tadaify-app#188):
+ * U6: 9 platforms present in PLATFORM_LIST
+ * U7: each platform has branded CSS vars defined in PLATFORM_COLORS
  */
 
 import { describe, it, expect } from "vitest";
-import { loader, action, isValidPlatformId, PLATFORM_LIST } from "./onboarding.welcome";
+import { loader, action, isValidPlatformId, PLATFORM_LIST, PLATFORM_COLORS } from "./onboarding.welcome";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -153,5 +157,56 @@ describe("onboarding.welcome — U5: isValidPlatformId", () => {
     expect(isValidPlatformId("fakebook")).toBe(false);
     expect(isValidPlatformId("")).toBe(false);
     expect(isValidPlatformId("INSTAGRAM")).toBe(false); // case-sensitive
+  });
+});
+
+// ── U6: 9 platforms present (Bug #3 regression) ───────────────────────────────
+
+describe("onboarding.welcome — U6: 9 platforms present (Bug #3)", () => {
+  it("PLATFORM_LIST has exactly 9 entries", () => {
+    expect(PLATFORM_LIST).toHaveLength(9);
+  });
+
+  it("all 9 expected platform ids are present", () => {
+    const ids = PLATFORM_LIST.map((p) => p.id);
+    const expected = [
+      "instagram", "tiktok", "youtube", "x",
+      "twitch", "spotify", "linkedin", "pinterest", "threads",
+    ];
+    for (const id of expected) {
+      expect(ids).toContain(id);
+    }
+  });
+});
+
+// ── U7: branded CSS vars in PLATFORM_COLORS (Bug #3 regression) ───────────────
+
+describe("onboarding.welcome — U7: PLATFORM_COLORS branded styling (Bug #3)", () => {
+  const platforms = [
+    { id: "instagram", a: "#F58529" },
+    { id: "tiktok",    a: "#25F4EE" },
+    { id: "youtube",   a: "#FF0000" },
+    { id: "x",         a: "#000"    },
+    { id: "twitch",    a: "#9146FF" },
+    { id: "spotify",   a: "#1DB954" },
+    { id: "linkedin",  a: "#0A66C2" },
+    { id: "pinterest", a: "#E60023" },
+    { id: "threads",   a: "#000"    },
+  ];
+
+  for (const { id, a } of platforms) {
+    it(`PLATFORM_COLORS["${id}"].a matches brand hex ${a}`, () => {
+      expect(PLATFORM_COLORS[id]).toBeDefined();
+      expect(PLATFORM_COLORS[id].a).toBe(a);
+    });
+  }
+
+  it("every platform in PLATFORM_LIST has a PLATFORM_COLORS entry", () => {
+    for (const p of PLATFORM_LIST) {
+      expect(PLATFORM_COLORS[p.id]).toBeDefined();
+      expect(PLATFORM_COLORS[p.id]).toHaveProperty("a");
+      expect(PLATFORM_COLORS[p.id]).toHaveProperty("b");
+      expect(PLATFORM_COLORS[p.id]).toHaveProperty("c");
+    }
   });
 });

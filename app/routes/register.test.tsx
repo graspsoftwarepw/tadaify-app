@@ -1,14 +1,18 @@
 /**
- * U2 — Register route: Apple SSO removal verification (DEC-346=C)
+ * Register route: static source verification tests
  *
- * Verifies that the /register route source contains exactly 3 SSO provider references
- * (Google, X, Email) and zero Apple references after cleanup (issue tadaify-app#183).
+ * U1 — Bug #1 regression (issue tadaify-app#188):
+ *   "✉️ All paths confirm your email. We never ask for your phone." must
+ *   appear zero times — the line was removed per bug #1 fix.
+ *   The 🔒 trust chip MUST still be present.
+ *
+ * U2 — Apple SSO removal verification (DEC-346=C):
+ *   Verifies 3 SSO providers (Google, X, Email) and zero Apple references.
  *
  * These are static-analysis tests against the route source. We use fs.readFileSync
  * so they run under vitest node environment without jsdom/React rendering.
  *
- * Story: F-REGISTER-001a cleanup (issue tadaify-app#183)
- * Covers: U2 per issue spec
+ * Story: F-REGISTER-001a cleanup (issue tadaify-app#183, tadaify-app#188)
  */
 
 import { describe, it, expect } from "vitest";
@@ -19,6 +23,22 @@ const registerSrc = readFileSync(
   fileURLToPath(new URL("./register.tsx", import.meta.url)),
   "utf8",
 );
+
+// ---------------------------------------------------------------------------
+// U1: phone-disclaimer text must NOT appear (Bug #1 — issue tadaify-app#188)
+// ---------------------------------------------------------------------------
+
+describe("register.tsx — Bug #1: phone disclaimer removed", () => {
+  it("does NOT contain the ✉️ phone disclaimer line", () => {
+    expect(registerSrc).not.toContain(
+      "All paths confirm your email. We never ask for your phone."
+    );
+  });
+
+  it("still contains the 🔒 trust chip (not removed)", () => {
+    expect(registerSrc).toContain("We never ask for your phone number. Ever.");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // U2-1: "renders 3 SSO buttons NOT 4 (Apple absent)"

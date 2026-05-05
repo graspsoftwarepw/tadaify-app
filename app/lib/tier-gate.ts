@@ -11,6 +11,8 @@
 
 /** Canonical pricing — pulled from config, never hard-coded in UI copy. */
 export const CREATOR_PRICE_MONTHLY = "$7.99";
+export const PRO_PRICE_MONTHLY = "$19.99";
+export const BUSINESS_PRICE_MONTHLY = "$49.99";
 
 /** Actions that require Creator+ tier — cost-bearing surfaces only. */
 const CREATOR_GATED_ACTIONS = new Set([

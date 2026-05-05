@@ -6,7 +6,21 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { isCreatorPlus, checkSaveAllowed } from "./tier-gate";
+import { isCreatorPlus, checkSaveAllowed, CREATOR_PRICE_MONTHLY, PRO_PRICE_MONTHLY, BUSINESS_PRICE_MONTHLY } from "./tier-gate";
+
+describe("canonical pricing constants (DEC-279/287)", () => {
+  it("CREATOR_PRICE_MONTHLY is $7.99", () => {
+    expect(CREATOR_PRICE_MONTHLY).toBe("$7.99");
+  });
+
+  it("PRO_PRICE_MONTHLY is $19.99", () => {
+    expect(PRO_PRICE_MONTHLY).toBe("$19.99");
+  });
+
+  it("BUSINESS_PRICE_MONTHLY is $49.99", () => {
+    expect(BUSINESS_PRICE_MONTHLY).toBe("$49.99");
+  });
+});
 
 describe("isCreatorPlus", () => {
   it("isCreatorPlus(tier='free') returns false", () => {
