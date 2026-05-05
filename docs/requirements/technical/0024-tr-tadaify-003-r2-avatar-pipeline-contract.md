@@ -52,12 +52,18 @@ avatars/<userId>/<uuid>.<ext>
 - In production: would generate presigned URL with 7-day TTL; for MVP, streams directly
 - Rotation on access: deferred to post-MVP (sufficient for MVP scale)
 
-### MOCK_R2 stub for non-prod environments
+### Local dev + test R2 emulation via miniflare
 
-- `MOCK_R2=1` env var activates in-memory R2 stub (`app/lib/mock-r2.ts`)
-- Same interface as Cloudflare R2Bucket binding (subset: put/get/delete/list)
-- `MOCK_R2_FAIL_FIRST=1` makes the next PUT fail once (for retry test S4)
-- Tests + local dev use MOCK_R2 exclusively; prod R2 binding provisioned separately
+- `@cloudflare/vite-plugin` (already in project) auto-emulates `AVATARS_R2` R2 binding via miniflare
+  when `npm run dev` is started. The binding is filesystem-backed local storage.
+- No `MOCK_R2` env var, no in-memory stub — the binding is always present in local dev (identical
+  interface to production; real `R2Bucket` type).
+- Unit tests (CI): use hermetic `vi.fn()` mocks for the R2 binding (`{ put: vi.fn(), get: vi.fn() }`).
+  They do NOT spin up miniflare. Per `feedback_ci_unit_tests_allowed.md`.
+- Playwright (local only): runs against `npm run dev` which uses the vite-plugin → miniflare → real R2 API.
+- Network failure for S4 retry test: simulated via `page.route()` abort, not a server-side env var.
+- Prod R2 binding provisioned separately via tadaify-aws infra story (same binding name `AVATARS_R2`,
+  bucket name `tadaify-avatars`). No code change needed for prod cutover beyond enabling the binding.
 
 ### Feature flag
 
@@ -91,8 +97,9 @@ Server is AUTHORITATIVE — client validation can be bypassed.
 
 ## Consequences
 
-- Avatar upload pipeline is fully testable locally with `MOCK_R2=1`
+- Avatar upload pipeline is fully testable locally with `npm run dev` (miniflare emulates AVATARS_R2 automatically)
 - Production R2 cutover requires only: (a) tadaify-aws infra PR + (b) flip `AVATAR_UPLOADS_ENABLED=true`
+- No MOCK_R2 stub needed — the vite-plugin miniflare binding is interface-identical to the real Cloudflare R2 binding
 - The `avatar_r2_key` column in `profile_extras` is the single source of truth for whether a user has an avatar
 - GDPR Art. 17 compliance: deleting a user also deletes their R2 objects via `pending_r2_deletes` queue
 - Future stories that read avatar URLs MUST use `buildAvatarPreviewUrl(r2Key)` from `app/routes/api.avatar.$key.ts`
@@ -101,7 +108,7 @@ Server is AUTHORITATIVE — client validation can be bypassed.
 
 - `app/routes/api.upload.avatar.ts` — Worker upload route
 - `app/routes/api.avatar.$key.ts` — Avatar serve route + `buildAvatarPreviewUrl`
-- `app/lib/mock-r2.ts` — MOCK_R2 in-memory stub
+- `app/lib/mock-r2.ts` — DELETED; replaced by miniflare binding via `@cloudflare/vite-plugin`
 - `app/lib/avatar-validator.ts` — client-side validation
 - `app/lib/avatar-orphan-cleanup.ts` — orphan cleanup + GDPR delete helper
 - `supabase/migrations/20260506000001_profile_extras_add_avatar_r2_key.sql` — ALTER migration

@@ -6,15 +6,15 @@
  * Prerequisites:
  *   - `./bin/worktree-env-init.sh` (populates .dev.vars from supabase status)
  *   - `supabase start` (port-band 5435X)
- *   - `MOCK_R2=1 npm run dev` (starts dev server with in-memory R2 stub)
- *   - For S4: `MOCK_R2=1 MOCK_R2_FAIL_FIRST=1 npm run dev`
+ *   - `npm run dev` (starts dev server — @cloudflare/vite-plugin auto-emulates
+ *     AVATARS_R2 via miniflare; no MOCK_R2 env var needed)
  *
  * S1 — Upload happy path: JPG → spinner → preview → r2_key in URL
  * S2 — Too-large file → client-side rejection (no Worker call)
  * S3 — Bypassed client validation → Worker rejects (server-side authority)
  * S4 — Network failure → retry button visible → retry succeeds
  * S5 — Skip avatar → continue with no av param → DB has NULL
- * S6 — GDPR delete removes both DB row + R2 object (MOCK_R2 assertion)
+ * S6 — GDPR delete removes both DB row + R2 object
  *
  * Note: Tests that require DB access (S5 DB check, S6) use SUPABASE service-role
  * key from env. These tests are skipped gracefully when SERVICE_ROLE_KEY is unset.
@@ -32,9 +32,14 @@ import { test, expect, type Page } from "@playwright/test";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY ?? "";
 
 /** Handle prefix — all t138* rows cleaned up in afterAll */
 const HANDLE_PREFIX = "t138";
+
+/** Seeded test user for avatar upload tests. Created in supabase/seed.sql. */
+const SEED_USER_EMAIL = "test-br138-avatar-upload@local.test";
+const SEED_USER_PASSWORD = "TestPass123!";
 
 // ── Fixtures: minimal valid image bytes ──────────────────────────────────────
 
@@ -87,14 +92,32 @@ async function cleanupHandleReservations(prefix: string): Promise<void> {
 }
 
 /**
- * Sets a mock Supabase auth cookie so that same-origin XHR to /api/upload/avatar
- * carries credentials. The route parses sb-*-auth-token cookies and, in MOCK_R2
- * mode, accepts "mock-user-<id>" as a valid access_token.
+ * Signs in the seeded test user via the Supabase REST auth API.
+ * Returns the access_token JWT for use as a Bearer header in direct API calls.
+ * The session cookie is also set on the page context for XHR calls from the browser.
  */
-async function setMockAuthCookie(page: Page, userId: string): Promise<void> {
-  const cookieValue = JSON.stringify({ access_token: `mock-user-${userId}` });
-  // The page must have navigated at least once for cookie domain to resolve.
-  // We set domain to localhost to match the dev server.
+async function signInSeedUser(page: Page): Promise<string> {
+  // POST to Supabase local auth to get a real JWT
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email: SEED_USER_EMAIL, password: SEED_USER_PASSWORD }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`signInSeedUser failed: HTTP ${res.status} — ${body}`);
+  }
+
+  const data = (await res.json()) as { access_token: string };
+  const accessToken = data.access_token;
+
+  // Inject the Supabase auth cookie into the browser context so that the Worker
+  // route's cookie-fallback auth path picks it up on same-origin XHR requests.
+  const cookieValue = JSON.stringify({ access_token: accessToken });
   await page.context().addCookies([
     {
       name: "sb-test-auth-token",
@@ -116,14 +139,13 @@ async function setMockAuthCookie(page: Page, userId: string): Promise<void> {
       sameSite: "Lax",
     },
   ]);
+
+  return accessToken;
 }
 
-/** Stable mock user ID for avatar upload tests. */
-const MOCK_USER_ID = "00000000-0000-0000-0000-000000000138";
-
 async function navigateToProfileStep(page: Page, handle: string): Promise<void> {
-  // Set mock auth cookie before navigating so the upload XHR carries credentials
-  await setMockAuthCookie(page, MOCK_USER_ID);
+  // Sign in the seeded test user and inject auth cookie so the upload XHR has credentials
+  await signInSeedUser(page);
   // Navigate directly to the profile step with a handle already set
   // (bypasses welcome/social steps for speed — test only the profile step)
   await page.goto(
@@ -224,14 +246,18 @@ test("S2 — too-large file: client rejects before POST (no Worker call)", async
 // ── S3 — Bypassed client → Worker rejects (server-side authority) ──────────────
 // S3: Direct POST with oversized or wrong-type file → 413/415 from Worker
 // Verifies: ECN-138-08 + ECN-138-02 (server-side authority)
+//
+// Note on auth in S3:
+//   - The oversized test (413) fires from the Content-Length pre-check BEFORE auth —
+//     no Authorization header needed.
+//   - The magic-byte test (415) fires after auth — uses SUPABASE_SERVICE_ROLE_KEY
+//     as a Supabase-verified bearer token (the local stack accepts it for /auth/v1/user).
+//     Skipped gracefully when SERVICE_ROLE_KEY is unset.
 
 test("S3 — bypassed client validation: Worker rejects oversized file with 413", async ({
   request,
 }) => {
-  const blob = new Blob([OVERSIZED_BYTES], { type: "image/jpeg" });
-  const formData = new FormData();
-  formData.append("file", blob, "big.jpg");
-
+  // 413 fires from Content-Length pre-check BEFORE auth — no bearer needed
   const res = await request.post("/api/upload/avatar", {
     multipart: {
       file: {
@@ -241,7 +267,6 @@ test("S3 — bypassed client validation: Worker rejects oversized file with 413"
       },
     },
     headers: {
-      "Authorization": "Bearer mock-user-00000000-0000-0000-0000-000000000099",
       "Content-Length": String(OVERSIZED_BYTES.length),
     },
   });
@@ -255,6 +280,13 @@ test("S3 — bypassed client validation: Worker rejects oversized file with 413"
 test("S3 — bypassed client validation: Worker rejects PDF disguised as JPG with 415", async ({
   request,
 }) => {
+  // 415 fires after auth — requires a valid Supabase session
+  // Uses SERVICE_ROLE_KEY as bearer (local Supabase verifies it)
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
+
   const pdfBytes = makePdfBytes();
 
   const res = await request.post("/api/upload/avatar", {
@@ -266,7 +298,7 @@ test("S3 — bypassed client validation: Worker rejects PDF disguised as JPG wit
       },
     },
     headers: {
-      "Authorization": "Bearer mock-user-00000000-0000-0000-0000-000000000099",
+      "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
     },
   });
 
@@ -277,11 +309,11 @@ test("S3 — bypassed client validation: Worker rejects PDF disguised as JPG wit
 });
 
 // ── S4 — Network failure → retry button ────────────────────────────────────────
-// S4: MOCK_R2_FAIL_FIRST=1 → first PUT fails → retry button → success
+// S4: First upload attempt aborted (network failure) → retry button → success
 // Verifies: visual checklist item 7 + ECN-138-04
 //
-// Note: This test requires the dev server to be started with MOCK_R2_FAIL_FIRST=1.
-// It gracefully skips if the server does not support the fail-first mode.
+// Note: This test uses page.route() to abort the first upload request at the
+// browser layer — no server-side fail-first env var needed.
 
 test("S4 — network failure: retry button shown after upload failure → retry succeeds", async ({
   page,
@@ -371,6 +403,7 @@ test("S5 — skip avatar: no av param after Continue → wizard advances", async
 //   - Unit: avatar-orphan-cleanup.test.ts (U3) — deleteUserAvatarObjects + consumePendingR2Deletes
 //   - Migration: 20260506000002 — delete_user_data() RPC enqueues R2 delete before CASCADE
 //   - Post-#139 smoke test will replace this skip with a real authenticated flow.
+//   - Miniflare-emulated R2 (filesystem-backed) is used in local dev via vite-plugin.
 
 test.skip("S6 — GDPR delete: removes profile_extras row + enqueues R2 delete (blocked by #139)", async () => {
   // TODO(post-#139): implement real GDPR delete e2e:
@@ -379,5 +412,5 @@ test.skip("S6 — GDPR delete: removes profile_extras row + enqueues R2 delete (
   //   3. Call delete_user_data(user_id) RPC via service-role
   //   4. Assert profile_extras row is deleted (CASCADE)
   //   5. Assert pending_r2_deletes has a row with the avatar's r2_key
-  //   6. Assert MOCK_R2 store still has the object (queue consumer deletes it async)
+  //   6. Assert miniflare R2 store still has the object (queue consumer deletes it async)
 });

@@ -13,3 +13,32 @@
 -- users are NOT used for signup tests per feedback_supabase_local_inbucket_for_auth_testing.md.
 -- Only the returning-user login scenario (S5) needs a pre-existing profile.
 -- This is set up by running the full happy-path once, which creates the profile row.
+
+-- ── F-ONBOARDING-001c users (tadaify-app#138) ────────────────────────────────
+-- Pre-confirmed user for avatar upload Playwright tests (S1, S3-pdf, S4, S5).
+-- Signs in via signInWithPassword("TestPass123!") in test setup.
+-- Covers: TR-tadaify-003 (miniflare-emulated R2 binding, no MOCK_R2 stub).
+
+INSERT INTO auth.users (
+  id,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  created_at,
+  updated_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  aud,
+  role
+) VALUES (
+  '00000000-0000-0000-0000-000000000138',
+  'test-br138-avatar-upload@local.test',
+  crypt('TestPass123!', gen_salt('bf')),
+  now(),
+  now(),
+  now(),
+  '{"provider":"email","providers":["email"]}',
+  '{}',
+  'authenticated',
+  'authenticated'
+) ON CONFLICT (id) DO NOTHING;

@@ -9,6 +9,9 @@
  *
  * Wrangler trigger: [triggers] crons = ["0 3 * * *"] (daily at 03:00 UTC)
  *
+ * Local dev: @cloudflare/vite-plugin provides miniflare-backed AVATARS_R2 binding.
+ * No MOCK_R2 stub needed — the binding works the same in local and production.
+ *
  * Story: F-ONBOARDING-001c (tadaify-app#138)
  * TR-tadaify-003: 24h orphan cleanup cron, GDPR R2 delete queue consumer
  * ECN-138-06, ECN-138-12
@@ -24,7 +27,6 @@ import {
 
 interface CronEnv {
   AVATARS_R2?: R2Bucket;
-  MOCK_R2?: string;
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
 }
@@ -110,21 +112,16 @@ export async function handleScheduled(env: CronEnv): Promise<void> {
     return;
   }
 
-  // Resolve R2 binding (MOCK_R2 for local dev, real binding in prod)
-  let r2: R2BucketLike;
-  if (env.MOCK_R2 === "1") {
-    const { mockR2 } = await import("~/lib/mock-r2");
-    r2 = mockR2;
-  } else if (env.AVATARS_R2) {
-    r2 = env.AVATARS_R2 as unknown as R2BucketLike;
-  } else {
+  // R2 binding — provided by wrangler (miniflare in local dev, real binding in prod)
+  const r2 = env.AVATARS_R2;
+  if (!r2) {
     console.error("[avatar-cron] No R2 binding available — skipping cron");
     return;
   }
 
   // 1. Orphan cleanup — fail-closed: if getBoundKeys throws (e.g. Supabase
   //    outage), skip orphan cleanup entirely to avoid deleting valid avatars.
-  const cleanupDeps = buildCleanupDeps(r2, supabaseUrl, serviceKey);
+  const cleanupDeps = buildCleanupDeps(r2 as unknown as R2BucketLike, supabaseUrl, serviceKey);
   try {
     const cleanupResult = await runOrphanCleanup(cleanupDeps);
     console.info("[avatar-cron] orphan cleanup:", {
@@ -140,7 +137,7 @@ export async function handleScheduled(env: CronEnv): Promise<void> {
   }
 
   // 2. GDPR queue consumer — runs independently of orphan cleanup
-  const queueDeps = buildQueueDeps(r2, supabaseUrl, serviceKey);
+  const queueDeps = buildQueueDeps(r2 as unknown as R2BucketLike, supabaseUrl, serviceKey);
   const queueResult = await consumePendingR2Deletes(queueDeps);
   console.info("[avatar-cron] GDPR queue:", {
     processed: queueResult.processed.length,

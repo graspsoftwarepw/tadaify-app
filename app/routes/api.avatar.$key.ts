@@ -1,10 +1,13 @@
 /**
  * GET /api/avatar/:key
  *
- * Serves avatar bytes from R2 (MOCK_R2 or real binding).
+ * Serves avatar bytes from R2.
  *
  * In production this would generate a presigned URL with 7-day TTL and redirect.
- * In MOCK_R2 mode it serves the bytes directly (no presigning needed).
+ * For MVP, streams the object bytes directly from the R2 binding.
+ *
+ * In local dev, @cloudflare/vite-plugin provides miniflare-backed AVATARS_R2
+ * binding — no separate stub needed.
  *
  * The `key` param is the full r2_key path (e.g. `avatars/user-id/uuid.jpg`).
  * The URL is encoded as a base64url param to avoid path conflicts.
@@ -17,10 +20,8 @@
  */
 
 import type { Route } from "./+types/api.avatar.$key";
-import { mockR2 } from "~/lib/mock-r2";
 
 interface WorkerEnv {
-  MOCK_R2?: string;
   AVATARS_R2?: R2Bucket;
 }
 
@@ -49,25 +50,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs): Pr
     return new Response("Invalid key", { status: 400 });
   }
 
-  const mockMode = env.MOCK_R2 === "1";
-
-  if (mockMode) {
-    const obj = await mockR2.get(r2Key);
-    if (!obj) {
-      return new Response("Not found", { status: 404 });
-    }
-    const buf = await obj.arrayBuffer();
-    const contentType = obj.httpMetadata?.contentType ?? "application/octet-stream";
-    return new Response(buf, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=604800, immutable", // 7 days
-      },
-    });
-  }
-
-  // Production: use real R2 binding
+  // R2 binding — provided by wrangler (miniflare in local dev, real binding in prod)
   const r2 = env.AVATARS_R2;
   if (!r2) {
     return new Response("R2 binding missing", { status: 500 });

@@ -10,11 +10,12 @@
  *   3. Auth: Bearer JWT in Authorization header (Supabase JWT verified via /auth/v1/user).
  *   4. On success: generates `r2_key = avatars/<userId>/<uuid>.<ext>`, PUT to R2, return { r2_key }.
  *
+ * Local dev: @cloudflare/vite-plugin auto-emulates AVATARS_R2 via miniflare
+ * (filesystem-backed). No MOCK_R2 env var needed — the binding is always present.
+ *
  * Env:
  *   SUPABASE_URL              — Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY — service role key for JWT verification
- *   MOCK_R2                   — if "1", use in-memory R2 stub (local dev + tests)
- *   MOCK_R2_FAIL_FIRST        — if "1", next PUT fails once (Playwright S4)
  *   AVATAR_UPLOADS_ENABLED    — if "false", return 503 (prod gating until tadaify-aws lands)
  *
  * Story: F-ONBOARDING-001c (tadaify-app#138)
@@ -24,7 +25,6 @@
  */
 
 import type { Route } from "./+types/api.upload.avatar";
-import { mockR2, setFailNextPut } from "~/lib/mock-r2";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -44,10 +44,8 @@ const WEBP_SUFFIX = [0x57, 0x45, 0x42, 0x50]; // "WEBP" (at bytes 8–11)
 interface WorkerEnv {
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
-  MOCK_R2?: string;
-  MOCK_R2_FAIL_FIRST?: string;
   AVATAR_UPLOADS_ENABLED?: string;
-  /** Real Cloudflare R2 binding — available in production Workers environment. */
+  /** Cloudflare R2 binding — provided by wrangler / miniflare in local dev via vite-plugin. */
   AVATARS_R2?: R2Bucket;
 }
 
@@ -125,29 +123,6 @@ async function verifyJwt(
   return data.id ?? null;
 }
 
-// ── R2 resolver ──────────────────────────────────────────────────────────────
-
-type R2LikeBucket = {
-  put(key: string, value: ArrayBuffer | Uint8Array, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
-  get(key: string): Promise<unknown>;
-  delete(key: string): Promise<void>;
-  list(options?: { prefix?: string }): Promise<{ objects: Array<{ key: string; uploadedAt: Date }> }>;
-};
-
-function resolveR2(env: WorkerEnv): R2LikeBucket | null {
-  if (env.MOCK_R2 === "1") {
-    // Activate fail-first if requested (for Playwright S4)
-    if (env.MOCK_R2_FAIL_FIRST === "1") {
-      setFailNextPut(true);
-    }
-    return mockR2;
-  }
-  if (env.AVATARS_R2) {
-    return env.AVATARS_R2 as unknown as R2LikeBucket;
-  }
-  return null;
-}
-
 // ── Handler ──────────────────────────────────────────────────────────────────
 
 export async function action({ request, context }: Route.ActionArgs): Promise<Response> {
@@ -157,8 +132,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
 
   const env = (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {};
 
-  // Feature flag: AVATAR_UPLOADS_ENABLED defaults true in dev, false in prod until tadaify-aws
-  // The flag defaults to "true" if unset (so local dev and test work out of the box).
+  // Feature flag: AVATAR_UPLOADS_ENABLED defaults true if unset (dev + test work out of the box).
   // In prod, set AVATAR_UPLOADS_ENABLED=false until the R2 bucket is provisioned.
   if (env.AVATAR_UPLOADS_ENABLED === "false") {
     return Response.json(
@@ -170,24 +144,36 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   // Env check
   const supabaseUrl = env.SUPABASE_URL;
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-  const mockR2Mode = env.MOCK_R2 === "1";
 
   if (!supabaseUrl || !serviceKey) {
     return Response.json({ error: "Server misconfigured" }, { status: 500 });
   }
 
-  // R2 binding check
-  const r2 = resolveR2(env);
+  // ── Content-Length pre-check (cheap reject before reading body or hitting Supabase auth) ──
+
+  const contentLengthHeader = request.headers.get("Content-Length");
+  if (contentLengthHeader !== null) {
+    const declared = parseInt(contentLengthHeader, 10);
+    if (!isNaN(declared) && declared > MAX_SIZE_BYTES) {
+      return Response.json(
+        { error: "file_too_large", message: "File too large (max 2 MB)" },
+        { status: 413 }
+      );
+    }
+  }
+
+  // R2 binding check — provided by wrangler (miniflare in local dev, real binding in prod)
+  const r2 = env.AVATARS_R2;
   if (!r2) {
-    console.error("[api.upload.avatar] R2 binding missing — set MOCK_R2=1 for local dev or check wrangler.jsonc");
+    console.error("[api.upload.avatar] R2 binding missing — check wrangler.jsonc r2_buckets declaration");
     return Response.json(
-      { error: "r2_binding_missing", message: "R2 binding missing — set MOCK_R2=1 for local dev or check wrangler.jsonc" },
+      { error: "r2_binding_missing", message: "R2 binding missing — check wrangler.jsonc r2_buckets declaration" },
       { status: 500 }
     );
   }
 
   // ── Auth ─────────────────────────────────────────────────────────────────
-  // Primary: Authorization header (API consumers, unit tests, MOCK_R2 mock-user-* tokens).
+  // Primary: Authorization header (API consumers, unit tests).
   // Fallback: Supabase session cookie from same-origin browser request (real users).
   // This keeps auth resolution server-side — client code never parses document.cookie.
 
@@ -214,29 +200,13 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
     }
   }
 
-  // In MOCK_R2 mode with no real Supabase, accept a stub token "mock-user-<id>"
   let userId: string | null = null;
-  if (mockR2Mode && accessToken.startsWith("mock-user-")) {
-    userId = accessToken.slice("mock-user-".length);
-  } else if (accessToken) {
+  if (accessToken) {
     userId = await verifyJwt(accessToken, supabaseUrl, serviceKey);
   }
 
   if (!userId) {
     return Response.json({ error: "Missing or invalid authorization" }, { status: 401 });
-  }
-
-  // ── Content-Length pre-check (reject before reading body) ─────────────────
-
-  const contentLengthHeader = request.headers.get("Content-Length");
-  if (contentLengthHeader !== null) {
-    const declared = parseInt(contentLengthHeader, 10);
-    if (!isNaN(declared) && declared > MAX_SIZE_BYTES) {
-      return Response.json(
-        { error: "file_too_large", message: "File too large (max 2 MB)" },
-        { status: 413 }
-      );
-    }
   }
 
   // ── Multipart body parsing ─────────────────────────────────────────────────

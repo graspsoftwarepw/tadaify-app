@@ -6,6 +6,9 @@
  *
  * Story: F-ONBOARDING-001c (tadaify-app#138)
  * Codex Finding 2: scheduled handler wiring test
+ *
+ * Hermetic: mocks the cleanup module + uses a vi.fn() R2 binding.
+ * No miniflare, no real Supabase. Per feedback_ci_unit_tests_allowed.md.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -16,16 +19,21 @@ vi.mock("~/lib/avatar-orphan-cleanup", () => ({
   consumePendingR2Deletes: vi.fn().mockResolvedValue({ processed: [], errors: [] }),
 }));
 
-// Mock mock-r2 for MOCK_R2 mode
-vi.mock("~/lib/mock-r2", () => ({
-  mockR2: {
-    list: vi.fn().mockResolvedValue({ objects: [] }),
-    delete: vi.fn().mockResolvedValue(undefined),
-  },
-}));
-
 import { handleScheduled } from "./avatar-cron";
 import { runOrphanCleanup, consumePendingR2Deletes } from "~/lib/avatar-orphan-cleanup";
+
+/** Minimal fake R2 binding — hermetic vi.fn() mock, no miniflare needed in unit tests. */
+function makeFakeR2(): R2Bucket {
+  return {
+    put: vi.fn().mockResolvedValue({}),
+    get: vi.fn().mockResolvedValue(null),
+    delete: vi.fn().mockResolvedValue(undefined),
+    list: vi.fn().mockResolvedValue({ objects: [] }),
+    head: vi.fn().mockResolvedValue(null),
+    createMultipartUpload: vi.fn(),
+    resumeMultipartUpload: vi.fn(),
+  } as unknown as R2Bucket;
+}
 
 describe("handleScheduled — avatar cron wiring", () => {
   beforeEach(() => {
@@ -46,9 +54,9 @@ describe("handleScheduled — avatar cron wiring", () => {
     vi.restoreAllMocks();
   });
 
-  it("calls runOrphanCleanup and consumePendingR2Deletes in MOCK_R2 mode", async () => {
+  it("calls runOrphanCleanup and consumePendingR2Deletes when AVATARS_R2 binding is present", async () => {
     await handleScheduled({
-      MOCK_R2: "1",
+      AVATARS_R2: makeFakeR2(),
       SUPABASE_URL: "http://localhost:54351",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
     });
@@ -61,7 +69,7 @@ describe("handleScheduled — avatar cron wiring", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await handleScheduled({
-      MOCK_R2: "1",
+      AVATARS_R2: makeFakeR2(),
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
     });
 
@@ -83,7 +91,7 @@ describe("handleScheduled — avatar cron wiring", () => {
     );
 
     await handleScheduled({
-      MOCK_R2: "1",
+      AVATARS_R2: makeFakeR2(),
       SUPABASE_URL: "http://localhost:54351",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
     });
@@ -105,7 +113,7 @@ describe("handleScheduled — avatar cron wiring", () => {
     await handleScheduled({
       SUPABASE_URL: "http://localhost:54351",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
-      // No MOCK_R2, no AVATARS_R2
+      // No AVATARS_R2
     });
 
     expect(runOrphanCleanup).not.toHaveBeenCalled();

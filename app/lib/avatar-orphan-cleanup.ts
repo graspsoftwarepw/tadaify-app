@@ -6,7 +6,7 @@
  *   2. List all objects under `avatars/` prefix in R2 that are older than ORPHAN_TTL_MS.
  *   3. Delete any R2 object whose key is NOT in the set of bound keys.
  *
- * In MOCK_R2 mode the cleanup runs against the in-memory store.
+ * In local dev, AVATARS_R2 is emulated by miniflare via @cloudflare/vite-plugin.
  * In production, it runs against the real R2 binding.
  *
  * Story: F-ONBOARDING-001c (tadaify-app#138)
@@ -105,7 +105,7 @@ export interface GdprDeleteDeps {
 /**
  * Enqueues R2 delete for a specific user's avatar objects.
  * Called from the `delete_user_data()` wiring at account deletion time.
- * In MOCK_R2 mode, deletes synchronously from the in-memory store.
+ * Deletes synchronously via the R2 binding (miniflare in local dev, real binding in prod).
  */
 export async function deleteUserAvatarObjects(
   r2: R2BucketLike,

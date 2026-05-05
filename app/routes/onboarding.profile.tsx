@@ -10,7 +10,7 @@
  * Avatar upload: POST /api/upload/avatar (TR-tadaify-003, tadaify-app#138).
  *   - r2_key stored in `av` URL param and passed forward.
  *   - Preview served via /api/avatar/:key (base64url-encoded r2_key).
- *   - MOCK_R2=1 mode for local dev + tests.
+ *   - AVATARS_R2 binding emulated by miniflare via @cloudflare/vite-plugin in local dev.
  *
  * DEC trail:
  *   DEC-297=B  profile is step 3/5

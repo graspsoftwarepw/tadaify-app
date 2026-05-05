@@ -4,18 +4,21 @@
  * U1 — Worker upload route: validation + key generation (issue tadaify-app#138)
  * Covers: TR-tadaify-003 (backend-proxy upload, magic-byte validation, key pattern, auth)
  * ECN-138-01, ECN-138-02, ECN-138-08, ECN-138-11, ECN-138-13
+ *
+ * Hermetic: uses vi.fn() mocks for the R2 binding — no real miniflare, no real Supabase.
+ * Per feedback_ci_unit_tests_allowed.md: unit tests stay hermetic and run in CI.
+ * Playwright (S1–S6 in e2e/onboarding-avatar-upload.spec.ts) covers the full flow
+ * against the miniflare-emulated R2 binding in local dev.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { action, detectImageType } from "./api.upload.avatar";
-import { mockR2 } from "~/lib/mock-r2";
 
 // ── Fetch mock helpers (hermetic — no real Supabase required) ─────────────────
 
 /**
  * Stub global fetch to simulate Supabase /auth/v1/user returning the given
- * HTTP status. Used by tests that exercise the JWT-verification path without
- * MOCK_R2 mode (i.e. tokens that don't start with "mock-user-").
+ * HTTP status and body. Used by auth-path tests.
  */
 function mockAuthFetch(status: number, body: unknown = {}) {
   vi.stubGlobal(
@@ -87,16 +90,41 @@ describe("detectImageType — U1 (pure function)", () => {
 const MOCK_SUPABASE_URL = "http://localhost:54351";
 const MOCK_SERVICE_KEY = "test-service-key";
 const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001";
-const MOCK_TOKEN = `mock-user-${MOCK_USER_ID}`;
 
-function makeContext(overrides?: Record<string, string | undefined>) {
+/**
+ * Creates a fake R2 binding with vi.fn() — hermetic, no miniflare needed.
+ * Unit tests assert that `put` is called with the correct key + content-type.
+ */
+function makeFakeR2(overrides?: { put?: ReturnType<typeof vi.fn> }) {
+  return {
+    put: overrides?.put ?? vi.fn().mockResolvedValue({}),
+    get: vi.fn().mockResolvedValue(null),
+    delete: vi.fn().mockResolvedValue(undefined),
+    list: vi.fn().mockResolvedValue({ objects: [] }),
+  };
+}
+
+function makeContext(r2Overrides?: { put?: ReturnType<typeof vi.fn> }, envOverrides?: Record<string, string | undefined>) {
   return {
     cloudflare: {
       env: {
         SUPABASE_URL: MOCK_SUPABASE_URL,
         SUPABASE_SERVICE_ROLE_KEY: MOCK_SERVICE_KEY,
-        MOCK_R2: "1",
-        ...overrides,
+        AVATARS_R2: makeFakeR2(r2Overrides),
+        ...envOverrides,
+      },
+    },
+  };
+}
+
+function makeContextNoR2(envOverrides?: Record<string, string | undefined>) {
+  return {
+    cloudflare: {
+      env: {
+        SUPABASE_URL: MOCK_SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY: MOCK_SERVICE_KEY,
+        AVATARS_R2: undefined,
+        ...envOverrides,
       },
     },
   };
@@ -125,11 +153,11 @@ async function makeMultipartRequest(
 
 describe("POST /api/upload/avatar — action handler — U1", () => {
   beforeEach(() => {
-    mockR2.clear();
+    // Default: Supabase /auth/v1/user returns the mock user ID
+    mockAuthFetch(200, { id: MOCK_USER_ID });
   });
 
   afterEach(() => {
-    mockR2.clear();
     vi.restoreAllMocks();
   });
 
@@ -142,27 +170,15 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   // ── Auth checks ─────────────────────────────────────────────────────────────
-  it("rejects 401 on missing auth in MOCK_R2 mode (no anonymous fallback)", async () => {
-    // MOCK_R2 mode: no Authorization header and no cookie → 401 (TR-tadaify-003 requires auth)
+  it("rejects 401 on missing auth (no Authorization header, no cookie)", async () => {
+    mockAuthFetch(401, { message: "Missing token" });
     const req = await makeMultipartRequest(JPG_BYTES, {}); // no bearer
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(401);
   });
 
-  it("rejects 401 on missing auth when MOCK_R2 is NOT set", async () => {
-    // Non-MOCK_R2 mode: no Authorization header and no cookie → 401
-    // Provide a fake AVATARS_R2 binding so the R2 check passes (we're testing auth, not R2)
-    const req = await makeMultipartRequest(JPG_BYTES, {});
-    const ctx = makeContext({ MOCK_R2: undefined, AVATARS_R2: "fake-binding" as unknown as string });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res = (await action({ request: req, context: ctx } as any)) as Response;
-    expect(res.status).toBe(401);
-  });
-
-  it("rejects 401 on invalid JWT (non-mock-user format with MOCK_R2)", async () => {
-    // Malformed token — doesn't match "mock-user-<id>", so code falls through to
-    // verifyJwt(). Stub fetch to simulate Supabase returning 401 (no real network).
+  it("rejects 401 on invalid JWT (Supabase returns 401)", async () => {
     mockAuthFetch(401, { message: "Invalid JWT" });
     const req = await makeMultipartRequest(JPG_BYTES, { bearer: "invalid-jwt-token" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,9 +187,9 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   it("accepts auth from Supabase session cookie (server-side parsing)", async () => {
-    // Simulate a Supabase auth cookie containing a mock-user-* access token.
-    // Server parses Cookie header when Authorization is absent.
-    const cookieValue = encodeURIComponent(JSON.stringify({ access_token: MOCK_TOKEN }));
+    // Stub fetch to return user ID when parsing a valid bearer from cookie
+    mockAuthFetch(200, { id: MOCK_USER_ID });
+    const cookieValue = encodeURIComponent(JSON.stringify({ access_token: "valid-jwt-from-cookie" }));
     const req = new Request("http://localhost/api/upload/avatar", {
       method: "POST",
       headers: {
@@ -194,8 +210,9 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
 
   // ── Content-Length pre-check (ECN-138-01) ────────────────────────────────────
   it("rejects 413 on Content-Length > 2MB before reading body", async () => {
+    const bearerToken = "valid-jwt";
     const req = await makeMultipartRequest(JPG_BYTES, {
-      bearer: MOCK_TOKEN,
+      bearer: bearerToken,
       contentLength: 2 * 1024 * 1024 + 1, // 2MB + 1 byte
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,7 +224,7 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
 
   // ── Magic-byte checks (ECN-138-02, ECN-138-08) ─────────────────────────────
   it("rejects 415 on magic-byte mismatch (PDF disguised as JPG)", async () => {
-    const req = await makeMultipartRequest(PDF_AS_JPG, { bearer: MOCK_TOKEN });
+    const req = await makeMultipartRequest(PDF_AS_JPG, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(415);
@@ -217,7 +234,7 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
 
   // ── Happy paths: accepts image types ────────────────────────────────────────
   it("accepts JPG via magic bytes — returns 200 + r2_key", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(200);
@@ -227,7 +244,7 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   it("accepts PNG via magic bytes — returns 200", async () => {
-    const req = await makeMultipartRequest(PNG_BYTES, { bearer: MOCK_TOKEN });
+    const req = await makeMultipartRequest(PNG_BYTES, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(200);
@@ -236,7 +253,7 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   it("accepts WebP via magic bytes (RIFF...WEBP) — returns 200", async () => {
-    const req = await makeMultipartRequest(WEBP_BYTES, { bearer: MOCK_TOKEN });
+    const req = await makeMultipartRequest(WEBP_BYTES, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(200);
@@ -246,7 +263,7 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
 
   // ── Key pattern (TR-tadaify-003) ─────────────────────────────────────────────
   it("key pattern matches avatars/<userId>/<uuid>.<ext>", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     const body = await res.json() as { r2_key: string };
@@ -255,27 +272,40 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
     expect(body.r2_key).toMatch(regex);
   });
 
+  // ── R2 put called with correct args ────────────────────────────────────────
+  it("calls r2.put with correct key and content-type header", async () => {
+    const fakePut = vi.fn().mockResolvedValue({});
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = (await action({ request: req, context: makeContext({ put: fakePut }) } as any)) as Response;
+    expect(res.status).toBe(200);
+    expect(fakePut).toHaveBeenCalledTimes(1);
+    const [calledKey, , calledOpts] = fakePut.mock.calls[0];
+    expect(calledKey).toMatch(/^avatars\//);
+    expect(calledOpts?.httpMetadata?.contentType).toBe("image/jpeg");
+  });
+
   // ── Feature flag (ECN-138-13) ─────────────────────────────────────────────────
   it("returns 503 when AVATAR_UPLOADS_ENABLED=false (prod gating)", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
-    const ctx = makeContext({ AVATAR_UPLOADS_ENABLED: "false" });
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
+    const ctx = makeContext(undefined, { AVATAR_UPLOADS_ENABLED: "false" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: ctx } as any)) as Response;
     expect(res.status).toBe(503);
   });
 
   // ── Missing env (ECN-138-11) ─────────────────────────────────────────────────
-  it("returns 500 when Workers env binding missing", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
+  it("returns 500 when Workers env binding missing (no SUPABASE_URL)", async () => {
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
     const ctx = { cloudflare: { env: {} } };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: ctx } as any)) as Response;
     expect(res.status).toBe(500);
   });
 
-  it("returns 500 with R2 binding missing message when MOCK_R2 not set and no real binding", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
-    const ctx = makeContext({ MOCK_R2: undefined });
+  it("returns 500 with r2_binding_missing when AVATARS_R2 not set", async () => {
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
+    const ctx = makeContextNoR2();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: ctx } as any)) as Response;
     expect(res.status).toBe(500);
@@ -283,20 +313,21 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
     expect(body.error).toBe("r2_binding_missing");
   });
 
-  // ── MOCK_R2 stores object ─────────────────────────────────────────────────────
-  it("stores uploaded file in MOCK_R2 store", async () => {
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
+  // ── R2 PUT failure → 502 ──────────────────────────────────────────────────────
+  it("returns 502 when R2 put throws (upload_failed)", async () => {
+    const fakePut = vi.fn().mockRejectedValue(new Error("simulated R2 error"));
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res = (await action({ request: req, context: makeContext() } as any)) as Response;
-    expect(res.status).toBe(200);
-    const body = await res.json() as { r2_key: string };
-    expect(mockR2.has(body.r2_key)).toBe(true);
+    const res = (await action({ request: req, context: makeContext({ put: fakePut }) } as any)) as Response;
+    expect(res.status).toBe(502);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe("upload_failed");
   });
 
   // ── Logging (TR-tadaify-003: audit log) ──────────────────────────────────────
   it("logs request for audit on successful upload", async () => {
     const logSpy = vi.spyOn(console, "info");
-    const req = await makeMultipartRequest(JPG_BYTES, { bearer: MOCK_TOKEN });
+    const req = await makeMultipartRequest(JPG_BYTES, { bearer: "valid-jwt" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await action({ request: req, context: makeContext() } as any);
     expect(logSpy).toHaveBeenCalledWith(
