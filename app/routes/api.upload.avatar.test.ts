@@ -142,14 +142,12 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   // ── Auth checks ─────────────────────────────────────────────────────────────
-  it("accepts MOCK_R2 anonymous fallback (no auth header, no cookie) — dev/test only", async () => {
-    // In MOCK_R2 mode, when no auth is available, server falls back to a mock user.
+  it("rejects 401 on missing auth in MOCK_R2 mode (no anonymous fallback)", async () => {
+    // MOCK_R2 mode: no Authorization header and no cookie → 401 (TR-tadaify-003 requires auth)
     const req = await makeMultipartRequest(JPG_BYTES, {}); // no bearer
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
-    expect(res.status).toBe(200);
-    const body = await res.json() as { r2_key: string };
-    expect(body.r2_key).toMatch(/^avatars\/00000000-0000-0000-0000-00000000mock\//);
+    expect(res.status).toBe(401);
   });
 
   it("rejects 401 on missing auth when MOCK_R2 is NOT set", async () => {

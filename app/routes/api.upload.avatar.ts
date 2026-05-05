@@ -218,10 +218,6 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   let userId: string | null = null;
   if (mockR2Mode && accessToken.startsWith("mock-user-")) {
     userId = accessToken.slice("mock-user-".length);
-  } else if (mockR2Mode && !accessToken) {
-    // Dev/test fallback: anonymous mock user when no auth is available (MOCK_R2 only).
-    // Allows browser uploads in local dev without a real Supabase session.
-    userId = "00000000-0000-0000-0000-00000000mock";
   } else if (accessToken) {
     userId = await verifyJwt(accessToken, supabaseUrl, serviceKey);
   }
