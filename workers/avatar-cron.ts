@@ -47,8 +47,9 @@ function buildCleanupDeps(r2: R2BucketLike, supabaseUrl: string, serviceKey: str
         }
       );
       if (!res.ok) {
-        console.error("[avatar-cron] Failed to fetch bound keys:", res.status, await res.text());
-        return new Set();
+        const body = await res.text();
+        console.error("[avatar-cron] Failed to fetch bound keys:", res.status, body);
+        throw new Error(`getBoundKeys failed: HTTP ${res.status} — ${body}`);
       }
       const rows = (await res.json()) as Array<{ avatar_r2_key: string }>;
       return new Set(rows.map((r) => r.avatar_r2_key));
@@ -121,26 +122,30 @@ export async function handleScheduled(env: CronEnv): Promise<void> {
     return;
   }
 
-  // 1. Orphan cleanup
+  // 1. Orphan cleanup — fail-closed: if getBoundKeys throws (e.g. Supabase
+  //    outage), skip orphan cleanup entirely to avoid deleting valid avatars.
   const cleanupDeps = buildCleanupDeps(r2, supabaseUrl, serviceKey);
-  const cleanupResult = await runOrphanCleanup(cleanupDeps);
-  console.info("[avatar-cron] orphan cleanup:", {
-    deleted: cleanupResult.deleted.length,
-    kept: cleanupResult.kept.length,
-    errors: cleanupResult.errors.length,
-  });
+  try {
+    const cleanupResult = await runOrphanCleanup(cleanupDeps);
+    console.info("[avatar-cron] orphan cleanup:", {
+      deleted: cleanupResult.deleted.length,
+      kept: cleanupResult.kept.length,
+      errors: cleanupResult.errors.length,
+    });
+    if (cleanupResult.errors.length > 0) {
+      console.warn("[avatar-cron] orphan cleanup errors:", cleanupResult.errors);
+    }
+  } catch (err) {
+    console.error("[avatar-cron] orphan cleanup skipped — bound-key lookup failed:", err);
+  }
 
-  // 2. GDPR queue consumer
+  // 2. GDPR queue consumer — runs independently of orphan cleanup
   const queueDeps = buildQueueDeps(r2, supabaseUrl, serviceKey);
   const queueResult = await consumePendingR2Deletes(queueDeps);
   console.info("[avatar-cron] GDPR queue:", {
     processed: queueResult.processed.length,
     errors: queueResult.errors.length,
   });
-
-  if (cleanupResult.errors.length > 0) {
-    console.warn("[avatar-cron] orphan cleanup errors:", cleanupResult.errors);
-  }
   if (queueResult.errors.length > 0) {
     console.warn("[avatar-cron] GDPR queue errors:", queueResult.errors);
   }

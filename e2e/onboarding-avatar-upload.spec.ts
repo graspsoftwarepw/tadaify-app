@@ -86,7 +86,44 @@ async function cleanupHandleReservations(prefix: string): Promise<void> {
   }
 }
 
+/**
+ * Sets a mock Supabase auth cookie so that same-origin XHR to /api/upload/avatar
+ * carries credentials. The route parses sb-*-auth-token cookies and, in MOCK_R2
+ * mode, accepts "mock-user-<id>" as a valid access_token.
+ */
+async function setMockAuthCookie(page: Page, userId: string): Promise<void> {
+  const cookieValue = JSON.stringify({ access_token: `mock-user-${userId}` });
+  // The page must have navigated at least once for cookie domain to resolve.
+  // We set domain to localhost to match the dev server.
+  await page.context().addCookies([
+    {
+      name: "sb-test-auth-token",
+      value: encodeURIComponent(cookieValue),
+      domain: "localhost",
+      path: "/",
+      httpOnly: false,
+      secure: false,
+      sameSite: "Lax",
+    },
+    // Also cover 127.0.0.1 in case the dev server binds there
+    {
+      name: "sb-test-auth-token",
+      value: encodeURIComponent(cookieValue),
+      domain: "127.0.0.1",
+      path: "/",
+      httpOnly: false,
+      secure: false,
+      sameSite: "Lax",
+    },
+  ]);
+}
+
+/** Stable mock user ID for avatar upload tests. */
+const MOCK_USER_ID = "00000000-0000-0000-0000-000000000138";
+
 async function navigateToProfileStep(page: Page, handle: string): Promise<void> {
+  // Set mock auth cookie before navigating so the upload XHR carries credentials
+  await setMockAuthCookie(page, MOCK_USER_ID);
   // Navigate directly to the profile step with a handle already set
   // (bypasses welcome/social steps for speed — test only the profile step)
   await page.goto(

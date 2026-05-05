@@ -152,8 +152,9 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
 
   it("rejects 401 on missing auth when MOCK_R2 is NOT set", async () => {
     // Non-MOCK_R2 mode: no Authorization header and no cookie → 401
+    // Provide a fake AVATARS_R2 binding so the R2 check passes (we're testing auth, not R2)
     const req = await makeMultipartRequest(JPG_BYTES, {});
-    const ctx = makeContext({ MOCK_R2: undefined });
+    const ctx = makeContext({ MOCK_R2: undefined, AVATARS_R2: "fake-binding" as unknown as string });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: ctx } as any)) as Response;
     expect(res.status).toBe(401);

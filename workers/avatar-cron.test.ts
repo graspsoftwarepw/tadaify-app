@@ -73,6 +73,32 @@ describe("handleScheduled — avatar cron wiring", () => {
     errorSpy.mockRestore();
   });
 
+  it("skips orphan cleanup when runOrphanCleanup throws but still runs GDPR queue", async () => {
+    // Simulate getBoundKeys failure propagating as a throw from runOrphanCleanup
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    (runOrphanCleanup as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("getBoundKeys failed: HTTP 500 — Internal Server Error")
+    );
+
+    await handleScheduled({
+      MOCK_R2: "1",
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "test-key",
+    });
+
+    // Orphan cleanup threw, but GDPR queue consumer still ran
+    expect(consumePendingR2Deletes).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("orphan cleanup skipped"),
+      expect.anything()
+    );
+
+    errorSpy.mockRestore();
+    infoSpy.mockRestore();
+  });
+
   it("skips cron when no R2 binding is available", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 

@@ -130,6 +130,25 @@ describe("runOrphanCleanup — U3", () => {
     expect(result.kept).toContain(KEY_B1);
   });
 
+  it("propagates getBoundKeys failure — no objects deleted when bound-key lookup throws", async () => {
+    // Old objects that WOULD be deleted if bound keys returned empty
+    bucket.seed(KEY_A1, ORPHAN_TTL_MS + 1 * 60 * 60 * 1000);
+    bucket.seed(KEY_B1, ORPHAN_TTL_MS + 1 * 60 * 60 * 1000);
+
+    await expect(
+      runOrphanCleanup({
+        r2: bucket,
+        getBoundKeys: async () => { throw new Error("Supabase 500"); },
+        now: NOW,
+      })
+    ).rejects.toThrow("Supabase 500");
+
+    // No objects were deleted — fail-closed
+    expect(bucket.deletedKeys).toHaveLength(0);
+    expect(bucket.has(KEY_A1)).toBe(true);
+    expect(bucket.has(KEY_B1)).toBe(true);
+  });
+
   it("records errors if R2 delete throws, continues with remaining objects", async () => {
     bucket.seed(KEY_A1, ORPHAN_TTL_MS + 1 * 60 * 60 * 1000);
     bucket.seed(KEY_B1, ORPHAN_TTL_MS + 1 * 60 * 60 * 1000);
