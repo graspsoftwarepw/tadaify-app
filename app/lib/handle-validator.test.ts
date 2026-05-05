@@ -179,30 +179,34 @@ describe("HANDLE_REGEX sanity checks", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// generateAlternatives — original tests (updated per DEC-357=D universal ranking)
+// ---------------------------------------------------------------------------
+
 describe("generateAlternatives", () => {
-  it("returns 3 alternatives for EN locale", () => {
-    const alts = generateAlternatives("alex", "en");
+  it("returns 3 alternatives for a standard handle", () => {
+    const alts = generateAlternatives("alex");
     expect(alts).toHaveLength(3);
   });
 
-  it("EN locale first suggestion is the_ prefix", () => {
-    const alts = generateAlternatives("alex", "en");
+  it("first suggestion is the_ prefix", () => {
+    const alts = generateAlternatives("alex");
     expect(alts[0]).toBe("the_alex");
   });
 
-  it("PL locale first suggestion is _pl suffix", () => {
-    const alts = generateAlternatives("alex", "pl");
-    expect(alts[0]).toBe("alex_pl");
+  it("second suggestion is numeric 2 suffix (DEC-357=D universal)", () => {
+    const alts = generateAlternatives("alex");
+    expect(alts[1]).toBe("alex2");
   });
 
-  it("always includes its_ as third option for EN", () => {
-    const alts = generateAlternatives("kuba", "en");
-    expect(alts).toContain("its_kuba");
+  it("always includes its_ as third option", () => {
+    const alts = generateAlternatives("kuba");
+    expect(alts[2]).toBe("its_kuba");
   });
 
   it("does not include alternatives that are too long", () => {
     const longHandle = "a".repeat(28); // 28 chars — the_ prefix would be 32 chars
-    const alts = generateAlternatives(longHandle, "en");
+    const alts = generateAlternatives(longHandle);
     for (const a of alts) {
       expect(a.length).toBeLessThanOrEqual(30);
     }
@@ -210,25 +214,79 @@ describe("generateAlternatives", () => {
 
   it("does not include alternatives with blocked words", () => {
     // 'admin' is blocked; 'the_admin' is not (not exact match) — valid
-    const alts = generateAlternatives("admin", "en");
+    const alts = generateAlternatives("admin");
     // 'admin' itself blocked but alternatives like 'the_admin' are fine
     for (const a of alts) {
       expect(BLOCKED_WORDS.has(a)).toBe(false);
     }
   });
 
-  it("returns empty array if all variants are too long", () => {
+  it("returns only valid-length alternatives for very long handles", () => {
     const longHandle = "a".repeat(27); // 27 chars — 'the_' + 27 = 31 > 30
-    const alts = generateAlternatives(longHandle, "en");
-    // 'the_' + 27 = 31 → dropped; '_pl' + 27 = 29 → dropped (it's a suffix: 27+3=30 → OK)
-    // Actually 'a'.repeat(27) + '_pl' = 30 chars → valid
+    const alts = generateAlternatives(longHandle);
     for (const a of alts) {
       expect(a.length).toBeLessThanOrEqual(30);
     }
   });
 
-  it("unknown locale falls back to EN strategy", () => {
-    const alts = generateAlternatives("alex", "de");
-    expect(alts[0]).toBe("the_alex");
+  it("locale param is accepted but ignored (backwards compat)", () => {
+    // DEC-357=D: locale param dropped — same output regardless
+    const altsNoLocale = generateAlternatives("alex");
+    const altsEn = generateAlternatives("alex", "en");
+    const altsPl = generateAlternatives("alex", "pl");
+    const altsDe = generateAlternatives("alex", "de");
+    expect(altsNoLocale).toEqual(altsEn);
+    expect(altsEn).toEqual(altsPl);
+    expect(altsPl).toEqual(altsDe);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// U2 — DEC-357=D locale-independence + no _pl suffix regression (tadaify-app#187)
+// ---------------------------------------------------------------------------
+
+describe("generateAlternatives — U2: locale-independence (DEC-357=D, tadaify-app#187)", () => {
+  it("generateAlternatives returns 3 alternatives regardless of locale param", () => {
+    // Same count: undefined, 'pl', 'en', 'de'
+    expect(generateAlternatives("alex")).toHaveLength(3);
+    expect(generateAlternatives("alex", "pl")).toHaveLength(3);
+    expect(generateAlternatives("alex", "en")).toHaveLength(3);
+    expect(generateAlternatives("alex", "de")).toHaveLength(3);
+  });
+
+  it("same output for locale=undefined, locale='pl', locale='en'", () => {
+    const base = generateAlternatives("creator");
+    expect(generateAlternatives("creator", "pl")).toEqual(base);
+    expect(generateAlternatives("creator", "en")).toEqual(base);
+  });
+
+  it("generateAlternatives output does NOT include `_pl` suffix (regression-lock against DEC-357=D)", () => {
+    const alts = generateAlternatives("alex");
+    for (const alt of alts) {
+      expect(alt).not.toMatch(/_pl$/);
+    }
+  });
+
+  it("generateAlternatives output does NOT include `_pl` suffix for any locale (DEC-357=D)", () => {
+    const locales = [undefined, "pl", "en", "de", "fr", "ja"];
+    for (const locale of locales) {
+      const alts = generateAlternatives("alex", locale);
+      for (const alt of alts) {
+        expect(alt).not.toMatch(/_pl$/);
+      }
+    }
+  });
+
+  it("generateAlternatives output uses underscore where applicable, never hyphen (DEC-353)", () => {
+    const alts = generateAlternatives("alex");
+    for (const alt of alts) {
+      // No hyphens in any suggestion
+      expect(alt).not.toContain("-");
+    }
+  });
+
+  it("universal output is: the_<handle>, <handle>2, its_<handle>", () => {
+    const alts = generateAlternatives("kuba");
+    expect(alts).toEqual(["the_kuba", "kuba2", "its_kuba"]);
   });
 });

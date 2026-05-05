@@ -14,10 +14,15 @@
  *   3 clickable chips from generateAlternatives(). Old "Taken — someone beat
  *   you to it." text must be absent.
  *
+ * U-187 — F-002a (issue tadaify-app#187):
+ *   WelcomeHeader is imported at route-level (DEC-352=A + DEC-358=A).
+ *   generateAlternatives called without locale param (DEC-357=D).
+ *
  * These are static-analysis tests against the route source. We use fs.readFileSync
  * so they run under vitest node environment without jsdom/React rendering.
  *
  * Story: F-REGISTER-001a cleanup (issue tadaify-app#183, tadaify-app#188, tadaify-app#190)
+ *        F-002a persistent header (issue tadaify-app#187)
  */
 
 import { describe, it, expect } from "vitest";
@@ -138,5 +143,29 @@ describe("register.tsx — U1-190: handle-taken 'Already taken. Try:' copy + chi
   it("source uses ✦ brand marker for taken copy (DEC-363=A)", () => {
     // The ✦ (sparkle) marker is the brand indicator for the taken state
     expect(registerSrc).toContain("✦ Already taken. Try:");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// U-187: F-002a — WelcomeHeader at route-level + locale-free alternatives
+// ---------------------------------------------------------------------------
+
+describe("register.tsx — U-187: WelcomeHeader imported at route-level (DEC-352=A)", () => {
+  it("imports WelcomeHeader component", () => {
+    expect(registerSrc).toContain("WelcomeHeader");
+    expect(registerSrc).toMatch(/from ["']~\/components\/WelcomeHeader["']/);
+  });
+
+  it("renders <WelcomeHeader handle={state.handle} /> in route component body", () => {
+    // Must be rendered above or outside SectionA, at route level
+    expect(registerSrc).toMatch(/<WelcomeHeader\s+handle=\{state\.handle\}/);
+  });
+
+  it("does NOT pass locale to generateAlternatives (DEC-357=D)", () => {
+    // Old: generateAlternatives(handle, locale)
+    // New: generateAlternatives(handle) — no locale arg
+    expect(registerSrc).not.toMatch(/generateAlternatives\(handle,\s*locale\)/);
+    // Must not reference navigator.language for locale detection
+    expect(registerSrc).not.toMatch(/navigator\.language/);
   });
 });

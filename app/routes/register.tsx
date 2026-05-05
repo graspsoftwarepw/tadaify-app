@@ -53,6 +53,7 @@ import { normalizePrefillEmail } from "~/lib/register-prefill";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 import { ThemeToggleButton } from "~/components/ThemeToggleButton";
 import { OTP_GRID_TEMPLATE } from "~/lib/otp-grid-style";
+import { WelcomeHeader } from "~/components/WelcomeHeader";
 
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
@@ -187,8 +188,8 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
           setHandleAlternatives([]);
         } else {
           // DEC-363=A: show alternatives as clickable chips (not static "Taken" message)
-          const locale = navigator.language?.startsWith("pl") ? "pl" : "en";
-          const alts = generateAlternatives(handle, locale);
+          // DEC-357=D: locale param dropped — universal alternatives ranking
+          const alts = generateAlternatives(handle);
           setHandleAlternatives(alts);
           setHandleError("Already taken. Try:");
         }
@@ -479,12 +480,17 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
         <ThemeToggleButton />
       </nav>
 
+      {/* Persistent welcome header — DEC-352=A + DEC-358=A
+          Mounted ABOVE the grid, stays visible across A→B→B-email→B-otp→B-password-toggle→C.
+          Reactive on state.handle (no debounce — availability check is debounced separately). */}
+      <WelcomeHeader handle={state.handle} />
+
       {/* Main register grid */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          minHeight: "calc(100vh - 54px)",
+          minHeight: "calc(100vh - 54px - 64px)",
         }}
         className="register-grid-responsive"
       >
@@ -743,43 +749,17 @@ function SectionA({
 }) {
   return (
     <section aria-label="Choose your handle" style={{ marginBottom: state.section !== "A" ? 0 : undefined }}>
-      <h1
-        className="font-display"
-        style={{ fontSize: "clamp(28px,4vw,38px)", lineHeight: 1.1, marginBottom: 12 }}
-      >
-        {state.handle ? (
-          <>
-            Hey{" "}
-            <span style={{ color: "var(--brand-primary)" }}>@{state.handle}</span>{" "}
-            <span aria-hidden>👋</span>
-            <br />
-            <span style={{ color: "var(--fg-muted)", fontSize: "clamp(20px,3vw,28px)" }}>
-              welcome to{" "}
-            </span>
-            <span className="font-display font-semibold" style={{ fontSize: "clamp(28px,4vw,36px)" }}>
-              <span style={{ color: "var(--wm-ta)" }}>ta</span>
-              <span style={{ color: "var(--wm-da)" }}>da!</span>
-              <span style={{ color: "var(--wm-ify)" }}>ify</span>
-            </span>
-          </>
-        ) : (
-          <>
-            Claim your handle
-            <br />
-            <span
-              className="font-display font-semibold"
-              style={{ fontSize: "clamp(28px,4vw,36px)" }}
-            >
-              <span style={{ color: "var(--wm-ta)" }}>ta</span>
-              <span style={{ color: "var(--wm-da)" }}>da!</span>
-              <span style={{ color: "var(--wm-ify)" }}>ify</span>
-            </span>
-          </>
-        )}
-      </h1>
+      {/* Welcome header lifted to route-level (DEC-352=A + DEC-358=A) — rendered above the grid.
+          SectionA now shows only the handle input + availability check when active. */}
 
       {state.section === "A" && (
         <>
+          <p
+            className="font-display font-semibold"
+            style={{ fontSize: "clamp(20px,3vw,28px)", marginBottom: 8, lineHeight: 1.2 }}
+          >
+            Claim your handle
+          </p>
           <p style={{ fontSize: 15, color: "var(--fg-muted)", marginBottom: 24, lineHeight: 1.6 }}>
             Grab your handle first — it's yours forever, free.
           </p>

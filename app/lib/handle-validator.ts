@@ -103,39 +103,40 @@ export const HANDLE_ERROR_MESSAGES: Record<
 };
 
 /**
- * Generate locale-aware alternative handle suggestions.
+ * Generate universal alternative handle suggestions.
  *
- * Strategy:
- *  - PL locale  → prefer `<handle>_pl` suffix variant
- *  - EN/default → prefer `the_<handle>` prefix variant
- *  - Always include `its_<handle>` as a third fallback
+ * DEC-357=D: locale parameter dropped — same output regardless of country.
+ * Rationale: removes need for locale/country detection (privacy-minimal;
+ * no IP-derived data collection). No `_pl` suffix bias.
+ *
+ * Universal strategy:
+ *  1. `the_<handle>` prefix
+ *  2. `<handle>2` numeric suffix
+ *  3. `its_<handle>` prefix
  *
  * Returns up to 3 alternatives. Each is validated before being included;
  * if a variant is too long (>30 chars) it is dropped.
+ *
+ * The `locale` parameter is accepted but ignored for backwards compatibility
+ * with existing call sites (api.handle.check.ts). Removing it entirely would
+ * be a no-op since locale detection is also removed there (DEC-357=D).
  */
 export function generateAlternatives(
   handle: string,
-  locale: "pl" | "en" | string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _locale?: string
 ): string[] {
   const alts: string[] = [];
 
-  if (locale === "pl") {
-    // PL-first: append _pl suffix
-    const plVariant = `${handle}_pl`;
-    if (plVariant.length <= 30) alts.push(plVariant);
+  // 1. the_ prefix
+  const theVariant = `the_${handle}`;
+  if (theVariant.length <= 30) alts.push(theVariant);
 
-    const theVariant = `the_${handle}`;
-    if (theVariant.length <= 30) alts.push(theVariant);
-  } else {
-    // EN / default: prepend the_
-    const theVariant = `the_${handle}`;
-    if (theVariant.length <= 30) alts.push(theVariant);
+  // 2. numeric 2 suffix
+  const numVariant = `${handle}2`;
+  if (numVariant.length <= 30) alts.push(numVariant);
 
-    const plVariant = `${handle}_pl`;
-    if (plVariant.length <= 30) alts.push(plVariant);
-  }
-
-  // Third option: its_ prefix
+  // 3. its_ prefix
   const itsVariant = `its_${handle}`;
   if (itsVariant.length <= 30 && !alts.includes(itsVariant)) {
     alts.push(itsVariant);
