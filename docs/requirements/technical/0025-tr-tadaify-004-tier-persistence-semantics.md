@@ -17,10 +17,11 @@ The system needs to write and read `tier_slug` reliably.
 
 ## Decision
 
-1. **Write path (onboarding)**: `onboarding.tier` action UPSERTs `tier_slug='free'` into
-   `profile_extras` via service-role REST (`Prefer: resolution=merge-duplicates`) immediately
-   before redirecting to `/app`. The UPSERT is idempotent — re-submission does not error
-   (ECN-139-02).
+1. **Write path (onboarding)**: `onboarding.tier` action INSERTs `tier_slug='free'` into
+   `profile_extras` via service-role REST (`Prefer: resolution=ignore-duplicates,return=minimal`)
+   immediately before redirecting to `/app`. The INSERT with ON CONFLICT DO NOTHING is
+   idempotent — re-submission does not error and never overwrites an existing row
+   (ECN-139-02). This preserves any non-free `tier_slug` set by a prior Stripe webhook.
 2. **Param enforcement**: `tier` param in URL/body is IGNORED. Server always writes `'free'`
    regardless of input (ECN-139-01, DEC-311=A enforcement). The function signature
    `upsertTierFree(userId, env)` does not accept a tier argument.
@@ -35,9 +36,9 @@ The system needs to write and read `tier_slug` reliably.
 
 1. `onboarding.tier` action calls `upsertTierFree(userId, env)` before `redirect("/app")`.
 2. `upsertTierFree` always posts `{ tier_slug: "free" }` — no external input accepted.
-3. `Prefer: resolution=merge-duplicates` ensures second submission is a no-op, not an error.
-4. Missing `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` → skip UPSERT + still redirect.
-5. Missing session cookie → skip UPSERT + still redirect.
+3. `Prefer: resolution=ignore-duplicates` ensures second submission is a no-op (ON CONFLICT DO NOTHING), preserving any existing row.
+4. Missing `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` → skip INSERT + still redirect.
+5. Missing session cookie → skip INSERT + still redirect.
 
 ## Related
 

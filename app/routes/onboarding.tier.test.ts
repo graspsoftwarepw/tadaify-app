@@ -12,7 +12,7 @@
  * F-ONBOARDING-001d (#139) — upsertTierFree + action DB persistence:
  * U_TIER_DB_1: upsertTierFree calls Supabase REST with tier_slug='free'
  * U_TIER_DB_2: upsertTierFree ignores tier param from URL/body (ECN-139-01)
- * U_TIER_DB_3: upsertTierFree is idempotent — second UPSERT succeeds (ECN-139-02)
+ * U_TIER_DB_3: upsertTierFree is idempotent — second INSERT is a no-op (ECN-139-02)
  * U_TIER_DB_4: action skips DB write + still redirects if env vars missing
  * U_TIER_DB_5: action skips DB write + still redirects if no auth cookie (unauthenticated)
  * U_TIER_DB_6: extractAccessToken reads from sb-*-auth-token cookie
@@ -287,7 +287,7 @@ describe("onboarding.tier — U8: no deferred-feature copy (Bug #6d)", () => {
   });
 });
 
-// ── U_TIER_DB: profile_extras UPSERT (F-ONBOARDING-001d / TR-tadaify-004) ────
+// ── U_TIER_DB: profile_extras INSERT (F-ONBOARDING-001d / TR-tadaify-004) ────
 
 describe("onboarding.tier — U_TIER_DB_1: upsertTierFree calls Supabase with tier_slug='free'", () => {
   let mockFetch: ReturnType<typeof vi.fn>;
@@ -454,6 +454,209 @@ describe("onboarding.tier — U_TIER_DB_9: existing non-free tier is not overwri
     expect(preferHeader).toContain("ignore-duplicates");
     // Must NOT use merge-duplicates (which would overwrite tier_slug)
     expect(preferHeader).not.toContain("merge-duplicates");
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_10: action throws on /auth/v1/user 5xx (infra failure)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("throws when /auth/v1/user returns 500 (server error)", async () => {
+    // /auth/v1/user returns 500
+    mockFetch.mockResolvedValueOnce(
+      new Response("internal server error", { status: 500 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await expect(
+      action({
+        request: req,
+        context: {
+          cloudflare: {
+            env: {
+              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_SERVICE_ROLE_KEY: "sk",
+            },
+          },
+        } as never,
+        params: {},
+      } as never),
+    ).rejects.toThrow(/\/auth\/v1\/user failed: 500/);
+  });
+
+  it("throws when /auth/v1/user returns 503 (service unavailable)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("service unavailable", { status: 503 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await expect(
+      action({
+        request: req,
+        context: {
+          cloudflare: {
+            env: {
+              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_SERVICE_ROLE_KEY: "sk",
+            },
+          },
+        } as never,
+        params: {},
+      } as never),
+    ).rejects.toThrow(/\/auth\/v1\/user failed: 503/);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_11: action throws on /auth/v1/user 200 without id", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("throws when /auth/v1/user returns 200 but response has no id field", async () => {
+    // /auth/v1/user returns 200 with a body missing the id field
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ email: "user@example.com" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await expect(
+      action({
+        request: req,
+        context: {
+          cloudflare: {
+            env: {
+              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_SERVICE_ROLE_KEY: "sk",
+            },
+          },
+        } as never,
+        params: {},
+      } as never),
+    ).rejects.toThrow(/\/auth\/v1\/user returned 200 but no user id/);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_12: action gracefully skips on 401/403 (expired token)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("redirects to /app (no throw) when /auth/v1/user returns 401", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("unauthorized", { status: 401 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "expired-tok", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    const result = await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+    // Only the /auth/v1/user call, no profile_extras call
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("redirects to /app (no throw) when /auth/v1/user returns 403", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("forbidden", { status: 403 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "banned-tok", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    const result = await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
 

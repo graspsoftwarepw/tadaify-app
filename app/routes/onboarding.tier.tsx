@@ -12,15 +12,17 @@
  *   Button label changed to "Take me to my dashboard →" — "my page" was
  *   misleading since the page is not published at this point.
  *
- * TR-tadaify-004: action UPSERTs tier_slug='free' into profile_extras via
- *   service-role REST. tier param in URL/body is IGNORED — server enforces
- *   'free' regardless (DEC-311=A enforcement). If user is unauthenticated
- *   (no session cookie), the DB write is skipped and the redirect still goes
- *   to /app (which itself will gate auth and redirect to /login if needed).
+ * TR-tadaify-004: action INSERTs tier_slug='free' into profile_extras via
+ *   service-role REST (ignore-duplicates / ON CONFLICT DO NOTHING — never
+ *   overwrites existing row). tier param in URL/body is IGNORED — server
+ *   enforces 'free' regardless (DEC-311=A enforcement). If user is
+ *   unauthenticated (no session cookie), the DB write is skipped and the
+ *   redirect still goes to /app (which itself will gate auth and redirect
+ *   to /login if needed).
  *
  * URL state:
  *   loader reads → all accumulated params (for back-link construction only)
- *   action emits → /app directly (DEC-366=A), after profile_extras UPSERT
+ *   action emits → /app directly (DEC-366=A), after profile_extras INSERT
  *
  * Covers: BR-ONBOARDING-005 (step 5 plan overview)
  * Story: F-ONBOARDING-001d (#139), TR-tadaify-007 + TR-tadaify-004
@@ -194,7 +196,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 // TR-tadaify-004: action INSERTs tier_slug='free' into profile_extras BEFORE redirect.
 // tier param in URL/body is IGNORED — server always writes 'free' (DEC-311=A / ECN-139-01).
 // Codex Finding 1: authenticated users with env configured → throw on failed DB write.
-// Graceful skip only for: missing env vars or missing session (unauthenticated).
+// Codex Finding 2: throw on /auth/v1/user infrastructure failures (5xx, malformed 200).
+// Graceful skip only for: missing env vars, missing session, or expired/invalid token (401/403).
 
 export async function action({ request, context }: Route.ActionArgs) {
   const env = (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {};
@@ -211,12 +214,29 @@ export async function action({ request, context }: Route.ActionArgs) {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+
       if (userRes.ok) {
         const userData = (await userRes.json()) as { id?: string };
-        if (userData?.id) {
-          // upsertTierFree throws on real DB failures — let it propagate (500).
-          await upsertTierFree(userData.id, env);
+        if (!userData?.id) {
+          // Malformed 200 — Supabase returned OK but no user id. Treat as infra failure.
+          throw new Error(
+            `[onboarding.tier] /auth/v1/user returned 200 but no user id`,
+          );
         }
+        // upsertTierFree throws on real DB failures — let it propagate (500).
+        await upsertTierFree(userData.id, env);
+      } else if (userRes.status === 401 || userRes.status === 403) {
+        // Expired or invalid token — graceful skip, /app loader will gate auth.
+        console.warn(
+          `[onboarding.tier] /auth/v1/user returned ${userRes.status} — token expired/invalid, skipping tier persistence`,
+        );
+      } else {
+        // Infrastructure failure (5xx, unexpected status) — throw so we don't
+        // silently skip tier persistence while advancing the user to /app.
+        const body = await userRes.text().catch(() => "");
+        throw new Error(
+          `[onboarding.tier] /auth/v1/user failed: ${userRes.status} ${body}`,
+        );
       }
     }
   }
