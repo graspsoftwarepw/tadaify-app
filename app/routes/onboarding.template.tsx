@@ -11,11 +11,14 @@
  *   DEC-297=B  template is step 4/5
  *
  * Covers: BR-ONBOARDING-004 (step 4 template selection)
+ * State broadcast: tdf:onboarding:state-update (TR-tadaify-006, tadaify-app#137)
  */
 
 import { redirect } from "react-router";
 import { Link, useSearchParams } from "react-router";
+import { useEffect } from "react";
 import type { Route } from "./+types/onboarding.template";
+import { publish } from "~/lib/onboarding-preview-bus";
 
 // ─── Template definitions ──────────────────────────────────────────────────────
 
@@ -126,6 +129,25 @@ export default function TemplatePage({ loaderData, actionData }: Route.Component
   const currentTpl = urlTpl && isValidTemplateId(urlTpl)
     ? urlTpl
     : prefilled?.tpl ?? (selectedTemplate ?? "chopin");
+
+  // Broadcast state on mount and whenever selected template changes
+  useEffect(() => {
+    publish({
+      handle,
+      name: name || null,
+      bio: bio || null,
+      av: av || null,
+      platforms: platforms ? platforms.split(",").filter(Boolean) : [],
+      socials: (() => {
+        try {
+          return socials ? (JSON.parse(socials) as Record<string, string>) : {};
+        } catch {
+          return {};
+        }
+      })(),
+      tpl: currentTpl,
+    });
+  }, [handle, name, bio, av, platforms, socials, currentTpl]);
 
   const handleRadioChange = (id: string) => {
     setSearchParams((prev) => {

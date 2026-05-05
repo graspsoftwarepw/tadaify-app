@@ -2,13 +2,15 @@
  * /onboarding — Shared wizard layout
  *
  * Story: F-ONBOARDING-001a — Wizard skeleton + state propagation + 5 routes
- * Visual contract: mockups/tadaify-mvp/onboarding-welcome.html (merged PR #135)
+ * Story: F-ONBOARDING-001b — Preview pane + 3-viewport switcher + state-broadcast (tadaify-app#137)
+ * Visual contract: mockups/tadaify-mvp/onboarding-profile.html (canonical preview-pane reference)
  *
  * Layout:
  *   - Top nav with wordmark
  *   - Progress bar (steps 1-5; hidden on /onboarding/complete)
  *   - <Outlet /> for step-specific content
- *   - Right-col preview pane PLACEHOLDER (wired in #134b)
+ *   - Right-col <OnboardingPreviewPane /> on welcome/social/profile/template steps
+ *   - Right-col hidden on tier step (DEC-297=B) and complete step (DEC-332=D)
  *
  * URL state propagation:
  *   Step 1 (welcome)  → no state
@@ -20,14 +22,19 @@
  *
  * DEC trail:
  *   DEC-311=A  tier always free in MVP; no billing step
- *   DEC-297=B  flow: welcome → social → profile → template → tier → complete
+ *   DEC-297=B  flow: welcome → social → profile → template → tier → complete;
+ *              tier step has NO preview pane (single-column)
  *   DEC-298=A  scraping skipped; profile is manual-only
- *   DEC-332=D  complete page: "page coming soon" semantics
+ *   DEC-332=D  complete page: "page coming soon" semantics; no preview pane
+ *   DEC-251    preview pane shared partial pattern
+ *   TR-tadaify-006  tdf:onboarding:state-update event contract
  */
 
 import { Outlet, Link, useLocation, useSearchParams } from "react-router";
 import { MotionLogo } from "~/components/landing/MotionLogo";
 import { ThemeToggleButton } from "~/components/ThemeToggleButton";
+import { OnboardingPreviewPane } from "~/components/OnboardingPreviewPane";
+import type { OnboardingPreviewState } from "~/lib/onboarding-preview-bus";
 
 // ─── Step configuration ────────────────────────────────────────────────────────
 
@@ -48,6 +55,16 @@ const STEPS: StepConfig[] = [
 
 // ─── Layout component ──────────────────────────────────────────────────────────
 
+// Steps that show the preview pane (welcome/social/profile/template)
+// DEC-297=B: tier step has no preview pane
+// DEC-332=D: complete step has no preview pane
+const PREVIEW_PANE_PATHS = [
+  "/onboarding/welcome",
+  "/onboarding/social",
+  "/onboarding/profile",
+  "/onboarding/template",
+];
+
 export default function OnboardingLayout() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -57,6 +74,31 @@ export default function OnboardingLayout() {
   const stepNumber = currentStep?.number ?? 1;
   const progressPct = (stepNumber / STEPS.length) * 100;
   const stepTitle = currentStep?.title ?? "";
+
+  // Whether the current step should show the preview pane
+  const showPreviewPane = PREVIEW_PANE_PATHS.some((p) =>
+    location.pathname.startsWith(p)
+  );
+
+  // Build initial state for preview pane from URL search params
+  const previewInitialState: OnboardingPreviewState = {
+    handle: searchParams.get("handle") ?? "",
+    name: searchParams.get("name") || null,
+    bio: searchParams.get("bio") || null,
+    av: searchParams.get("av") || null,
+    platforms: searchParams.get("platforms")
+      ? (searchParams.get("platforms") as string).split(",").filter(Boolean)
+      : [],
+    socials: (() => {
+      try {
+        const raw = searchParams.get("socials");
+        return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+      } catch {
+        return {};
+      }
+    })(),
+    tpl: searchParams.get("tpl") || null,
+  };
 
   return (
     <>
@@ -156,11 +198,14 @@ export default function OnboardingLayout() {
         </div>
       )}
 
-      {/* ── Two-column shell: content left + preview-pane placeholder right ─ */}
+      {/* ── Two-column shell: content left + preview-pane right ───────────── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isComplete ? "1fr" : "minmax(0, 1fr) auto",
+          gridTemplateColumns:
+            isComplete || !showPreviewPane
+              ? "1fr"
+              : "minmax(0, 1fr) auto",
           minHeight: "calc(100vh - 54px)",
           maxWidth: isComplete ? undefined : 1200,
           margin: "0 auto",
@@ -191,35 +236,11 @@ export default function OnboardingLayout() {
           <Outlet />
         </main>
 
-        {/* Preview pane placeholder (wired in #134b) */}
-        {!isComplete && (
-          <aside
-            className="ob-preview-hide-mobile"
-            aria-label="Page preview"
-            style={{
-              width: 360,
-              background: "var(--bg-muted)",
-              borderLeft: "1px solid var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 24,
-            }}
-          >
-            <div
-              style={{
-                textAlign: "center",
-                color: "var(--fg-subtle)",
-                fontSize: 13,
-              }}
-            >
-              <div style={{ fontSize: 32, marginBottom: 12 }} aria-hidden>
-                📄
-              </div>
-              <p style={{ fontWeight: 500, marginBottom: 4 }}>Preview</p>
-              <p style={{ color: "var(--fg-muted)" }}>Your page will appear here.</p>
-            </div>
-          </aside>
+        {/* Preview pane — only on welcome/social/profile/template steps */}
+        {showPreviewPane && (
+          <div className="ob-preview-hide-mobile">
+            <OnboardingPreviewPane initialState={previewInitialState} />
+          </div>
         )}
       </div>
 
@@ -228,6 +249,12 @@ export default function OnboardingLayout() {
         @media (max-width: 900px) {
           .ob-preview-hide-mobile { display: none !important; }
           .ob-shell-responsive { grid-template-columns: 1fr !important; }
+        }
+        .ob-preview-hide-mobile {
+          position: sticky;
+          top: 54px;
+          height: calc(100vh - 54px);
+          overflow-y: auto;
         }
       `}</style>
     </>

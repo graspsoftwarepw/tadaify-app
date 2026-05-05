@@ -15,12 +15,15 @@
  *   DEC-298=A  no scraping; manual entry only
  *
  * Covers: BR-ONBOARDING-002 (step 2 social handle entry)
+ * State broadcast: tdf:onboarding:state-update (TR-tadaify-006, tadaify-app#137)
  */
 
 import { redirect } from "react-router";
 import { Link } from "react-router";
+import { useEffect } from "react";
 import type { Route } from "./+types/onboarding.social";
 import { PLATFORM_LIST, isValidPlatformId, type PlatformId } from "./onboarding.welcome";
+import { publish } from "~/lib/onboarding-preview-bus";
 
 // ─── Validators ────────────────────────────────────────────────────────────────
 
@@ -128,6 +131,19 @@ export async function action({ request }: Route.ActionArgs) {
 export default function SocialPage({ loaderData, actionData }: Route.ComponentProps) {
   const { handle, platforms, platformsCsv, existingSocials } = loaderData;
   const error = actionData?.error;
+
+  // Broadcast initial state on mount — handle + platforms; socials not fully entered yet
+  useEffect(() => {
+    publish({
+      handle,
+      name: null,
+      bio: null,
+      av: null,
+      platforms: [...platforms],
+      socials: existingSocials,
+      tpl: null,
+    });
+  }, [handle, platforms, existingSocials]);
 
   // Build back URL
   const backParams = new URLSearchParams();

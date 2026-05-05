@@ -30,7 +30,8 @@
 | [TR-tadaify-001](requirements/technical/0020-tr-tadaify-001-unit-test-ci-gate.md) | MUST | Unit-test CI gate; Playwright stays local (supersedes TR-009) |
 | [TR-tadaify-002](requirements/technical/0021-tr-tadaify-002-auth-email-templates.md) | MUST | Auth email templates contract (plain-text fallback files / token-only OTP / local files / inline CSS only) — multipart MIME wire delivery PENDING text_path support / Edge Function dispatcher / Resend Phase 3 |
 | [TR-tadaify-005](requirements/technical/0022-tr-tadaify-005-app-dashboard-ssr-contract.md) | MUST | App dashboard SSR-first contract: loader fetches profile + account_settings + pages + blocks in parallel; pure-function extractables for URL-param parsing; onboarding state derivation in `lib/onboarding-state.ts`; DEC-332=D enforced via type system |
+| [TR-tadaify-006](requirements/technical/0023-tr-tadaify-006-onboarding-preview-pane-event-contract.md) | MUST | Onboarding preview-pane event/state contract: shared `<OnboardingPreviewPane />` publishes/consumes `tdf:onboarding:state-update` with payload `{ handle, name, bio, av, platforms, socials, tpl }`. Viewport persists in `sessionStorage['tadaify:onboarding:viewport']` (desktop/tablet/mobile). Debounce: 150ms. Tier + complete steps have no preview pane (DEC-297=B + DEC-332=D). |
 
 ---
 
-*Generated from 22 MADR records in `docs/requirements/technical/`.*
+*Generated from 23 MADR records in `docs/requirements/technical/`.*
