@@ -37,7 +37,7 @@ DROP FUNCTION IF EXISTS public.profile_extras_set_updated_at() CASCADE;
 
 ---
 
-### 20260506000001_profile_extras_rls_tier_lockdown.sql
+### 20260506000002_profile_extras_rls_tier_lockdown.sql
 
 **Depends on:** `20260505182021_profile_extras_base.sql` — MUST run after it.
 

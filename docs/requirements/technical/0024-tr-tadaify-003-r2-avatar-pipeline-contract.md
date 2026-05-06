@@ -112,7 +112,7 @@ Server is AUTHORITATIVE — client validation can be bypassed.
 - `app/lib/avatar-validator.ts` — client-side validation
 - `app/lib/avatar-orphan-cleanup.ts` — orphan cleanup + GDPR delete helper
 - `supabase/migrations/20260506000001_profile_extras_add_avatar_r2_key.sql` — ALTER migration
-- `supabase/migrations/20260506000002_delete_user_data_r2_enqueue.sql` — GDPR queue + RPC update
+- `supabase/migrations/20260506000003_delete_user_data_r2_enqueue.sql` — GDPR queue + RPC update
 - TR-tadaify-007 — profile_extras shared contract (base table owned by tadaify-app#139)
 - DEC-310=B — 4-issue split; avatar upload is F-ONBOARDING-001c
 - DEC-329=A — one TR with N acceptance bullets
