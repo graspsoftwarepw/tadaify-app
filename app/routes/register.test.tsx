@@ -169,3 +169,87 @@ describe("register.tsx — U-187: WelcomeHeader imported at route-level (DEC-352
     expect(registerSrc).not.toMatch(/navigator\.language/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// U2 — Issue #142 mockup match: sub-copy literal + top-right link copy
+// ---------------------------------------------------------------------------
+//
+// Visual checklist items 6 + 4 from issue tadaify-app#142:
+//  - sub-copy reads "Your public URL will be:" (was "Your public URL:")
+//  - top-right link reads "Log in →" (was "Already have an account? Sign in")
+//
+// Source: mockups/tadaify-mvp/register.html (canonical contract).
+// ---------------------------------------------------------------------------
+
+describe("register.tsx — U2-1: Section A sub-copy matches mockup (item 6)", () => {
+  it("contains 'Your public URL will be:' literal", () => {
+    expect(registerSrc).toContain("Your public URL will be:");
+  });
+
+  it("does NOT contain the old 'Your public URL:' preview-pane sub-copy", () => {
+    // The preview-pane sub-copy was previously `Your public URL:{" "}` (with the
+    // trailing colon literal followed by a JSX whitespace). After the fix it reads
+    // `Your public URL will be:{" "}`. The form-field <label>Your public URL</label>
+    // is a separate render and is unchanged.
+    expect(registerSrc).not.toContain('Your public URL:{" "}');
+    expect(registerSrc).toContain('Your public URL will be:{" "}');
+  });
+});
+
+describe("register.tsx — U2-2: top-right auth-bar link reads 'Log in →' (item 4)", () => {
+  it("contains 'Log in →' literal", () => {
+    // Uses the actual right-arrow character (→ U+2192) per mockup register.html.
+    expect(registerSrc).toContain("Log in →");
+  });
+
+  it("does NOT contain the old 'Already have an account?' / 'Sign in' copy", () => {
+    expect(registerSrc).not.toContain("Already have an account?");
+    // The old <strong>Sign in</strong> link is gone. Other "Sign in" mentions in
+    // unrelated UI (e.g. provider button labels) are not on this auth-bar — but the
+    // old copy was the ONLY use of the exact phrase, so a strict negative is safe.
+    expect(registerSrc).not.toMatch(/<strong[^>]*>Sign in<\/strong>/);
+  });
+
+  it("link routes to /login (ECN-142-07)", () => {
+    // The only <a href="/login"> in this route is the auth-bar Log in link.
+    expect(registerSrc).toMatch(/href="\/login"/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// U2-3 — Visual checklist items 1, 2, 3, 5 wiring (mockup match)
+//
+// These items can be verified at the source level (CSS class + JSX shape).
+// Runtime visual is covered by Playwright S1/S2/S4/S6.
+// ---------------------------------------------------------------------------
+
+describe("register.tsx — U2-3: visual checklist wiring", () => {
+  it("preview-col aside has className 'preview-col' (radial overlay target — item 3)", () => {
+    expect(registerSrc).toMatch(/className="preview-col-hide-mobile preview-col"/);
+  });
+
+  it("logo-corner div is present in preview pane (item 1 — MotionLogo wrapper)", () => {
+    expect(registerSrc).toContain('className="logo-corner"');
+    // Wrapper aria-hidden so the decorative logo doesn't double up in the AT tree
+    expect(registerSrc).toMatch(/className="logo-corner"[\s\S]*?aria-hidden="true"/);
+  });
+
+  it("preview-thumb skeleton has className 'preview-thumb' (item 2)", () => {
+    expect(registerSrc).toContain('className="preview-thumb"');
+  });
+
+  it("ThemeToggleButton is rendered in the auth-bar nav (item 5)", () => {
+    expect(registerSrc).toContain("<ThemeToggleButton />");
+    expect(registerSrc).toMatch(/from ["']~\/components\/ThemeToggleButton["']/);
+  });
+
+  it("inline <style> declares .preview-col::before radial overlay (item 3)", () => {
+    expect(registerSrc).toContain(".preview-col::before");
+    expect(registerSrc).toContain("radial-gradient");
+  });
+
+  it("inline <style> respects prefers-reduced-motion on .logo-corner (ECN-142-05)", () => {
+    expect(registerSrc).toContain("prefers-reduced-motion: reduce");
+    expect(registerSrc).toMatch(/\.logo-corner[\s\S]*?animation-play-state:\s*paused/);
+  });
+});
