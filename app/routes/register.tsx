@@ -479,10 +479,10 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
         <ThemeToggleButton />
       </nav>
 
-      {/* Persistent welcome header — DEC-352=A + DEC-358=A
+      {/* Persistent welcome header — DEC-352=A + DEC-358=B (varying copy per section, tadaify-app#196)
           Mounted ABOVE the grid, stays visible across A→B→B-email→B-otp→B-password-toggle→C.
           Reactive on state.handle (no debounce — availability check is debounced separately). */}
-      <WelcomeHeader handle={state.handle} />
+      <WelcomeHeader handle={state.handle} section={state.section} />
 
       {/* Main register grid */}
       <div
@@ -768,7 +768,7 @@ function SectionA({
 }) {
   return (
     <section aria-label="Choose your handle" style={{ marginBottom: state.section !== "A" ? 0 : undefined }}>
-      {/* Welcome header lifted to route-level (DEC-352=A + DEC-358=A) — rendered above the grid.
+      {/* Welcome header lifted to route-level (DEC-352=A + DEC-358=B) — rendered above the grid.
           SectionA now shows only the handle input + availability check when active. */}
 
       {state.section === "A" && (

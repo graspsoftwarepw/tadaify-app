@@ -1,21 +1,37 @@
 /**
  * WelcomeHeader — persistent route-level header across all /register sections.
  *
- * Renders: "Hey @{handle} 👋 welcome to tada!ify"
+ * Renders section-aware copy per DEC-358=B (tadaify-app#196):
+ *   A / B / B-email            → "Hey @{handle} 👋"
+ *   B-otp / B-password-toggle  → "@{handle}, almost there..."
+ *   C                          → "Welcome @{handle}!"
+ *
  * - Stays mounted across A → B → B-email → B-otp → B-password-toggle → C
  * - Reactive on `handle` prop (updates in real-time, no debounce)
  * - Brand wordmark styled per DEC-WORDMARK-01 (3-span: ta=indigo, da!=warm, ify=dark)
  * - aria-live="polite" for screen reader announcements
  *
- * Story: F-002a — persistent welcome header (DEC-352=A + DEC-358=A)
- * Issue: tadaify-app#187
+ * Story: F-002a — persistent welcome header (DEC-352=A)
+ *        F-002a-followup — varying copy (DEC-358=B)
+ * Issues: tadaify-app#187, tadaify-app#196
  */
+
+import { getWelcomeCopy } from "~/lib/register-welcome-copy";
+import type { RegisterSection } from "~/lib/register-welcome-copy";
 
 export interface WelcomeHeaderProps {
   handle: string;
+  section: RegisterSection;
 }
 
-export function WelcomeHeader({ handle }: WelcomeHeaderProps) {
+export function WelcomeHeader({ handle, section }: WelcomeHeaderProps) {
+  const displayHandle = handle || "yourname";
+  const copy = getWelcomeCopy(section, displayHandle);
+
+  // Section C copy ends with "!" — omit the wave emoji for that variant.
+  // B-otp / B-password-toggle also omit the wave (starts with "@handle,").
+  const showWave = section === "A" || section === "B" || section === "B-email";
+
   return (
     <header
       className="welcome-header"
@@ -44,17 +60,18 @@ export function WelcomeHeader({ handle }: WelcomeHeaderProps) {
           maxWidth: "100%",
         }}
       >
-        Hey{" "}
-        <span className="handle" style={{ color: "var(--brand-primary)" }}>
-          @{handle || "yourname"}
-        </span>{" "}
-        <span aria-hidden>👋</span>
-        {" "}welcome to{" "}
-        <span className="brand-wordmark" aria-label="tada!ify">
-          <span style={{ color: "var(--wm-ta)" }}>ta</span>
-          <span style={{ color: "var(--wm-da)" }}>da!</span>
-          <span style={{ color: "var(--wm-ify)" }}>ify</span>
-        </span>
+        {showWave ? (
+          // DEC-358=B — short copy only: "Hey @{handle} 👋" (no wordmark suffix)
+          <>
+            Hey{" "}
+            <span className="handle" style={{ color: "var(--brand-primary)" }}>
+              @{displayHandle}
+            </span>{" "}
+            <span aria-hidden>👋</span>
+          </>
+        ) : (
+          <span data-welcome-copy={section}>{copy}</span>
+        )}
       </h1>
     </header>
   );

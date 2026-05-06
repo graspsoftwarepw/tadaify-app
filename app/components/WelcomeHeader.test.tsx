@@ -1,18 +1,12 @@
 /**
- * Unit tests for WelcomeHeader component (U1)
+ * Unit tests for WelcomeHeader component (source-analysis style)
  *
- * Story: F-002a — persistent welcome header (DEC-352=A + DEC-358=A)
- * Issue: tadaify-app#187
+ * Story: F-002a — persistent welcome header (DEC-352=A)
+ *        F-002a-followup — varying copy (DEC-358=B, tadaify-app#196)
  *
  * Tests use fs.readFileSync (static source analysis) so they run under vitest
  * node environment without jsdom/React rendering. This mirrors the existing
  * pattern in register.test.tsx.
- *
- * U1 tests:
- *  - "renders handle from props"
- *  - "uses 'yourname' placeholder when handle is empty string"
- *  - "renders 'tada!ify' brand wordmark with 3 spans (ta + da! + ify)"
- *  - "has aria-live='polite' on header element"
  */
 
 import { describe, it, expect } from "vitest";
@@ -25,45 +19,33 @@ const src = readFileSync(
 );
 
 // ---------------------------------------------------------------------------
-// U1: WelcomeHeader source analysis
+// Component structure
 // ---------------------------------------------------------------------------
 
 describe("WelcomeHeader — renders handle from props", () => {
-  it("renders handle from props — contains @{handle || 'yourname'} pattern", () => {
-    // Source must use handle prop to render @handle
-    expect(src).toMatch(/@\{handle/);
+  it("renders handle from props — contains displayHandle pattern", () => {
+    // Source must derive displayHandle from handle prop
+    expect(src).toMatch(/displayHandle/);
   });
 
   it("uses 'yourname' placeholder when handle is empty string", () => {
     // Source must fallback to 'yourname' when handle is empty
     expect(src).toContain("yourname");
-    // The pattern: handle || "yourname"
     expect(src).toMatch(/handle\s*\|\|\s*["']yourname["']/);
   });
 });
 
-describe("WelcomeHeader — brand wordmark", () => {
-  it("renders 'tada!ify' brand wordmark with 3 spans (ta + da! + ify)", () => {
-    // Must have all three wordmark parts
-    expect(src).toContain("wm-ta");
-    expect(src).toContain("wm-da");
-    expect(src).toContain("wm-ify");
+// Brand wordmark is NOT rendered in the welcome header per DEC-358=B (short copy only).
+// The wordmark CSS variables remain in the design system but are not used here.
+describe("WelcomeHeader — no wordmark suffix (DEC-358=B)", () => {
+  it("does NOT contain 'welcome to' wordmark suffix for Hey sections (DEC-358=B literal: short copy)", () => {
+    // DEC-358=B chose option B: 'Hey @{handle} 👋' — no wordmark suffix.
+    // Option A (rejected) would have appended 'welcome to tada!ify'.
+    expect(src).not.toContain("welcome to");
   });
 
-  it("wordmark spans use correct CSS variable colors (DEC-WORDMARK-01)", () => {
-    // ta → indigo (var(--wm-ta))
-    // da! → warm (var(--wm-da))
-    // ify → dark (var(--wm-ify))
-    expect(src).toContain("var(--wm-ta)");
-    expect(src).toContain("var(--wm-da)");
-    expect(src).toContain("var(--wm-ify)");
-  });
-
-  it("wordmark text contains 'ta', 'da!', 'ify' in source", () => {
-    // Each span contains its literal text
-    expect(src).toContain(">ta<");
-    expect(src).toContain(">da!</");
-    expect(src).toContain(">ify<");
+  it("does NOT render brand-wordmark span (wordmark removed per DEC-358=B)", () => {
+    expect(src).not.toContain("brand-wordmark");
   });
 });
 
@@ -81,16 +63,36 @@ describe("WelcomeHeader — accessibility", () => {
   });
 });
 
-describe("WelcomeHeader — welcome copy", () => {
-  it("contains 'welcome to' copy text", () => {
-    expect(src).toContain("welcome to");
+describe("WelcomeHeader — varying copy integration (DEC-358=B)", () => {
+  it("imports getWelcomeCopy from register-welcome-copy helper", () => {
+    expect(src).toContain("getWelcomeCopy");
+    expect(src).toContain("register-welcome-copy");
   });
 
-  it("contains 'Hey' greeting", () => {
+  it("accepts a 'section' prop of type RegisterSection", () => {
+    expect(src).toContain("section: RegisterSection");
+    expect(src).toContain("RegisterSection");
+  });
+
+  it("passes section and displayHandle to getWelcomeCopy", () => {
+    expect(src).toMatch(/getWelcomeCopy\(section,\s*displayHandle\)/);
+  });
+
+  it("contains 'Hey' greeting for wave sections", () => {
     expect(src).toContain("Hey");
   });
 
-  it("contains the 👋 wave emoji", () => {
+  it("contains the 👋 wave emoji for Hey sections", () => {
     expect(src).toContain("👋");
+  });
+
+  it("short Hey copy — component renders 'Hey' directly (not via getWelcomeCopy for wave sections)", () => {
+    // The component renders the wave variant inline with "Hey @{handle} 👋" (no wordmark).
+    // getWelcomeCopy() is still called (copy var populated) but wave variant uses JSX directly.
+    expect(src).toContain("Hey");
+  });
+
+  it("uses data-welcome-copy attribute for non-wave sections (Playwright selector)", () => {
+    expect(src).toContain("data-welcome-copy");
   });
 });
