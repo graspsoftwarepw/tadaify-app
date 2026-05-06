@@ -203,7 +203,7 @@ function Form({ children }: { children?: ReactNode }) {
         flex-1 min-w-0 px-[22px] py-[18px]
         flex flex-col gap-[18px]
         border-r border-[var(--border)]
-        max-[860px]:border-r-0 max-[860px]:border-b max-[860px]:border-[var(--border)]
+        max-[1023px]:border-r-0 max-[1023px]:border-b max-[1023px]:border-[var(--border)]
       "
     >
       {children}
@@ -368,7 +368,7 @@ export function BlockEditorModalBody({ children }: { children?: ReactNode }) {
       className="
         flex-1 overflow-y-auto
         grid grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]
-        max-[860px]:grid-cols-1
+        max-[1023px]:grid-cols-1
       "
     >
       {children}

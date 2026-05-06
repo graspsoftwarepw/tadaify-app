@@ -79,9 +79,27 @@ Radix exposes `data-state="open|closed"` attributes that drive CSS transitions;
 any `@keyframes` or `transition` declarations referencing these MUST include a
 `prefers-reduced-motion` override.
 
+## Responsive layout contract (3-viewport)
+
+Multi-panel dialog bodies (e.g. `BlockEditorModal` with form + preview columns)
+MUST follow the locked 3-viewport contract from
+`feedback_tadaify_three_viewport_support.md`:
+
+| Viewport | Width range | Body layout |
+|----------|-------------|-------------|
+| Desktop  | ≥ 1024 px   | 2-column grid (form left, preview right) |
+| Tablet   | 600–1023 px | Single column (stacked vertically) |
+| Mobile   | < 600 px    | Single column (stacked vertically) |
+
+Tailwind canonical: `grid grid-cols-[…] max-[1023px]:grid-cols-1`.  
+**Do NOT use `max-[860px]` or any non-1024 breakpoint** for the column collapse
+— that leaves tablet (861-1023 px) incorrectly in desktop split mode.
+
 ## Related
 
 - DEC-375=B (decision record in `/tmp/claude-decisions/decisions.json`)
 - `feedback_no_right_side_drawers.md` — all overlays are centered modals, never
   right-side slide-in drawers
+- `feedback_tadaify_three_viewport_support.md` — locked 3-viewport contract
+  (mobile <600px / tablet 600-1023px / desktop ≥1024px)
 - TR-003 — Tailwind v4 for styling (applies to Radix Dialog overlay styles too)

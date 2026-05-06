@@ -128,8 +128,10 @@ test("S4: Tab key cycles focus within modal only (focus trap)", async ({ page })
 });
 
 // ---------------------------------------------------------------------------
-// S5: Mobile responsive — single-column body
-// Covers: BR-BLOCK-EDITOR-003
+// S5 / S5b: Responsive — single-column body at mobile AND tablet viewports
+// Covers: BR-BLOCK-EDITOR-003, feedback_tadaify_three_viewport_support.md
+// 3-viewport contract: mobile <600px, tablet 600-1023px, desktop ≥1024px
+// Both mobile AND tablet must stack to single column (breakpoint is <1024px).
 // ---------------------------------------------------------------------------
 
 test("S5: mobile viewport (375×667) shows single-column stacked body", async ({ page }) => {
@@ -143,7 +145,7 @@ test("S5: mobile viewport (375×667) shows single-column stacked body", async ({
   const colPreview = page.locator("#col-preview");
   await expect(colPreview).toBeVisible();
 
-  // Preview should be stacked below the form (single-column grid at <860px)
+  // Preview should be stacked below the form (single-column grid at <1024px)
   // Verify both are present and the grid is single-column by checking that
   // the preview top edge is below the form bottom edge (vertically stacked).
   const formBounds = await page.locator('[data-testid="block-editor-modal-box"] .border-r, [data-testid="block-editor-modal-box"] .border-b').first().boundingBox();
@@ -160,6 +162,43 @@ test("S5: mobile viewport (375×667) shows single-column stacked body", async ({
   const modalBox = page.locator('[data-testid="block-editor-modal-box"]');
   const modalBounds = await modalBox.boundingBox();
   expect(modalBounds?.width).toBeGreaterThan(300);
+});
+
+test("S5b: tablet viewport (900×800) shows single-column stacked body — not side-by-side", async ({
+  page,
+}) => {
+  // 900px is mid-tablet (600-1023px range). Per 3-viewport contract the grid
+  // must collapse to single column — same as mobile, not the desktop 2-column split.
+  await page.setViewportSize({ width: 900, height: 800 });
+  await page.goto(TEST_PAGE);
+
+  await page.click("#open-editor-btn");
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  const colPreview = page.locator("#col-preview");
+  await expect(colPreview).toBeVisible();
+
+  // Preview must be stacked BELOW the form (not side-by-side).
+  // In single-column layout, preview top is at or below form bottom.
+  // In two-column layout, both columns start at roughly the same Y — we guard against that.
+  const formBounds = await page
+    .locator(
+      '[data-testid="block-editor-modal-box"] .border-r, [data-testid="block-editor-modal-box"] .border-b',
+    )
+    .first()
+    .boundingBox();
+  const previewBounds = await colPreview.boundingBox();
+  if (formBounds && previewBounds) {
+    // Single-column: preview top ≥ form bottom
+    expect(previewBounds.y).toBeGreaterThanOrEqual(formBounds.y + formBounds.height - 1);
+    // Additional guard: columns must NOT be horizontally adjacent (same Y ± 10px)
+    const horizontallyAdjacent = Math.abs(previewBounds.y - formBounds.y) < 10;
+    expect(horizontallyAdjacent).toBe(false);
+  }
+
+  // Footer visible
+  const footer = page.locator('[role="dialog"] footer');
+  await expect(footer).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
