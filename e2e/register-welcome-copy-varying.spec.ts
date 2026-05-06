@@ -234,21 +234,19 @@ test("varying header copy: 'Hey' on A → 'almost there' on B-otp → 'Welcome' 
   await page.click("button:has-text('Continue with OTP')");
 
   // ── Section C — Welcome @{handle}! ───────────────────────────────────────
-  // C either renders inline or auto-redirects to /onboarding/welcome.
-  // The header must briefly show "Welcome" copy before redirect (2s delay per DEC).
-  await expect(
-    page.locator("header.welcome-header, [data-testid='onboarding-welcome']")
-  ).toBeVisible({ timeout: 15_000 });
+  // DEC-358=B contract: Section C MUST render "Welcome @{handle}!" on the
+  // /register route before the auto-redirect to /onboarding/welcome.
+  // Assert the header copy unconditionally — if the app skips C and redirects
+  // straight to onboarding, this assertion correctly fails the test.
+  await expect(page.locator("header.welcome-header")).toContainText(
+    `Welcome @${HANDLE}!`,
+    { timeout: 15_000 }
+  );
+  // "almost there" must be gone on C
+  await expect(page.locator("header.welcome-header")).not.toContainText("almost there");
 
-  // If still on /register (before auto-redirect), assert Welcome copy
-  const url = page.url();
-  if (url.includes("/register")) {
-    await expect(page.locator("header.welcome-header")).toContainText(
-      `Welcome @${HANDLE}!`,
-      { timeout: 5_000 }
-    );
-    // "almost there" must be gone on C
-    await expect(page.locator("header.welcome-header")).not.toContainText("almost there");
-  }
-  // If already redirected to /onboarding, copy contract was satisfied — test passes.
+  // Now wait for the auto-redirect to /onboarding/welcome
+  await expect(
+    page.locator("[data-testid='onboarding-welcome']")
+  ).toBeVisible({ timeout: 15_000 });
 });
