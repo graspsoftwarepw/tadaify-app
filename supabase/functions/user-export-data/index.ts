@@ -3,22 +3,25 @@
  *
  * Returns ALL user-owned data as a JSON file for download.
  *
- * Tables covered (as of F-ONBOARDING-001c, tadaify-app#138):
- *   - profiles
- *   - account_settings
- *   - pages
- *   - blocks
- *   - profile_extras (includes avatar_r2_key — UC-7 / ECN-138-12)
+ * Tables covered:
+ *   - profiles           (F-APP-DASHBOARD-001a, #171)
+ *   - account_settings   (F-APP-DASHBOARD-001a, #171)
+ *   - pages              (F-APP-DASHBOARD-001a, #171)
+ *   - blocks             (F-APP-DASHBOARD-001a, #171)
+ *   - profile_extras     (F-ONBOARDING-001d, #139 — tier_slug + avatar_r2_key + future extras)
  *
  * Auth: requires Bearer JWT (user's own session token).
  * Runtime: Deno (Supabase Edge Runtime)
  *
- * Story: F-APP-DASHBOARD-001a (#171); updated by F-ONBOARDING-001c (#138)
+ * Story: F-APP-DASHBOARD-001a (#171), F-ONBOARDING-001c (#138), F-ONBOARDING-001d (#139)
  * GDPR Art. 20 (Right to Data Portability)
  *
  * Codex P2 fix (PR #174): per-table Supabase errors are now propagated —
  * a read failure returns 500 with { error: "export_failed", failed_dataset }
  * instead of silently returning null/[] for the broken dataset.
+ *
+ * #139 update: profile_extras added (TR-tadaify-007 requires ALL extras columns
+ * to be included; covers tier_slug and any future columns added via ALTER).
  */
 
 import { createClient, PostgrestError } from "https://esm.sh/@supabase/supabase-js@2";
@@ -101,8 +104,7 @@ Deno.serve(async (req: Request) => {
       adminClient.from("account_settings").select("*").eq("id", userId),
       adminClient.from("pages").select("*").eq("user_id", userId),
       adminClient.from("blocks").select("*").eq("user_id", userId),
-      // profile_extras: includes avatar_r2_key (F-ONBOARDING-001c, tadaify-app#138 / UC-7)
-      // Returns [] when table doesn't exist yet (pre-#139 merge) — graceful degradation.
+      // profile_extras: TR-tadaify-007 — includes tier_slug, avatar_r2_key + any future extras columns
       adminClient.from("profile_extras").select("*").eq("user_id", userId),
     ]);
 
@@ -111,24 +113,7 @@ Deno.serve(async (req: Request) => {
     const accountSettings = unwrap("account_settings", settingsRes);
     const pages = unwrap("pages", pagesRes);
     const blocks = unwrap("blocks", blocksRes);
-    // profile_extras: tolerate ONLY the missing-table error (pre-#139 compatibility).
-    // PostgREST returns code "42P01" for undefined relations; Supabase JS surfaces
-    // this as error.code. Any OTHER error (permission, schema, runtime) is propagated
-    // via unwrap() so exports are never silently incomplete (Codex P2 fix, PR #195).
-    let profileExtras: unknown[] = [];
-    if (profileExtrasRes.error) {
-      const isMissingTable =
-        profileExtrasRes.error.code === "42P01" ||
-        (profileExtrasRes.error.message?.includes("relation") &&
-         profileExtrasRes.error.message?.includes("does not exist"));
-      if (!isMissingTable) {
-        // Real read error — propagate (fail-closed per PR #174 contract)
-        throw new ExportError("profile_extras", profileExtrasRes.error.message);
-      }
-      // Missing table is expected pre-#139 — return empty gracefully
-    } else {
-      profileExtras = (profileExtrasRes.data as unknown[]) ?? [];
-    }
+    const profileExtras = unwrap("profile_extras", profileExtrasRes);
 
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -136,10 +121,10 @@ Deno.serve(async (req: Request) => {
       email: userData.user.email,
       profile: (profiles as unknown[])[0] ?? null,
       account_settings: (accountSettings as unknown[])[0] ?? null,
+      // profile_extras: tier_slug + avatar_r2_key + future extras (TR-tadaify-007, GDPR Art. 20)
+      profile_extras: (profileExtras as unknown[])[0] ?? null,
       pages: pages ?? [],
       blocks: blocks ?? [],
-      // avatar_r2_key is included per GDPR Art. 20 + UC-7 / ECN-138-12
-      profile_extras: profileExtras[0] ?? null,
     };
 
     const filename = `tadaify-data-export-${userId.slice(0, 8)}-${Date.now()}.json`;
