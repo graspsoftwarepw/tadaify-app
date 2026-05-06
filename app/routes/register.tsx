@@ -474,8 +474,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
           href="/login"
           style={{ fontSize: 13, fontWeight: 500, color: "var(--fg-muted)", textDecoration: "none" }}
         >
-          Already have an account?{" "}
-          <strong style={{ color: "var(--brand-primary)" }}>Sign in</strong>
+          Log in →
         </a>
         <ThemeToggleButton />
       </nav>
@@ -601,7 +600,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
 
         {/* Preview column (desktop only) */}
         <aside
-          className="preview-col-hide-mobile"
+          className="preview-col-hide-mobile preview-col"
           style={{
             background: "var(--hero-gradient)",
             color: "#FFF",
@@ -616,6 +615,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
         >
           {/* logo-corner — matches mockups/tadaify-mvp/register.html line 795 */}
           <div
+            className="logo-corner"
             style={{
               position: "absolute",
               top: 24,
@@ -679,7 +679,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
                 whiteSpace: "nowrap",
               }}
             >
-              Your public URL:{" "}
+              Your public URL will be:{" "}
               <span style={{ color: "#FDE68A" }}>
                 https://tadaify.com/{state.handle || "yourname"}
               </span>
@@ -688,6 +688,7 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
             {/* preview-thumb skeleton — matches mockups/tadaify-mvp/register.html
                 lines 811-819 (3 dots + 5 lines: short / full / pill / pill / short). */}
             <div
+              className="preview-thumb"
               style={{
                 marginTop: 32,
                 background: "rgba(255,255,255,0.08)",
@@ -718,6 +719,24 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
         @media (max-width: 960px) {
           .preview-col-hide-mobile { display: none !important; }
           .register-grid-responsive { grid-template-columns: 1fr !important; }
+        }
+        /* Radial overlay — matches mockups/tadaify-mvp/register.html .preview-col::before */
+        .preview-col::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(600px 300px at 20% 20%, rgba(245,158,11,0.28), transparent),
+            radial-gradient(500px 400px at 80% 80%, rgba(255,255,255,0.1), transparent);
+          pointer-events: none;
+          z-index: 0;
+        }
+        /* Reduced-motion: no animation on logo-corner (ECN-142-05) */
+        @media (prefers-reduced-motion: reduce) {
+          .logo-corner * {
+            animation-play-state: paused !important;
+            animation-duration: 0.001ms !important;
+          }
         }
       `}</style>
     </>
