@@ -16,7 +16,7 @@
  * Env:
  *   SUPABASE_URL              — Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY — service role key for JWT verification
- *   AVATAR_UPLOADS_ENABLED    — if "false", return 503 (prod gating until tadaify-aws lands)
+ *   AVATAR_UPLOADS_ENABLED    — if "false", return 503 (runtime safety toggle via Cloudflare env var)
  *
  * Story: F-ONBOARDING-001c (tadaify-app#138)
  * TR-tadaify-003: backend-proxy upload model, magic-byte validation, key pattern
@@ -133,7 +133,7 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const env = (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {};
 
   // Feature flag: AVATAR_UPLOADS_ENABLED defaults true if unset (dev + test work out of the box).
-  // In prod, set AVATAR_UPLOADS_ENABLED=false until the R2 bucket is provisioned.
+  // In prod, set AVATAR_UPLOADS_ENABLED=false in Cloudflare Worker env vars as a runtime safety toggle.
   if (env.AVATAR_UPLOADS_ENABLED === "false") {
     return Response.json(
       { error: "avatar_uploads_disabled", message: "Avatar upload coming soon — skip for now" },

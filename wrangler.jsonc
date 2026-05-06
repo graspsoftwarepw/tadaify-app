@@ -5,24 +5,21 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
   "vars": {
-    // Disable avatar uploads in deployed envs until the R2 bucket is provisioned
-    // (tadaify-aws infra story). Remove this line when AVATARS_R2 is declared below.
-    "AVATAR_UPLOADS_ENABLED": "false"
+    // Runtime safety toggle: set to "false" to disable avatar upload endpoint without a deploy.
+    // In prod, set AVATAR_UPLOADS_ENABLED=false in Cloudflare Worker env vars if needed.
+    // Defaults to enabled when unset (local dev + test work out of the box).
+    "AVATAR_UPLOADS_ENABLED": "true"
   },
 
-  // R2 bucket binding for avatar uploads (TR-tadaify-003)
-  // INTENTIONALLY omitted from this file — wrangler deploy reads this config,
-  // and the tadaify-avatars bucket is not yet provisioned in Cloudflare
-  // (deferred to tadaify-aws infra story). Declaring r2_buckets here would
-  // fail the deploy validation.
-  //
-  // Local dev: vite.config.ts points @cloudflare/vite-plugin to
-  // wrangler.dev.jsonc, which DOES declare the binding so miniflare
-  // emulates it with filesystem-backed storage.
-  //
-  // When the infra PR lands and the bucket exists: move r2_buckets from
-  // wrangler.dev.jsonc back here and remove the configPath override in
-  // vite.config.ts.
+  // R2 bucket binding for avatar uploads (TR-tadaify-003, DEC-367=C).
+  // Single config for local dev and prod — DEC-367=C mandates no split config.
+  // Local dev: @cloudflare/vite-plugin auto-emulates AVATARS_R2 via miniflare
+  //   with filesystem-backed storage (no extra setup needed).
+  // Prod: bucket "tadaify-avatars" must be provisioned once before first deploy:
+  //   wrangler r2 bucket create tadaify-avatars
+  "r2_buckets": [
+    { "binding": "AVATARS_R2", "bucket_name": "tadaify-avatars" }
+  ],
 
   // Cron trigger: avatar orphan cleanup + GDPR pending_r2_deletes consumer
   // Daily at 03:00 UTC (TR-tadaify-003, ECN-138-06, ECN-138-12)
