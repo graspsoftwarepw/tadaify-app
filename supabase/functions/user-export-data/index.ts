@@ -8,12 +8,12 @@
  *   - account_settings   (F-APP-DASHBOARD-001a, #171)
  *   - pages              (F-APP-DASHBOARD-001a, #171)
  *   - blocks             (F-APP-DASHBOARD-001a, #171)
- *   - profile_extras     (F-ONBOARDING-001d, #139 — tier_slug + future extras)
+ *   - profile_extras     (F-ONBOARDING-001d, #139 — tier_slug + avatar_r2_key + future extras)
  *
  * Auth: requires Bearer JWT (user's own session token).
  * Runtime: Deno (Supabase Edge Runtime)
  *
- * Story: F-APP-DASHBOARD-001a (#171), F-ONBOARDING-001d (#139)
+ * Story: F-APP-DASHBOARD-001a (#171), F-ONBOARDING-001c (#138), F-ONBOARDING-001d (#139)
  * GDPR Art. 20 (Right to Data Portability)
  *
  * Codex P2 fix (PR #174): per-table Supabase errors are now propagated —
@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
       adminClient.from("account_settings").select("*").eq("id", userId),
       adminClient.from("pages").select("*").eq("user_id", userId),
       adminClient.from("blocks").select("*").eq("user_id", userId),
-      // profile_extras: TR-tadaify-007 — includes tier_slug + any future extras columns
+      // profile_extras: TR-tadaify-007 — includes tier_slug, avatar_r2_key + any future extras columns
       adminClient.from("profile_extras").select("*").eq("user_id", userId),
     ]);
 
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
       email: userData.user.email,
       profile: (profiles as unknown[])[0] ?? null,
       account_settings: (accountSettings as unknown[])[0] ?? null,
-      // profile_extras row contains tier_slug and any future extras (TR-tadaify-007)
+      // profile_extras: tier_slug + avatar_r2_key + future extras (TR-tadaify-007, GDPR Art. 20)
       profile_extras: (profileExtras as unknown[])[0] ?? null,
       pages: pages ?? [],
       blocks: blocks ?? [],

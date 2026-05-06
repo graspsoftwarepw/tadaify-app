@@ -28,7 +28,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
-import { loader, action, extractAccessToken, upsertTierFree } from "./onboarding.tier";
+import { loader, action, extractAccessToken, upsertTierFree, persistAvatarR2Key, isValidAvatarR2Key } from "./onboarding.tier";
 import { CREATOR_PRICE_MONTHLY, PRO_PRICE_MONTHLY, BUSINESS_PRICE_MONTHLY } from "~/lib/tier-gate";
 
 const tierSrc = readFileSync(
@@ -770,5 +770,197 @@ describe("onboarding.tier — U_TIER_DB_7: extractAccessToken reads from Authori
       },
     });
     expect(extractAccessToken(req)).toBe("header-tok");
+  });
+});
+
+// ── U_AVATAR: avatar_r2_key persistence (Codex follow-up Finding 1) ─────────
+
+describe("onboarding.tier — U_AVATAR_1: isValidAvatarR2Key validates key pattern + ownership", () => {
+  const userId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+
+  it("accepts a valid key matching the userId", () => {
+    expect(isValidAvatarR2Key(`avatars/${userId}/deadbeef-1234-5678-9abc-def012345678.jpg`, userId)).toBe(true);
+  });
+
+  it("accepts png and webp extensions", () => {
+    expect(isValidAvatarR2Key(`avatars/${userId}/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.png`, userId)).toBe(true);
+    expect(isValidAvatarR2Key(`avatars/${userId}/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.webp`, userId)).toBe(true);
+  });
+
+  it("rejects a key belonging to a different user", () => {
+    const otherUserId = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+    expect(isValidAvatarR2Key(`avatars/${otherUserId}/deadbeef-1234-5678-9abc-def012345678.jpg`, userId)).toBe(false);
+  });
+
+  it("rejects a key with an invalid extension", () => {
+    expect(isValidAvatarR2Key(`avatars/${userId}/deadbeef-1234-5678-9abc-def012345678.gif`, userId)).toBe(false);
+  });
+
+  it("rejects a key without the avatars/ prefix", () => {
+    expect(isValidAvatarR2Key(`profiles/${userId}/deadbeef.jpg`, userId)).toBe(false);
+  });
+
+  it("rejects an empty string", () => {
+    expect(isValidAvatarR2Key("", userId)).toBe(false);
+  });
+});
+
+describe("onboarding.tier — U_AVATAR_2: persistAvatarR2Key PATCHes profile_extras", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const userId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+  const validKey = `avatars/${userId}/deadbeef-1234-5678-9abc-def012345678.jpg`;
+  const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+
+  it("PATCHes profile_extras with avatar_r2_key for the user", async () => {
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await persistAvatarR2Key(userId, validKey, env);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`http://localhost:54351/rest/v1/profile_extras?user_id=eq.${userId}`);
+    expect(opts.method).toBe("PATCH");
+
+    const body = JSON.parse(opts.body as string) as { avatar_r2_key: string };
+    expect(body.avatar_r2_key).toBe(validKey);
+  });
+
+  it("silently skips when key pattern is invalid (no PATCH call)", async () => {
+    await persistAvatarR2Key(userId, "bad-key", env);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("silently skips when key belongs to a different user (no PATCH call)", async () => {
+    const otherUserKey = "avatars/ffffffff-ffff-ffff-ffff-ffffffffffff/abc.jpg";
+    await persistAvatarR2Key(userId, otherUserKey, env);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("silently skips when env vars are missing", async () => {
+    await persistAvatarR2Key(userId, validKey, {});
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("throws when Supabase returns 500", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("internal error", { status: 500 }));
+    await expect(persistAvatarR2Key(userId, validKey, env)).rejects.toThrow(
+      /avatar_r2_key UPDATE failed: 500/,
+    );
+  });
+});
+
+describe("onboarding.tier — U_AVATAR_3: action persists avatar_r2_key from URL av param", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const userId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+  const validKey = `avatars/${userId}/deadbeef-1234-5678-9abc-def012345678.jpg`;
+
+  it("persists avatar_r2_key when av param is present in URL", async () => {
+    // Call 1: /auth/v1/user → 200 with user id
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: userId }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    // Call 2: profile_extras INSERT (upsertTierFree)
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
+    // Call 3: profile_extras PATCH (persistAvatarR2Key)
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request(
+      `http://localhost/onboarding/tier?av=${encodeURIComponent(validKey)}`,
+      {
+        method: "POST",
+        body: new FormData(),
+        headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+      },
+    );
+
+    const result = await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+
+    // 3 fetch calls: auth/v1/user, profile_extras INSERT, profile_extras PATCH
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+
+    // Third call is the avatar PATCH
+    const [patchUrl, patchOpts] = mockFetch.mock.calls[2] as [string, RequestInit];
+    expect(patchUrl).toContain("profile_extras");
+    expect(patchOpts.method).toBe("PATCH");
+    const body = JSON.parse(patchOpts.body as string) as { avatar_r2_key: string };
+    expect(body.avatar_r2_key).toBe(validKey);
+  });
+
+  it("skips avatar persistence when av param is absent", async () => {
+    // Call 1: /auth/v1/user → 200
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: userId }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    // Call 2: profile_extras INSERT
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    // Only 2 fetch calls: auth + tier INSERT, no avatar PATCH
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 });

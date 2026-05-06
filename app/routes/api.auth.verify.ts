@@ -54,7 +54,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   // ── Supabase OTP verify ──────────────────────────────────────────────────
 
-  const env = context?.cloudflare?.env as Record<string, string> | undefined;
+  const env = context?.cloudflare?.env as unknown as Record<string, string> | undefined;
   const supabaseUrl = env?.SUPABASE_URL;
   const supabaseAnonKey = env?.SUPABASE_ANON_KEY;
   const serviceKey = env?.SUPABASE_SERVICE_ROLE_KEY;
