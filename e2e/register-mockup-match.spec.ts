@@ -132,7 +132,7 @@ test.describe("S4 — Theme toggle present + functional", () => {
     expect(afterClickDark).toBe(true);
 
     // Persistence: localStorage must have the choice; reload preserves
-    const stored = await page.evaluate(() => localStorage.getItem("tadaify:theme"));
+    const stored = await page.evaluate(() => localStorage.getItem("tadaify.theme"));
     expect(stored).toBe("dark");
 
     await page.reload();
