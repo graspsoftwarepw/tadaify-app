@@ -209,17 +209,32 @@ describe("POST /api/upload/avatar — action handler — U1", () => {
   });
 
   // ── Content-Length pre-check (ECN-138-01) ────────────────────────────────────
-  it("rejects 413 on Content-Length > 2MB before reading body", async () => {
+  it("rejects 413 on Content-Length clearly exceeding max + multipart overhead", async () => {
     const bearerToken = "valid-jwt";
+    // 2MB + 4096 overhead + 1 byte — exceeds even the overhead margin
     const req = await makeMultipartRequest(JPG_BYTES, {
       bearer: bearerToken,
-      contentLength: 2 * 1024 * 1024 + 1, // 2MB + 1 byte
+      contentLength: 2 * 1024 * 1024 + 4096 + 1,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = (await action({ request: req, context: makeContext() } as any)) as Response;
     expect(res.status).toBe(413);
     const body = await res.json() as { error: string };
     expect(body.error).toBe("file_too_large");
+  });
+
+  it("does NOT reject 413 on Content-Length at MAX_SIZE + realistic multipart overhead", async () => {
+    // A file of exactly 2MB in a multipart request has Content-Length > 2MB
+    // due to boundary/header overhead. The pre-check must allow this through
+    // to the authoritative post-read file-size check.
+    const req = await makeMultipartRequest(JPG_BYTES, {
+      bearer: "valid-jwt",
+      contentLength: 2 * 1024 * 1024 + 500, // within the 4096 overhead margin
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = (await action({ request: req, context: makeContext() } as any)) as Response;
+    // Should NOT be 413 — the pre-check allows it through
+    expect(res.status).not.toBe(413);
   });
 
   // ── Magic-byte checks (ECN-138-02, ECN-138-08) ─────────────────────────────

@@ -13,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock the cleanup module before importing the handler
+// Mock the cleanup module before importing the handler (for wiring tests)
 vi.mock("~/lib/avatar-orphan-cleanup", () => ({
   runOrphanCleanup: vi.fn().mockResolvedValue({ deleted: [], kept: [], errors: [] }),
   consumePendingR2Deletes: vi.fn().mockResolvedValue({ processed: [], errors: [] }),
@@ -122,5 +122,52 @@ describe("handleScheduled — avatar cron wiring", () => {
       expect.stringContaining("No R2 binding")
     );
     errorSpy.mockRestore();
+  });
+
+  it("paginates Supabase getBoundKeys — fetches multiple pages until < PAGE_SIZE rows", async () => {
+    // Simulate Supabase returning 1000 rows on first call, then 50 on second
+    const page1 = Array.from({ length: 1000 }, (_, i) => ({ avatar_r2_key: `avatars/u/${i}.jpg` }));
+    const page2 = Array.from({ length: 50 }, (_, i) => ({ avatar_r2_key: `avatars/u/${1000 + i}.jpg` }));
+
+    let fetchCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      if (url.includes("profile_extras")) {
+        fetchCallCount++;
+        const data = fetchCallCount === 1 ? page1 : page2;
+        return Promise.resolve(new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      }
+      // For any other fetch (getUnconsumedDeletes)
+      return Promise.resolve(new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }));
+    }));
+
+    // runOrphanCleanup is mocked, so getBoundKeys won't actually run through it.
+    // Instead, verify that the real buildCleanupDeps.getBoundKeys calls fetch with
+    // correct pagination params by inspecting the deps passed to runOrphanCleanup.
+    (runOrphanCleanup as ReturnType<typeof vi.fn>).mockImplementationOnce(async (deps) => {
+      // Actually call getBoundKeys to exercise the pagination logic
+      const keys = await deps.getBoundKeys();
+      expect(keys.size).toBe(1050);
+      expect(keys.has("avatars/u/0.jpg")).toBe(true);
+      expect(keys.has("avatars/u/1049.jpg")).toBe(true);
+      return { deleted: [], kept: [], errors: [] };
+    });
+
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    await handleScheduled({
+      AVATARS_R2: makeFakeR2(),
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "test-key",
+    });
+
+    // Verify two fetch calls were made to profile_extras (pagination)
+    expect(fetchCallCount).toBe(2);
+    infoSpy.mockRestore();
   });
 });

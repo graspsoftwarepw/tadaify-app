@@ -39,22 +39,36 @@ function buildCleanupDeps(r2: R2BucketLike, supabaseUrl: string, serviceKey: str
   return {
     r2,
     async getBoundKeys(): Promise<Set<string>> {
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/profile_extras?select=avatar_r2_key&avatar_r2_key=not.is.null`,
-        {
-          headers: {
-            apikey: serviceKey,
-            Authorization: `Bearer ${serviceKey}`,
-          },
+      const PAGE_SIZE = 1000;
+      const keys = new Set<string>();
+      let offset = 0;
+
+      // Paginate through all profile_extras rows with non-null avatar_r2_key.
+      // Fail closed: any non-2xx page throws, aborting the entire cleanup pass.
+      while (true) {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/profile_extras?select=avatar_r2_key&avatar_r2_key=not.is.null&order=avatar_r2_key.asc&limit=${PAGE_SIZE}&offset=${offset}`,
+          {
+            headers: {
+              apikey: serviceKey,
+              Authorization: `Bearer ${serviceKey}`,
+            },
+          }
+        );
+        if (!res.ok) {
+          const body = await res.text();
+          console.error("[avatar-cron] Failed to fetch bound keys:", res.status, body);
+          throw new Error(`getBoundKeys failed: HTTP ${res.status} — ${body}`);
         }
-      );
-      if (!res.ok) {
-        const body = await res.text();
-        console.error("[avatar-cron] Failed to fetch bound keys:", res.status, body);
-        throw new Error(`getBoundKeys failed: HTTP ${res.status} — ${body}`);
+        const rows = (await res.json()) as Array<{ avatar_r2_key: string }>;
+        for (const r of rows) {
+          keys.add(r.avatar_r2_key);
+        }
+        if (rows.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
       }
-      const rows = (await res.json()) as Array<{ avatar_r2_key: string }>;
-      return new Set(rows.map((r) => r.avatar_r2_key));
+
+      return keys;
     },
   };
 }

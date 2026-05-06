@@ -29,6 +29,11 @@ import type { Route } from "./+types/api.upload.avatar";
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+// Multipart requests include boundary/header overhead beyond the file bytes.
+// Allow a bounded margin on the Content-Length pre-check so valid files near
+// MAX_SIZE_BYTES are not falsely rejected. The authoritative file-size check
+// runs after parsing the multipart body (post-read).
+const MULTIPART_OVERHEAD_BYTES = 4096;
 
 // Magic bytes for supported image types
 // JPG: FF D8 FF
@@ -154,7 +159,10 @@ export async function action({ request, context }: Route.ActionArgs): Promise<Re
   const contentLengthHeader = request.headers.get("Content-Length");
   if (contentLengthHeader !== null) {
     const declared = parseInt(contentLengthHeader, 10);
-    if (!isNaN(declared) && declared > MAX_SIZE_BYTES) {
+    // Pre-check uses MAX_SIZE_BYTES + overhead margin because Content-Length
+    // reflects the full multipart body (boundaries + headers + file bytes).
+    // The authoritative exact-file-size check runs post-read on fileBytes.length.
+    if (!isNaN(declared) && declared > MAX_SIZE_BYTES + MULTIPART_OVERHEAD_BYTES) {
       return Response.json(
         { error: "file_too_large", message: "File too large (max 2 MB)" },
         { status: 413 }

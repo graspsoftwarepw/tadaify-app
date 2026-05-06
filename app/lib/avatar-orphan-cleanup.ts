@@ -25,10 +25,12 @@ export const ORPHAN_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface R2ListResult {
   objects: Array<{ key: string; uploaded: Date }>;
+  truncated?: boolean;
+  cursor?: string;
 }
 
 export interface R2BucketLike {
-  list(options?: { prefix?: string }): Promise<R2ListResult>;
+  list(options?: { prefix?: string; cursor?: string }): Promise<R2ListResult>;
   delete(key: string): Promise<void>;
 }
 
@@ -60,12 +62,18 @@ export async function runOrphanCleanup(deps: AvatarCleanupDeps): Promise<Cleanup
   const now = deps.now ?? Date.now();
   const result: CleanupResult = { deleted: [], kept: [], errors: [] };
 
-  const [listResult, boundKeys] = await Promise.all([
-    deps.r2.list({ prefix: "avatars/" }),
-    deps.getBoundKeys(),
-  ]);
+  // Paginate R2 listing to handle buckets with more objects than a single page
+  const allObjects: Array<{ key: string; uploaded: Date }> = [];
+  let cursor: string | undefined;
+  do {
+    const page = await deps.r2.list({ prefix: "avatars/", cursor });
+    allObjects.push(...page.objects);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
 
-  for (const obj of listResult.objects) {
+  const boundKeys = await deps.getBoundKeys();
+
+  for (const obj of allObjects) {
     const ageMs = now - obj.uploaded.getTime();
 
     // Keep objects that are still "fresh" (within TTL)
@@ -112,13 +120,17 @@ export async function deleteUserAvatarObjects(
   userId: string
 ): Promise<{ deleted: string[] }> {
   const prefix = `avatars/${userId}/`;
-  const listResult = await r2.list({ prefix });
   const deleted: string[] = [];
 
-  for (const obj of listResult.objects) {
-    await r2.delete(obj.key);
-    deleted.push(obj.key);
-  }
+  let cursor: string | undefined;
+  do {
+    const page = await r2.list({ prefix, cursor });
+    for (const obj of page.objects) {
+      await r2.delete(obj.key);
+      deleted.push(obj.key);
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
 
   return { deleted };
 }
