@@ -36,6 +36,13 @@ test.describe("S1 — /login page uses 'Log in' brand copy", () => {
     await expect(page.getByText("Log in to your tadaify account.")).toBeVisible();
   });
 
+  test("meta description contains 'Log in to your tadaify account.'", async ({ page }) => {
+    // Covers: WARN-1 fix — meta description must use "Log in" not "Sign in"
+    await page.goto("/login");
+    const metaDesc = page.locator('meta[name="description"]');
+    await expect(metaDesc).toHaveAttribute("content", "Log in to your tadaify account.");
+  });
+
   test("does NOT show 'Sign in to your tadaify account.' as visible text", async ({ page }) => {
     // Regression-lock: the old copy must be gone
     await page.goto("/login");
