@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  tier-gate-modal.html — focused mockup for tadaify-app#209
+  (F-BLOCK-INFRA-TIER-GATE-MODAL-001 · DEC-382=A · 2026-05-06)
+
+  This is the dedicated, scoped design contract for the TierGate save-time
+  validation modal that gates touched premium features at save action.
+  Per `feedback_no_blur_premium_features.md`: NO blur, no hide, fully
+  visible UI; gate ONLY at save.
+
+  Sister/canonical files (richer, multi-scenario):
+    - app-tier-gate-modal.html — 8-scenario, runtime-globalized via
+      window.TierGate.checkAndProceed(); kept as design reference
+    - app-block-editor.html    — calls TierGate at block save time
+
+  This file's job: minimum spec coverage of #209's 7-item visual checklist
+  with 3 demo scenarios (1-feature / 2-feature / Business-only Creator user)
+  and the body-class mega-switcher pattern locked in
+  `feedback_megaswitcher_must_mirror_media_queries.md`.
+
+  Source-of-truth memories:
+    - feedback_no_blur_premium_features      (gate at save, never hide)
+    - feedback_no_right_side_drawers         (centered, never drawer)
+    - feedback_mockup_megaswitcher_and_mobile_friendly_mandatory
+    - feedback_megaswitcher_must_mirror_media_queries
+    - feedback_tadaify_simple_ui_no_advanced_toggle
+    - feedback_mockup_full_feature_vision
+    - feedback_tadaify_three_viewport_support
+
+  Self-contained: inline <style> + inline <script>, only external dep
+  is shared/tokens.css for the locked indigo-serif brand palette.
+  No analytics, no tracking, no fonts beyond Google Fonts CDN.
+  ============================================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TierGate save-time modal — #209 — tadaify</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./shared/tokens.css?_no_viewport_toolbar=1"/>
+  <style>
+    /* Suppress the global partials.js viewport toolbar (we ship our own
+       body-class mega-switcher per the dispatch contract). */
+    body { padding-top: 0 !important; }
+    #tdf-vp-toolbar { display: none !important; }
+
+    /* =========================================================================
+       Mega-switcher (body-class — mirrors @media queries per
+       feedback_megaswitcher_must_mirror_media_queries.md)
+
+         body.preview-desktop  ↔ default ≥ 1024px
+         body.preview-tablet   ↔ @media (min-width:600px) and (max-width:1023px)
+         body.preview-mobile   ↔ @media (max-width: 599px)
+       ========================================================================= */
+    .mega-switcher {
+      position: sticky; top: 0; z-index: 100;
+      background: #111827;
+      color: #f3f4f6;
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.25);
+    }
+    .mega-switcher .ms-label {
+      font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      font-size: 10px; color: #9ca3af;
+    }
+    .mega-switcher .ms-group {
+      display: inline-flex; gap: 4px;
+      background: #1f2937; border-radius: 999px; padding: 3px;
+    }
+    .mega-switcher .ms-btn {
+      border: 0; background: transparent; color: #9ca3af;
+      padding: 6px 12px; border-radius: 999px;
+      font: inherit; font-weight: 600; font-size: 12px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 28px;
+    }
+    .mega-switcher .ms-btn:hover { color: #f3f4f6; }
+    .mega-switcher .ms-btn.is-active {
+      background: #6366F1; color: #ffffff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .mega-switcher .ms-spacer { flex: 1; }
+    .mega-switcher .ms-meta {
+      font-family: ui-monospace, "JetBrains Mono", monospace;
+      font-size: 11px; color: #6b7280;
+    }
+
+    /* Viewport simulation: clamp body width via wrapper (NOT iframe — body
+       class also drives our @media-mirror rules below). */
+    body.preview-tablet .demo-stage { max-width: 820px; }
+    body.preview-mobile .demo-stage { max-width: 390px; }
+    body.preview-desktop .demo-stage { max-width: 100%; }
+
+    /* =========================================================================
+       Demo stage chrome
+       ========================================================================= */
+    .demo-stage {
+      margin: 0 auto;
+      transition: max-width 0.25s ease;
+      min-height: calc(100vh - 60px);
+      background: var(--bg);
+    }
+    .demo-stage-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: clamp(20px, 4vw, 40px);
+    }
+
+    .demo-header { margin-bottom: 24px; }
+    .demo-header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3vw, 32px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+    }
+    .demo-header p {
+      color: var(--fg-muted);
+      font-size: 14px;
+      margin: 0;
+    }
+    .demo-header .demo-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* Scenario toolbar */
+    .scenario-toolbar {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+    .scenario-toolbar h2 {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-subtle);
+      margin: 0 0 12px;
+    }
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .scenario-btn {
+      text-align: left;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+      min-height: 72px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .scenario-btn:hover {
+      border-color: var(--brand-primary);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+    .scenario-btn .sc-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--fg);
+    }
+    .scenario-btn .sc-sub {
+      font-size: 12px;
+      color: var(--fg-muted);
+      line-height: 1.4;
+    }
+
+    /* Stub editor card for context */
+    .stub-editor {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stub-editor h3 {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-subtle);
+      margin: 0 0 14px;
+    }
+    .stub-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .stub-row:last-child { border-bottom: 0; }
+    .stub-row .lbl { color: var(--fg-muted); }
+    .stub-row .val { color: var(--fg); font-weight: 500; }
+    .premium-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 999px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      margin-left: 6px;
+    }
+    .premium-tag.creator  { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .premium-tag.business { background: rgba(139,92,246,0.12); color: var(--brand-secondary); }
+
+    /* =========================================================================
+       Modal chrome — Radix Dialog look-alike, centered (no drawer)
+       ========================================================================= */
+    .tg-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: clamp(16px, 4vw, 32px);
+      z-index: 60;
+      animation: tg-fade 0.18s ease-out;
+    }
+    .tg-backdrop.is-open { display: flex; }
+    @keyframes tg-fade { from { opacity: 0; } to { opacity: 1; } }
+
+    .tg-modal {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-elevated);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      max-height: calc(100vh - 32px);
+      animation: tg-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    @keyframes tg-pop {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .tg-head {
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: 16px;
+    }
+    .tg-head h2 {
+      flex: 1;
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 0;
+      color: var(--fg);
+    }
+    .tg-head h2 em {
+      font-style: normal;
+      color: var(--brand-primary);
+    }
+    .tg-head h2.bus em { color: var(--brand-secondary); }
+    .tg-close {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--fg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .tg-close:hover { background: var(--bg-muted); color: var(--fg); }
+    .tg-close svg { width: 16px; height: 16px; }
+
+    .tg-body {
+      padding: 18px 22px 4px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Required-tier badge */
+    .tg-tier-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px 6px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 14px;
+    }
+    .tg-tier-badge .tg-tier-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .tg-tier-badge.creator {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+    }
+    .tg-tier-badge.creator .tg-tier-dot { background: var(--brand-primary); }
+    .tg-tier-badge.business {
+      background: rgba(139,92,246,0.10);
+      color: var(--brand-secondary);
+    }
+    .tg-tier-badge.business .tg-tier-dot { background: var(--brand-secondary); }
+
+    /* Touched-features list */
+    .tg-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .tg-feature {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    .tg-feature .tg-icon {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .tg-feature .tg-feat-body { flex: 1; min-width: 0; }
+    .tg-feature .tg-feat-name {
+      display: block;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 2px;
+    }
+    .tg-feature .tg-feat-tier {
+      font-size: 12px;
+      color: var(--fg-muted);
+    }
+    .tg-feature .tg-feat-tier strong {
+      color: var(--brand-primary);
+      font-weight: 600;
+    }
+    .tg-feature.business .tg-feat-tier strong {
+      color: var(--brand-secondary);
+    }
+
+    /* Pricing summary card */
+    .tg-pricing {
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04));
+      border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 12px;
+      margin-bottom: 18px;
+    }
+    .tg-pricing.business {
+      background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(245,158,11,0.04));
+      border-color: rgba(139,92,246,0.20);
+    }
+    .tg-pricing-head {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .tg-pricing-tier {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: -0.01em;
+    }
+    .tg-pricing-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--fg-muted);
+    }
+    .tg-pricing-price strong {
+      font-size: 18px;
+      color: var(--fg);
+      font-weight: 700;
+    }
+    .tg-pricing-blurb {
+      font-size: 13px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Foot / actions */
+    .tg-foot {
+      padding: 16px 22px 22px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      display: flex; flex-direction: row-reverse;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tg-btn {
+      font: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 0 18px;
+      min-height: 44px; /* tap target */
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+    }
+    .tg-btn:hover { transform: translateY(-1px); }
+    .tg-btn-primary {
+      background: var(--brand-primary);
+      color: #fff;
+      border-color: var(--brand-primary);
+      box-shadow: var(--shadow-brand);
+    }
+    .tg-btn-primary:hover {
+      background: var(--brand-primary-hover);
+      border-color: var(--brand-primary-hover);
+    }
+    .tg-btn-primary.business {
+      background: var(--brand-secondary);
+      border-color: var(--brand-secondary);
+      box-shadow: 0 10px 30px rgba(139,92,246,0.30);
+    }
+    .tg-btn-primary.business:hover {
+      background: #7C3AED;
+      border-color: #7C3AED;
+    }
+    .tg-btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      border-color: var(--border-strong);
+    }
+    .tg-btn-secondary:hover {
+      background: var(--bg-muted);
+    }
+    .tg-btn-ghost {
+      background: transparent;
+      color: var(--fg-muted);
+      border-color: transparent;
+    }
+    .tg-btn-ghost:hover { color: var(--fg); background: var(--bg-muted); }
+
+    /* =========================================================================
+       Mobile-stacked buttons full-width — REAL @media query mirrored by
+       body.preview-mobile (so body-class swap = real responsive behaviour)
+       ========================================================================= */
+    @media (max-width: 599px) {
+      .tg-foot {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px 16px 18px;
+      }
+      .tg-btn { width: 100%; }
+      .tg-modal { border-radius: 14px; max-width: 100%; }
+      .tg-head { padding: 16px 18px 12px; }
+      .tg-head h2 { font-size: 20px; }
+      .tg-body { padding: 14px 18px 2px; }
+    }
+
+    /* Body-class mirror: simulate mobile @media at any window width */
+    body.preview-mobile .tg-foot {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 14px 16px 18px;
+    }
+    body.preview-mobile .tg-btn { width: 100%; }
+    body.preview-mobile .tg-modal { border-radius: 14px; max-width: 100%; }
+    body.preview-mobile .tg-head { padding: 16px 18px 12px; }
+    body.preview-mobile .tg-head h2 { font-size: 20px; }
+    body.preview-mobile .tg-body { padding: 14px 18px 2px; }
+
+    /* Tablet @media + body-class mirror: relax horizontal padding slightly */
+    @media (min-width: 600px) and (max-width: 1023px) {
+      .demo-stage-inner { padding: clamp(16px, 3vw, 32px); }
+    }
+    body.preview-tablet .demo-stage-inner { padding: clamp(16px, 3vw, 32px); }
+
+    /* =========================================================================
+       Toast (BR-TIER-GATE-003 confirmation surface)
+       ========================================================================= */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #F9FAFB;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 70;
+      display: none;
+      animation: toast-rise 0.25s ease-out;
+    }
+    .toast.is-visible { display: inline-flex; align-items: center; gap: 8px; }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+    @keyframes toast-rise {
+      from { opacity: 0; transform: translate(-50%, 8px); }
+      to   { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    /* =========================================================================
+       Theme: Dark mode
+       ========================================================================= */
+    body.dark-mode {
+      --bg:          #0B0F1E;
+      --bg-elevated: #141A2D;
+      --bg-muted:    #1F2937;
+      --bg-sunken:   #0B0F1E;
+      --fg:          #F9FAFB;
+      --fg-muted:    #9CA3AF;
+      --fg-subtle:   #6B7280;
+      --border:      #1F2937;
+      --border-strong: #374151;
+    }
+    body.dark-mode .tg-modal {
+      background: var(--bg-elevated);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    }
+    body.dark-mode .tg-feature { background: var(--bg-muted); border-color: var(--border-strong); }
+    body.dark-mode .tg-feature .tg-icon { background: var(--bg-elevated); border-color: var(--border-strong); }
+    body.dark-mode .tg-pricing {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(139,92,246,0.10));
+    }
+    body.dark-mode .tg-pricing.business {
+      background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(245,158,11,0.06));
+    }
+    body.dark-mode .tg-foot { background: var(--bg); }
+    body.dark-mode .tg-close { background: var(--bg-muted); border-color: var(--border-strong); color: var(--fg-muted); }
+    body.dark-mode .tg-btn-secondary {
+      background: var(--bg-muted); color: var(--fg); border-color: var(--border-strong);
+    }
+    body.dark-mode .tg-btn-secondary:hover { background: var(--bg-sunken); }
+    body.dark-mode .tg-backdrop { background: rgba(0,0,0,0.65); }
+    body.dark-mode .scenario-btn { background: var(--bg-elevated); }
+    body.dark-mode .stub-editor { background: var(--bg-elevated); }
+
+    /* Visual-checklist coverage badge in the demo header */
+    .checklist-mini {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--bg-elevated);
+      border: 1px dashed var(--border-strong);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .checklist-mini strong { color: var(--fg); }
+    .checklist-mini ul { margin: 6px 0 0; padding-left: 18px; }
+    .checklist-mini li { padding: 1px 0; }
+  </style>
+</head>
+<body class="preview-desktop">
+
+  <!-- =========================================================================
+       Mega-switcher (top of page) — viewport + theme
+       Pattern locked by feedback_megaswitcher_must_mirror_media_queries.md
+       ========================================================================= -->
+  <div class="mega-switcher" role="toolbar" aria-label="Preview controls">
+    <span class="ms-label">Viewport</span>
+    <div class="ms-group" role="radiogroup" aria-label="Viewport">
+      <button class="ms-btn is-active" data-viewport="desktop" type="button" aria-pressed="true">🖥 Desktop</button>
+      <button class="ms-btn" data-viewport="tablet" type="button" aria-pressed="false">📱 Tablet</button>
+      <button class="ms-btn" data-viewport="mobile" type="button" aria-pressed="false">☎ Mobile</button>
+    </div>
+    <span class="ms-label" style="margin-left:8px;">Theme</span>
+    <div class="ms-group" role="radiogroup" aria-label="Theme">
+      <button class="ms-btn is-active" data-theme="light" type="button" aria-pressed="true">☀ Light</button>
+      <button class="ms-btn" data-theme="dark" type="button" aria-pressed="false">🌙 Dark</button>
+    </div>
+    <span class="ms-spacer"></span>
+    <span class="ms-meta" id="msMeta">desktop · ≥1024px</span>
+  </div>
+
+  <main class="demo-stage">
+    <div class="demo-stage-inner">
+
+      <header class="demo-header">
+        <span class="demo-tag">tadaify-app#209 · DEC-382=A</span>
+        <h1>TierGate save-time validation modal</h1>
+        <p>Reusable modal that fires when a creator saves a block touching premium features. Per <code>feedback_no_blur_premium_features.md</code>: NO blur, fully visible UI; gate <em>only</em> at the save action.</p>
+
+        <div class="checklist-mini">
+          <strong>Visual checklist (#209) covered by this mockup:</strong>
+          <ul>
+            <li>Modal backdrop · <code>.tg-backdrop</code> (z-index 60)</li>
+            <li>Modal head with title + close (X) · <code>.tg-head</code> + <code>.tg-close</code></li>
+            <li>Touched-features list with icons · <code>.tg-features</code> / <code>.tg-feature</code></li>
+            <li>Required-tier badge · <code>.tg-tier-badge</code> (creator / business variants)</li>
+            <li>Pricing summary · <code>.tg-pricing</code></li>
+            <li>3 action buttons (Upgrade / Save without / Cancel) · <code>.tg-foot</code> + <code>.tg-btn-*</code></li>
+            <li>Mobile stacked full-width · <code>@media (max-width:599px)</code> + <code>body.preview-mobile</code></li>
+          </ul>
+        </div>
+      </header>
+
+      <!-- =====================================================================
+           Demo scenario toolbar — 3 scenarios per dispatch contract
+           ===================================================================== -->
+      <section class="scenario-toolbar" aria-label="Demo scenarios">
+        <h2>Try a scenario</h2>
+        <div class="scenario-grid">
+          <button class="scenario-btn" type="button" data-scenario="free-schedule">
+            <span class="sc-title">Free user · Schedule</span>
+            <span class="sc-sub">1 feature touched. Required tier: Creator. Mirrors UC-1.</span>
+          </button>
+          <button class="scenario-btn" type="button" data-scenario="free-both">
+            <span class="sc-title">Free user · Schedule + A/B</span>
+            <span class="sc-sub">2 features touched. Required tier: Business (highest). Mirrors UC-3 / ECN-TIER-GATE-01.</span>
+          </button>
+          <button class="scenario-btn" type="button" data-scenario="creator-ab">
+            <span class="sc-title">Creator user · A/B only</span>
+            <span class="sc-sub">Schedule allowed at Creator tier. Modal lists only A/B (Business). Mirrors UC-4 / ECN-TIER-GATE-02.</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           Stub editor card — gives the modal a believable surface to gate
+           ===================================================================== -->
+      <section class="stub-editor" aria-label="Block editor (stub)">
+        <h3>Block editor — Newsletter signup (stub for context)</h3>
+        <div class="stub-row">
+          <span class="lbl">Heading</span>
+          <span class="val">Subscribe to my Tuesday letter</span>
+        </div>
+        <div class="stub-row">
+          <span class="lbl">CTA label</span>
+          <span class="val">Join 1,200 readers</span>
+        </div>
+        <div class="stub-row">
+          <span class="lbl">Schedule visibility <span class="premium-tag creator">Creator+</span></span>
+          <span class="val" id="stubSchedule">Mon–Fri · 09:00–17:00</span>
+        </div>
+        <div class="stub-row">
+          <span class="lbl">A/B variant B <span class="premium-tag business">Business</span></span>
+          <span class="val" id="stubAb">Active · 50/50 split</span>
+        </div>
+        <div class="stub-row" style="padding-top:16px;">
+          <span class="lbl">&nbsp;</span>
+          <button class="tg-btn tg-btn-primary" type="button" id="stubSaveBtn" style="min-width: 140px;">
+            Save block
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       The TierGate modal itself
+       ========================================================================= -->
+  <div class="tg-backdrop" id="tgBackdrop" role="dialog" aria-modal="true" aria-labelledby="tgTitle">
+    <div class="tg-modal" role="document">
+
+      <header class="tg-head">
+        <h2 id="tgTitle">Some changes need <em id="tgTierWord">Creator</em></h2>
+        <button class="tg-close" type="button" id="tgCloseBtn" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="tg-body">
+        <span class="tg-tier-badge creator" id="tgTierBadge">
+          <span class="tg-tier-dot"></span>
+          <span id="tgTierBadgeText">Requires Creator</span>
+        </span>
+
+        <ul class="tg-features" id="tgFeatures" aria-label="Touched premium features">
+          <!-- Filled by JS per scenario -->
+        </ul>
+
+        <aside class="tg-pricing" id="tgPricing">
+          <div class="tg-pricing-head">
+            <span class="tg-pricing-tier" id="tgPricingTier">Creator</span>
+            <span class="tg-pricing-price"><strong id="tgPricingPrice">$7.99</strong>/mo</span>
+          </div>
+          <p class="tg-pricing-blurb" id="tgPricingBlurb">
+            Schedule blocks, custom domain, AI Suggest quota, paid articles.
+          </p>
+        </aside>
+      </div>
+
+      <footer class="tg-foot">
+        <!-- Reverse row order so Primary visually trails on desktop;
+             on mobile column the visual order = Upgrade → Save without → Cancel. -->
+        <button class="tg-btn tg-btn-primary" type="button" id="tgUpgradeBtn" data-action="upgrade">
+          Upgrade to <span id="tgUpgradeTierLabel">Creator</span> →
+        </button>
+        <button class="tg-btn tg-btn-secondary" type="button" data-action="save-without">
+          Save without these
+        </button>
+        <button class="tg-btn tg-btn-ghost" type="button" data-action="cancel">
+          Cancel
+        </button>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       Toast (post-action confirmation per BR-TIER-GATE-003)
+       ========================================================================= -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-dot"></span>
+    <span id="toastText">Saved without schedule</span>
+  </div>
+
+  <script>
+    /* =========================================================================
+       Scenario data — 3 scenarios per dispatch contract
+       ========================================================================= */
+    var SCENARIOS = {
+      'free-schedule': {
+        title: 'Some changes need <em>Creator</em>',
+        tier: 'creator',
+        tierWord: 'Creator',
+        badgeText: 'Requires Creator',
+        features: [
+          { icon: '📅', name: 'Schedule visibility', tier: 'Creator', tierClass: 'creator',
+            sub: 'Show this block only on selected days/hours.' }
+        ],
+        pricing: {
+          tier: 'Creator',
+          price: '$7.99',
+          blurb: 'Schedule blocks, custom domain, paid articles, AI Suggest quota.'
+        },
+        upgradeLabel: 'Creator',
+        saveWithoutToast: 'Saved without schedule'
+      },
+      'free-both': {
+        title: 'Some changes need <em>Business</em>',
+        titleClass: 'bus',
+        tier: 'business',
+        tierWord: 'Business',
+        badgeText: 'Requires Business',
+        features: [
+          { icon: '📅', name: 'Schedule visibility', tier: 'Creator', tierClass: 'creator',
+            sub: 'Show this block only on selected days/hours.' },
+          { icon: '🧪', name: 'A/B testing', tier: 'Business', tierClass: 'business',
+            sub: 'Run variants and pick the winner automatically.' }
+        ],
+        pricing: {
+          tier: 'Business',
+          price: '$49.99',
+          blurb: 'Everything in Creator + A/B testing, team seats, API access, priority support.'
+        },
+        upgradeLabel: 'Business',
+        saveWithoutToast: 'Saved without schedule + A/B'
+      },
+      'creator-ab': {
+        title: 'Some changes need <em>Business</em>',
+        titleClass: 'bus',
+        tier: 'business',
+        tierWord: 'Business',
+        badgeText: 'Requires Business',
+        features: [
+          { icon: '🧪', name: 'A/B testing', tier: 'Business', tierClass: 'business',
+            sub: 'Run variants and pick the winner automatically. Schedule is fine on your tier.' }
+        ],
+        pricing: {
+          tier: 'Business',
+          price: '$49.99',
+          blurb: 'Everything in Creator + A/B testing, team seats, API access, priority support.'
+        },
+        upgradeLabel: 'Business',
+        saveWithoutToast: 'Saved without A/B'
+      }
+    };
+
+    var currentScenario = 'free-schedule';
+
+    /* =========================================================================
+       Modal open / close + scenario render
+       ========================================================================= */
+    var $backdrop = document.getElementById('tgBackdrop');
+    var $title = document.getElementById('tgTitle');
+    var $tierWord = document.getElementById('tgTierWord');
+    var $tierBadge = document.getElementById('tgTierBadge');
+    var $tierBadgeText = document.getElementById('tgTierBadgeText');
+    var $features = document.getElementById('tgFeatures');
+    var $pricing = document.getElementById('tgPricing');
+    var $pricingTier = document.getElementById('tgPricingTier');
+    var $pricingPrice = document.getElementById('tgPricingPrice');
+    var $pricingBlurb = document.getElementById('tgPricingBlurb');
+    var $upgradeBtn = document.getElementById('tgUpgradeBtn');
+    var $upgradeLabel = document.getElementById('tgUpgradeTierLabel');
+
+    function renderScenario(key) {
+      currentScenario = key;
+      var s = SCENARIOS[key];
+      if (!s) return;
+
+      // Title
+      $title.innerHTML = s.title;
+      $title.className = s.titleClass || '';
+      $tierWord.textContent = s.tierWord; // legacy, also keeps em styling consistent
+
+      // Tier badge
+      $tierBadge.className = 'tg-tier-badge ' + s.tier;
+      $tierBadgeText.textContent = s.badgeText;
+
+      // Features list
+      $features.innerHTML = s.features.map(function (f) {
+        return (
+          '<li class="tg-feature ' + f.tierClass + '">' +
+            '<span class="tg-icon" aria-hidden="true">' + f.icon + '</span>' +
+            '<div class="tg-feat-body">' +
+              '<span class="tg-feat-name">' + f.name + '</span>' +
+              '<span class="tg-feat-tier">' + f.sub + ' <strong>Requires ' + f.tier + '</strong></span>' +
+            '</div>' +
+          '</li>'
+        );
+      }).join('');
+
+      // Pricing card
+      $pricing.className = 'tg-pricing' + (s.tier === 'business' ? ' business' : '');
+      $pricingTier.textContent = s.pricing.tier;
+      $pricingPrice.textContent = s.pricing.price;
+      $pricingBlurb.textContent = s.pricing.blurb;
+
+      // Upgrade button
+      $upgradeBtn.className = 'tg-btn tg-btn-primary' + (s.tier === 'business' ? ' business' : '');
+      $upgradeLabel.textContent = s.upgradeLabel;
+    }
+
+    function openModal(key) {
+      renderScenario(key);
+      $backdrop.classList.add('is-open');
+      // Move focus into the modal for a11y
+      setTimeout(function () {
+        document.getElementById('tgUpgradeBtn').focus();
+      }, 50);
+    }
+
+    function closeModal() {
+      $backdrop.classList.remove('is-open');
+    }
+
+    /* =========================================================================
+       Action wiring
+       ========================================================================= */
+    document.querySelectorAll('.scenario-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openModal(btn.getAttribute('data-scenario'));
+      });
+    });
+
+    document.getElementById('stubSaveBtn').addEventListener('click', function () {
+      // Default save action triggers the most common path: free user, schedule touched.
+      openModal('free-schedule');
+    });
+
+    document.getElementById('tgCloseBtn').addEventListener('click', closeModal);
+
+    $backdrop.addEventListener('click', function (e) {
+      if (e.target === $backdrop) closeModal(); // backdrop dismiss
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && $backdrop.classList.contains('is-open')) {
+        closeModal();
+      }
+    });
+
+    // 3 action buttons in the modal foot
+    $backdrop.addEventListener('click', function (e) {
+      var actionBtn = e.target.closest('[data-action]');
+      if (!actionBtn) return;
+      var action = actionBtn.getAttribute('data-action');
+      var s = SCENARIOS[currentScenario];
+
+      if (action === 'cancel') {
+        closeModal();
+      } else if (action === 'save-without') {
+        // BR-TIER-GATE-003: clear premium fields, save the rest, toast confirms
+        if (currentScenario === 'free-schedule' || currentScenario === 'free-both') {
+          document.getElementById('stubSchedule').textContent = '— (cleared)';
+          document.getElementById('stubSchedule').style.color = 'var(--fg-subtle)';
+        }
+        if (currentScenario === 'free-both' || currentScenario === 'creator-ab') {
+          document.getElementById('stubAb').textContent = '— (cleared)';
+          document.getElementById('stubAb').style.color = 'var(--fg-subtle)';
+        }
+        closeModal();
+        showToast(s.saveWithoutToast);
+      } else if (action === 'upgrade') {
+        // BR-TIER-GATE-004: navigate to /pricing — demo only logs intent
+        closeModal();
+        showToast('Routing to /pricing?from=block-editor&tier=' + s.tier + '&block_id=demo-209');
+      }
+    });
+
+    function showToast(text) {
+      var t = document.getElementById('toast');
+      document.getElementById('toastText').textContent = text;
+      t.classList.add('is-visible');
+      clearTimeout(t._hide);
+      t._hide = setTimeout(function () { t.classList.remove('is-visible'); }, 2400);
+    }
+
+    /* =========================================================================
+       Mega-switcher wiring (body class swap mirrors @media queries)
+       ========================================================================= */
+    var VP_META = {
+      desktop: 'desktop · ≥1024px',
+      tablet:  'tablet · 600px–1023px',
+      mobile:  'mobile · ≤599px'
+    };
+
+    document.querySelectorAll('[data-viewport]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var vp = btn.getAttribute('data-viewport');
+        document.body.classList.remove('preview-desktop', 'preview-tablet', 'preview-mobile');
+        document.body.classList.add('preview-' + vp);
+        document.querySelectorAll('[data-viewport]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        document.getElementById('msMeta').textContent = VP_META[vp];
+      });
+    });
+
+    document.querySelectorAll('[data-theme]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var th = btn.getAttribute('data-theme');
+        document.body.classList.toggle('dark-mode', th === 'dark');
+        document.querySelectorAll('[data-theme]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
