@@ -37,4 +37,7 @@ export default [
   // Avatar upload + serve API (F-ONBOARDING-001c, tadaify-app#138 / TR-tadaify-003)
   route("/api/upload/avatar", "routes/api.upload.avatar.ts"),
   route("/api/avatar/:key", "routes/api.avatar.$key.ts"),
+
+  // Test harness — BlockPickerModal (Playwright S1–S7, tadaify-app#201)
+  route("/test-block-picker-modal", "routes/test-block-picker-modal.tsx"),
 ] satisfies RouteConfig;
