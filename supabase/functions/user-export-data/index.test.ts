@@ -1,11 +1,14 @@
 /**
  * Unit tests for user-export-data Edge Function
  * Story: F-APP-DASHBOARD-001a (#171) — Codex review P2 fix (PR #174)
+ * Story: F-ONBOARDING-001d (#139) — profile_extras added (ECN-139-07)
  *
  * Tests the error-propagation behaviour added in the Codex P2 fix:
  *   U_EXPORT_1: returns 500 with failed_dataset when profiles read fails
  *   U_EXPORT_2: returns 500 with failed_dataset when blocks read fails
- *   U_EXPORT_3: happy path returns 200 with all 4 datasets
+ *   U_EXPORT_3: happy path returns 200 with all 5 datasets (incl. profile_extras)
+ *   U_EXPORT_4: profile_extras read failure → 500 (ECN-139-07 / TR-tadaify-007)
+ *   U_EXPORT_5: profile_extras.tier_slug included in happy-path export payload
  *
  * Run: npx vitest run supabase/functions/user-export-data/index.test.ts
  */
@@ -46,6 +49,7 @@ let profilesResult: MockResponse<unknown[]>;
 let settingsResult: MockResponse<unknown[]>;
 let pagesResult: MockResponse<unknown[]>;
 let blocksResult: MockResponse<unknown[]>;
+let profileExtrasResult: MockResponse<unknown[]>;
 
 vi.mock("https://esm.sh/@supabase/supabase-js@2", () => {
   return {
@@ -80,6 +84,10 @@ beforeEach(async () => {
   settingsResult = { data: [{ id: TEST_USER_ID, theme: "dark" }], error: null };
   pagesResult = { data: [{ id: "page-1", user_id: TEST_USER_ID }], error: null };
   blocksResult = { data: [{ id: "block-1", user_id: TEST_USER_ID }], error: null };
+  profileExtrasResult = {
+    data: [{ user_id: TEST_USER_ID, tier_slug: "free" }],
+    error: null,
+  };
 
   mockClient = {
     auth: {
@@ -94,6 +102,7 @@ beforeEach(async () => {
         account_settings: settingsResult,
         pages: pagesResult,
         blocks: blocksResult,
+        profile_extras: profileExtrasResult,
       };
       const res = resultMap[table] ?? { data: [], error: null };
       return {
@@ -144,15 +153,16 @@ describe("user-export-data — U_EXPORT_2: blocks read failure", () => {
 
 // ── U_EXPORT_3: happy path ────────────────────────────────────────────────────
 
-describe("user-export-data — U_EXPORT_3: happy path", () => {
-  it("returns 200 with all 4 datasets on success", async () => {
+describe("user-export-data — U_EXPORT_3: happy path returns 200 with all 5 datasets", () => {
+  it("returns 200 with all 5 datasets on success (incl. profile_extras)", async () => {
     const res = await callHandler(makeRequest());
     const body = (await res.json()) as Record<string, unknown>;
 
     expect(res.status).toBe(200);
-    // All four keys must be present
+    // All five keys must be present
     expect(body).toHaveProperty("profile");
     expect(body).toHaveProperty("account_settings");
+    expect(body).toHaveProperty("profile_extras");
     expect(body).toHaveProperty("pages");
     expect(body).toHaveProperty("blocks");
     // Metadata fields
@@ -161,5 +171,47 @@ describe("user-export-data — U_EXPORT_3: happy path", () => {
     expect(body).toHaveProperty("email", "test@example.com");
     // Content-Disposition header present
     expect(res.headers.get("Content-Disposition")).toMatch(/attachment; filename=/);
+  });
+});
+
+// ── U_EXPORT_4: profile_extras read failure → 500 ────────────────────────────
+// Covers ECN-139-07 / TR-tadaify-007: export must include profile_extras or fail clearly
+
+describe("user-export-data — U_EXPORT_4: profile_extras read failure", () => {
+  it("returns 500 with failed_dataset='profile_extras' when profile_extras read fails", async () => {
+    profileExtrasResult = { data: null, error: { message: "relation does not exist" } };
+
+    const res = await callHandler(makeRequest());
+    const body = (await res.json()) as { error: string; failed_dataset: string };
+
+    expect(res.status).toBe(500);
+    expect(body.error).toBe("export_failed");
+    expect(body.failed_dataset).toBe("profile_extras");
+  });
+});
+
+// ── U_EXPORT_5: tier_slug included in export payload ─────────────────────────
+// Covers ECN-139-07 / GDPR Art. 20 / TR-tadaify-007
+
+describe("user-export-data — U_EXPORT_5: tier_slug present in export payload", () => {
+  it("exported profile_extras contains tier_slug='free'", async () => {
+    const res = await callHandler(makeRequest());
+    const body = (await res.json()) as Record<string, unknown>;
+
+    expect(res.status).toBe(200);
+    const extras = body.profile_extras as { tier_slug: string } | null;
+    expect(extras).not.toBeNull();
+    expect(extras?.tier_slug).toBe("free");
+  });
+
+  it("profile_extras is null in export when user has no extras row (new user pre-onboarding)", async () => {
+    profileExtrasResult = { data: [], error: null };
+
+    const res = await callHandler(makeRequest());
+    const body = (await res.json()) as Record<string, unknown>;
+
+    expect(res.status).toBe(200);
+    // (extras as unknown[])[0] ?? null → null when array is empty
+    expect(body.profile_extras).toBeNull();
   });
 });

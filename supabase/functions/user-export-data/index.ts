@@ -3,21 +3,25 @@
  *
  * Returns ALL user-owned data as a JSON file for download.
  *
- * Tables covered (as of F-APP-DASHBOARD-001a, #171):
- *   - profiles
- *   - account_settings
- *   - pages
- *   - blocks
+ * Tables covered:
+ *   - profiles           (F-APP-DASHBOARD-001a, #171)
+ *   - account_settings   (F-APP-DASHBOARD-001a, #171)
+ *   - pages              (F-APP-DASHBOARD-001a, #171)
+ *   - blocks             (F-APP-DASHBOARD-001a, #171)
+ *   - profile_extras     (F-ONBOARDING-001d, #139 — tier_slug + future extras)
  *
  * Auth: requires Bearer JWT (user's own session token).
  * Runtime: Deno (Supabase Edge Runtime)
  *
- * Story: F-APP-DASHBOARD-001a (#171)
+ * Story: F-APP-DASHBOARD-001a (#171), F-ONBOARDING-001d (#139)
  * GDPR Art. 20 (Right to Data Portability)
  *
  * Codex P2 fix (PR #174): per-table Supabase errors are now propagated —
  * a read failure returns 500 with { error: "export_failed", failed_dataset }
  * instead of silently returning null/[] for the broken dataset.
+ *
+ * #139 update: profile_extras added (TR-tadaify-007 requires ALL extras columns
+ * to be included; covers tier_slug and any future columns added via ALTER).
  */
 
 import { createClient, PostgrestError } from "https://esm.sh/@supabase/supabase-js@2";
@@ -95,18 +99,21 @@ Deno.serve(async (req: Request) => {
   // Any read failure returns 500 with the failing dataset name so the caller
   // knows the export is incomplete (Codex P2 fix, PR #174).
   try {
-    const [profilesRes, settingsRes, pagesRes, blocksRes] = await Promise.all([
+    const [profilesRes, settingsRes, pagesRes, blocksRes, profileExtrasRes] = await Promise.all([
       adminClient.from("profiles").select("*").eq("id", userId),
       adminClient.from("account_settings").select("*").eq("id", userId),
       adminClient.from("pages").select("*").eq("user_id", userId),
       adminClient.from("blocks").select("*").eq("user_id", userId),
+      // profile_extras: TR-tadaify-007 — includes tier_slug + any future extras columns
+      adminClient.from("profile_extras").select("*").eq("user_id", userId),
     ]);
 
-    // Unwrap all four — throws ExportError on any failure
+    // Unwrap all five — throws ExportError on any failure
     const profiles = unwrap("profiles", profilesRes);
     const accountSettings = unwrap("account_settings", settingsRes);
     const pages = unwrap("pages", pagesRes);
     const blocks = unwrap("blocks", blocksRes);
+    const profileExtras = unwrap("profile_extras", profileExtrasRes);
 
     const exportData = {
       exported_at: new Date().toISOString(),
@@ -114,6 +121,8 @@ Deno.serve(async (req: Request) => {
       email: userData.user.email,
       profile: (profiles as unknown[])[0] ?? null,
       account_settings: (accountSettings as unknown[])[0] ?? null,
+      // profile_extras row contains tier_slug and any future extras (TR-tadaify-007)
+      profile_extras: (profileExtras as unknown[])[0] ?? null,
       pages: pages ?? [],
       blocks: blocks ?? [],
     };

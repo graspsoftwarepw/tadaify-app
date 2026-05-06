@@ -1,13 +1,22 @@
 /**
  * Unit tests for onboarding.tier.tsx — Step 5/5
  *
- * Story: F-ONBOARDING-001a
- * Covers: BR-ONBOARDING-005 / ECN-136-08 / DEC-311=A
+ * Story: F-ONBOARDING-001a + F-ONBOARDING-001d (#139)
+ * Covers: BR-ONBOARDING-005 / ECN-136-08 / DEC-311=A / TR-tadaify-004 / TR-tadaify-007
  *
  * U1: loader reads all accumulated params (ignores tier URL param)
- * U2: action always redirects to complete with tier=free regardless of form state
- * U3: action carries all accumulated params to complete
+ * U2: action always redirects to /app (DEC-366=A)
+ * U3: action carries all accumulated params to /app (DEC-366=A)
  * U4: no billing / tier selection allowed (action always free)
+ *
+ * F-ONBOARDING-001d (#139) — upsertTierFree + action DB persistence:
+ * U_TIER_DB_1: upsertTierFree calls Supabase REST with tier_slug='free'
+ * U_TIER_DB_2: upsertTierFree ignores tier param from URL/body (ECN-139-01)
+ * U_TIER_DB_3: upsertTierFree is idempotent — second INSERT is a no-op (ECN-139-02)
+ * U_TIER_DB_4: action skips DB write + still redirects if env vars missing
+ * U_TIER_DB_5: action skips DB write + still redirects if no auth cookie (unauthenticated)
+ * U_TIER_DB_6: extractAccessToken reads from sb-*-auth-token cookie
+ * U_TIER_DB_7: extractAccessToken reads from Authorization header
  *
  * Bug #6a regression tests (issue tadaify-app#188):
  * U5: submit button text matches /Take me to my page/
@@ -16,10 +25,10 @@
  * U6: displayed Creator price equals CREATOR_PRICE_MONTHLY constant (no hard-coded $9)
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
-import { loader, action } from "./onboarding.tier";
+import { loader, action, extractAccessToken, upsertTierFree } from "./onboarding.tier";
 import { CREATOR_PRICE_MONTHLY, PRO_PRICE_MONTHLY, BUSINESS_PRICE_MONTHLY } from "~/lib/tier-gate";
 
 const tierSrc = readFileSync(
@@ -275,5 +284,491 @@ describe("onboarding.tier — U8: no deferred-feature copy (Bug #6d)", () => {
   it("source does not contain 'Live preview' deferred right-pane copy on tier step", () => {
     // The previous stub rendered "Live preview · Coming in a future update."
     expect(tierSrc).not.toMatch(/Live preview[\s·]*Coming/i);
+  });
+});
+
+// ── U_TIER_DB: profile_extras INSERT (F-ONBOARDING-001d / TR-tadaify-004) ────
+
+describe("onboarding.tier — U_TIER_DB_1: upsertTierFree calls Supabase with tier_slug='free'", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("calls /rest/v1/profile_extras POST with user_id + tier_slug='free'", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
+
+    await upsertTierFree("user-abc-123", {
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://localhost:54351/rest/v1/profile_extras");
+    expect(opts.method).toBe("POST");
+
+    const body = JSON.parse(opts.body as string) as { user_id: string; tier_slug: string };
+    expect(body.user_id).toBe("user-abc-123");
+    expect(body.tier_slug).toBe("free");
+  });
+
+  it("uses ignore-duplicates Prefer header to avoid overwriting existing rows", async () => {
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
+
+    await upsertTierFree("user-abc-123", {
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "service-key",
+    });
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const preferHeader = (opts.headers as Record<string, string>)["Prefer"] ?? "";
+    expect(preferHeader).toContain("ignore-duplicates");
+    expect(preferHeader).not.toContain("merge-duplicates");
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_2: upsertTierFree always writes 'free' (ECN-139-01)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("body always has tier_slug='free' regardless of any external input", async () => {
+    // Caller cannot pass tier='premium' — function signature only accepts userId + env
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
+
+    await upsertTierFree("user-xyz", {
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "sk",
+    });
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(opts.body as string) as { tier_slug: string };
+    expect(body.tier_slug).toBe("free");
+    // Must not contain any other tier value
+    expect(body.tier_slug).not.toBe("premium");
+    expect(body.tier_slug).not.toBe("creator");
+    expect(body.tier_slug).not.toBe("pro");
+    expect(body.tier_slug).not.toBe("business");
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_3: upsertTierFree idempotent on 2nd call (ECN-139-02)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("second insert succeeds (ignore-duplicates returns 200 for existing row)", async () => {
+    // First call returns 201, second call returns 200 (ignore-duplicates: row exists, no-op)
+    mockFetch
+      .mockResolvedValueOnce(new Response("", { status: 201 }))
+      .mockResolvedValueOnce(new Response("", { status: 200 }));
+
+    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+
+    await expect(upsertTierFree("user-dup", env)).resolves.not.toThrow();
+    await expect(upsertTierFree("user-dup", env)).resolves.not.toThrow();
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_8: upsertTierFree throws on Supabase failure", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("throws when Supabase returns 500 (server error)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("internal error", { status: 500 }),
+    );
+
+    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    await expect(upsertTierFree("user-fail", env)).rejects.toThrow(
+      /profile_extras INSERT failed: 500/,
+    );
+  });
+
+  it("throws when Supabase returns 403 (RLS/permission error)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("permission denied", { status: 403 }),
+    );
+
+    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    await expect(upsertTierFree("user-denied", env)).rejects.toThrow(
+      /profile_extras INSERT failed: 403/,
+    );
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_9: existing non-free tier is not overwritten", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("uses ignore-duplicates so existing row is preserved (not merge-duplicates)", async () => {
+    // ignore-duplicates returns 200 with empty body when row already exists
+    mockFetch.mockResolvedValueOnce(new Response("", { status: 200 }));
+
+    await upsertTierFree("user-existing-pro", {
+      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_SERVICE_ROLE_KEY: "sk",
+    });
+
+    const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const preferHeader = (opts.headers as Record<string, string>)["Prefer"] ?? "";
+    // Must use ignore-duplicates (INSERT ... ON CONFLICT DO NOTHING)
+    expect(preferHeader).toContain("ignore-duplicates");
+    // Must NOT use merge-duplicates (which would overwrite tier_slug)
+    expect(preferHeader).not.toContain("merge-duplicates");
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_10: action throws on /auth/v1/user 5xx (infra failure)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("throws when /auth/v1/user returns 500 (server error)", async () => {
+    // /auth/v1/user returns 500
+    mockFetch.mockResolvedValueOnce(
+      new Response("internal server error", { status: 500 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await expect(
+      action({
+        request: req,
+        context: {
+          cloudflare: {
+            env: {
+              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_SERVICE_ROLE_KEY: "sk",
+            },
+          },
+        } as never,
+        params: {},
+      } as never),
+    ).rejects.toThrow(/\/auth\/v1\/user failed: 500/);
+  });
+
+  it("throws when /auth/v1/user returns 503 (service unavailable)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("service unavailable", { status: 503 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await expect(
+      action({
+        request: req,
+        context: {
+          cloudflare: {
+            env: {
+              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_SERVICE_ROLE_KEY: "sk",
+            },
+          },
+        } as never,
+        params: {},
+      } as never),
+    ).rejects.toThrow(/\/auth\/v1\/user failed: 503/);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_11: action throws on /auth/v1/user 200 without id", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("throws when /auth/v1/user returns 200 but response has no id field", async () => {
+    // /auth/v1/user returns 200 with a body missing the id field
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ email: "user@example.com" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    await expect(
+      action({
+        request: req,
+        context: {
+          cloudflare: {
+            env: {
+              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_SERVICE_ROLE_KEY: "sk",
+            },
+          },
+        } as never,
+        params: {},
+      } as never),
+    ).rejects.toThrow(/\/auth\/v1\/user returned 200 but no user id/);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_12: action gracefully skips on 401/403 (expired token)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("redirects to /app (no throw) when /auth/v1/user returns 401", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("unauthorized", { status: 401 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "expired-tok", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    const result = await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+    // Only the /auth/v1/user call, no profile_extras call
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("redirects to /app (no throw) when /auth/v1/user returns 403", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("forbidden", { status: 403 }),
+    );
+
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "banned-tok", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      headers: { Cookie: `sb-ref-auth-token=${cookieVal}` },
+    });
+
+    const result = await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_4: action skips DB write if env vars missing", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("action redirects to /app even when SUPABASE env vars absent", async () => {
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+    });
+    const result = await action({
+      request: req,
+      context: { cloudflare: { env: {} } } as never,
+      params: {},
+    } as never);
+
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+
+    // No fetch should have been made (no Supabase URL configured)
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_5: action skips DB write if no auth cookie", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("action redirects to /app even when no auth cookie present (unauthenticated case)", async () => {
+    const req = new Request("http://localhost/onboarding/tier", {
+      method: "POST",
+      body: new FormData(),
+      // No Authorization header, no Cookie header
+    });
+    const result = await action({
+      request: req,
+      context: {
+        cloudflare: {
+          env: {
+            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_SERVICE_ROLE_KEY: "sk",
+          },
+        },
+      } as never,
+      params: {},
+    } as never);
+
+    expect(result).toBeInstanceOf(Response);
+    const res = result as Response;
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/app");
+
+    // No Supabase REST call should be made (token extraction returned null)
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_6: extractAccessToken reads from sb-*-auth-token cookie", () => {
+  it("extracts access_token from sb-<ref>-auth-token cookie JSON", () => {
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "tok-from-cookie", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      headers: { Cookie: `sb-ihnvcuhabtzaxkdzjhhy-auth-token=${cookieVal}` },
+    });
+    expect(extractAccessToken(req)).toBe("tok-from-cookie");
+  });
+
+  it("returns null when no cookie and no Authorization header", () => {
+    const req = new Request("http://localhost/onboarding/tier");
+    expect(extractAccessToken(req)).toBeNull();
+  });
+});
+
+describe("onboarding.tier — U_TIER_DB_7: extractAccessToken reads from Authorization header", () => {
+  it("extracts access_token from 'Bearer <token>' Authorization header", () => {
+    const req = new Request("http://localhost/onboarding/tier", {
+      headers: { Authorization: "Bearer header-tok-xyz" },
+    });
+    expect(extractAccessToken(req)).toBe("header-tok-xyz");
+  });
+
+  it("prefers Authorization header over cookie", () => {
+    const cookieVal = encodeURIComponent(
+      JSON.stringify({ access_token: "cookie-tok", token_type: "bearer" }),
+    );
+    const req = new Request("http://localhost/onboarding/tier", {
+      headers: {
+        Authorization: "Bearer header-tok",
+        Cookie: `sb-ihnvcuhabtzaxkdzjhhy-auth-token=${cookieVal}`,
+      },
+    });
+    expect(extractAccessToken(req)).toBe("header-tok");
   });
 });
