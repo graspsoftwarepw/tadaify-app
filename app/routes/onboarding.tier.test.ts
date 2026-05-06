@@ -822,7 +822,7 @@ describe("onboarding.tier — U_AVATAR_2: persistAvatarR2Key PATCHes profile_ext
   const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
 
   it("PATCHes profile_extras with avatar_r2_key for the user", async () => {
-    mockFetch.mockResolvedValueOnce(new Response("", { status: 204 }));
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     await persistAvatarR2Key(userId, validKey, env);
 
@@ -885,7 +885,7 @@ describe("onboarding.tier — U_AVATAR_3: action persists avatar_r2_key from URL
     // Call 2: profile_extras INSERT (upsertTierFree)
     mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
     // Call 3: profile_extras PATCH (persistAvatarR2Key)
-    mockFetch.mockResolvedValueOnce(new Response("", { status: 204 }));
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     const cookieVal = encodeURIComponent(
       JSON.stringify({ access_token: "tok-abc", token_type: "bearer" }),
