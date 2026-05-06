@@ -105,7 +105,7 @@ interface IconTileProps {
   entry: IconEntry;
   isSelected: boolean;
   onSelect: (id: string) => void;
-  tileRef?: React.RefObject<HTMLButtonElement>;
+  tileRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 function IconTile({ entry, isSelected, onSelect, tileRef }: IconTileProps) {
