@@ -69,6 +69,20 @@ export function extractAccessToken(request: Request): string | null {
 }
 
 /**
+ * R2 key pattern validation. Ensures the key matches the expected format
+ * produced by the upload route: avatars/<userId>/<uuid>.<ext>
+ * The userId parameter is checked against the key's userId segment to prevent
+ * a user from binding another user's avatar to their own row.
+ */
+const AVATAR_R2_KEY_RE = /^avatars\/([a-f0-9-]+)\/[a-f0-9-]+\.(jpg|png|webp)$/;
+
+export function isValidAvatarR2Key(key: string, userId: string): boolean {
+  const match = key.match(AVATAR_R2_KEY_RE);
+  if (!match) return false;
+  return match[1] === userId;
+}
+
+/**
  * Persists tier_slug='free' into profile_extras for the authenticated user.
  * Uses INSERT with ON CONFLICT DO NOTHING (ignore-duplicates) so an existing
  * row (potentially with a non-free tier) is never overwritten (ECN-139-02).
@@ -103,6 +117,55 @@ export async function upsertTierFree(userId: string, env: WorkerEnv): Promise<vo
     const body = await res.text().catch(() => "");
     throw new Error(
       `[onboarding.tier] profile_extras INSERT failed: ${res.status} ${body}`,
+    );
+  }
+}
+
+/**
+ * Persists avatar_r2_key into profile_extras for the authenticated user.
+ * Called AFTER upsertTierFree so the row is guaranteed to exist.
+ * Uses PATCH with user_id filter (service-role bypasses RLS).
+ * Validates the key pattern and ownership before writing.
+ * Codex follow-up Finding 1: binds uploaded R2 key to profile_extras so the
+ * orphan-cleanup cron does not delete active avatars after 24h.
+ */
+export async function persistAvatarR2Key(
+  userId: string,
+  avatarR2Key: string,
+  env: WorkerEnv,
+): Promise<void> {
+  const supabaseUrl = env.SUPABASE_URL;
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    console.warn("[onboarding.tier] SUPABASE env vars missing — skipping avatar_r2_key UPDATE");
+    return;
+  }
+
+  if (!isValidAvatarR2Key(avatarR2Key, userId)) {
+    console.warn(
+      `[onboarding.tier] avatar_r2_key rejected — pattern mismatch or userId mismatch: ${avatarR2Key}`,
+    );
+    return;
+  }
+
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/profile_extras?user_id=eq.${userId}`,
+    {
+      method: "PATCH",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ avatar_r2_key: avatarR2Key }),
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(
+      `[onboarding.tier] profile_extras avatar_r2_key UPDATE failed: ${res.status} ${body}`,
     );
   }
 }
@@ -201,6 +264,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const env = (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {};
+  const url = new URL(request.url);
+  const avatarR2Key = url.searchParams.get("av") ?? "";
 
   // Verify JWT and extract user ID so we can write to profile_extras.
   const accessToken = extractAccessToken(request);
@@ -225,6 +290,12 @@ export async function action({ request, context }: Route.ActionArgs) {
         }
         // upsertTierFree throws on real DB failures — let it propagate (500).
         await upsertTierFree(userData.id, env);
+
+        // Codex follow-up Finding 1: persist avatar_r2_key AFTER tier row exists.
+        // Validates key pattern + ownership (userId segment must match).
+        if (avatarR2Key) {
+          await persistAvatarR2Key(userData.id, avatarR2Key, env);
+        }
       } else if (userRes.status === 401 || userRes.status === 403) {
         // Expired or invalid token — graceful skip, /app loader will gate auth.
         console.warn(

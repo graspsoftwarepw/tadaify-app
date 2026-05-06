@@ -181,6 +181,18 @@ test("S1 — upload happy path: JPG 1MB → preview shown → r2_key in URL", as
   // File type + size hint visible (visual checklist item 6 — type hint shown at idle)
   await expect(page.locator('[data-testid="avatar-type-hint"]')).toBeVisible();
 
+  // Codex follow-up Finding 2: delay the upload route response so the spinner
+  // is deterministically observable before the upload completes. Without this,
+  // fast local uploads can resolve before Playwright checks for the spinner.
+  let continueUpload: (() => void) | null = null;
+  await page.route("/api/upload/avatar", async (route) => {
+    // Signal that the request started — spinner should now be visible
+    await new Promise<void>((resolve) => {
+      continueUpload = resolve;
+    });
+    await route.continue();
+  });
+
   // Set file via hidden input (visual checklist item 3 — upload zone triggers file picker)
   const fileInput = page.locator('[data-testid="avatar-file-input"]');
   await fileInput.setInputFiles({
@@ -190,9 +202,13 @@ test("S1 — upload happy path: JPG 1MB → preview shown → r2_key in URL", as
   });
 
   // Spinner visible during upload (visual checklist item 4)
+  // Deterministic: upload route is held until we release it below.
   await expect(page.locator('[data-testid="avatar-upload-spinner"]')).toBeVisible({
     timeout: 3_000,
   });
+
+  // Release the upload route so the request completes
+  continueUpload!();
 
   // Preview image visible after upload (visual checklist item 2)
   await expect(page.locator('[data-testid="avatar-preview-image"]')).toBeVisible({
