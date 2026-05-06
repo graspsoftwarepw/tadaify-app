@@ -134,6 +134,7 @@ export default function TestBlockEditorModal() {
           blockType="link"
           blockId="test-block-123"
           nested
+          ariaLabel="Delete block?"
         >
           <div
             className="bg-white rounded-[14px] shadow-xl border border-gray-200 p-6 w-full max-w-sm mx-auto mt-auto mb-auto"

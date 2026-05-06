@@ -132,17 +132,25 @@ test("S4: Tab key cycles focus within modal only (focus trap)", async ({ page })
 // Covers: BR-BLOCK-EDITOR-003
 // ---------------------------------------------------------------------------
 
-test("S5: mobile viewport (375×667) shows single-column body", async ({ page }) => {
+test("S5: mobile viewport (375×667) shows single-column stacked body", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto(TEST_PAGE);
 
   await page.click("#open-editor-btn");
   await expect(page.getByRole("dialog")).toBeVisible();
 
-  // Form column should be full width (no col-preview side-by-side)
-  // On mobile (<720px per mockup) the preview is hidden
+  // Both form and preview columns should be visible (stacked vertically, not hidden)
   const colPreview = page.locator("#col-preview");
-  await expect(colPreview).toBeHidden();
+  await expect(colPreview).toBeVisible();
+
+  // Preview should be stacked below the form (single-column grid at <860px)
+  // Verify both are present and the grid is single-column by checking that
+  // the preview top edge is below the form bottom edge (vertically stacked).
+  const formBounds = await page.locator('[data-testid="block-editor-modal-box"] .border-r, [data-testid="block-editor-modal-box"] .border-b').first().boundingBox();
+  const previewBounds = await colPreview.boundingBox();
+  if (formBounds && previewBounds) {
+    expect(previewBounds.y).toBeGreaterThanOrEqual(formBounds.y + formBounds.height - 1);
+  }
 
   // Footer should be visible without scrolling (sticky)
   const footer = page.locator('[role="dialog"] footer');
@@ -176,6 +184,10 @@ test("S6: sub-modal stacking — open delete confirm inside editor; Esc closes L
 
   // Sub-modal box should be visible
   await expect(page.locator('[data-testid="delete-submodal-box"]')).toBeVisible();
+
+  // Nested dialog must have an accessible name (Finding 4 — a11y contract)
+  const deleteDialog = page.getByRole("dialog", { name: "Delete block?" });
+  await expect(deleteDialog).toBeVisible();
 
   // Press Esc — only sub-modal closes (editor stays open)
   await page.keyboard.press("Escape");

@@ -78,6 +78,14 @@ export interface BlockEditorModalProps {
    * Default: false (z-index 50).
    */
   nested?: boolean;
+  /**
+   * Accessible title for the dialog. When a Header compound slot is used,
+   * the Header renders its own Dialog.Title — pass this prop to suppress the
+   * visually-hidden fallback. When no Header is used (e.g. delete confirm
+   * sub-modals), this prop provides the required accessible name via a
+   * visually-hidden Dialog.Title.
+   */
+  ariaLabel?: string;
   /** Modal children — typically compound slots (Header, Form, Preview, Footer). */
   children?: ReactNode;
 }
@@ -272,12 +280,13 @@ function Footer({ savedHint, onDiscard, onSave, saving = false }: BlockEditorFoo
  * flex-row container at ≥1024px that stacks to flex-col below 1024px.
  * At ≤720px the modal fills the full viewport (no rounded corners, no padding).
  */
-export function BlockEditorModal({
+function BlockEditorModalRoot({
   open,
   onOpenChange,
   blockType: _blockType,
   blockId: _blockId,
   nested = false,
+  ariaLabel,
   children,
 }: BlockEditorModalProps) {
   const zIndex = resolveZIndex(nested);
@@ -285,7 +294,7 @@ export function BlockEditorModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        {/* Backdrop */}
+        {/* Backdrop — clicks here close the modal (Radix default) */}
         <Dialog.Overlay
           className="
             fixed inset-0
@@ -296,49 +305,41 @@ export function BlockEditorModal({
           style={{ zIndex }}
         />
 
-        {/* Modal container */}
+        {/*
+          Modal panel — Dialog.Content IS the modal box (not a full-screen wrapper).
+          Radix treats pointer events outside this element as "outside the dialog",
+          which makes backdrop/overlay click-to-close work correctly (Finding 1).
+        */}
         <Dialog.Content
           className="
-            fixed inset-0
-            flex items-center justify-center
-            p-4
-            max-[720px]:p-0 max-[720px]:items-stretch
+            fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+            bg-[var(--bg-elevated)]
+            border border-[var(--border)]
+            rounded-[18px]
+            shadow-[var(--shadow-xl)]
+            w-[min(960px,calc(100vw-32px))]
+            max-h-[calc(100vh-32px)]
+            flex flex-col
+            overflow-hidden
+            data-[state=open]:animate-modalIn
+            data-[state=closed]:animate-modalOut
+            max-[720px]:rounded-none max-[720px]:max-h-screen max-[720px]:h-screen max-[720px]:w-screen
+            max-[720px]:left-0 max-[720px]:top-0 max-[720px]:translate-x-0 max-[720px]:translate-y-0
           "
           style={{ zIndex }}
           aria-describedby={undefined}
+          data-testid="block-editor-modal-box"
         >
-          <div
-            className="
-              bg-[var(--bg-elevated)]
-              border border-[var(--border)]
-              rounded-[18px]
-              shadow-[var(--shadow-xl)]
-              w-[min(960px,100%)]
-              max-h-[calc(100vh-32px)]
-              flex flex-col
-              overflow-hidden
-              data-[state=open]:animate-modalIn
-              data-[state=closed]:animate-modalOut
-              max-[720px]:rounded-none max-[720px]:max-h-screen max-[720px]:h-screen max-[720px]:w-full
-            "
-            data-testid="block-editor-modal-box"
-          >
-            {/*
-              Children are laid out as:
-                Header (flex-shrink-0)
-                Body row (flex-1, overflow-y-auto)
-                  ├── Form slot (col-form, 60%)
-                  └── Preview slot (col-preview, 40%)
-                Footer (flex-shrink-0, sticky bottom-0)
+          {/*
+            Accessible title fallback: when no Header compound slot is used
+            (e.g. delete confirm sub-modals), ariaLabel provides the required
+            accessible name via a visually-hidden Dialog.Title (Finding 4).
+          */}
+          {ariaLabel && (
+            <Dialog.Title className="sr-only">{ariaLabel}</Dialog.Title>
+          )}
 
-              We use React.Children to find Header/Footer slots and wrap the
-              Form+Preview slots in a shared 2-col container.
-              For flexibility (progressive enhancement), we just render
-              children directly — the layout is achieved via CSS on the
-              compound slots themselves + the modal-body wrapper below.
-            */}
-            {children}
-          </div>
+          {children}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -346,22 +347,8 @@ export function BlockEditorModal({
 }
 
 // ---------------------------------------------------------------------------
-// Attach compound slots as static properties
+// Body helper
 // ---------------------------------------------------------------------------
-
-BlockEditorModal.Header = Header;
-BlockEditorModal.Form = Form;
-BlockEditorModal.Preview = Preview;
-BlockEditorModal.Footer = Footer;
-
-// ---------------------------------------------------------------------------
-// Named exports for tree-shaking
-// ---------------------------------------------------------------------------
-
-export { Header as BlockEditorHeader };
-export { Form as BlockEditorForm };
-export { Preview as BlockEditorPreview };
-export { Footer as BlockEditorFooter };
 
 /**
  * Helper: render the 2-column body wrapper.
@@ -389,4 +376,35 @@ export function BlockEditorModalBody({ children }: { children?: ReactNode }) {
   );
 }
 
-BlockEditorModal.Body = BlockEditorModalBody;
+// ---------------------------------------------------------------------------
+// Typed compound component (Finding 2)
+// ---------------------------------------------------------------------------
+
+/** Compound component type — root + static slot properties. */
+type BlockEditorModalCompound = typeof BlockEditorModalRoot & {
+  Header: typeof Header;
+  Form: typeof Form;
+  Preview: typeof Preview;
+  Footer: typeof Footer;
+  Body: typeof BlockEditorModalBody;
+};
+
+export const BlockEditorModal: BlockEditorModalCompound = Object.assign(
+  BlockEditorModalRoot,
+  {
+    Header,
+    Form,
+    Preview,
+    Footer,
+    Body: BlockEditorModalBody,
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Named exports for tree-shaking
+// ---------------------------------------------------------------------------
+
+export { Header as BlockEditorHeader };
+export { Form as BlockEditorForm };
+export { Preview as BlockEditorPreview };
+export { Footer as BlockEditorFooter };
