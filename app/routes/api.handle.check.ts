@@ -18,7 +18,8 @@ import {
   generateAlternatives,
   HANDLE_ERROR_MESSAGES,
 } from "~/lib/handle-validator";
-import { detectLocaleFromRequest } from "~/lib/locale-detect";
+// locale-detect import removed: DEC-357=D — generateAlternatives is now universal,
+// no locale/country detection needed.
 
 export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "POST") {
@@ -45,7 +46,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     });
   }
 
-  const locale = detectLocaleFromRequest(request);
+  // locale detection removed: DEC-357=D — universal alternatives, no CF-IPCountry needed.
 
   // Query DB for active reservations and claimed handles
   // In Workers runtime, Supabase client is constructed from env bindings.
@@ -106,8 +107,9 @@ export async function action({ request, context }: Route.ActionArgs) {
   // If Supabase env vars aren't configured (local dev without bindings),
   // fall through as available=true — handle claim still works for testing.
 
+  // DEC-357=D: locale param dropped — universal alternatives ranking
   const alternatives =
-    available ? [] : generateAlternatives(raw, locale);
+    available ? [] : generateAlternatives(raw);
 
   return Response.json({
     available,
