@@ -35,23 +35,17 @@ describe("WelcomeHeader — renders handle from props", () => {
   });
 });
 
-describe("WelcomeHeader — brand wordmark", () => {
-  it("renders 'tada!ify' brand wordmark with 3 spans (ta + da! + ify)", () => {
-    expect(src).toContain("wm-ta");
-    expect(src).toContain("wm-da");
-    expect(src).toContain("wm-ify");
+// Brand wordmark is NOT rendered in the welcome header per DEC-358=B (short copy only).
+// The wordmark CSS variables remain in the design system but are not used here.
+describe("WelcomeHeader — no wordmark suffix (DEC-358=B)", () => {
+  it("does NOT contain 'welcome to' wordmark suffix for Hey sections (DEC-358=B literal: short copy)", () => {
+    // DEC-358=B chose option B: 'Hey @{handle} 👋' — no wordmark suffix.
+    // Option A (rejected) would have appended 'welcome to tada!ify'.
+    expect(src).not.toContain("welcome to");
   });
 
-  it("wordmark spans use correct CSS variable colors (DEC-WORDMARK-01)", () => {
-    expect(src).toContain("var(--wm-ta)");
-    expect(src).toContain("var(--wm-da)");
-    expect(src).toContain("var(--wm-ify)");
-  });
-
-  it("wordmark text contains 'ta', 'da!', 'ify' in source", () => {
-    expect(src).toContain(">ta<");
-    expect(src).toContain(">da!</");
-    expect(src).toContain(">ify<");
+  it("does NOT render brand-wordmark span (wordmark removed per DEC-358=B)", () => {
+    expect(src).not.toContain("brand-wordmark");
   });
 });
 
@@ -92,8 +86,10 @@ describe("WelcomeHeader — varying copy integration (DEC-358=B)", () => {
     expect(src).toContain("👋");
   });
 
-  it("contains 'welcome to' text for Hey sections", () => {
-    expect(src).toContain("welcome to");
+  it("short Hey copy — component renders 'Hey' directly (not via getWelcomeCopy for wave sections)", () => {
+    // The component renders the wave variant inline with "Hey @{handle} 👋" (no wordmark).
+    // getWelcomeCopy() is still called (copy var populated) but wave variant uses JSX directly.
+    expect(src).toContain("Hey");
   });
 
   it("uses data-welcome-copy attribute for non-wave sections (Playwright selector)", () => {

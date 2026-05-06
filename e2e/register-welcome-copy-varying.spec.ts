@@ -176,31 +176,36 @@ test("varying header copy: 'Hey' on A → 'almost there' on B-otp → 'Welcome' 
   // ── Section A — Hey @{handle} 👋 ─────────────────────────────────────────
   await page.fill("#handle-input", HANDLE);
 
-  // Header updates reactively (no debounce on header text)
-  await expect(page.locator("header.welcome-header")).toContainText(`Hey @${HANDLE}`, {
-    timeout: 3_000,
-  });
-  // Emoji is present in the Hey variant
-  await expect(page.locator("header.welcome-header")).toContainText("👋");
+  // Header updates reactively (no debounce on header text).
+  // DEC-358=B exact contract: "Hey @{handle} 👋" — no wordmark suffix.
+  // toHaveText uses exact substring match on the element's full text content.
+  await expect(page.locator("header.welcome-header h1")).toHaveText(
+    `Hey @${HANDLE} 👋`,
+    { timeout: 3_000 }
+  );
   // B-otp / C copy must NOT appear on section A
   await expect(page.locator("header.welcome-header")).not.toContainText("almost there");
   await expect(page.locator("header.welcome-header")).not.toContainText("Welcome");
+  // Wordmark must NOT appear (DEC-358=B chose short copy, not option A wordmark variant)
+  await expect(page.locator("header.welcome-header")).not.toContainText("welcome to");
 
   // ── Section B — Hey @{handle} 👋 (same as A after Continue click) ────────
   await expect(page.locator("#handle-availability")).toContainText("Available!", { timeout: 8_000 });
   await page.click("button:has-text('Continue')");
   await expect(page.locator("[aria-label='Choose sign-in method']")).toBeVisible({ timeout: 8_000 });
 
-  // Header still shows Hey on B
-  await expect(page.locator("header.welcome-header")).toContainText(`Hey @${HANDLE}`);
+  // Header still shows exact Hey copy on B (no wordmark)
+  await expect(page.locator("header.welcome-header h1")).toHaveText(`Hey @${HANDLE} 👋`);
   await expect(page.locator("header.welcome-header")).not.toContainText("almost there");
+  await expect(page.locator("header.welcome-header")).not.toContainText("welcome to");
 
   // ── Section B-email — Hey @{handle} 👋 ───────────────────────────────────
   await page.click("button:has-text('Continue with Email')");
   await expect(page.locator("[aria-label='Enter email']")).toBeVisible({ timeout: 8_000 });
 
-  await expect(page.locator("header.welcome-header")).toContainText(`Hey @${HANDLE}`);
+  await expect(page.locator("header.welcome-header h1")).toHaveText(`Hey @${HANDLE} 👋`);
   await expect(page.locator("header.welcome-header")).not.toContainText("almost there");
+  await expect(page.locator("header.welcome-header")).not.toContainText("welcome to");
 
   // ── Send OTP code ─────────────────────────────────────────────────────────
   await page.fill("input[type='email']", EMAIL);
@@ -210,12 +215,12 @@ test("varying header copy: 'Hey' on A → 'almost there' on B-otp → 'Welcome' 
   // Wait for OTP input grid to appear
   await page.waitForSelector("[aria-label='Enter verification code']", { timeout: 15_000 });
 
-  // Header must switch to "almost there" copy
-  await expect(page.locator("header.welcome-header")).toContainText(
+  // Header must switch to exact "almost there" copy (DEC-358=B)
+  await expect(page.locator("header.welcome-header h1")).toHaveText(
     `@${HANDLE}, almost there...`,
     { timeout: 5_000 }
   );
-  // Hey variant must no longer be shown (exact check: "Hey @" starts are gone)
+  // Hey variant must no longer be shown
   await expect(page.locator("header.welcome-header")).not.toContainText("Hey @");
 
   // ── Enter OTP via Mailpit (real email flow per DEC auth testing rules) ────
@@ -225,7 +230,7 @@ test("varying header copy: 'Hey' on A → 'almost there' on B-otp → 'Welcome' 
 
   // ── Section B-password-toggle — @{handle}, almost there... ───────────────
   await expect(page.locator("[aria-label='Login preference']")).toBeVisible({ timeout: 15_000 });
-  await expect(page.locator("header.welcome-header")).toContainText(
+  await expect(page.locator("header.welcome-header h1")).toHaveText(
     `@${HANDLE}, almost there...`,
     { timeout: 3_000 }
   );
@@ -238,7 +243,8 @@ test("varying header copy: 'Hey' on A → 'almost there' on B-otp → 'Welcome' 
   // /register route before the auto-redirect to /onboarding/welcome.
   // Assert the header copy unconditionally — if the app skips C and redirects
   // straight to onboarding, this assertion correctly fails the test.
-  await expect(page.locator("header.welcome-header")).toContainText(
+  // Exact match: "Welcome @{handle}!" — no suffix (DEC-358=B)
+  await expect(page.locator("header.welcome-header h1")).toHaveText(
     `Welcome @${HANDLE}!`,
     { timeout: 15_000 }
   );

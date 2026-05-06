@@ -32,9 +32,6 @@ export function WelcomeHeader({ handle, section }: WelcomeHeaderProps) {
   // B-otp / B-password-toggle also omit the wave (starts with "@handle,").
   const showWave = section === "A" || section === "B" || section === "B-email";
 
-  // Brand wordmark suffix is shown on the Hey variants; omitted on "almost there" / "Welcome"
-  const showWordmark = showWave;
-
   return (
     <header
       className="welcome-header"
@@ -64,22 +61,13 @@ export function WelcomeHeader({ handle, section }: WelcomeHeaderProps) {
         }}
       >
         {showWave ? (
+          // DEC-358=B — short copy only: "Hey @{handle} 👋" (no wordmark suffix)
           <>
             Hey{" "}
             <span className="handle" style={{ color: "var(--brand-primary)" }}>
               @{displayHandle}
             </span>{" "}
             <span aria-hidden>👋</span>
-            {showWordmark && (
-              <>
-                {" "}welcome to{" "}
-                <span className="brand-wordmark" aria-label="tada!ify">
-                  <span style={{ color: "var(--wm-ta)" }}>ta</span>
-                  <span style={{ color: "var(--wm-da)" }}>da!</span>
-                  <span style={{ color: "var(--wm-ify)" }}>ify</span>
-                </span>
-              </>
-            )}
           </>
         ) : (
           <span data-welcome-copy={section}>{copy}</span>
