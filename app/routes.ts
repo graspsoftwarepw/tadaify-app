@@ -40,4 +40,7 @@ export default [
 
   // Test harness — BlockPickerModal (Playwright S1–S7, tadaify-app#201)
   route("/test-block-picker-modal", "routes/test-block-picker-modal.tsx"),
+
+  // Test harness — BlockEditorModal (Playwright S1–S7, tadaify-app#211)
+  route("/test-block-editor-modal", "routes/test-block-editor-modal.tsx"),
 ] satisfies RouteConfig;

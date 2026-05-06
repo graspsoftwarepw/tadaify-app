@@ -241,8 +241,8 @@ export default function RegisterPage({ loaderData }: Route.ComponentProps) {
   const handleProviderClick = (provider: "google" | "x") => {
     // DEC-308=C: Google gated to 001b; X post-MVP. Apple dropped entirely (DEC-346=C).
     const messages: Record<string, string> = {
-      google: "Google sign-in is coming soon. Use email for now.",
-      x: "X sign-in is coming soon. Use email for now.",
+      google: "Google log-in is coming soon. Use email for now.",
+      x: "X log-in is coming soon. Use email for now.",
     };
     showToast(messages[provider]);
   };
@@ -944,7 +944,7 @@ function SectionB({
 
   return (
     <section
-      aria-label="Choose sign-in method"
+      aria-label="Choose log-in method"
       style={{
         marginTop: 32,
         paddingTop: 24,
@@ -1146,7 +1146,7 @@ function SectionBEmail({
           padding: 0,
         }}
       >
-        ← back to sign-in options
+        ← back to log-in options
       </button>
 
       <TrustStrip />
@@ -1392,8 +1392,8 @@ function SectionBPasswordToggle({
       <RadioCard
         selected={state.passwordMode === "password"}
         onSelect={() => onModeChange("password")}
-        title="Set a password for faster sign-in"
-        subtitle="Faster daily sign-in. You can always use a code instead."
+        title="Set a password for faster log-in"
+        subtitle="Faster daily log-in. You can always use a code instead."
         extra={
           state.passwordMode === "password" ? (
             <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 14 }}>

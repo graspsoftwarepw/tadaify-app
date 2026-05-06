@@ -42,10 +42,10 @@ import { OtpResendControl } from "~/components/OtpResendControl";
 
 export function meta(_: Route.MetaArgs) {
   return [
-    { title: "Sign in — tadaify" },
+    { title: "Log in — tadaify" },
     {
       name: "description",
-      content: "Sign in to your tadaify account.",
+      content: "Log in to your tadaify account.",
     },
   ];
 }
@@ -89,8 +89,8 @@ export default function LoginPage() {
 
   const handleProviderClick = (provider: "google" | "x") => {
     const messages: Record<string, string> = {
-      google: "Google sign-in is coming soon. Use email for now.",
-      x: "X sign-in is coming soon. Use email for now.",
+      google: "Google log-in is coming soon. Use email for now.",
+      x: "X log-in is coming soon. Use email for now.",
     };
     showToast(messages[provider]);
   };
@@ -298,7 +298,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p style={{ fontSize: 14, color: "var(--fg-muted)", marginBottom: 28 }}>
-            Sign in to your tadaify account.
+            Log in to your tadaify account.
           </p>
 
           {/* Method selection + email input */}

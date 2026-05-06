@@ -77,6 +77,35 @@ describe("login.tsx — no user-facing Apple copy (DEC-346=C)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// U6 (smoke-test-2026-05-06 WARN-1): login page uses "Log in" brand copy, not "Sign in"
+// Brand lock: register + landing use "Log in"; login page must match.
+// Covers: feedback_brand_lock_sweep_all_renderings.md
+// ---------------------------------------------------------------------------
+
+describe("login.tsx — U6: 'Log in' brand copy (not 'Sign in')", () => {
+  it("page title uses 'Log in — tadaify'", () => {
+    expect(loginSrc).toContain("Log in — tadaify");
+  });
+
+  it("meta description uses 'Log in to your tadaify account'", () => {
+    expect(loginSrc).toContain("Log in to your tadaify account.");
+  });
+
+  it("H2 heading uses 'Log in to your tadaify account'", () => {
+    // The visible paragraph under "Welcome back" heading
+    expect(loginSrc).toContain("Log in to your tadaify account.");
+  });
+
+  it("does NOT contain user-visible 'Sign in to your tadaify account'", () => {
+    expect(loginSrc).not.toContain("Sign in to your tadaify account");
+  });
+
+  it("does NOT contain 'Sign in — tadaify' page title", () => {
+    expect(loginSrc).not.toContain("Sign in — tadaify");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // U5 (issue tadaify-app#190 Bug #3): successful OTP verify navigates to /app
 // DEC-307: returning user → dashboard — canonical route is /app, not /dashboard
 // ---------------------------------------------------------------------------
