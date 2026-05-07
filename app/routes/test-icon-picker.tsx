@@ -14,7 +14,7 @@
  * No auth required — test harness mounts component directly.
  *
  * Story: tadaify-app#205 F-BLOCK-INFRA-ICON-PICKER-001
- * Covers: Playwright S1–S6
+ * Covers: Playwright S1–S7
  */
 
 import { useState } from "react";
@@ -24,7 +24,8 @@ export default function TestIconPicker() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [changeCount, setChangeCount] = useState(0);
 
-  const handleChange = (id: string) => {
+  // F1 fix (Codex P2): onChange now accepts null (clear action) — update handler type
+  const handleChange = (id: string | null) => {
     setSelectedId(id);
     setChangeCount((c) => c + 1);
   };
