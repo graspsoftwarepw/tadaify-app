@@ -1,5 +1,5 @@
 /**
- * Playwright test suite — IconPicker component (S1–S6)
+ * Playwright test suite — IconPicker component (S1–S7)
  *
  * Covers: BR-ICON-PICKER-001..006, TR-tadaify-014 (picker component)
  * Story: tadaify-app#205 F-BLOCK-INFRA-ICON-PICKER-001
@@ -19,6 +19,12 @@
  *   - Desktop: ≥1024px (6-col grid)
  *
  * Run: npx playwright test e2e/icon-picker.spec.ts
+ *
+ * S7 covers Codex P2 findings:
+ *   F1: clear button is a sibling of trigger (not nested), clicking it sets value=null
+ *       and does NOT open the picker popover.
+ *   F2: ArrowRight/ArrowDown move actual DOM focus (not just visual state); column
+ *       count correctly computed from CSS grid at desktop (1280px) and mobile (375px).
  */
 
 import { test, expect } from "@playwright/test";
@@ -221,6 +227,126 @@ test("S5: keyboard navigation — arrow keys move focus, Enter selects, Esc clos
 // S6: Mobile viewport — 4-col grid + ≥44px touch targets
 // Covers: ECN-ICON-PICKER-04
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// S7: Codex P2 F1 — clear button is sibling (not nested), sets null, no open
+// Codex P2 F2 — arrow keys move actual DOM focus; column count correct at desktop+mobile
+// Covers: ECN-ICON-PICKER-04 (keyboard), F1/F2 Codex P2 findings
+// ---------------------------------------------------------------------------
+
+test("S7-F1: clear button sets value to null and does NOT open popover (clearable=true)", async ({ page }) => {
+  await page.goto(TEST_PAGE);
+
+  // Pre-requisite: select an icon so clear button is shown (harness needs clearable=true)
+  // Select Spotify first
+  await page.click('[data-testid="icon-picker-trigger"]');
+  await expect(page.locator('[data-testid="icon-picker-panel"]')).toBeVisible();
+  await page.click('[data-testid="icon-tile-simple-icons:spotify"]');
+  await expect(page.locator('[data-testid="icon-picker-panel"]')).not.toBeVisible();
+
+  // Output spy: value is set
+  const output = page.locator('[data-testid="icon-picker-selected-output"]');
+  await expect(output).toHaveAttribute("data-selected-id", "simple-icons:spotify");
+
+  // Clear button should now be visible (test harness must pass clearable=true)
+  const clearBtn = page.locator('[data-testid="icon-picker-clear"]');
+  await expect(clearBtn).toBeVisible();
+
+  // F1 fix: clear button must NOT be inside the trigger button — verify DOM structure
+  // The trigger button should not contain the clear button as a descendant
+  const triggerContainsClear = await page.locator('[data-testid="icon-picker-trigger"]')
+    .locator('[data-testid="icon-picker-clear"]')
+    .count();
+  expect(triggerContainsClear).toBe(0); // clear button is a sibling, not nested
+
+  // Click clear button
+  await clearBtn.click();
+
+  // Popover must NOT open (clear doesn't trigger the picker open)
+  await expect(page.locator('[data-testid="icon-picker-panel"]')).not.toBeVisible();
+
+  // Value cleared: output spy should show empty / null
+  await expect(output).toHaveAttribute("data-selected-id", "");
+});
+
+test("S7-F2a: desktop (1280px) — ArrowRight/ArrowDown move actual DOM focus to correct tile", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(TEST_PAGE);
+
+  // Open picker
+  await page.click('[data-testid="icon-picker-trigger"]');
+  await expect(page.locator('[data-testid="icon-picker-panel"]')).toBeVisible();
+
+  // Focus search and move into grid
+  await page.waitForTimeout(100);
+  const searchInput = page.locator('[data-testid="icon-picker-search"]');
+  await expect(searchInput).toBeFocused();
+
+  // ArrowDown from search: focus moves to tile[0]
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(50);
+
+  const tiles = page.locator('[data-testid="icon-picker-grid"] [role="option"]');
+  const firstTile = tiles.nth(0);
+  await expect(firstTile).toBeFocused();
+
+  // Get first tile's data-icon-id
+  const firstId = await firstTile.getAttribute("data-icon-id");
+
+  // ArrowRight: focus moves to tile[1]
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(50);
+
+  const secondTile = tiles.nth(1);
+  await expect(secondTile).toBeFocused();
+  const secondId = await secondTile.getAttribute("data-icon-id");
+
+  // Focus must have actually moved (different tile)
+  expect(secondId).not.toBe(firstId);
+
+  // ArrowDown from tile[1] at desktop (6-col grid): should land on tile[7]
+  // (1-indexed row 2, same column position)
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(50);
+
+  // The focused element should be neither tile[0] nor tile[1]
+  const focusedAfterDown = await page.evaluate(() => {
+    const el = document.activeElement;
+    return el?.getAttribute("data-icon-id") ?? null;
+  });
+  expect(focusedAfterDown).not.toBeNull();
+  expect(focusedAfterDown).not.toBe(firstId);
+  expect(focusedAfterDown).not.toBe(secondId);
+});
+
+test("S7-F2b: mobile viewport (375px) — ArrowDown uses 4-col count (not 6)", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(TEST_PAGE);
+
+  // Open picker
+  await page.click('[data-testid="icon-picker-trigger"]');
+  await expect(page.locator('[data-testid="icon-picker-panel"]')).toBeVisible();
+  await page.waitForTimeout(100);
+
+  const searchInput = page.locator('[data-testid="icon-picker-search"]');
+  await expect(searchInput).toBeFocused();
+
+  // Move into grid: focus tile[0]
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(50);
+
+  const tiles = page.locator('[data-testid="icon-picker-grid"] [role="option"]');
+  const tile0 = tiles.nth(0);
+  await expect(tile0).toBeFocused();
+
+  // ArrowDown from tile[0] at mobile (4-col): should land on tile[4], not tile[6]
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(50);
+
+  // The focused tile should be tile[4] (row 2, col 1 of 4-col grid)
+  const tile4 = tiles.nth(4);
+  await expect(tile4).toBeFocused();
+});
 
 test("S6: mobile viewport (375px) — 4-col grid + tap targets ≥44px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });

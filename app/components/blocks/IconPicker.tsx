@@ -22,7 +22,7 @@
  */
 
 import * as Popover from "@radix-ui/react-popover";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import {
   ICON_CATALOG,
@@ -80,10 +80,10 @@ export interface IconPickerProps {
    */
   value: string | null;
   /**
-   * Fired when the user clicks an icon tile.
-   * Passes the selected icon identifier string.
+   * Fired when the user clicks an icon tile, or null when the clear button is clicked.
+   * Passes the selected icon identifier string, or null to clear the selection.
    */
-  onChange: (id: string) => void;
+  onChange: (id: string | null) => void;
   /**
    * Optional: allow clearing the selection.
    * When true, a "×" button appears on the trigger and onChange(null) is fired.
@@ -105,7 +105,7 @@ interface IconTileProps {
   entry: IconEntry;
   isSelected: boolean;
   onSelect: (id: string) => void;
-  tileRef?: React.RefObject<HTMLButtonElement | null>;
+  tileRef?: (el: HTMLButtonElement | null) => void;
 }
 
 function IconTile({ entry, isSelected, onSelect, tileRef }: IconTileProps) {
@@ -159,7 +159,16 @@ export function IconPicker({ value, onChange, clearable = false, disabled = fals
   const [focusedIndex, setFocusedIndex] = useState(0);
 
   const searchRef = useRef<HTMLInputElement>(null);
-  const firstTileRef = useRef<HTMLButtonElement>(null);
+  // Array of tile button refs for roving focus (F2 fix — Codex P2)
+  const tileRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Stable callback-ref factory so each tile gets a stable ref assignment
+  const setTileRef = useCallback(
+    (idx: number) => (el: HTMLButtonElement | null) => {
+      tileRefs.current[idx] = el;
+    },
+    [],
+  );
 
   // Debounced query (50ms per AC item 7, ECN-ICON-PICKER-02)
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -200,35 +209,45 @@ export function IconPicker({ value, onChange, clearable = false, disabled = fals
   };
 
   // Keyboard nav in grid (arrow keys, Enter)
+  // F2 fix (Codex P2): roving focus — after updating focusedIndex, call .focus()
+  // on the target tile. Column count derived from actual CSS grid layout, not
+  // fixed arithmetic (fixes tablet/mobile column mismatch).
   const handleGridKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (filtered.length === 0) return;
 
-    // Determine number of columns based on viewport approximation.
-    // We use a best-effort approach: read from grid style.
-    // Default: 6 cols for desktop
-    const grid = e.currentTarget;
-    const cols = Math.max(1, Math.round(grid.clientWidth / (grid.clientWidth / 6)));
+    // Derive actual column count from computed grid style (F2 fix — Codex P2).
+    // getComputedStyle(grid).gridTemplateColumns returns space-separated track
+    // sizes like "60px 60px 60px 60px 60px 60px"; splitting by " " gives the count.
+    const gridEl = e.currentTarget.querySelector<HTMLElement>(".grid");
+    const cols = gridEl
+      ? window.getComputedStyle(gridEl).gridTemplateColumns.split(" ").length
+      : 6; // fallback for test envs without layout
+
+    const moveFocus = (newIndex: number) => {
+      setFocusedIndex(newIndex);
+      // Roving focus: call .focus() on the target tile (F2 fix — Codex P2)
+      tileRefs.current[newIndex]?.focus();
+    };
 
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      setFocusedIndex((i) => Math.min(i + 1, filtered.length - 1));
+      moveFocus(Math.min(focusedIndex + 1, filtered.length - 1));
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      setFocusedIndex((i) => Math.max(i - 1, 0));
+      moveFocus(Math.max(focusedIndex - 1, 0));
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setFocusedIndex((i) => Math.min(i + cols, filtered.length - 1));
+      moveFocus(Math.min(focusedIndex + cols, filtered.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setFocusedIndex((i) => {
-        const next = i - cols;
-        if (next < 0) {
-          // Move focus back to search
-          searchRef.current?.focus();
-          return 0;
-        }
-        return next;
-      });
+      const next = focusedIndex - cols;
+      if (next < 0) {
+        // Move focus back to search
+        searchRef.current?.focus();
+        setFocusedIndex(0);
+      } else {
+        moveFocus(next);
+      }
     } else if (e.key === "Enter" && focusedIndex >= 0 && focusedIndex < filtered.length) {
       e.preventDefault();
       handleSelect(filtered[focusedIndex].id);
@@ -242,76 +261,82 @@ export function IconPicker({ value, onChange, clearable = false, disabled = fals
 
   return (
     <Popover.Root open={open} onOpenChange={handleOpenChange}>
-      {/* ---- Trigger ---- */}
-      <Popover.Trigger asChild>
-        <button
-          type="button"
-          aria-label="Open icon picker"
-          data-testid="icon-picker-trigger"
-          disabled={disabled}
-          className={[
-            "icon-picker-trigger",
-            "inline-flex items-center gap-[8px]",
-            "px-[12px] py-[8px] rounded-[8px]",
-            "border border-[var(--border)] bg-[var(--bg-elevated)]",
-            "text-sm font-medium transition-colors duration-100",
-            "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
-            disabled
-              ? "opacity-50 cursor-not-allowed"
-              : "cursor-pointer hover:border-[var(--brand-primary)]",
-            open ? "border-[var(--brand-primary)]" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          {/* Selected icon preview or placeholder */}
-          {selectedEntry ? (
-            <>
-              <span className="flex items-center justify-center w-[18px] h-[18px]" data-testid="icon-picker-selected-preview">
-                {renderIcon(selectedEntry.id, { size: 18 })}
-              </span>
-              <span className="text-[var(--fg)] truncate max-w-[140px]" data-testid="icon-picker-selected-name">
-                {selectedEntry.name}
-              </span>
-            </>
-          ) : (
-            <span className="text-[var(--fg-muted)]" data-testid="icon-picker-placeholder">
-              {TRIGGER_PLACEHOLDER}
-            </span>
-          )}
-
-          {/* Caret */}
-          <svg
+      {/* ---- Trigger row: picker trigger + optional clear button (sibling, not nested) ---- */}
+      {/* F1 fix (Codex P2): clear button is a SIBLING of Popover.Trigger, not nested inside it.
+          Nested interactive controls (<button> inside <button>) violate HTML spec.
+          The clear button calls onChange(null) — no cast needed with updated prop type. */}
+      <div className="inline-flex items-center gap-[4px]">
+        <Popover.Trigger asChild>
+          <button
+            type="button"
+            aria-label="Open icon picker"
+            data-testid="icon-picker-trigger"
+            disabled={disabled}
             className={[
-              "ml-auto w-[14px] h-[14px] text-[var(--fg-muted)] flex-shrink-0 transition-transform duration-150",
-              open ? "rotate-180" : "",
-            ].join(" ")}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
+              "icon-picker-trigger",
+              "inline-flex items-center gap-[8px]",
+              "px-[12px] py-[8px] rounded-[8px]",
+              "border border-[var(--border)] bg-[var(--bg-elevated)]",
+              "text-sm font-medium transition-colors duration-100",
+              "outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
+              disabled
+                ? "opacity-50 cursor-not-allowed"
+                : "cursor-pointer hover:border-[var(--brand-primary)]",
+              open ? "border-[var(--brand-primary)]" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
+            {/* Selected icon preview or placeholder */}
+            {selectedEntry ? (
+              <>
+                <span className="flex items-center justify-center w-[18px] h-[18px]" data-testid="icon-picker-selected-preview">
+                  {renderIcon(selectedEntry.id, { size: 18 })}
+                </span>
+                <span className="text-[var(--fg)] truncate max-w-[140px]" data-testid="icon-picker-selected-name">
+                  {selectedEntry.name}
+                </span>
+              </>
+            ) : (
+              <span className="text-[var(--fg-muted)]" data-testid="icon-picker-placeholder">
+                {TRIGGER_PLACEHOLDER}
+              </span>
+            )}
 
-          {/* Clear button (when clearable + value set) */}
-          {clearable && value && (
-            <button
-              type="button"
-              aria-label="Clear icon"
-              data-testid="icon-picker-clear"
-              className="ml-[2px] w-[16px] h-[16px] rounded-full flex items-center justify-center text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChange(null as unknown as string); // Clear: pass null to parent
-              }}
+            {/* Caret */}
+            <svg
+              className={[
+                "ml-auto w-[14px] h-[14px] text-[var(--fg-muted)] flex-shrink-0 transition-transform duration-150",
+                open ? "rotate-180" : "",
+              ].join(" ")}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
             >
-              ×
-            </button>
-          )}
-        </button>
-      </Popover.Trigger>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        </Popover.Trigger>
+
+        {/* Clear button — outside Popover.Trigger to avoid nested interactive controls (F1 fix) */}
+        {clearable && value !== null && (
+          <button
+            type="button"
+            aria-label="Clear icon"
+            data-testid="icon-picker-clear"
+            className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--bg-muted)] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onChange(null); // F1 fix: null typed correctly, no cast needed
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
 
       {/* ---- Popover panel ---- */}
       <Popover.Portal>
@@ -353,8 +378,8 @@ export function IconPicker({ value, onChange, clearable = false, disabled = fals
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    // Move focus into the grid
-                    firstTileRef.current?.focus();
+                    // Move focus into the grid — roving focus to tile[0] (F2 fix — Codex P2)
+                    tileRefs.current[0]?.focus();
                     setFocusedIndex(0);
                   }
                 }}
@@ -425,7 +450,7 @@ export function IconPicker({ value, onChange, clearable = false, disabled = fals
                     entry={entry}
                     isSelected={entry.id === value}
                     onSelect={handleSelect}
-                    tileRef={idx === focusedIndex ? firstTileRef : undefined}
+                    tileRef={setTileRef(idx)}
                   />
                 ))}
               </div>
