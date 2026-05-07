@@ -43,4 +43,7 @@ export default [
 
   // Test harness — BlockEditorModal (Playwright S1–S7, tadaify-app#211)
   route("/test-block-editor-modal", "routes/test-block-editor-modal.tsx"),
+
+  // Test harness — IconPicker (Playwright S1–S6, tadaify-app#205)
+  route("/test-icon-picker", "routes/test-icon-picker.tsx"),
 ] satisfies RouteConfig;
