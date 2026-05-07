@@ -38,6 +38,13 @@ export default [
   route("/api/upload/avatar", "routes/api.upload.avatar.ts"),
   route("/api/avatar/:key", "routes/api.avatar.$key.ts"),
 
+  // Block CRUD API (F-BLOCK-INFRA-CRUD-001, tadaify-app#199)
+  // Order matters: specific routes before parameterised ones
+  route("/api/blocks/reorder", "routes/api.blocks.reorder.ts"),
+  route("/api/blocks/:id/duplicate", "routes/api.blocks.$id.duplicate.ts"),
+  route("/api/blocks/:id", "routes/api.blocks.$id.ts"),
+  route("/api/blocks", "routes/api.blocks.ts"),
+
   // Test harness — BlockPickerModal (Playwright S1–S7, tadaify-app#201)
   route("/test-block-picker-modal", "routes/test-block-picker-modal.tsx"),
 
