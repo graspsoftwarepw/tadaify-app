@@ -1,15 +1,19 @@
 /**
- * S3 — Creator duplicates block — new block at source+1, subsequent shifted
+ * S3 — API integration: POST /api/blocks/:id/duplicate inserts at source+1 with shift
  *
  * Story: F-BLOCK-INFRA-CRUD-001 (tadaify-app#199)
  * Covers: BR-BLOCK-CRUD-004, AC#8, ECN-CRUD-03
  *
- * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
- *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
+ * Note: The dashboard duplicate button UI is NOT implemented in this PR — it lives
+ * in the consumer story (dashboard rework issue #200). This spec validates the
+ * backend duplicate endpoint contract directly via Playwright request API.
+ * Renamed from block-crud-duplicate.spec.ts per Codex P2 finding on PR #217.
  *
- * Run: npx playwright test e2e/block-crud-duplicate.spec.ts
+ * Prerequisites:
+ *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
+ *   - Worker API running (npm run dev — http://localhost:5173)
+ *
+ * Run: npx playwright test e2e/block-crud-duplicate-api.spec.ts
  */
 
 import { test, expect } from "@playwright/test";
@@ -128,8 +132,11 @@ async function cleanupUser(email: string): Promise<void> {
 
 // ── S3 ────────────────────────────────────────────────────────────────────────
 
-test("S3 — duplicate block: new block at source+1, subsequent blocks shifted", async ({ page }) => {
-  test.skip(!SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY not set — skipping S3");
+test("S3 — API integration: POST /api/blocks/:id/duplicate inserts at source+1, shifts subsequent", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
 
   const email = `test-crud-s3-${Date.now()}@local.test`;
 
@@ -138,78 +145,75 @@ test("S3 — duplicate block: new block at source+1, subsequent blocks shifted",
     const accessToken = await signInUser(email);
     const { pageId, blockIds } = await seedPageWithBlocks(userId, 3);
 
-    await page.context().addCookies([{
-      name: "sb-ihnvcuhabtzaxkdzjhhy-auth-token",
-      value: encodeURIComponent(JSON.stringify({ access_token: accessToken, token_type: "bearer" })),
-      domain: "localhost",
-      path: "/",
-    }]);
+    // Duplicate Block 1 (middle block, position 1)
+    const res = await request.post(`${APP_URL}/api/blocks/${blockIds[1]}/duplicate`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.status()).toBe(200);
+    const body = (await res.json()) as { block_id: string };
+    expect(body.block_id).toBeTruthy();
 
-    await page.goto(`${APP_URL}/app`);
-    await page.waitForURL(/\/app/, { timeout: 10_000 });
-
-    // All 3 blocks visible
-    for (let i = 0; i < 3; i++) {
-      await expect(page.getByText(`Block ${i}`)).toBeVisible({ timeout: 10_000 });
-    }
-
-    // Try to find duplicate button in the UI
-    const dupBtns = page.locator('[data-testid="block-duplicate-btn"], [aria-label*="duplicate" i], [aria-label*="Duplicate" i]');
-    const dupCount = await dupBtns.count();
-
-    if (dupCount < 2) {
-      // Duplicate UI not yet rendered (backend foundation story)
-      // Verify via direct API call instead
-      const res = await fetch(`${APP_URL}/api/blocks/${blockIds[1]}/duplicate`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as { block_id: string };
-      expect(body.block_id).toBeTruthy();
-
-      // Verify positions in DB
-      const rows = await getBlockPositions(pageId);
-      expect(rows).toHaveLength(4); // 3 + 1 duplicate
-
-      // Block 1 source stays at position 1
-      const sourceRow = rows.find((r) => r.id === blockIds[1]);
-      expect(sourceRow?.position).toBe(1);
-
-      // New duplicate at position 2
-      const dupRow = rows.find((r) => r.id === body.block_id);
-      expect(dupRow?.position).toBe(2);
-
-      // Former Block 2 shifted to position 3
-      const shiftedRow = rows.find((r) => r.id === blockIds[2]);
-      expect(shiftedRow?.position).toBe(3);
-
-      test.info().annotations.push({
-        type: "note",
-        description: "Duplicate button UI not yet rendered; verified via API duplicate endpoint",
-      });
-      return;
-    }
-
-    // Click duplicate on the second block (Block 1, position 1)
-    const secondDupBtn = dupBtns.nth(1);
-    await secondDupBtn.click();
-
-    // New block should appear in the list (4 total)
-    await page.waitForTimeout(1_000);
-    const blockItems = page.locator('[data-testid="block-item"], .block-item');
-    await expect(blockItems).toHaveCount(4, { timeout: 5_000 });
-
-    // Reload and verify DB persists
+    // Verify positions in DB
     const rows = await getBlockPositions(pageId);
-    expect(rows).toHaveLength(4);
-    // Block at position 1 (source) unchanged
+    expect(rows).toHaveLength(4); // 3 + 1 duplicate
+
+    // Block 1 source stays at position 1
     const sourceRow = rows.find((r) => r.id === blockIds[1]);
     expect(sourceRow?.position).toBe(1);
-    // Former Block 2 shifted to 3
+
+    // New duplicate at position 2
+    const dupRow = rows.find((r) => r.id === body.block_id);
+    expect(dupRow?.position).toBe(2);
+
+    // Former Block 2 shifted to position 3
     const shiftedRow = rows.find((r) => r.id === blockIds[2]);
     expect(shiftedRow?.position).toBe(3);
   } finally {
     await cleanupUser(email);
+  }
+});
+
+test("S3b — API integration: duplicate on another user's block returns 404 (ECN-CRUD-03 auth boundary)", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
+
+  const ownerEmail = `test-crud-s3b-owner-${Date.now()}@local.test`;
+  const attackerEmail = `test-crud-s3b-attacker-${Date.now()}@local.test`;
+
+  try {
+    const ownerId = await createTestUser(ownerEmail);
+    const attackerId = await createTestUser(attackerEmail);
+
+    // Seed attacker profile
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        id: attackerId,
+        handle: `attacker-${attackerId.slice(0, 6)}`,
+        email: attackerEmail,
+        tos_version: "v1", tier: "free",
+        onboarding_completed_at: new Date().toISOString(),
+      }),
+    });
+
+    const attackerToken = await signInUser(attackerEmail);
+    const { blockIds } = await seedPageWithBlocks(ownerId, 1);
+
+    // Attacker tries to duplicate owner's block
+    const res = await request.post(`${APP_URL}/api/blocks/${blockIds[0]}/duplicate`, {
+      headers: { Authorization: `Bearer ${attackerToken}` },
+    });
+    expect(res.status()).toBe(404);
+  } finally {
+    await cleanupUser(ownerEmail);
+    await cleanupUser(attackerEmail);
   }
 });

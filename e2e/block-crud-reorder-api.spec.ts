@@ -1,15 +1,20 @@
 /**
- * S2 — Creator reorders blocks via drag — positions persist
+ * S2 — API integration: POST /api/blocks/reorder atomically updates positions
  *
  * Story: F-BLOCK-INFRA-CRUD-001 (tadaify-app#199)
  * Covers: BR-BLOCK-CRUD-003, AC#7, ECN-CRUD-04/05
  *
- * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
- *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
+ * Note: Drag-handle UI is NOT implemented in this PR — it lives in the
+ * drag-reorder consumer story (issue tadaify-app#210, deferred per DEC-381=B).
+ * This spec validates the backend reorder endpoint contract directly via
+ * Playwright request API. Renamed from block-crud-reorder.spec.ts per
+ * Codex P2 finding on PR #217.
  *
- * Run: npx playwright test e2e/block-crud-reorder.spec.ts
+ * Prerequisites:
+ *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
+ *   - Worker API running (npm run dev — http://localhost:5173)
+ *
+ * Run: npx playwright test e2e/block-crud-reorder-api.spec.ts
  */
 
 import { test, expect } from "@playwright/test";
@@ -46,9 +51,7 @@ async function signInUser(email: string): Promise<string> {
   return ((await res.json()) as { access_token: string }).access_token;
 }
 
-async function seedPageWithBlocks(
-  userId: string
-): Promise<{ pageId: string; blockIds: string[] }> {
+async function seedPageWithBlocks(userId: string): Promise<{ pageId: string; blockIds: string[] }> {
   await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
     method: "POST",
     headers: {
@@ -106,12 +109,7 @@ async function getBlockPositions(
 ): Promise<Array<{ id: string; title: string; position: number }>> {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/blocks?page_id=eq.${pageId}&order=position.asc&select=id,title,position`,
-    {
-      headers: {
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      },
-    }
+    { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` } }
   );
   return res.json();
 }
@@ -133,8 +131,11 @@ async function cleanupUser(email: string): Promise<void> {
 
 // ── S2 ────────────────────────────────────────────────────────────────────────
 
-test("S2 — reorder blocks via drag — positions persist after refresh", async ({ page }) => {
-  test.skip(!SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY not set — skipping S2");
+test("S2 — API integration: POST /api/blocks/reorder atomically updates positions", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
 
   const email = `test-crud-s2-${Date.now()}@local.test`;
 
@@ -143,79 +144,87 @@ test("S2 — reorder blocks via drag — positions persist after refresh", async
     const accessToken = await signInUser(email);
     const { pageId, blockIds } = await seedPageWithBlocks(userId);
 
-    await page.context().addCookies([{
-      name: "sb-ihnvcuhabtzaxkdzjhhy-auth-token",
-      value: encodeURIComponent(JSON.stringify({ access_token: accessToken, token_type: "bearer" })),
-      domain: "localhost",
-      path: "/",
-    }]);
+    // Reorder: move Block 4 to position 0 (before all others)
+    const reorderedIds = [
+      blockIds[4], blockIds[0], blockIds[1], blockIds[2], blockIds[3],
+    ];
 
-    await page.goto(`${APP_URL}/app`);
-    await page.waitForURL(/\/app/, { timeout: 10_000 });
+    const res = await request.post(`${APP_URL}/api/blocks/reorder`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: { page_id: pageId, ordered_ids: reorderedIds },
+    });
+    expect(res.status()).toBe(200);
 
-    // Assert all 5 blocks visible
-    for (let i = 0; i < 5; i++) {
-      await expect(page.getByText(`Block ${i}`)).toBeVisible({ timeout: 10_000 });
-    }
-
-    // Find drag handles for blocks (data-testid="block-drag-handle" or similar)
-    const dragHandles = page.locator('[data-testid="block-drag-handle"], [aria-label*="drag" i]');
-    const handleCount = await dragHandles.count();
-
-    if (handleCount < 2) {
-      // If drag UI is not implemented yet (this story is backend foundation),
-      // verify via direct API call that the reorder endpoint works
-      const reorderedIds = [
-        blockIds[4], blockIds[0], blockIds[1], blockIds[2], blockIds[3],
-      ];
-      const res = await fetch(`${APP_URL}/api/blocks/reorder`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ page_id: pageId, ordered_ids: reorderedIds }),
-      });
-      expect(res.status).toBe(200);
-
-      // Verify positions in DB
-      const rows = await getBlockPositions(pageId);
-      expect(rows[0].id).toBe(blockIds[4]); // formerly at position 4, now at 0
-      expect(rows[1].id).toBe(blockIds[0]); // formerly at position 0, now at 1
-
-      test.info().annotations.push({
-        type: "note",
-        description: "Drag UI not yet rendered; verified via API reorder endpoint",
-      });
-      return;
-    }
-
-    // Drag block at position 4 above block at position 1
-    const lastHandle = dragHandles.nth(4);
-    const secondHandle = dragHandles.nth(1);
-
-    const lastBox = await lastHandle.boundingBox();
-    const secondBox = await secondHandle.boundingBox();
-    if (!lastBox || !secondBox) throw new Error("Could not get bounding boxes");
-
-    await page.mouse.move(lastBox.x + lastBox.width / 2, lastBox.y + lastBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y - 5, { steps: 10 });
-    await page.mouse.up();
-
-    // Wait for API call to complete and re-render
-    await page.waitForTimeout(1_000);
-
-    // Refresh and verify order persisted
-    await page.goto(`${APP_URL}/app`);
-    await page.waitForURL(/\/app/, { timeout: 10_000 });
-
-    // Verify via DB that positions were persisted
+    // Verify positions persisted atomically in DB
     const rows = await getBlockPositions(pageId);
-    // The block "Block 4" should now be at position 1 (between Block 0 and Block 1)
-    const block4Row = rows.find((r) => r.title === "Block 4");
-    expect(block4Row).toBeDefined();
-    expect(block4Row!.position).toBeLessThanOrEqual(2);
+    expect(rows).toHaveLength(5);
+    expect(rows[0].id).toBe(blockIds[4]); // formerly at position 4, now at 0
+    expect(rows[1].id).toBe(blockIds[0]); // formerly at position 0, now at 1
+    expect(rows[2].id).toBe(blockIds[1]);
+    expect(rows[3].id).toBe(blockIds[2]);
+    expect(rows[4].id).toBe(blockIds[3]);
+  } finally {
+    await cleanupUser(email);
+  }
+});
+
+test("S2b — API integration: reorder with cross-page block id returns 422 (ECN-CRUD-04)", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
+
+  const email = `test-crud-s2b-${Date.now()}@local.test`;
+
+  try {
+    const userId = await createTestUser(email);
+    const accessToken = await signInUser(email);
+    const { pageId, blockIds } = await seedPageWithBlocks(userId);
+
+    // Inject a random uuid that doesn't belong to this page
+    const fakeId = "00000000-0000-0000-0000-000000000001";
+    const badIds = [fakeId, ...blockIds.slice(1)]; // length matches but fakeId is cross-page
+
+    const res = await request.post(`${APP_URL}/api/blocks/reorder`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: { page_id: pageId, ordered_ids: badIds },
+    });
+    expect(res.status()).toBe(422);
+  } finally {
+    await cleanupUser(email);
+  }
+});
+
+test("S2c — API integration: reorder with wrong ordered_ids length returns 422 (ECN-CRUD-05)", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
+
+  const email = `test-crud-s2c-${Date.now()}@local.test`;
+
+  try {
+    const userId = await createTestUser(email);
+    const accessToken = await signInUser(email);
+    const { pageId, blockIds } = await seedPageWithBlocks(userId);
+
+    // Only pass 4 of 5 block ids — length mismatch
+    const shortIds = blockIds.slice(0, 4);
+
+    const res = await request.post(`${APP_URL}/api/blocks/reorder`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: { page_id: pageId, ordered_ids: shortIds },
+    });
+    expect(res.status()).toBe(422);
   } finally {
     await cleanupUser(email);
   }

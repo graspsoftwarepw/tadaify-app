@@ -1,16 +1,20 @@
 /**
- * S1 — Creator deletes block — confirm modal then row gone
+ * S1 — API integration: DELETE /api/blocks/:id removes row; cache purge stub fires
  *
  * Story: F-BLOCK-INFRA-CRUD-001 (tadaify-app#199)
- * Covers: BR-BLOCK-CRUD-002, AC#5, ECN-CRUD-01
- * DEC-374=B: hard-delete via confirm modal
+ * Covers: BR-BLOCK-CRUD-002, AC#5, ECN-CRUD-01, ECN-CRUD-02
+ * DEC-374=B: hard-delete via endpoint; confirm modal UI deferred to #200 consumer
+ *
+ * Note: This spec validates the backend DELETE endpoint contract. The dashboard
+ * delete-confirm modal UI (button + dialog) is NOT implemented in this PR — it lives
+ * in the consumer story (issue #200 / HomepagePanel dashboard rework). Renamed from
+ * block-crud-delete.spec.ts per Codex P1 finding on PR #217.
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
  *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
+ *   - Worker API running (npm run dev — http://localhost:5173)
  *
- * Run: npx playwright test e2e/block-crud-delete.spec.ts
+ * Run: npx playwright test e2e/block-crud-delete-api.spec.ts
  */
 
 import { test, expect } from "@playwright/test";
@@ -47,7 +51,7 @@ async function signInUser(email: string): Promise<string> {
   return ((await res.json()) as { access_token: string }).access_token;
 }
 
-async function seedUserData(userId: string, accessToken: string): Promise<{ pageId: string; blockId: string }> {
+async function seedBlock(userId: string): Promise<{ pageId: string; blockId: string }> {
   // Create profile (required for /app loader)
   await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
     method: "POST",
@@ -65,7 +69,6 @@ async function seedUserData(userId: string, accessToken: string): Promise<{ page
     }),
   });
 
-  // Create page (service-role, bypasses RLS)
   const pageRes = await fetch(`${SUPABASE_URL}/rest/v1/pages`, {
     method: "POST",
     headers: {
@@ -78,7 +81,6 @@ async function seedUserData(userId: string, accessToken: string): Promise<{ page
   });
   const [page] = (await pageRes.json()) as Array<{ id: string }>;
 
-  // Create 1 block (service-role, bypasses RLS — insert policy not yet in place)
   const blockRes = await fetch(`${SUPABASE_URL}/rest/v1/blocks`, {
     method: "POST",
     headers: {
@@ -98,6 +100,14 @@ async function seedUserData(userId: string, accessToken: string): Promise<{ page
   return { pageId: page.id, blockId: block.id };
 }
 
+async function getBlock(blockId: string): Promise<Array<{ id: string }>> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/blocks?id=eq.${blockId}&select=id`,
+    { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` } }
+  );
+  return res.json();
+}
+
 async function cleanupUser(email: string): Promise<void> {
   try {
     const listRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=200`, {
@@ -115,54 +125,88 @@ async function cleanupUser(email: string): Promise<void> {
 
 // ── S1 ────────────────────────────────────────────────────────────────────────
 
-test("S1 — delete block: confirm modal then block gone from list", async ({ page }) => {
-  test.skip(!SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY not set — skipping S1");
+test("S1 — API integration: DELETE /api/blocks/:id removes row + 404 on second call (hard-delete)", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
 
   const email = `test-crud-s1-${Date.now()}@local.test`;
 
   try {
     const userId = await createTestUser(email);
     const accessToken = await signInUser(email);
-    await seedUserData(userId, accessToken);
+    const { blockId } = await seedBlock(userId);
 
-    // Inject session cookie
-    await page.context().addCookies([{
-      name: "sb-ihnvcuhabtzaxkdzjhhy-auth-token",
-      value: encodeURIComponent(JSON.stringify({ access_token: accessToken, token_type: "bearer" })),
-      domain: "localhost",
-      path: "/",
-    }]);
+    // Verify block exists before delete
+    const before = await getBlock(blockId);
+    expect(before).toHaveLength(1);
 
-    await page.goto(`${APP_URL}/app`);
-    await page.waitForURL(/\/app/, { timeout: 10_000 });
+    // DELETE via Worker endpoint (authenticated as the block owner)
+    const deleteRes = await request.delete(`${APP_URL}/api/blocks/${blockId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(deleteRes.status()).toBe(204);
 
-    // Assert block "Delete Me Block" is visible in the dashboard
-    await expect(page.getByText("Delete Me Block")).toBeVisible({ timeout: 10_000 });
+    // Verify row gone from DB (hard-delete, not soft-delete)
+    const after = await getBlock(blockId);
+    expect(after).toHaveLength(0);
 
-    // Click the delete button on the block
-    // The block row should have a delete button (aria-label or data-testid)
-    const deleteBtn = page.locator('[data-testid="block-delete-btn"], [aria-label*="delete" i], [aria-label*="Delete" i]').first();
-    await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
-    await deleteBtn.click();
-
-    // Confirm modal should appear (DEC-374=B)
-    const modal = page.locator('[role="dialog"]').or(page.locator('[data-testid="delete-confirm-modal"]'));
-    await expect(modal).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText(/delete block|confirm delete|are you sure/i)).toBeVisible();
-
-    // Click confirm
-    const confirmBtn = modal.getByRole("button", { name: /confirm|delete|yes/i });
-    await expect(confirmBtn).toBeVisible();
-    await confirmBtn.click();
-
-    // Block should disappear from the list
-    await expect(page.getByText("Delete Me Block")).not.toBeVisible({ timeout: 5_000 });
-
-    // Navigate away and back — block still gone
-    await page.goto(`${APP_URL}/app`);
-    await page.waitForURL(/\/app/, { timeout: 10_000 });
-    await expect(page.getByText("Delete Me Block")).not.toBeVisible({ timeout: 5_000 });
+    // Second DELETE on same id returns 404 (ECN-CRUD-02: no info leak on missing)
+    const secondDelete = await request.delete(`${APP_URL}/api/blocks/${blockId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(secondDelete.status()).toBe(404);
   } finally {
     await cleanupUser(email);
+  }
+});
+
+test("S1b — API integration: DELETE on another user's block returns 404 (ECN-CRUD-02 no info leak)", async ({ request }) => {
+  if (!SERVICE_ROLE_KEY) {
+    test.skip();
+    return;
+  }
+
+  const ownerEmail = `test-crud-s1b-owner-${Date.now()}@local.test`;
+  const attackerEmail = `test-crud-s1b-attacker-${Date.now()}@local.test`;
+
+  try {
+    const ownerId = await createTestUser(ownerEmail);
+    const attackerId = await createTestUser(attackerEmail);
+
+    // Seed attacker profile (needed for JWT auth to succeed)
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        id: attackerId,
+        handle: `attacker-${attackerId.slice(0, 6)}`,
+        email: attackerEmail,
+        tos_version: "v1", tier: "free",
+        onboarding_completed_at: new Date().toISOString(),
+      }),
+    });
+
+    const attackerToken = await signInUser(attackerEmail);
+    const { blockId } = await seedBlock(ownerId);
+
+    // Attacker tries to delete owner's block — must get 404, not 403 (no info leak)
+    const res = await request.delete(`${APP_URL}/api/blocks/${blockId}`, {
+      headers: { Authorization: `Bearer ${attackerToken}` },
+    });
+    expect(res.status()).toBe(404);
+
+    // Owner's block still exists
+    const still = await getBlock(blockId);
+    expect(still).toHaveLength(1);
+  } finally {
+    await cleanupUser(ownerEmail);
+    await cleanupUser(attackerEmail);
   }
 });
