@@ -1,0 +1,91 @@
+name: Agent Review Gate
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - review_requested
+      - review_request_removed
+      - synchronize
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  agent-review-gate:
+    name: Agent Review Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce opposite-agent review
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed("This workflow must run from a pull request event.");
+              return;
+            }
+
+            const authorToReviewer = {"grasp-claude":"grasp-codex","grasp-codex":"grasp-claude"};
+            const author = pr.user.login;
+            const requiredReviewer = authorToReviewer[author];
+
+            if (!requiredReviewer) {
+              core.info("PR author is not a managed agent; no opposite-agent gate required.");
+              return;
+            }
+
+            if (pr.draft) {
+              core.info("Draft PR: opposite-agent gate is deferred until ready for review.");
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = pr.number;
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            const significantReviewStates = new Set(["APPROVED", "CHANGES_REQUESTED", "DISMISSED"]);
+            const latestReviewState = new Map();
+            reviews
+              .filter((review) => review.user && review.user.login && review.submitted_at)
+              .filter((review) => significantReviewStates.has(review.state))
+              .sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))
+              .forEach((review) => latestReviewState.set(review.user.login, review.state));
+
+            const requiredState = latestReviewState.get(requiredReviewer);
+            if (requiredState === "APPROVED") {
+              core.info("Required reviewer " + requiredReviewer + " has approved.");
+              return;
+            }
+
+            const alreadyRequested = (pr.requested_reviewers || [])
+              .some((reviewer) => reviewer.login === requiredReviewer);
+
+            if (!alreadyRequested) {
+              await github.rest.pulls.requestReviewers({
+                owner,
+                repo,
+                pull_number,
+                reviewers: [requiredReviewer],
+              });
+              core.info("Requested review from " + requiredReviewer + ".");
+            }
+
+            const stateText = requiredState ? " Latest state: " + requiredState + "." : "";
+            core.setFailed(
+              "PRs authored by " + author + " require approval from " + requiredReviewer + "." + stateText
+            );
