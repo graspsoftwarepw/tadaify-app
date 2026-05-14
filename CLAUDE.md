@@ -1,205 +1,59 @@
-# Tadaify App — Claude instructions
+# Claude operating contract - `tadaify-app`
 
-Project-level guidance for any Claude agent working on `graspsoftwarepw/tadaify-app`.
+This file is the default context router for Claude Code in this repository.
+Keep it small. Load detailed context only when the task touches that area.
 
-Applies to every session, every branch, every story. Extends the global `~/.claude/CLAUDE.md`.
+## Always Active
 
----
+- Responses to the Owner: Polish.
+- Code, comments, identifiers, commit messages, PR bodies, and docs: English.
+- Never merge. Manual Owner merge is always required.
+- Never commit directly to `main`. All work uses a feature branch and PR.
+- Use repository branch naming, branch-issue links, Conventional Commits, and
+  the required 7-section PR body contract before creating or updating PRs.
+- Do not use GitHub CLI (`gh`) or GitHub connector fallback flows. GitHub
+  automation must use the approved Agents Orchestrator token/App path.
+- Pilot approval gate: before edits, labels, branch creation, PRs, agent
+  dispatch, deploy changes, or merge-adjacent actions, provide a plan and wait
+  for Owner approval. Full process contract lives in
+  `graspsoftwarepw/agents-orchestrator`.
+- New work starts from latest `main` in an isolated branch/worktree. If the repo
+  is dirty or `main` cannot fast-forward, stop and report the blocker.
+- Pricing and tier-gating are hard guardrails: Category C fake-margin gating is
+  forbidden. Load full context before touching pricing, billing, analytics SQL,
+  tier permissions, or paid/free feature copy.
+- Marketing pillars locked on 2026-04-26 and Phase A/Phase B sequencing are
+  hard product constraints. Load full context before touching marketing copy,
+  branding, insights, multi-handle/Phase B scope, or DEC-084+ work.
 
-## Marketing pillars (locked 2026-04-26)
+## Context Loading
 
-Tadaify positioning rests on four flagship value props. Reinforce these on landing page, pricing page, onboarding flow, and any creator-facing UI surface:
+- Full pre-split repository instructions are preserved in
+  `docs/agent-context/claude-full-context.md`.
+- Open that full context before changing app architecture, build/test commands,
+  deployment, external integrations, auth, storage, UI conventions, or process
+  automation, product pricing, branding, marketing pillars, or PR/process
+  contracts.
+- For narrow inspection, tests, or small docs edits, read only the relevant
+  source files plus the specific section of the full context you need.
 
-1. 🔒 **Privacy-first** — no cookies, no tracking, ever (DEC-075 cookieless daily salt)
-2. 🔌 **First creator analytics API in link-in-bio** — Pro 100 req/h, Business 1000 req/h (DEC-080)
-3. 🎁 **Most generous Free in link-in-bio analytics** — full dataset (cross-tab, geo+city, device+browser+referrer detail) at hourly cadence + 7-day window (DEC-076 Option 9)
-4. 👥 **Agency-friendly Business** — 5 handles + 10 team members for $49/mo (DEC-083) — **Phase B work pending multi-handle SPIKE; do NOT implement until SPIKE + sub-decisions are locked**
+Do not preload every referenced document. Read the minimum file set that proves
+the decision or implementation.
 
-When designing or implementing any user-facing surface, ask: "does this surface reinforce these pillars or work against them?"
+## Token Hygiene
 
----
+- Before broad search, exclude generated or archived context:
+  `--glob '!node_modules/**' --glob '!.claude/worktrees/**' --glob '!exports/**'`
+  `--glob '!dist/**' --glob '!build/**' --glob '!coverage/**'`.
+- Do not run `rg` from repo root against `.claude`, `.codex`, Hermes logs, or
+  exported dashboards unless that directory is the explicit target.
+- For `.jsonl` sessions or logs, write a small parser that prints counts and the
+  relevant top records. Do not dump large logs into the model.
+- For secrets/auth diagnostics, print key names and present/missing status only.
+- Prefer `rg --files` plus targeted file reads over recursive grep.
 
-## Tier-gating discipline — no fake margin
+## Durable Notes
 
-When gating any feature behind a paid tier, classify it FIRST:
-
-### Category A — real infra cost differential (gate freely)
-Examples: Durable Objects live-view sessions, R2 reads/downloads, email API calls, rate-limited API access, A/B testing compute, identity stitching. Gate these — cite the actual marginal $/mo cost.
-
-### Category B — storytelling / explicit upsell hook (gate only with user buy-in)
-The feature costs $0 to deliver across tiers but functions as a defensible upsell pull. Examples: time window (7d → 90d → 1y → unlimited), saved views, CSV export frequency. Surface these as "Category B — storytelling" when proposing; user must acknowledge this is narrative gating, not cost.
-
-### Category C — fake margin (FORBIDDEN — do NOT gate)
-Feature costs $0 AND has no defensible upsell story:
-- Cross-tab dimensions (same SQL slicing, any number of dimensions)
-- Top-N counts (same query with different LIMIT)
-- Geographic detail: country + city (same Cloudflare GeoIP headers)
-- Device/browser detail (same User-Agent parsing)
-- Referrer detail: full list (same data)
-
-**Free gets the full thing for Category C features.** No exceptions.
-
-**Quick test:** "If a Free user goes viral and uses this 1000×, what's our marginal cost?" If essentially $0 → do not gate.
-
-**Source:** `feedback_no_fake_margin_tier_gating.md` in orchestrator memory. Full DEC context: `docs/decisions/insights-2026-04.md`.
-
----
-
-## DEC presentation format (when surfacing decisions to user)
-
-Every non-trivial decision presented to the user uses table format v3:
-
-```
-### DEC-NNN — <czego dotyczy>
-
-**Czego dotyczy:** <short domain header>
-**Szczegolowy opis:** 2-4 sentences, cold-readable without scrollback
-
-**Opcje:**
-1. <name>
-2. <name>
-
-**Uzasadnienie biznesowe per opcja:**
-1. Who benefits, product impact, explicit trade-off
-2. ...
-
-**Koszt per opcja, per skala (extra $/mo):**
-
-| Opcja | 100 DAU | 1k DAU | 10k DAU | 100k DAU | 1M DAU |
-|-------|---------|--------|---------|----------|--------|
-| 1     | ...     | ...    | ...     | ...      | ...    |
-| 2     | ...     | ...    | ...     | ...      | ...    |
-
-**Twoja rekomendacja:** Option N — optimised for <X>, accepting <Y> as trade-off.
-```
-
-Rules:
-- Always include business rationale AND cost-at-scale table — a DEC without both is incomplete
-- Recommendation is non-optional — always pick one and state which outcome you optimised for
-- For multiple DECs in one turn: sequential sections (not a multi-row summary table)
-
-**Source:** `feedback_dec_format_v2.md` + `feedback_dec_format_v3_business_cost.md` in orchestrator memory.
-
----
-
-## Sidebar canonical structure
-
-Every dashboard-style sidebar uses "Pages" as parent grouping (accordion-style, default expanded) with "Home" as the first page:
-
-```
-Pages                       ← parent group (accordion, default expanded)
-  🏠 Home                   ← first page — NEVER labeled "Homepage"
-  + Add page                ← disabled until multi-page ships
-─── divider ───
-Design / Domain
-─── divider ───
-Insights / Shop
-─── divider ───
-Settings / Help & docs
-```
-
-Rules:
-- First page is **"Home"** — the word "Homepage" is rejected (user: strong wording, 2026-04-25)
-- "Pages" is the canonical parent accordion label (`data-nav="pages"`)
-- When multi-page ships, additional pages appear as sub-items under "Pages"
-- Copy the Pages accordion structure from `mockups/tadaify-mvp/app-dashboard.html` (GROUP 1)
-- When editing mockups that say "Homepage": rename to "Home" AND wrap in Pages parent
-
-**Source:** `feedback_sidebar_pages_grouping.md` in orchestrator memory.
-
----
-
-## Phase A / Phase B status (Insights work)
-
-### Phase A — shipped 2026-04-26
-
-| Issue | Story |
-|-------|-------|
-| #41 | Privacy-first flagship landing section (DEC-075) |
-| #42 | API flagship landing section (DEC-080) |
-| #43 | Generous-Free flagship landing section (DEC-076) |
-| #44 | Cross-mockup feature-prominence audit |
-| #45 | Insights tab mockup — single-handle scope |
-| #38 | Team feature rescoped: Business-only, 10-member cap, account-level |
-
-PRs: #46 (landing.html + pricing.html), #47 (app-insights.html single-handle).
-
-Decisions locked: DEC-075 through DEC-083 (see `docs/decisions/insights-2026-04.md`).
-
-### Phase B — NOT YET STARTED
-
-**Do NOT start Phase B work without first running the multi-handle architecture SPIKE and locking DEC-084..DEC-090+.**
-
-Queued stories:
-- Multi-handle architecture SPIKE (separate research dispatch)
-- F-APP-MULTI-HANDLE-001 — profile switcher, URL routing, per-handle independent data, aggregate billing, add-on subscription
-- F-LANDING-AGENCY-FLAGSHIP-001 — pillar #4 (agency-friendly) on landing.html
-- onboarding-tier.html update with multi-handle context
-
-Issue body edits needed post-SPIKE:
-- #33 (Account: per-user vs per-handle scoping)
-- #34 (Billing: handle add-ons Stripe flow)
-- #36 (GDPR: multi-handle export aggregation)
-- #37 (API keys: handle-level vs account-level scoping)
-- #39 (Danger: delete-handle vs delete-account)
-
-Sub-decisions to lock before Phase B:
-1. URL routing convention (`/app/{handle}/...` vs query param vs subdomain)
-2. Per-handle vs per-account Settings tab scoping
-3. Solo-Business default UX (profile switcher when only 1 handle)
-4. GDPR export aggregation (all handles in one ZIP?)
-5. Delete-handle vs delete-account separation (primary handle)
-6. Add-on handle Stripe subscription_item design (downgrade edge cases)
-7. Team member cross-handle visibility
-
----
-
-## Reference docs
-
-All docs live in the repo — no external sources needed for context:
-
-- `docs/decisions/insights-2026-04.md` — all locked DECs (DEC-073..DEC-083) full text + cross-references
-- `docs/research/insights-metrics-feasibility.md` — Opus 4.7 research SPIKE (technical capability × user demand, 970 lines, PR #40)
-- `docs/research/insights-implementation-context.md` — implementation context, UI copy verbatim, tone rules, Phase A/B split (this doc is the single source of truth for the Insights implementation agent)
-- `docs/research/custom-domains-cloudflare-vs-cloudfront.md` — earlier research on custom domains
-
----
-
-## Stack
-
-Remix + Supabase (auth via GoTrue) + Stripe (subscriptions) + AWS S3/CloudFront (frontend hosting) + Cloudflare for SaaS (custom creator domains) + Cloudflare Workers + Workers Analytics Engine (analytics pipeline).
-
----
-
-## Conventions
-
-- **Branch naming:** `feat/<short>-<issue>`, `fix/<short>-<issue>`, `mockup/<descriptor>`, `docs/<descriptor>`, `research/<topic>`
-- **Branch–issue link (mandatory):** every branch linked to a GitHub issue via `gh issue develop <N> --name <branch> --checkout` before code is written. `feature-checklist §0.7` HARD-blocks PRs without the link.
-- **PR body 7-section contract:** Summary / Business requirements (BR-NNN) / Technical requirements (TR-NNN) / Acceptance criteria (verbatim, all ✅) / Test plan (unit + Playwright + edge cases) / Mockup (blob URL or "No UI change") / Rollback. Missing any section → `pr-creator` HARD-fails.
-- **Conventional commits:** `feat(<scope>): ...`, `fix(<scope>): ...`, `chore(<scope>): ...` with `Co-Authored-By: Claude` trailer.
-- **Tests:** Playwright (e2e) + Vitest (unit) + pgTAP (RPC). Unit tests run in CI (MANDATORY). Playwright: local only (no CI).
-- **Mockups:** `mockups/tadaify-mvp/` — file:// loadable, no external dependencies.
-- **Never commit directly to main** — always feature branch + PR.
-
----
-
-## Documentation map
-
-**Entry point for all product research, decisions, architecture, and branding:**
-
-```
-docs/INDEX.md
-```
-
-Open `docs/INDEX.md` first in any session that needs product context. It maps every doc in the tree.
-
-Key pointers:
-- **Canonical functional spec** (all features + locked decisions): `docs/specs/functional-spec.md`
-- **Decision lookup table** (50 DEC-* entries, line refs into spec): `docs/decisions/INDEX.md`
-- **Branding (canonical)**: `docs/branding/brand-lock.md` + `docs/branding/theme-tokens.html`
-- **Architecture**: `docs/architecture/infra-v2.md`
-- **Pricing model**: `docs/pricing/bandwidth-based-model-v2.md`
-
-> Migration note (2026-04-28): all tadaify research previously in
-> `~/git/claude-startup-ideas/full-research/tadaify/` was moved here.
-> `docs/INDEX.md` is the single source of truth from now on.
+If a feature changes product behavior, technical contracts, verification plans,
+or long-term operating rules, update the relevant durable doc or state why no
+doc change is needed.
