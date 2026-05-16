@@ -1355,14 +1355,46 @@
       border-radius: 8px; font-size: 11px; font-weight: 700;
     }
     .preview-countdown {
-      display: flex; gap: 6px; justify-content: center;
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
     }
     .preview-countdown .cd-cell {
       background: rgba(255,255,255,0.22); border-radius: 8px;
-      padding: 8px 10px; min-width: 44px;
+      padding: 8px 10px; min-width: 44px; text-align: center;
     }
     .preview-countdown .cd-cell .v { font-size: 17px; font-weight: 700; line-height: 1; }
     .preview-countdown .cd-cell .l { font-size: 9px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+    .preview-countdown .cd-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 8px;
+      color: var(--brand-primary);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .preview-countdown .cd-note {
+      margin-top: 6px;
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.78);
+      text-align: center;
+    }
+    .preview-countdown .cd-copy {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
     .preview-faq {
       text-align: left;
       background: rgba(255,255,255,0.12); border-radius: 10px;
@@ -2814,6 +2846,82 @@
       return '';
     }
 
+    function parseCountdownTarget(value) {
+      var raw = (value == null ? '' : String(value)).trim();
+      if (!raw) return null;
+      var parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) return null;
+      return parsed;
+    }
+
+    function formatCountdownParts(targetAt) {
+      var target = parseCountdownTarget(targetAt);
+      if (!target) {
+        return { d: '14', h: '00', m: '00', s: '00', expired: false };
+      }
+
+      var diff = target.getTime() - Date.now();
+      if (diff <= 0) {
+        return { d: '00', h: '00', m: '00', s: '00', expired: true };
+      }
+
+      var totalSeconds = Math.floor(diff / 1000);
+      var days = Math.floor(totalSeconds / 86400);
+      totalSeconds -= days * 86400;
+      var hours = Math.floor(totalSeconds / 3600);
+      totalSeconds -= hours * 3600;
+      var mins = Math.floor(totalSeconds / 60);
+      var secs = totalSeconds - mins * 60;
+
+      return {
+        d: String(days),
+        h: String(hours).padStart(2, '0'),
+        m: String(mins).padStart(2, '0'),
+        s: String(secs).padStart(2, '0'),
+        expired: false,
+      };
+    }
+
+    function renderCountdownPreviewHtml(state) {
+      var parts = formatCountdownParts(state.targetAt || state.target || '2026-05-15T19:00');
+      var label = escapeHtml(state.label || 'Next live in');
+      var icon = state.icon ? renderIconForPreview(state.icon) + ' ' : '';
+      var style = state.style || state.theme || 'boxed';
+      var linkHtml = '';
+      if (state.linkLabel && state.linkUrl) {
+        linkHtml =
+          '<a class="cd-link" href="' + escapeHtml(state.linkUrl) + '" onclick="return false;">' +
+            escapeHtml(state.linkLabel) + ' →' +
+          '</a>';
+      }
+      var noteHtml = '';
+      if (state.scheduleVisibilityEnabled) {
+        var starts = state.scheduleStartsAt ? 'from ' + escapeHtml(state.scheduleStartsAt) : 'from 7 days before';
+        var ends = state.scheduleEndsAt ? ' to ' + escapeHtml(state.scheduleEndsAt) : '';
+        noteHtml = '<div class="cd-note">Visible ' + starts + ends + '</div>';
+      } else if (state.autoHide === false) {
+        noteHtml = '<div class="cd-note">Auto-hide off · replacement copy: ' + escapeHtml(state.replacementCopy || 'Live now!') + '</div>';
+      }
+      var styleBadge = '<div class="cd-note" style="margin-top:0">Style: ' + escapeHtml(style) + '</div>';
+      var timerHtml;
+      if (parts.expired && state.autoHide === false) {
+        timerHtml = '<div class="preview-countdown"><div class="cd-copy">' + escapeHtml(state.replacementCopy || 'Live now!') + '</div></div>';
+      } else {
+        timerHtml =
+          '<div class="preview-countdown" data-countdown-preview="true" data-target-at="' + escapeHtml(state.targetAt || state.target || '') + '">' +
+            '<div class="cd-cell"><div class="v">' + parts.d + '</div><div class="l">d</div></div>' +
+            '<div class="cd-cell"><div class="v">' + parts.h + '</div><div class="l">h</div></div>' +
+            '<div class="cd-cell"><div class="v">' + parts.m + '</div><div class="l">m</div></div>' +
+            '<div class="cd-cell"><div class="v">' + parts.s + '</div><div class="l">s</div></div>' +
+          '</div>';
+      }
+      return '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;opacity:0.85;margin-bottom:6px">' + icon + label + '</div>' +
+             timerHtml +
+             styleBadge +
+             linkHtml +
+             noteHtml;
+    }
+
     /* ------------------------------------------------------------------ */
     /* ICON PICKER — runtime control                                      */
     /* ------------------------------------------------------------------ */
@@ -3932,20 +4040,20 @@
             { kind: 'text', name: 'label', label: 'Event label', value: state.label || 'Next live in', ai: true },
             { kind: 'icon-picker', name: 'icon', label: 'Label icon', value: state.icon || 'flame',
               help: 'A flame, lightning, or live dot signals urgency. Leave empty for plain text.' },
-            { kind: 'datetime', name: 'target', label: 'Target date + time', value: state.target || '2026-05-15T19:00' },
-            { kind: 'select', name: 'theme', label: 'Style',
-              options: [['boxed','Boxed cells'],['plain','Plain numbers']], value: state.theme || 'boxed' }
+            { kind: 'datetime', name: 'targetAt', label: 'Target date + time', value: state.targetAt || state.target || '2026-05-15T19:00' },
+            { kind: 'select', name: 'style', label: 'Style',
+              options: [['boxed','Boxed cells'],['inline','Inline text'],['compact','Compact pills'],['flip','Flip clock']], value: state.style || state.theme || 'boxed' },
+            { kind: 'text', name: 'linkLabel', label: 'Link label (optional)', value: state.linkLabel || '', help: 'Shown below the timer when a link URL is also present.', ai: true },
+            { kind: 'url', name: 'linkUrl', label: 'Link URL (optional)', value: state.linkUrl || '', help: 'Must be a valid URL if you want the link to render.' },
+            { kind: 'check', name: 'autoHide', label: 'Auto-hide after target', value: state.autoHide !== false, help: 'When on, the block disappears after the countdown reaches zero.' },
+            { kind: 'text', name: 'replacementCopy', label: 'Replacement copy (when auto-hide is off)', value: state.replacementCopy || 'Live now!', help: 'Shown instead of 0 0 0 0 after the target passes.' },
+            { kind: 'check', name: 'scheduleVisibilityEnabled', label: 'Schedule visibility (Creator+)', value: !!state.scheduleVisibilityEnabled, help: 'Show the countdown only during a creator-defined lead-up window.' },
+            { kind: 'datetime', name: 'scheduleStartsAt', label: 'Schedule starts at', value: state.scheduleStartsAt || '' },
+            { kind: 'datetime', name: 'scheduleEndsAt', label: 'Schedule ends at', value: state.scheduleEndsAt || '' }
           ];
         },
         preview: function (state) {
-          var ic = state.icon ? renderIconForPreview(state.icon) + ' ' : '';
-          return '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;opacity:0.85;margin-bottom:6px">' + ic + escapeHtml(state.label || 'Next live in') + '</div>' +
-                 '<div class="preview-countdown">' +
-                   '<div class="cd-cell"><div class="v">19</div><div class="l">d</div></div>' +
-                   '<div class="cd-cell"><div class="v">04</div><div class="l">h</div></div>' +
-                   '<div class="cd-cell"><div class="v">37</div><div class="l">m</div></div>' +
-                   '<div class="cd-cell"><div class="v">22</div><div class="l">s</div></div>' +
-                 '</div>';
+          return renderCountdownPreviewHtml(state);
         },
         analytics: { today: '54', sevenDay: '420', source: 'instagram', trending: true }
       },
@@ -4037,7 +4145,8 @@
       'autoplay', 'loop',                                  /* video (autoplay/loop kept for legacy state migration; new video block uses url+provider above) */
       'sectionIcon', 'items', 'q1', 'a1', 'q2', 'a2',      /* faq (q1..a2 kept for legacy seed migration only) */
       'html',                                              /* custom */
-      'target', 'theme'                                    /* countdown */
+      'target', 'theme', 'targetAt', 'linkLabel', 'linkUrl',
+      'autoHide', 'replacementCopy'                        /* countdown */
       /* v2 candidate: 'platform', 'channel', 'showWhenOffline' (live) — see feedback_no_livestream_block_in_tadaify_mvp.md (DEC-099) */
     ];
 
@@ -4058,6 +4167,8 @@
       q1: 'Question 1', a1: 'Answer 1', q2: 'Question 2', a2: 'Answer 2',
       html: 'HTML / CSS / JS',
       target: 'Target time', theme: 'Theme',
+      targetAt: 'Target date + time', linkLabel: 'Link label', linkUrl: 'Link URL',
+      autoHide: 'Auto-hide after target', replacementCopy: 'Replacement copy',
       platform: 'Platform', channel: 'Channel', showWhenOffline: 'Show when offline'
     };
 
@@ -4673,6 +4784,15 @@
         document.getElementById(bodyId).innerHTML = spec.preview(view);
       });
       renderAbDiff();
+    }
+
+    var countdownPreviewTimer = null;
+    function ensureCountdownPreviewTicker() {
+      if (countdownPreviewTimer) return;
+      countdownPreviewTimer = setInterval(function () {
+        if (document.hidden) return;
+        if (state.type === 'countdown') renderPreview();
+      }, 1000);
     }
 
     /* Build a content-state object for a given variant by merging the
@@ -5439,6 +5559,13 @@
     loadType('link');
     renderDemoBlocks();
     setTier('creator');
+    ensureCountdownPreviewTicker();
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && state.type === 'countdown') {
+        renderPreview();
+      }
+    });
 
     // Auto-open modal on first load (so reviewers see it immediately)
     setTimeout(function () {

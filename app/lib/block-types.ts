@@ -177,12 +177,21 @@ export const BLOCK_TYPES: BlockTypeMeta[] = [
   {
     id: "countdown",
     name: "Countdown timer",
-    description: "Drives urgency for launches, drops, events.",
+    description: "Drives urgency for launches, drops, events — live ticking.",
     icon: "⏳",
     category: "generic",
     isNew: true,
-    tags: "timer countdown launch event drop urgency",
-    defaultMeta: { targetDate: "", label: "" },
+    tags: "timer countdown launch event drop urgency live clock",
+    defaultMeta: {
+      label: "Next live in",
+      icon: "flame",
+      targetAt: "",
+      style: "boxed",
+      linkLabel: "",
+      linkUrl: "",
+      autoHide: true,
+      replacementCopy: "",
+    },
   },
 ];
 
