@@ -88,6 +88,7 @@ describe("BLOCK_TYPES — U2-4: category values are constrained to known set", (
 describe("isBlockTypeLocked — U2-5: tier-gating logic", () => {
   const customHtml = BLOCK_TYPES.find((bt) => bt.id === "custom-html");
   const link = BLOCK_TYPES.find((bt) => bt.id === "link");
+  const countdown = BLOCK_TYPES.find((bt) => bt.id === "countdown");
 
   it("custom-html (Pro+) is locked for free tier", () => {
     expect(customHtml).toBeDefined();
@@ -120,6 +121,20 @@ describe("isBlockTypeLocked — U2-5: tier-gating logic", () => {
   it("getBlockType returns entry by id", () => {
     expect(getBlockType("link")?.id).toBe("link");
     expect(getBlockType("nonexistent")).toBeUndefined();
+  });
+
+  it("countdown entry ships with the expected default meta contract", () => {
+    expect(countdown).toBeDefined();
+    expect(countdown?.defaultMeta).toMatchObject({
+      label: "Next live in",
+      icon: "flame",
+      targetAt: "",
+      style: "boxed",
+      linkLabel: "",
+      linkUrl: "",
+      autoHide: true,
+      replacementCopy: "",
+    });
   });
 
   it("TIER_LEVELS covers all 4 tiers", () => {
