@@ -35,7 +35,6 @@ from pathlib import Path
 
 def load_projects_json() -> dict:
     candidates = [
-        Path.home() / "git" / "claude-project-orchestrator" / "projects.json",
         Path(__file__).parent.parent / "projects.json",  # relative to hooks/
     ]
     for p in candidates:
