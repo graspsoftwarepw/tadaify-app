@@ -12,11 +12,12 @@ Keep it small. Load detailed context only when the task touches that area.
 - Use repository branch naming, branch-issue links, Conventional Commits, and
   the required 7-section PR body contract before creating or updating PRs.
 - Do not use GitHub CLI (`gh`) or GitHub connector fallback flows. GitHub
-  automation must use the approved Agents Orchestrator token/App path.
+  automation must use the per-agent GitHub App identity resolved from
+  `graspsoftwarepw/agents-team`.
 - Pilot approval gate: before edits, labels, branch creation, PRs, agent
   dispatch, deploy changes, or merge-adjacent actions, provide a plan and wait
   for Owner approval. Full process contract lives in
-  `graspsoftwarepw/agents-orchestrator`.
+  `graspsoftwarepw/agents-team`.
 - New work starts from latest `main` in an isolated branch/worktree. If the repo
   is dirty or `main` cannot fast-forward, stop and report the blocker.
 - Pricing and tier-gating are hard guardrails: Category C fake-margin gating is
