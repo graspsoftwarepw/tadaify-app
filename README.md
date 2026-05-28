@@ -10,33 +10,32 @@ Tadaify — link-in-bio + creator commerce SaaS (React Router 7 / Remix on Cloud
 # 1. Install
 npm install
 
-# 2. Bootstrap env files (.env + .dev.vars) — safe to run before Supabase
-#    Generates the HMAC hook secret needed by supabase start.
-./bin/worktree-env-init.sh
+# 2. Start Supabase local (port-band 5435X) and generate local env files
+npm run test:local:prepare
+# Inbucket UI: http://127.0.0.1:54354
 
-# 3. Start Supabase local (port-band 5435X)
-supabase start
-# Inbucket UI: http://localhost:54354
-
-# 4. Re-run to fill in Supabase keys (idempotent — re-run is always safe)
-./bin/worktree-env-init.sh
-
-# 5. Start dev server
+# 3. Start dev server
 npm run dev
-# App: http://localhost:5173
+# App: http://127.0.0.1:5173
 
-# 6. Build
+# 4. Run local Playwright
+npm run test:e2e:local -- e2e/register-cascade.spec.ts
+
+# 5. Build
 npm run build
 
-# 7. Local preview of built artifact (Workers via Wrangler)
+# 6. Local preview of built artifact (Workers via Wrangler)
 npm run preview
 # (or: wrangler dev ./build/server/index.js)
 ```
 
-> **worktree-env-init.sh** is idempotent — running it again is always safe.
-> Run it **before** `supabase start` to generate `.env` (the Auth Hook secret must exist
-> before Supabase boots). Re-run **after** `supabase start` to populate the Supabase keys
-> in `.dev.vars`. For manual setup reference, see `.env.example` and `.dev.vars.example`.
+> `npm run test:local:prepare` handles the local E2E path end-to-end: it creates
+> the hook secret when needed, starts Supabase Local, resets the DB, and writes
+> `.env.local` plus `.dev.vars`. For manual setup reference, see `.env.example`
+> and `.dev.vars.example`.
+>
+> For the full local Supabase port map and Playwright flow, see
+> [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md).
 
 ### Stack
 

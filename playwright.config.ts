@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:5173";
+const e2eEnv = process.env.E2E_ENV ?? "shared";
+const isLocalE2E = e2eEnv === "local";
+
 /**
  * Playwright configuration for tadaify-app E2E tests.
  *
@@ -26,7 +30,7 @@ export default defineConfig({
   use: {
     // Allow overriding via TEST_BASE_URL env var — used when running against
     // a worktree dev server on a non-standard port (e.g. 5175 during PR validation).
-    baseURL: process.env.TEST_BASE_URL ?? "http://localhost:5173",
+    baseURL,
     trace: "on-first-retry",
   },
 
@@ -39,13 +43,15 @@ export default defineConfig({
   // Test order matters for some scenarios (handle reservation tests share global state)
   fullyParallel: false,
 
-  // Start dev server before running tests; reuse if already running
+  // Start dev server before running tests. Local E2E must not reuse an
+  // already-running server because it may be bound to hosted Supabase values.
   webServer: {
-    command: "npm run dev",
-    url: process.env.TEST_BASE_URL ?? "http://localhost:5173",
-    reuseExistingServer: true,
+    command: "npm run dev -- --host 127.0.0.1 --port 5173",
+    url: baseURL,
+    reuseExistingServer: !isLocalE2E,
     timeout: 120_000,
     env: {
+      E2E_ENV: e2eEnv,
       // Pass through env vars needed by Workers dev server
       // These must be set in the shell or .dev.vars for tests to work
       ...(process.env.HANDLE_RESERVATION_TTL_SECONDS && {
