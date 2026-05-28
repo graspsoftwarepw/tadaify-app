@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:5173";
-const e2eEnv = process.env.E2E_ENV ?? "local";
+const e2eEnv = process.env.E2E_ENV ?? "shared";
 const isLocalE2E = e2eEnv === "local";
 
 /**
