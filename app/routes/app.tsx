@@ -38,6 +38,7 @@ import { LivePreviewPane } from "~/components/LivePreviewPane";
 import type { DeviceSize } from "~/components/LivePreviewPane";
 import { AppMobileTabs } from "~/components/AppMobileTabs";
 import { DesignPanel, DEFAULT_DESIGN_SUBTAB, normalizeSubTab } from "~/components/DesignPanel";
+import { InsightsPanel } from "~/components/InsightsPanel";
 import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
 import type { SubTabId } from "~/components/DesignBreadcrumbStepper";
 import { deriveOnboardingState } from "~/lib/onboarding-state";
@@ -386,6 +387,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
       className="app-dashboard-root"
       data-testid="app-dashboard"
       data-state={blocks.length > 0 ? "ready" : "empty"}
+      data-tier={profile.tier}
       style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}
     >
       {/* Top appbar */}
@@ -450,7 +452,10 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
               onSubTabChange={handleSubTabChange}
             />
           )}
-          {activeTab !== "page" && activeTab !== "design" && (
+          {activeTab === "insights" && (
+            <InsightsPanel handle={profile.handle} tier={profile.tier} />
+          )}
+          {activeTab !== "page" && activeTab !== "design" && activeTab !== "insights" && (
             /* Placeholder panel for other tabs */
             <div
               style={{
