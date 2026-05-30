@@ -21,12 +21,19 @@
 
 import type { Route } from "./+types/api.blocks.reorder";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
+import {
+  purgeCacheForHandleAndAwait,
+  type CachePurgeWaitable,
+} from "~/lib/cache-purge";
+import { resolveHandleForUser } from "~/lib/resolve-handle-for-purge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface WorkerEnv {
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  CF_ZONE_ID?: string;
+  CF_API_TOKEN?: string;
 }
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -78,6 +85,11 @@ function getEnv(context: unknown): WorkerEnv {
   return (
     (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {}
   );
+}
+
+function getCtx(context: unknown): CachePurgeWaitable | undefined {
+  return (context as { cloudflare?: { ctx?: CachePurgeWaitable } }).cloudflare
+    ?.ctx;
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -155,6 +167,21 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     console.error("[api.blocks.reorder] RPC error:", rpcRes.status, text);
     return Response.json({ error: "Reorder failed", detail: text }, { status: 500 });
+  }
+
+  // TR-tadaify-010 — purge edge cache after successful reorder.
+  // Registered with ctx.waitUntil() so the runtime keeps the purge alive
+  // past the response.
+  const handle = await resolveHandleForUser(
+    userId,
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+  );
+  if (handle) {
+    purgeCacheForHandleAndAwait(getCtx(context), handle, undefined, {
+      CF_ZONE_ID: env.CF_ZONE_ID,
+      CF_API_TOKEN: env.CF_API_TOKEN,
+    });
   }
 
   return Response.json({ ok: true }, { status: 200 });

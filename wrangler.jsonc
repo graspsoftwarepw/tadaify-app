@@ -8,7 +8,13 @@
     // Runtime safety toggle: set to "false" to disable avatar upload endpoint without a deploy.
     // In prod, set AVATAR_UPLOADS_ENABLED=false in Cloudflare Worker env vars if needed.
     // Defaults to enabled when unset (local dev + test work out of the box).
-    "AVATAR_UPLOADS_ENABLED": "true"
+    "AVATAR_UPLOADS_ENABLED": "true",
+
+    // Cloudflare zone identifier for the tadaify.com zone (TR-tadaify-010, #202).
+    // Public — NOT a secret. Empty placeholder here; real value is supplied
+    // per-environment via the Cloudflare Workers dashboard (or `wrangler deploy
+    // --var CF_ZONE_ID=...`). When empty, cache purge gracefully no-ops.
+    "CF_ZONE_ID": ""
   },
 
   // R2 bucket binding for avatar uploads (TR-tadaify-003, DEC-367=C).

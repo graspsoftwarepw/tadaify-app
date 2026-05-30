@@ -22,3 +22,10 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...replace-with-output-of-supabase-status
 # Override to a small value (e.g. 10) in test environments to exercise expiry
 # without waiting 10 minutes: HANDLE_RESERVATION_TTL_SECONDS=10
 HANDLE_RESERVATION_TTL_SECONDS=600
+
+# Cloudflare Cache Purge API token (TR-tadaify-010, #202).
+# Scope: Zone.Cache Purge for the tadaify.com zone.
+# Production: configured via `wrangler secret put CF_API_TOKEN` per environment.
+# Local dev: leave as the placeholder below — the helper detects it and
+# gracefully no-ops, so block CRUD still works without a real CF zone.
+CF_API_TOKEN=CHANGE_ME_VIA_WRANGLER_SECRET

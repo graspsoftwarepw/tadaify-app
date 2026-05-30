@@ -58,3 +58,25 @@ the decision or implementation.
 If a feature changes product behavior, technical contracts, verification plans,
 or long-term operating rules, update the relevant durable doc or state why no
 doc change is needed.
+
+## Worker environment bindings
+
+Operator-facing reference. Full list lives in `.dev.vars.example` (local dev)
+and `wrangler.jsonc` (deployed vars).
+
+Secrets (configured via `wrangler secret put <NAME>` per environment, NEVER
+committed):
+
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service-role for server-side queries.
+- `CF_API_TOKEN` — Cloudflare Cache Purge API token (TR-tadaify-010, #202).
+  Scope: `Zone.Cache Purge` for the `tadaify.com` zone. Local dev uses the
+  placeholder `CHANGE_ME_VIA_WRANGLER_SECRET` in `.dev.vars`; the helper
+  detects it and gracefully no-ops, so block CRUD works without a real CF zone.
+
+Public vars (in `wrangler.jsonc [vars]`, safe to commit — NOT secrets):
+
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY` — Supabase project URL + anon key.
+- `AVATAR_UPLOADS_ENABLED` — runtime kill-switch for the avatar upload route.
+- `CF_ZONE_ID` — Cloudflare zone identifier for `tadaify.com` (TR-tadaify-010,
+  #202). Empty placeholder in the checked-in file; real value supplied
+  per-environment via the Cloudflare Workers dashboard.

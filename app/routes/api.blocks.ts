@@ -22,6 +22,11 @@
 
 import type { Route } from "./+types/api.blocks";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
+import {
+  purgeCacheForHandleAndAwait,
+  type CachePurgeWaitable,
+} from "~/lib/cache-purge";
+import { resolveHandleForUser } from "~/lib/resolve-handle-for-purge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +34,8 @@ interface WorkerEnv {
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  CF_ZONE_ID?: string;
+  CF_API_TOKEN?: string;
 }
 
 export interface Block {
@@ -101,6 +108,11 @@ function getEnv(context: unknown): WorkerEnv {
   return (
     (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {}
   );
+}
+
+function getCtx(context: unknown): CachePurgeWaitable | undefined {
+  return (context as { cloudflare?: { ctx?: CachePurgeWaitable } }).cloudflare
+    ?.ctx;
 }
 
 // ── GET /api/blocks?page_id=<uuid> ────────────────────────────────────────────
@@ -251,5 +263,21 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const blocks = (await insertRes.json()) as Block[];
+
+  // TR-tadaify-010 — purge edge cache for the creator's public page.
+  // Registered with ctx.waitUntil() so the Worker keeps the runtime alive
+  // until the purge fetch settles. Purge failure must not fail the CRUD save.
+  const handle = await resolveHandleForUser(
+    userId,
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+  );
+  if (handle) {
+    purgeCacheForHandleAndAwait(getCtx(context), handle, undefined, {
+      CF_ZONE_ID: env.CF_ZONE_ID,
+      CF_API_TOKEN: env.CF_API_TOKEN,
+    });
+  }
+
   return Response.json({ block: blocks[0] }, { status: 201 });
 }
