@@ -942,3 +942,178 @@ body:has(.creator-shell) {
 .block-divider-spacer.block-divider-lg {
   height: 56px;
 }
+
+/* ── Image block (F-BLOCK-IMAGE-001) ─────────────────────────────────────
+ *
+ * Rendered as `<article class="block-image-wrap"><figure class="block-image …">…</figure></article>`.
+ * The figure carries the chosen aspect ratio; the image fills it via
+ * object-fit cover. Optional click-through wraps the image in an `<a>` with a
+ * CTA chip; optional caption renders as `<figcaption>`.
+ *
+ * Visual contract: app-block-editor.html BLOCK_TYPES.image aspect options. */
+.blocks article.block-image-wrap {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-image {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.block-image-link {
+  position: relative;
+  display: block;
+  text-decoration: none;
+}
+
+.block-image-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  background: var(--bg-muted);
+}
+
+/* Aspect ratios. `rounded` keeps the image's natural ratio with rounded
+   corners; the others crop to a fixed box. */
+.block-image-1 .block-image-img,
+.block-image-1 .block-image-empty {
+  aspect-ratio: 1 / 1;
+}
+.block-image-43 .block-image-img,
+.block-image-43 .block-image-empty {
+  aspect-ratio: 4 / 3;
+}
+.block-image-169 .block-image-img,
+.block-image-169 .block-image-empty {
+  aspect-ratio: 16 / 9;
+}
+.block-image-rounded .block-image-img {
+  aspect-ratio: auto;
+  border-radius: 18px;
+}
+
+.block-image-cta {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 8px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.block-image-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  background: var(--bg-muted);
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.block-image-caption {
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── Video block (F-BLOCK-VIDEO-001) ─────────────────────────────────────
+ *
+ * Rendered as `<article class="block-video-wrap"><figure class="block-video">
+ * <div class="block-video-frame"><iframe …></div>…</figure></article>`.
+ * The frame is a 16:9 responsive box; the iframe fills it absolutely. A
+ * fallback `<a>` is shown when the URL can't be parsed into an embed id.
+ *
+ * Visual contract: app-block-editor.html BLOCK_TYPES.video (YouTube/Vimeo). */
+.blocks article.block-video-wrap {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-video {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.block-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.block-video-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.block-video-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.block-video-fallback:hover {
+  border-color: var(--brand-primary);
+}
+
+.block-video-empty {
+  margin: 0;
+  padding: 16px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  background: var(--bg-muted);
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  text-align: center;
+}
+
+.block-video-caption {
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.5;
+}
