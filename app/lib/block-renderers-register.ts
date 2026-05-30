@@ -17,8 +17,12 @@ import { LinkBlockRenderer } from "~/components/blocks/public/LinkBlockRenderer"
 import { ProductBlockRenderer } from "~/components/blocks/public/ProductBlockRenderer";
 import { HeadingBlockRenderer } from "~/components/blocks/public/HeadingBlockRenderer";
 import { DividerBlockRenderer } from "~/components/blocks/public/DividerBlockRenderer";
+import { ImageBlockRenderer } from "~/components/blocks/public/ImageBlockRenderer";
+import { VideoBlockRenderer } from "~/components/blocks/public/VideoBlockRenderer";
 
 registerBlockRenderer("link", LinkBlockRenderer);
 registerBlockRenderer("product", ProductBlockRenderer);
 registerBlockRenderer("heading", HeadingBlockRenderer);
 registerBlockRenderer("divider", DividerBlockRenderer);
+registerBlockRenderer("image", ImageBlockRenderer);
+registerBlockRenderer("video", VideoBlockRenderer);
