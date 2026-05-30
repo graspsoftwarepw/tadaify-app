@@ -6714,3 +6714,424 @@ body.dark-mode .app-dashboard-root .welcome-banner {
     body.dark-mode .app-dashboard-root .admin-v2-hero { border-color: #1F2937; }
     body.dark-mode .app-dashboard-root .admin-sub-nav { background: #141A2D; border-color: #1F2937; }
     body.dark-mode .app-dashboard-root .admin-sub-nav-item.active { background: #0B0F1E; border-color: #1F2937; border-bottom-color: #0B0F1E; }
+
+    /* ==========================================================================
+       DOMAIN PANEL — .app-dashboard-root .main-domain
+       Visual contract: mockups/tadaify-mvp/app-domain.html (1678 LOC)
+       All selectors are scoped under `.main-domain` to avoid colliding with
+       the dashboard's existing `.page-head`, `.btn`, `.chip` etc. atoms.
+       @keyframes with generic names are prefixed `domain-` per the instruction.
+       ========================================================================== */
+
+    /* ── Layout ── */
+    .app-dashboard-root .main-domain { padding: 24px 20px 120px; min-width: 0; max-width: 860px; }
+    @media (min-width: 720px) { .app-dashboard-root .main-domain { padding: 28px 32px 60px; } }
+
+    /* Page header — overrides dashboard base for domain layout */
+    .app-dashboard-root .main-domain .page-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 28px;
+    }
+    .app-dashboard-root .main-domain .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .app-dashboard-root .main-domain .page-head .sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 5px; }
+    .app-dashboard-root .main-domain .page-head .actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* Domain layout (1-col, optional 2-col on large screens) */
+    .app-dashboard-root .main-domain .domain-layout { display: block; }
+    @media (min-width: 1100px) {
+      .app-dashboard-root .main-domain .domain-layout { display: grid; grid-template-columns: 1fr 260px; gap: 28px; align-items: start; }
+    }
+
+    /* ── Empty state ── */
+    .app-dashboard-root .main-domain .empty-hero {
+      background: linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(139,92,246,0.04) 100%);
+      border: 1.5px dashed rgba(99,102,241,0.25); border-radius: 20px;
+      padding: 48px 32px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+    .app-dashboard-root .main-domain .eh-icon {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(139,92,246,0.10));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; margin-bottom: 4px;
+    }
+    .app-dashboard-root .main-domain .empty-hero h2 {
+      font-family: var(--font-display); font-size: 26px; font-weight: 600;
+      letter-spacing: -0.02em; margin: 0;
+    }
+    .app-dashboard-root .main-domain .eh-url {
+      font-size: 15px; color: var(--brand-primary); font-weight: 500;
+      font-family: var(--font-mono); background: rgba(99,102,241,0.07);
+      padding: 6px 14px; border-radius: 8px;
+    }
+    .app-dashboard-root .main-domain .eh-desc { font-size: 14px; color: var(--fg-muted); max-width: 420px; line-height: 1.55; }
+    .app-dashboard-root .main-domain .eh-price {
+      font-size: 13px; color: var(--fg-subtle); background: var(--bg-muted); border-radius: 8px; padding: 6px 14px;
+    }
+    .app-dashboard-root .main-domain .eh-price strong { color: var(--fg-muted); font-weight: 600; }
+
+    .app-dashboard-root .main-domain .empty-footer {
+      margin-top: 24px; padding: 18px 20px;
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .app-dashboard-root .main-domain .empty-footer p { font-size: 13.5px; color: var(--fg-muted); margin: 0; }
+    .app-dashboard-root .main-domain .empty-footer a { color: var(--brand-primary); font-weight: 500; }
+    .app-dashboard-root .main-domain .empty-footer a:hover { text-decoration: underline; }
+    .app-dashboard-root .main-domain .registrar-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .app-dashboard-root .main-domain .reg-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; color: var(--fg-muted);
+      background: var(--bg-muted); border: 1px solid var(--border);
+    }
+
+    /* ── Domain list ── */
+    .app-dashboard-root .main-domain .domain-list { display: flex; flex-direction: column; gap: 12px; }
+    .app-dashboard-root .main-domain .domain-card {
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+      padding: 16px 18px; display: flex; align-items: center; gap: 14px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .app-dashboard-root .main-domain .domain-card:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
+    .app-dashboard-root .main-domain .domain-card.is-focused { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .app-dashboard-root .main-domain .domain-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .app-dashboard-root .main-domain .dot-green { background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .app-dashboard-root .main-domain .dot-yellow { background: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+    .app-dashboard-root .main-domain .dot-red { background: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .app-dashboard-root .main-domain .dot-gray { background: var(--fg-subtle); }
+
+    .app-dashboard-root .main-domain .domain-info { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-domain .domain-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .app-dashboard-root .main-domain .primary-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 999px; background: rgba(99,102,241,0.12); color: var(--brand-primary);
+    }
+    .app-dashboard-root .main-domain .domain-meta { font-size: 12.5px; color: var(--fg-muted); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .app-dashboard-root .main-domain .dm-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); display: inline-block; }
+    .app-dashboard-root .main-domain .pulse-wrap { display: flex; align-items: center; gap: 5px; }
+    .app-dashboard-root .main-domain .domain-pulse {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--warning);
+      animation: domain-pulse-anim 1.5s ease-in-out infinite;
+    }
+    @keyframes domain-pulse-anim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .app-dashboard-root .main-domain .domain-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+    /* Kebab button */
+    .app-dashboard-root .main-domain .kebab-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent;
+      color: var(--fg-muted); display: flex; align-items: center; justify-content: center;
+      font-size: 18px; line-height: 1; transition: all .12s ease; position: relative; cursor: pointer;
+    }
+    .app-dashboard-root .main-domain .kebab-btn:hover { background: var(--bg-muted); color: var(--fg); border-color: var(--border); }
+
+    /* Dropdown menu */
+    .app-dashboard-root .main-domain .dropdown-menu {
+      display: none; position: absolute; right: 0; top: calc(100% + 4px);
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: 12px; padding: 6px; box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+      min-width: 200px; z-index: 100;
+    }
+    .app-dashboard-root .main-domain .dropdown-menu.open { display: block; }
+    .app-dashboard-root .main-domain .dm-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500; color: var(--fg);
+      background: transparent; border: none; text-align: left; cursor: pointer;
+      transition: background .1s ease;
+    }
+    .app-dashboard-root .main-domain .dm-item svg { width: 15px; height: 15px; color: var(--fg-muted); flex-shrink: 0; }
+    .app-dashboard-root .main-domain .dm-item:hover { background: var(--bg-muted); }
+    .app-dashboard-root .main-domain .dm-item.danger { color: var(--danger); }
+    .app-dashboard-root .main-domain .dm-item.danger svg { color: var(--danger); }
+    .app-dashboard-root .main-domain .dm-item.danger:hover { background: var(--danger-bg); }
+    .app-dashboard-root .main-domain .dm-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* Billing row */
+    .app-dashboard-root .main-domain .billing-row {
+      margin-top: 20px; padding: 14px 16px;
+      background: var(--bg-muted); border: 1px solid var(--border); border-radius: 12px;
+      font-size: 13px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .app-dashboard-root .main-domain .billing-row strong { color: var(--fg); font-weight: 600; }
+
+    /* ── Registrar expander ── */
+    .app-dashboard-root .main-domain .registrar-expander { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .app-dashboard-root .main-domain .re-trigger {
+      width: 100%; text-align: left; padding: 12px 16px; background: var(--bg-elevated);
+      font-size: 13.5px; font-weight: 500; color: var(--fg-muted); border: none;
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+      transition: background .12s ease;
+    }
+    .app-dashboard-root .main-domain .re-trigger:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .main-domain .re-trigger .chevron { transition: transform .2s ease; }
+    .app-dashboard-root .main-domain .re-trigger.open .chevron { transform: rotate(180deg); }
+    .app-dashboard-root .main-domain .re-body { display: none; padding: 14px 16px; border-top: 1px solid var(--border); background: var(--bg); }
+    .app-dashboard-root .main-domain .re-body.open { display: block; }
+    .app-dashboard-root .main-domain .re-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .app-dashboard-root .main-domain .re-row:last-child { border-bottom: none; }
+    .app-dashboard-root .main-domain .re-registrar { font-weight: 600; min-width: 110px; color: var(--fg); }
+    .app-dashboard-root .main-domain .re-path { color: var(--fg-muted); line-height: 1.45; }
+
+    /* Footer help */
+    .app-dashboard-root .main-domain .domain-footer-help {
+      margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--fg-subtle); text-align: center;
+    }
+    .app-dashboard-root .main-domain .domain-footer-help a { color: var(--brand-primary); font-weight: 500; }
+    .app-dashboard-root .main-domain .domain-footer-help a:hover { text-decoration: underline; }
+
+    /* ── Right tips panel (desktop only) ── */
+    .app-dashboard-root .main-domain .side-tips { display: none; }
+    @media (min-width: 1100px) {
+      .app-dashboard-root .main-domain .side-tips { display: block; position: sticky; top: 82px; }
+    }
+    .app-dashboard-root .main-domain .tips-panel { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    .app-dashboard-root .main-domain .tips-panel h3 {
+      font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-subtle); margin: 0 0 12px;
+    }
+    .app-dashboard-root .main-domain .tip-chip {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px; line-height: 1.45;
+    }
+    .app-dashboard-root .main-domain .tip-chip:last-child { border-bottom: none; }
+    .app-dashboard-root .main-domain .tip-ic { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .app-dashboard-root .main-domain .tip-title { font-weight: 600; color: var(--fg); }
+    .app-dashboard-root .main-domain .tip-body { color: var(--fg-muted); font-size: 12.5px; margin-top: 2px; }
+
+    /* ── Add domain wizard modal ── */
+    .app-dashboard-root .main-domain .domain-modal-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(15,23,42,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .app-dashboard-root .main-domain .domain-modal-backdrop.open { display: flex; }
+    .app-dashboard-root .main-domain .domain-modal {
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
+      box-shadow: 0 24px 80px rgba(15,23,42,0.22);
+      width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
+      animation: domain-modal-slide .22s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes domain-modal-slide {
+      from { transform: translateY(14px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .app-dashboard-root .main-domain .modal-header {
+      display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 0;
+    }
+    .app-dashboard-root .main-domain .modal-title {
+      font-family: var(--font-display); font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em;
+    }
+    .app-dashboard-root .main-domain .modal-close {
+      width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg-muted); display: flex; align-items: center; justify-content: center;
+      font-size: 16px; line-height: 1; cursor: pointer; transition: all .15s ease;
+    }
+    .app-dashboard-root .main-domain .modal-close:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .main-domain .modal-body { padding: 20px 24px 28px; }
+
+    /* Wizard step indicator */
+    .app-dashboard-root .main-domain .domain-wizard-steps {
+      display: flex; align-items: center; gap: 0; margin-bottom: 24px;
+    }
+    .app-dashboard-root .main-domain .ws-step {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600; color: var(--fg-subtle);
+    }
+    .app-dashboard-root .main-domain .ws-step .ws-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; transition: all .2s ease;
+    }
+    .app-dashboard-root .main-domain .ws-step.active { color: var(--brand-primary); }
+    .app-dashboard-root .main-domain .ws-step.active .ws-num { border-color: var(--brand-primary); background: var(--brand-primary); color: #fff; }
+    .app-dashboard-root .main-domain .ws-step.done .ws-num { border-color: var(--success); background: var(--success); color: #fff; }
+    .app-dashboard-root .main-domain .ws-step.done .ws-num::before { content: "✓"; }
+    .app-dashboard-root .main-domain .ws-connector { flex: 1; height: 2px; background: var(--border-strong); margin: 0 8px; border-radius: 2px; transition: background .2s ease; }
+    .app-dashboard-root .main-domain .ws-connector.done { background: var(--success); }
+
+    /* Wizard panels */
+    .app-dashboard-root .main-domain .wiz-panel { display: none; flex-direction: column; gap: 16px; }
+    .app-dashboard-root .main-domain .wiz-panel.active { display: flex; }
+
+    /* Domain input */
+    .app-dashboard-root .main-domain .field-label {
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+    }
+    .app-dashboard-root .main-domain .domain-input-wrap {
+      display: flex; align-items: center; background: var(--bg);
+      border: 1.5px solid var(--border-strong); border-radius: 12px;
+      padding: 2px 4px 2px 14px; transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .app-dashboard-root .main-domain .domain-input-wrap:focus-within {
+      border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .app-dashboard-root .main-domain .domain-input-wrap input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 15px; font-weight: 500; color: var(--fg); padding: 11px 8px; min-width: 0;
+    }
+    .app-dashboard-root .main-domain .domain-input-wrap input::placeholder { color: var(--fg-subtle); font-weight: 400; }
+    .app-dashboard-root .main-domain .input-hint { font-size: 12px; color: var(--fg-subtle); margin-top: 5px; }
+    .app-dashboard-root .main-domain .input-error { font-size: 12px; color: var(--danger); margin-top: 5px; display: none; }
+    .app-dashboard-root .main-domain .input-error.visible { display: block; }
+
+    /* DNS card */
+    .app-dashboard-root .main-domain .dns-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .app-dashboard-root .main-domain .dns-card-header { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+    .app-dashboard-root .main-domain .dns-col-head { padding: 10px 16px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-subtle); }
+    .app-dashboard-root .main-domain .dns-col-head:first-child { border-right: 1px solid var(--border); }
+    .app-dashboard-root .main-domain .dns-rows { display: flex; flex-direction: column; }
+    .app-dashboard-root .main-domain .dns-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+    .app-dashboard-root .main-domain .dns-row:last-child { border-bottom: 0; }
+    .app-dashboard-root .main-domain .dns-cell { padding: 10px 16px; font-size: 13px; }
+    .app-dashboard-root .main-domain .dns-cell:first-child { border-right: 1px solid var(--border); color: var(--fg-muted); }
+    .app-dashboard-root .main-domain .dns-cell .field-name { font-size: 11px; color: var(--fg-subtle); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .app-dashboard-root .main-domain .dns-cell code {
+      font-family: var(--font-mono); font-size: 13px;
+      background: rgba(99,102,241,0.08); color: var(--brand-primary);
+      padding: 2px 7px; border-radius: 5px; display: inline-block; margin-top: 2px; word-break: break-all;
+    }
+
+    /* DNS status bar */
+    .app-dashboard-root .main-domain .dns-status-bar {
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+      background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px;
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-domain .dns-status-bar.verified { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
+    .app-dashboard-root .main-domain .dns-status-bar svg { flex-shrink: 0; }
+
+    /* SSL timeline */
+    .app-dashboard-root .main-domain .ssl-timeline { display: flex; flex-direction: column; gap: 0; }
+    .app-dashboard-root .main-domain .ssl-step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; }
+    .app-dashboard-root .main-domain .ssl-step + .ssl-step { border-top: 1px solid var(--border); }
+    .app-dashboard-root .main-domain .ssl-icon {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    .app-dashboard-root .main-domain .ssl-icon.done { background: var(--success-bg); }
+    .app-dashboard-root .main-domain .ssl-icon.pending {
+      background: var(--warning-bg); animation: domain-ssl-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes domain-ssl-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+    }
+    .app-dashboard-root .main-domain .ssl-icon.waiting { background: var(--bg-muted); }
+    .app-dashboard-root .main-domain .ssl-body { flex: 1; }
+    .app-dashboard-root .main-domain .ssl-title { font-size: 14px; font-weight: 600; }
+    .app-dashboard-root .main-domain .ssl-sub { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+
+    /* Live CTA */
+    .app-dashboard-root .main-domain .live-cta {
+      background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.04));
+      border: 1px solid rgba(16,185,129,0.3); border-radius: 14px; padding: 20px;
+      text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center;
+    }
+    .app-dashboard-root .main-domain .lc-domain {
+      font-family: var(--font-mono); font-size: 16px; font-weight: 600; color: var(--success);
+      background: rgba(16,185,129,0.1); padding: 6px 16px; border-radius: 8px;
+    }
+    .app-dashboard-root .main-domain .lc-actions { display: flex; gap: 8px; }
+
+    /* Stripe plan card / payment overlay */
+    .app-dashboard-root .main-domain .stripe-plan-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.05));
+      border: 1.5px solid rgba(99,102,241,0.2); border-radius: 14px; padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .app-dashboard-root .main-domain .spc-name { font-size: 15px; font-weight: 600; }
+    .app-dashboard-root .main-domain .spc-desc { font-size: 12.5px; color: var(--fg-muted); margin-top: 3px; }
+    .app-dashboard-root .main-domain .spc-note { font-size: 11.5px; color: var(--brand-primary); margin-top: 5px; font-style: italic; }
+    .app-dashboard-root .main-domain .spc-price {
+      font-family: var(--font-display); font-size: 26px; font-weight: 600; color: var(--fg); white-space: nowrap;
+    }
+    .app-dashboard-root .main-domain .spc-price sub { font-size: 13px; font-family: var(--font-sans); color: var(--fg-muted); font-weight: 400; }
+
+    .app-dashboard-root .main-domain .card-form-mock {
+      border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px 16px;
+      background: var(--bg); display: flex; flex-direction: column; gap: 12px;
+    }
+    .app-dashboard-root .main-domain .cf-row { display: flex; gap: 10px; }
+    .app-dashboard-root .main-domain .cf-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .app-dashboard-root .main-domain .cf-field label { font-size: 11px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .app-dashboard-root .main-domain .cf-field input {
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      padding: 9px 12px; font-size: 14px; background: var(--bg-elevated); color: var(--fg);
+      outline: none; font-family: var(--font-mono);
+    }
+    .app-dashboard-root .main-domain .cf-field input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+    .app-dashboard-root .main-domain .pay-methods {
+      display: flex; gap: 8px; align-items: center; padding: 10px 14px;
+      background: var(--bg-muted); border-radius: 10px; font-size: 12.5px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-domain .pay-method-icon {
+      padding: 3px 8px; border-radius: 4px; background: var(--bg-elevated);
+      border: 1px solid var(--border); font-size: 11px; font-weight: 700; color: var(--fg-muted);
+    }
+
+    /* Confirm remove modal */
+    .app-dashboard-root .main-domain .domain-confirm-modal {
+      background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(15,23,42,0.22);
+      width: min(440px, calc(100vw - 32px)); padding: 24px;
+      display: flex; flex-direction: column; gap: 14px;
+      animation: domain-modal-slide .22s cubic-bezier(0.22,1,0.36,1);
+    }
+    .app-dashboard-root .main-domain .domain-confirm-modal h3 { font-family: var(--font-display); font-size: 20px; margin: 0; }
+    .app-dashboard-root .main-domain .domain-confirm-modal p { font-size: 14px; color: var(--fg-muted); line-height: 1.55; margin: 0; }
+    .app-dashboard-root .main-domain .domain-confirm-modal p strong { color: var(--fg); }
+    .app-dashboard-root .main-domain .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+    /* btn-danger scoped to domain panel */
+    .app-dashboard-root .main-domain .btn-danger {
+      background: var(--danger-bg); color: #991B1B; border: 1px solid rgba(239,68,68,0.25);
+    }
+    .app-dashboard-root .main-domain .btn-danger:hover { background: var(--danger); color: #fff; }
+
+    /* nav-pill-soon */
+    .app-dashboard-root .nav-pill-soon {
+      font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-subtle);
+    }
+
+    /* ── Dark mode overrides ── */
+    body.dark-mode .app-dashboard-root .main-domain .empty-hero { border-color: rgba(99,102,241,0.2); background: linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.06)); }
+    body.dark-mode .app-dashboard-root .main-domain .empty-footer { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .domain-card { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .domain-card:hover { border-color: #374151; }
+    body.dark-mode .app-dashboard-root .main-domain .dns-card { background: #0A0F1C; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .dns-card-header,
+    body.dark-mode .app-dashboard-root .main-domain .dns-col-head { border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .dns-cell:first-child,
+    body.dark-mode .app-dashboard-root .main-domain .dns-row { border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .domain-modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .modal-close { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .main-domain .domain-input-wrap { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .main-domain .card-form-mock { background: #0A0F1C; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .main-domain .cf-field input { background: #141A2D; border-color: #374151; color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .main-domain .tips-panel { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .billing-row { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .registrar-expander { border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .re-trigger { background: #141A2D; color: #9CA3AF; }
+    body.dark-mode .app-dashboard-root .main-domain .re-trigger:hover { background: #1F2937; color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .main-domain .re-body { background: #0A0F1C; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .re-row { border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .domain-confirm-modal { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .dropdown-menu { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .dm-item:hover { background: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-domain .stripe-plan-card { border-color: rgba(99,102,241,0.3); }
+    body.dark-mode .app-dashboard-root .main-domain .pay-methods { background: #0A0F1C; }
+    body.dark-mode .app-dashboard-root .main-domain .pay-method-icon { background: #141A2D; border-color: #374151; color: #9CA3AF; }

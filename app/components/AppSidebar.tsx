@@ -211,7 +211,7 @@ export function AppSidebar({
       {/* DIVIDER 2 */}
       <div className="nav-divider" aria-hidden="true" />
 
-      {/* GROUP 3: Insights + Affiliate */}
+      {/* GROUP 3: Insights + Affiliate + Domain */}
       <div className="nav-group" style={{ paddingTop: 0 }}>
         <button
           type="button"
@@ -254,6 +254,35 @@ export function AppSidebar({
             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
           <span className="label">Affiliate</span>
+        </button>
+        {/* Domain — 6th sidebar item per DEC-CUSTOM-DOMAIN-NAV-01=A */}
+        <button
+          type="button"
+          className={`nav-item${activeTab === "domain" ? " active" : ""}`}
+          data-nav="domain"
+          data-tip="Custom domain"
+          onClick={() => onTabChange("domain")}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+          <span className="label">Domain</span>
+          <span
+            className="nav-pill nav-pill-soon"
+            style={{ marginLeft: "auto" }}
+          >
+            soon
+          </span>
         </button>
       </div>
 
