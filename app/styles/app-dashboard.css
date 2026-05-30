@@ -4049,3 +4049,554 @@ body.dark-mode .app-dashboard-root .welcome-banner {
     .app-dashboard-root .main-settings .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
     .app-dashboard-root .main-settings .tier-banner .tb-sub { font-size: 12.5px; color: var(--fg-muted); }
     .app-dashboard-root .main-settings .tier-banner .btn { flex-shrink: 0; }
+
+    /* =========================================================================
+       Settings — API keys sub-page (SettingsApiKeys)
+       Visual contract: mockups/tadaify-mvp/app-settings-apikeys.html
+       All selectors prefixed ak- to avoid collisions with other settings pages.
+       body[data-tier] → .app-dashboard-root[data-tier] (per task constraint).
+       :root and @keyframes stay global (none needed here).
+       ========================================================================= */
+
+    /* ── Section title with inline action button ── */
+    .app-dashboard-root .main-settings .settings-section-title.ak-with-action {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 17px; margin-bottom: 14px;
+      color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .ak-sec-tier-pill {
+      margin-left: 8px; vertical-align: middle;
+    }
+    .app-dashboard-root .main-settings .ak-section-help {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+      margin: -4px 0 14px;
+    }
+    .app-dashboard-root .main-settings .ak-section-help code {
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11.5px;
+    }
+
+    /* ── chip.scope (monospace token badge) ── */
+    .app-dashboard-root .chip.scope {
+      background: var(--bg-muted); color: var(--fg-muted);
+      border: 1px solid var(--border); padding: 2px 7px;
+      font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+    }
+
+    /* ── btn-danger ── */
+    .app-dashboard-root .main-settings .btn-danger {
+      background: var(--danger); color: #fff; border-color: transparent;
+    }
+    .app-dashboard-root .main-settings .btn-danger:hover { background: #DC2626; }
+    .app-dashboard-root .main-settings .btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── modal size variants (sm / md) ── */
+    .app-dashboard-root .main-settings .modal.modal-md { max-width: 720px; padding: 32px; }
+    .app-dashboard-root .main-settings .modal.modal-sm { max-width: 480px; padding: 24px; }
+
+    /* ── Upsell hero (Free / Creator tier) ── */
+    .app-dashboard-root .main-settings .ak-upsell-hero {
+      display: flex; gap: 18px;
+      padding: 22px 24px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.30);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      align-items: center;
+    }
+    .app-dashboard-root .main-settings .ak-uh-icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; background: var(--bg-elevated);
+      box-shadow: var(--shadow-sm); flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .ak-uh-body { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .ak-uh-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 19px; margin: 0 0 4px;
+    }
+    .app-dashboard-root .main-settings .ak-uh-sub {
+      font-size: 13px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .ak-uh-cta { flex-shrink: 0; }
+    @media (max-width: 620px) {
+      .app-dashboard-root .main-settings .ak-upsell-hero { flex-direction: column; align-items: flex-start; }
+      .app-dashboard-root .main-settings .ak-uh-cta { width: 100%; }
+      .app-dashboard-root .main-settings .ak-uh-cta .btn { width: 100%; }
+    }
+
+    /* ── Demo-mode strip ── */
+    .app-dashboard-root .main-settings .ak-demo-mode-strip {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      background: rgba(99,102,241,0.06);
+      border: 1px dashed rgba(99,102,241,0.40);
+      border-radius: 10px;
+      font-size: 12.5px; color: var(--brand-primary);
+      line-height: 1.45;
+    }
+    .app-dashboard-root .main-settings .ak-dms-ico { font-size: 16px; }
+
+    /* ── Rate-limited banner ── */
+    .app-dashboard-root .main-settings .ak-rate-banner {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.30);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 13.5px; color: #991B1B; line-height: 1.5;
+    }
+    .app-dashboard-root .main-settings .ak-rb-ico { font-size: 18px; line-height: 1.2; flex-shrink: 0; }
+    .app-dashboard-root .main-settings .ak-rate-banner strong {
+      display: block; color: #7F1D1D; font-size: 14px; margin-bottom: 2px;
+    }
+
+    /* ── Keys table ── */
+    .app-dashboard-root .main-settings .ak-keys-table-wrap { overflow-x: auto; margin: 0 -4px; }
+    .app-dashboard-root .main-settings .ak-keys-table {
+      width: 100%; border-collapse: collapse; min-width: 760px;
+    }
+    .app-dashboard-root .main-settings .ak-keys-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .ak-keys-table td {
+      padding: 14px 12px; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--fg); vertical-align: middle;
+    }
+    .app-dashboard-root .main-settings .ak-keys-table tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .main-settings .ak-keys-table tr.is-revoked td { opacity: 0.55; }
+    .app-dashboard-root .main-settings .ak-keys-table tr.is-revoked .ak-k-name::after {
+      content: " · revoked"; color: var(--danger); font-weight: 500; font-size: 11.5px;
+    }
+    .app-dashboard-root .main-settings .ak-k-name { font-weight: 600; }
+    .app-dashboard-root .main-settings .ak-k-name-meta {
+      display: block; font-weight: 400; color: var(--fg-subtle);
+      font-size: 11.5px; margin-top: 3px;
+    }
+    .app-dashboard-root .main-settings .ak-k-token {
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .ak-k-scopes {
+      display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px;
+    }
+    .app-dashboard-root .main-settings .ak-k-date {
+      color: var(--fg-muted); font-size: 12.5px; white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .ak-k-actions {
+      display: flex; gap: 4px; justify-content: flex-end; white-space: nowrap;
+    }
+
+    /* ── Keys empty state ── */
+    .app-dashboard-root .main-settings .ak-keys-empty {
+      padding: 36px 20px; text-align: center;
+      color: var(--fg-muted); font-size: 13.5px;
+      background: var(--bg);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px; line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .ak-ke-ico { font-size: 32px; margin-bottom: 8px; }
+    .app-dashboard-root .main-settings .ak-ke-cta { margin-top: 14px; }
+
+    /* ── Permissions matrix ── */
+    .app-dashboard-root .main-settings .ak-permissions-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; border: 0; padding: 0;
+      color: var(--brand-primary); font-size: 13px; font-weight: 500;
+      cursor: pointer; margin-top: 4px;
+    }
+    .app-dashboard-root .main-settings .ak-pt-caret {
+      transition: transform .15s ease; display: inline-block;
+    }
+    .app-dashboard-root .main-settings .ak-permissions-toggle.open .ak-pt-caret {
+      transform: rotate(90deg);
+    }
+    .app-dashboard-root .main-settings .ak-permissions-grid {
+      display: none; margin-top: 14px;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .app-dashboard-root .main-settings .ak-permissions-grid.open { display: block; }
+    .app-dashboard-root .main-settings .ak-perm-row {
+      display: grid; grid-template-columns: 200px 1fr 120px;
+      gap: 12px; padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; align-items: center;
+    }
+    .app-dashboard-root .main-settings .ak-perm-row:last-child { border-bottom: 0; }
+    .app-dashboard-root .main-settings .ak-perm-row.is-head {
+      background: var(--bg-muted);
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .ak-perm-name {
+      font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .ak-perm-desc {
+      color: var(--fg-muted); font-size: 12.5px; line-height: 1.5;
+    }
+    .app-dashboard-root .main-settings .ak-perm-cat { font-size: 11px; color: var(--fg-subtle); text-align: right; }
+    .app-dashboard-root .main-settings .ak-perm-tag {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-weight: 600; letter-spacing: 0.02em;
+    }
+    .app-dashboard-root .main-settings .ak-perm-tag.write {
+      background: rgba(245,158,11,0.18); color: var(--brand-warm-dark);
+    }
+    @media (max-width: 720px) {
+      .app-dashboard-root .main-settings .ak-perm-row { grid-template-columns: 1fr; gap: 4px; }
+      .app-dashboard-root .main-settings .ak-perm-cat { text-align: left; }
+    }
+
+    /* ── Code blocks (MCP, GPT) ── */
+    .app-dashboard-root .main-settings .ak-code-block {
+      position: relative;
+      background: #0B0F1E; color: #E5E7EB;
+      border: 1px solid #1F2937; border-radius: 10px;
+      padding: 14px 16px;
+      font-family: var(--font-mono); font-size: 12.5px;
+      line-height: 1.6; overflow-x: auto; white-space: pre;
+    }
+    .app-dashboard-root .main-settings .ak-cb-copy {
+      position: absolute; top: 8px; right: 8px;
+      background: #1F2937; color: #F3F4F6; border: 1px solid #374151;
+      padding: 4px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .app-dashboard-root .main-settings .ak-cb-copy:hover { background: #374151; }
+    .app-dashboard-root .main-settings .ak-code-block-label {
+      font-size: 11px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-top: 14px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .app-dashboard-root .main-settings .ak-code-block-label code {
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 10.5px;
+      text-transform: none; letter-spacing: 0;
+    }
+
+    /* ── MCP note ── */
+    .app-dashboard-root .main-settings .ak-mcp-note {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px; margin-top: 12px;
+      font-size: 12.5px; color: var(--brand-warm-dark); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .ak-mn-ico { font-size: 16px; line-height: 1; flex-shrink: 0; }
+    .app-dashboard-root .main-settings .ak-mcp-note a { color: var(--brand-warm-dark); text-decoration: underline; }
+
+    /* ── Quickstart list ── */
+    .app-dashboard-root .main-settings .ak-quickstart-list {
+      counter-reset: q;
+      display: flex; flex-direction: column; gap: 10px;
+      margin: 14px 0 0; padding: 0; list-style: none;
+    }
+    .app-dashboard-root .main-settings .ak-quickstart-list li {
+      display: flex; gap: 12px; align-items: flex-start;
+      counter-increment: q;
+    }
+    .app-dashboard-root .main-settings .ak-quickstart-list li::before {
+      content: counter(q);
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 999px;
+      background: var(--brand-primary); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 12.5px;
+    }
+    .app-dashboard-root .main-settings .ak-qs-body {
+      flex: 1; font-size: 13px; line-height: 1.55; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .ak-qs-sub {
+      display: block; color: var(--fg-muted); font-size: 12px; margin-top: 2px;
+    }
+    .app-dashboard-root .main-settings .ak-qs-body code {
+      background: var(--bg-muted); padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-mono); font-size: 11.5px;
+    }
+
+    /* ── Webhook log table ── */
+    .app-dashboard-root .main-settings .ak-wh-toolbar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .app-dashboard-root .main-settings .ak-wht-label { font-size: 11.5px; color: var(--fg-muted); }
+    .app-dashboard-root .main-settings .ak-wh-toolbar select {
+      font: inherit; font-size: 12px; padding: 5px 22px 5px 10px;
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--bg-elevated); color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .ak-wh-table {
+      width: 100%; border-collapse: collapse; min-width: 700px;
+    }
+    .app-dashboard-root .main-settings .ak-wh-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .ak-wh-table td {
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg); vertical-align: middle;
+    }
+    .app-dashboard-root .main-settings .ak-wh-table tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .main-settings .ak-wh-endpoint {
+      font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-muted);
+      max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .ak-wh-event { font-family: var(--font-mono); font-size: 11.5px; }
+    .app-dashboard-root .main-settings .ak-wh-rt {
+      font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .ak-wh-retries { color: var(--fg-muted); font-size: 12px; }
+    .app-dashboard-root .main-settings .ak-wh-status {
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      font-family: var(--font-mono);
+    }
+    .app-dashboard-root .main-settings .ak-wh-status.s2xx { background: var(--success-bg); color: #065F46; }
+    .app-dashboard-root .main-settings .ak-wh-status.s4xx { background: var(--warning-bg); color: #92400E; }
+    .app-dashboard-root .main-settings .ak-wh-status.s5xx { background: var(--danger-bg); color: #991B1B; }
+    .app-dashboard-root .main-settings .ak-wh-status.spending { background: var(--info-bg); color: #1E40AF; }
+
+    /* ── Webhook future placeholder card ── */
+    .app-dashboard-root .main-settings .ak-webhook-future {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 16px; margin-top: 16px;
+      background: var(--bg);
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+    }
+    .app-dashboard-root .main-settings .ak-wf-ico {
+      flex-shrink: 0; font-size: 24px;
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--bg-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .app-dashboard-root .main-settings .ak-wf-body { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .ak-wf-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 14.5px; margin: 0 0 4px; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .ak-wf-sub {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .ak-wf-events {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+    }
+    .app-dashboard-root .main-settings .ak-wf-events .chip {
+      font-family: var(--font-mono); font-size: 10.5px;
+    }
+
+    /* ── Rate-limit panel ── */
+    .app-dashboard-root .main-settings .ak-rate-panel {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media (max-width: 720px) {
+      .app-dashboard-root .main-settings .ak-rate-panel { grid-template-columns: 1fr; }
+    }
+    .app-dashboard-root .main-settings .ak-rate-card {
+      padding: 16px 18px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .app-dashboard-root .main-settings .ak-rc-label {
+      font-size: 11px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
+    }
+    .app-dashboard-root .main-settings .ak-rc-value {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 26px; line-height: 1.05; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .ak-rc-divisor {
+      color: var(--fg-muted); font-weight: 400; font-size: 18px;
+    }
+    .app-dashboard-root .main-settings .ak-rc-sub {
+      font-size: 12px; color: var(--fg-muted); margin-top: 4px;
+    }
+    .app-dashboard-root .main-settings .ak-rate-bar-wrap {
+      margin-top: 12px; height: 8px; border-radius: 999px;
+      background: var(--bg-muted); overflow: hidden;
+    }
+    .app-dashboard-root .main-settings .ak-rate-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+      transition: width .35s ease, background .35s ease;
+    }
+    .app-dashboard-root .main-settings .ak-rate-bar-fill.is-warn {
+      background: linear-gradient(90deg, var(--brand-warm), var(--brand-warm-dark));
+    }
+    .app-dashboard-root .main-settings .ak-rate-bar-fill.is-crit {
+      background: linear-gradient(90deg, var(--danger), #B91C1C);
+    }
+    .app-dashboard-root .main-settings .ak-rate-tier-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .app-dashboard-root .main-settings .ak-rate-tier-row:first-child { padding-top: 0; }
+    .app-dashboard-root .main-settings .ak-rate-tier-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .app-dashboard-root .main-settings .ak-rtr-name { font-weight: 600; min-width: 90px; }
+    .app-dashboard-root .main-settings .ak-rtr-name.is-current { color: var(--brand-primary); }
+    .app-dashboard-root .main-settings .ak-rtr-limit {
+      font-family: var(--font-mono); font-size: 12.5px;
+    }
+    .app-dashboard-root .main-settings .ak-rtr-note {
+      color: var(--fg-muted); font-size: 12px; flex: 1; min-width: 0;
+    }
+
+    /* ── Help footer ── */
+    .app-dashboard-root .main-settings .ak-help-footer {
+      margin-top: 24px; padding-top: 18px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px; color: var(--fg-subtle); line-height: 1.6;
+    }
+    .app-dashboard-root .main-settings .ak-help-footer a { color: var(--brand-primary); }
+
+    /* ── Generate modal: form field-row (2-col grid) ── */
+    .app-dashboard-root .main-settings .ak-modal-field-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;
+    }
+    @media (max-width: 540px) {
+      .app-dashboard-root .main-settings .ak-modal-field-row { grid-template-columns: 1fr; }
+    }
+
+    /* ── Scope list (generate modal) ── */
+    .app-dashboard-root .main-settings .ak-scope-list {
+      display: flex; flex-direction: column; gap: 6px; margin: 6px 0 14px;
+    }
+    .app-dashboard-root .main-settings .ak-scope-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; transition: all .12s ease; font-size: 13.5px;
+    }
+    .app-dashboard-root .main-settings .ak-scope-item:hover {
+      border-color: var(--brand-primary); background: var(--bg-muted);
+    }
+    .app-dashboard-root .main-settings .ak-scope-item input[type="checkbox"] {
+      margin-top: 3px; flex-shrink: 0; accent-color: var(--brand-primary);
+    }
+    .app-dashboard-root .main-settings .ak-si-body { flex: 1; }
+    .app-dashboard-root .main-settings .ak-si-title {
+      font-weight: 600; color: var(--fg);
+      font-family: var(--font-mono); font-size: 12.5px;
+    }
+    .app-dashboard-root .main-settings .ak-si-write {
+      font-family: var(--font-sans); font-weight: 600; font-size: 10.5px;
+      background: rgba(245,158,11,0.18); color: var(--brand-warm-dark);
+      border-radius: 99px; padding: 1px 7px; margin-left: 6px;
+      letter-spacing: 0.02em;
+    }
+    .app-dashboard-root .main-settings .ak-si-sub {
+      font-size: 11.5px; color: var(--fg-muted); margin-top: 3px;
+    }
+
+    /* ── Reveal key (generate modal step 2) ── */
+    .app-dashboard-root .main-settings .ak-reveal-banner {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.40);
+      border-radius: 10px; margin-bottom: 14px;
+      font-size: 12.5px; color: var(--brand-warm-dark); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .ak-reveal-key {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px;
+      background: #0B0F1E; color: #E5E7EB;
+      border-radius: 12px;
+      font-family: var(--font-mono); font-size: 13px;
+      word-break: break-all; margin-bottom: 14px;
+    }
+    .app-dashboard-root .main-settings .ak-rk-key { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .ak-rk-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .app-dashboard-root .main-settings .ak-rk-actions button {
+      background: #1F2937; color: #F3F4F6; border: 1px solid #374151;
+      padding: 5px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .app-dashboard-root .main-settings .ak-rk-actions button:hover { background: #374151; }
+
+    /* ── Delete summary ── */
+    .app-dashboard-root .main-settings .ak-delete-summary {
+      padding: 14px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.30);
+      border-radius: 10px; margin: 14px 0;
+      font-size: 13px; color: #991B1B; line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .ak-delete-summary b { color: #7F1D1D; }
+
+    /* ── Payload meta (dl grid) ── */
+    .app-dashboard-root .main-settings .ak-payload-meta {
+      display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px;
+      font-size: 12.5px; color: var(--fg);
+      padding: 10px 14px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px;
+    }
+    .app-dashboard-root .main-settings .ak-payload-meta dt { color: var(--fg-muted); font-weight: 500; }
+    .app-dashboard-root .main-settings .ak-payload-meta dd {
+      margin: 0; font-family: var(--font-mono); font-size: 12px; word-break: break-all;
+    }
+
+    /* ── Toast ── */
+    .app-dashboard-root .main-settings .ak-toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0B0F1E; color: #F3F4F6;
+      padding: 10px 18px; border-radius: 999px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0; pointer-events: none;
+      transition: all .25s cubic-bezier(.2,.8,.2,1);
+      z-index: 200;
+    }
+    .app-dashboard-root .main-settings .ak-toast.show {
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Dark mode overrides for API keys ── */
+    body.dark-mode .app-dashboard-root .main-settings .ak-keys-table th {
+      color: #6B7280; border-bottom-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-keys-table td {
+      border-bottom-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-wh-table th {
+      color: #6B7280; border-bottom-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-wh-table td {
+      border-bottom-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-keys-empty,
+    body.dark-mode .app-dashboard-root .main-settings .ak-rate-card,
+    body.dark-mode .app-dashboard-root .main-settings .ak-webhook-future,
+    body.dark-mode .app-dashboard-root .main-settings .ak-perm-row.is-head,
+    body.dark-mode .app-dashboard-root .main-settings .ak-scope-item,
+    body.dark-mode .app-dashboard-root .main-settings .ak-payload-meta {
+      background: #0B0F1E; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-perm-row { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .ak-permissions-grid { border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .ak-scope-item .ak-si-title { color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .main-settings .ak-perm-name { color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .main-settings .ak-wh-toolbar select {
+      background: #0B0F1E; border-color: #374151; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-upsell-hero {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.10));
+      border-color: rgba(99,102,241,0.45);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ak-uh-icon { background: #0B0F1E; }
+    body.dark-mode .app-dashboard-root .main-settings .ak-demo-mode-strip {
+      background: rgba(99,102,241,0.12);
+      border-color: rgba(99,102,241,0.50);
+      color: #A5B4FC;
+    }
