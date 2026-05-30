@@ -13414,3 +13414,736 @@ body.dark-mode .app-dashboard-root .app-page-custom-slug-warn { color: #FECACA; 
   .app-dashboard-root .app-page-schedule-modal-backdrop { transition: none !important; }
   .app-dashboard-root .app-page-schedule-modal { transition: none !important; }
 }
+
+
+/* =============================================================================
+   AppPageNewsletterSignup — scoped under .app-dashboard-root
+   Prefix: app-page-newsletter-
+   Source: mockups/tadaify-mvp/app-page-newsletter-signup.html
+   ============================================================================= */
+
+/* ── Root ── */
+.app-dashboard-root .app-page-newsletter-root { max-width: 1080px; padding: 24px 20px 120px; }
+
+/* ── Breadcrumb ── */
+.app-dashboard-root .app-page-newsletter-crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-newsletter-crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; text-decoration: none; }
+.app-dashboard-root .app-page-newsletter-crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-newsletter-crumb-sep { color: var(--fg-subtle); }
+.app-dashboard-root .app-page-newsletter-crumb-here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+/* ── Page head ── */
+.app-dashboard-root .app-page-newsletter-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.app-dashboard-root .app-page-newsletter-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+.app-dashboard-root .app-page-newsletter-ph-emoji { font-size: 26px; }
+.app-dashboard-root .app-page-newsletter-sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+.app-dashboard-root .app-page-newsletter-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.app-dashboard-root .app-page-newsletter-url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.app-dashboard-root .app-page-newsletter-url-pill b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .app-page-newsletter-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); display: inline-block; }
+
+/* ── Buttons ── */
+.app-dashboard-root .app-page-newsletter-btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all .15s ease; line-height: 1.2; }
+.app-dashboard-root .app-page-newsletter-btn-primary { background: var(--brand-primary); color: #fff; }
+.app-dashboard-root .app-page-newsletter-btn-primary:hover { background: var(--brand-primary-hover); }
+.app-dashboard-root .app-page-newsletter-btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-newsletter-btn-ghost:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-newsletter-btn-warm { background: var(--brand-warm); color: #1F2937; }
+.app-dashboard-root .app-page-newsletter-btn-warm:hover { background: var(--brand-warm-dark); color: #fff; }
+.app-dashboard-root .app-page-newsletter-btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+
+/* ── Icon button ── */
+.app-dashboard-root .app-page-newsletter-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); transition: all .12s ease; }
+.app-dashboard-root .app-page-newsletter-iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-newsletter-iconbtn svg { width: 16px; height: 16px; }
+
+/* ── Toggle ── */
+.app-dashboard-root .app-page-newsletter-toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+.app-dashboard-root .app-page-newsletter-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+.app-dashboard-root .app-page-newsletter-toggle.is-on { background: var(--brand-primary); }
+.app-dashboard-root .app-page-newsletter-toggle.is-on::after { transform: translateX(16px); }
+.app-dashboard-root .app-page-newsletter-row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-newsletter-rt-name { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-newsletter-rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Tier hint / badge ── */
+.app-dashboard-root .app-page-newsletter-tier-hint { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 11px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; }
+.app-dashboard-root .app-page-newsletter-th-icon { font-size: 13px; }
+.app-dashboard-root .app-page-newsletter-tier-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(245,158,11,0.15); color: #92400E; }
+.app-dashboard-root .app-page-newsletter-tier-pro { background: rgba(245,158,11,0.18); color: #92400E; }
+.app-dashboard-root .app-page-newsletter-tier-creator { background: rgba(99,102,241,0.13); color: var(--brand-primary); }
+.app-dashboard-root .app-page-newsletter-tier-business { background: rgba(220,38,38,0.13); color: #991B1B; }
+
+/* ── Chip ── */
+.app-dashboard-root .app-page-newsletter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; border: 1px solid var(--border); cursor: default; }
+.app-dashboard-root .app-page-newsletter-chip-live { background: var(--success-bg); color: #065F46; border-color: transparent; }
+
+/* ── Section card ── */
+.app-dashboard-root .app-page-newsletter-section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: visible; }
+.app-dashboard-root .app-page-newsletter-section.is-collapsed .app-page-newsletter-section-body { display: none; }
+.app-dashboard-root .app-page-newsletter-section-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-newsletter-section.is-collapsed .app-page-newsletter-section-head { border-bottom: 0; }
+.app-dashboard-root .app-page-newsletter-section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-newsletter-sh-grip { display: inline-flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; padding: 2px; }
+.app-dashboard-root .app-page-newsletter-sh-grip svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-newsletter-head-spacer { flex: 1; }
+.app-dashboard-root .app-page-newsletter-sh-actions { display: inline-flex; gap: 4px; align-items: center; }
+.app-dashboard-root .app-page-newsletter-sh-collapse { transition: transform .15s ease; }
+.app-dashboard-root .app-page-newsletter-section.is-collapsed .app-page-newsletter-sh-collapse { transform: rotate(-90deg); }
+.app-dashboard-root .app-page-newsletter-section-body { padding: 18px; }
+
+/* ── Fields ── */
+.app-dashboard-root .app-page-newsletter-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-newsletter-field:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-newsletter-field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-newsletter-field-hint { font-size: 11px; color: var(--fg-subtle); font-weight: 400; }
+.app-dashboard-root .app-page-newsletter-field-input, .app-dashboard-root .app-page-newsletter-field-area, .app-dashboard-root .app-page-newsletter-field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+.app-dashboard-root .app-page-newsletter-field-area { min-height: 80px; resize: vertical; line-height: 1.5; }
+.app-dashboard-root .app-page-newsletter-field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-newsletter-field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-newsletter-field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; color: var(--fg); font: inherit; }
+.app-dashboard-root .app-page-newsletter-field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-newsletter-field-suffix-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 11px; margin: 3px; border: 0; border-radius: 8px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
+.app-dashboard-root .app-page-newsletter-help { color: var(--fg-muted); font-size: 11.5px; margin-top: 3px; line-height: 1.45; }
+
+/* ── Swatch ── */
+.app-dashboard-root .app-page-newsletter-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-newsletter-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); position: relative; }
+.app-dashboard-root .app-page-newsletter-swatch.is-selected { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-newsletter-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+/* ── Expander (SEO) ── */
+.app-dashboard-root .app-page-newsletter-expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-newsletter-expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-newsletter-expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-newsletter-expander > summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .app-page-newsletter-ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+.app-dashboard-root .app-page-newsletter-expander[open] > summary .app-page-newsletter-ex-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-newsletter-ex-body { padding: 4px 14px 14px; }
+.app-dashboard-root .app-page-newsletter-ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+/* ── Newsletter provider panel ── */
+.app-dashboard-root .app-page-newsletter-nlt-panel { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); padding: 14px 16px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-newsletter-nlt-panel-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.app-dashboard-root .app-page-newsletter-nlt-panel-title { font-weight: 600; font-size: 14px; color: var(--fg); }
+.app-dashboard-root .app-page-newsletter-nlt-panel-sub { color: var(--fg-muted); font-size: 12px; }
+.app-dashboard-root .app-page-newsletter-nlt-key-row { display: flex; gap: 6px; align-items: stretch; }
+.app-dashboard-root .app-page-newsletter-nlt-key-row input { flex: 1; }
+.app-dashboard-root .app-page-newsletter-nlt-key-show { width: 36px; padding: 0; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-elevated); cursor: pointer; font-size: 14px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-newsletter-nlt-key-show:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-newsletter-nlt-test-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-newsletter-nlt-test-btn { padding: 7px 13px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-elevated); color: var(--fg); cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; }
+.app-dashboard-root .app-page-newsletter-nlt-test-btn:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-newsletter-nlt-test-badge { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.app-dashboard-root .app-page-newsletter-nlt-test-badge.is-success { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .app-page-newsletter-nlt-test-badge.is-error { background: var(--danger-bg); color: var(--danger); }
+.app-dashboard-root .app-page-newsletter-nlt-toggle-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 8px 0; }
+.app-dashboard-root .app-page-newsletter-nlt-lbl .app-page-newsletter-nlt-t { font-size: 13px; font-weight: 600; }
+.app-dashboard-root .app-page-newsletter-nlt-lbl .app-page-newsletter-nlt-s { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.4; }
+.app-dashboard-root .app-page-newsletter-nlt-our-endpoint { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-newsletter-nlt-our-endpoint code { flex: 1; font-family: var(--font-mono); font-size: 12px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-dashboard-root .app-page-newsletter-nlt-copy-btn { padding: 4px 9px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg); cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600; color: var(--fg-muted); }
+.app-dashboard-root .app-page-newsletter-nlt-copy-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-newsletter-nlt-payload-details { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); padding: 8px 11px; margin-top: 6px; }
+.app-dashboard-root .app-page-newsletter-nlt-payload-details summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--fg-muted); }
+.app-dashboard-root .app-page-newsletter-nlt-payload { margin: 8px 0 4px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.5; color: var(--fg); overflow-x: auto; }
+.app-dashboard-root .app-page-newsletter-nlt-gsheets-signin { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-elevated); cursor: pointer; font: inherit; font-size: 13px; font-weight: 500; color: var(--fg); }
+.app-dashboard-root .app-page-newsletter-nlt-gsheets-signin:hover { background: var(--bg-muted); }
+
+/* ── Layout picker ── */
+.app-dashboard-root .app-page-newsletter-layout-picker { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.app-dashboard-root .app-page-newsletter-lp-card { border: 2px solid var(--border); border-radius: 12px; background: var(--bg); padding: 12px; cursor: pointer; transition: all .12s ease; display: flex; flex-direction: column; gap: 9px; }
+.app-dashboard-root .app-page-newsletter-lp-card:hover { border-color: var(--border-strong); }
+.app-dashboard-root .app-page-newsletter-lp-card.is-selected { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-newsletter-lp-name { font-size: 13px; font-weight: 600; color: var(--fg); display: flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-newsletter-lp-check { width: 14px; height: 14px; border-radius: 50%; background: var(--brand-primary); color: #fff; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.app-dashboard-root .app-page-newsletter-lp-check.is-visible { display: flex; }
+.app-dashboard-root .app-page-newsletter-lp-sub { font-size: 11px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-newsletter-lp-preview { background: var(--bg-elevated); border: 1px dashed var(--border-strong); border-radius: 8px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-newsletter-lp-preview-oneline { flex-direction: row; gap: 4px; }
+.app-dashboard-root .app-page-newsletter-lp-preview-oneline .app-page-newsletter-lp-fake-input { flex: 1; }
+.app-dashboard-root .app-page-newsletter-lp-preview-oneline .app-page-newsletter-lp-fake-btn { width: 38px; flex-shrink: 0; }
+.app-dashboard-root .app-page-newsletter-lp-preview-card { padding: 18px 14px; border-style: solid; background: var(--bg); }
+.app-dashboard-root .app-page-newsletter-lp-fake-input { height: 18px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--bg) 70%, transparent); border: 1px solid var(--border-strong); }
+.app-dashboard-root .app-page-newsletter-lp-fake-btn { height: 18px; width: 60%; border-radius: 4px; background: var(--brand-primary); }
+.app-dashboard-root .app-page-newsletter-lp-fake-icon { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+
+/* ── Bullet list ── */
+.app-dashboard-root .app-page-newsletter-bullet-list { display: flex; flex-direction: column; gap: 6px; }
+.app-dashboard-root .app-page-newsletter-bullet-item { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+.app-dashboard-root .app-page-newsletter-bl-grip { color: var(--fg-subtle); cursor: grab; width: 14px; height: 14px; flex-shrink: 0; }
+.app-dashboard-root .app-page-newsletter-bl-emoji { width: 28px; height: 28px; border-radius: 6px; background: var(--bg-elevated); border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+.app-dashboard-root .app-page-newsletter-bl-text { flex: 1; border: 0; background: transparent; outline: 0; font: inherit; font-size: 13.5px; color: var(--fg); }
+.app-dashboard-root .app-page-newsletter-bl-x { background: transparent; border: 0; color: var(--fg-subtle); cursor: pointer; padding: 2px 6px; font-size: 14px; line-height: 1; }
+.app-dashboard-root .app-page-newsletter-bl-x:hover { color: var(--danger); }
+.app-dashboard-root .app-page-newsletter-add-row-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border: 1px dashed var(--border-strong); border-radius: 8px; background: transparent; color: var(--fg-muted); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+.app-dashboard-root .app-page-newsletter-add-row-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+/* ── FAQ items ── */
+.app-dashboard-root .app-page-newsletter-faq-item { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); padding: 12px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.app-dashboard-root .app-page-newsletter-faq-head { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-newsletter-faq-grip { color: var(--fg-subtle); cursor: grab; }
+.app-dashboard-root .app-page-newsletter-faq-q { flex: 1; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--bg-elevated); font: inherit; font-size: 13.5px; outline: 0; font-weight: 600; }
+.app-dashboard-root .app-page-newsletter-faq-a { width: 100%; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--bg-elevated); font: inherit; font-size: 13px; min-height: 56px; resize: vertical; outline: 0; line-height: 1.5; }
+
+/* ── Past issues preview ── */
+.app-dashboard-root .app-page-newsletter-past-issues-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.app-dashboard-root .app-page-newsletter-past-issue-card { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); overflow: hidden; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-newsletter-pic-cover { aspect-ratio: 16/9; background: linear-gradient(135deg, #6366F1, #8B5CF6); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; }
+.app-dashboard-root .app-page-newsletter-pic-cover.t-rose { background: linear-gradient(135deg, #FB7185, #BE185D); }
+.app-dashboard-root .app-page-newsletter-pic-cover.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); }
+.app-dashboard-root .app-page-newsletter-pic-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+.app-dashboard-root .app-page-newsletter-pic-title { font-size: 13px; font-weight: 600; line-height: 1.35; }
+.app-dashboard-root .app-page-newsletter-pic-excerpt { font-size: 11.5px; color: var(--fg-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.app-dashboard-root .app-page-newsletter-pic-meta { font-size: 10.5px; color: var(--fg-subtle); margin-top: 4px; }
+
+/* ── Cover drop ── */
+.app-dashboard-root .app-page-newsletter-cover-drop { border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg); display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: border-color .12s ease, background .12s ease; }
+.app-dashboard-root .app-page-newsletter-cover-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-newsletter-cd-emoji { font-size: 30px; }
+.app-dashboard-root .app-page-newsletter-cd-title { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-newsletter-cd-sub { color: var(--fg-muted); font-size: 12.5px; }
+
+/* ── Add section row ── */
+.app-dashboard-root .app-page-newsletter-add-section-row { display: flex; justify-content: center; margin: 18px 0; }
+.app-dashboard-root .app-page-newsletter-add-section-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px dashed var(--border-strong); border-radius: 999px; background: var(--bg-elevated); color: var(--fg-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .12s ease; }
+.app-dashboard-root .app-page-newsletter-add-section-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+
+/* ── Empty state ── */
+.app-dashboard-root .app-page-newsletter-empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 28px; text-align: center; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04)); border: 1.5px dashed rgba(99,102,241,0.25); border-radius: 16px; }
+.app-dashboard-root .app-page-newsletter-es-emoji { font-size: 38px; line-height: 1; width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12)); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+
+/* ── Sticky save bar ── */
+.app-dashboard-root .app-page-newsletter-save-bar { position: sticky; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--bg-elevated); border-top: 1px solid var(--border-strong); padding: 12px 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 -4px 16px rgba(11,15,30,0.04); margin: 24px -32px -80px; }
+.app-dashboard-root .app-page-newsletter-save-status { font-size: 12px; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-newsletter-ss-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+.app-dashboard-root .app-page-newsletter-foot-spacer { flex: 1; }
+
+/* ── Section picker modal ── */
+.app-dashboard-root .app-page-newsletter-modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(11,15,30,0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .14s ease; }
+.app-dashboard-root .app-page-newsletter-modal-backdrop.is-open { display: flex; opacity: 1; }
+.app-dashboard-root .app-page-newsletter-modal { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25); width: min(720px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-newsletter-modal-sm { width: min(480px, 96vw); }
+.app-dashboard-root .app-page-newsletter-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.app-dashboard-root .app-page-newsletter-modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.app-dashboard-root .app-page-newsletter-modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+.app-dashboard-root .app-page-newsletter-modal-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; flex-shrink: 0; }
+
+/* ── Section picker grid ── */
+.app-dashboard-root .app-page-newsletter-section-picker-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.app-dashboard-root .app-page-newsletter-sp-card { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; transition: all .12s ease; text-align: left; }
+.app-dashboard-root .app-page-newsletter-sp-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-newsletter-sp-emoji { font-size: 24px; }
+.app-dashboard-root .app-page-newsletter-sp-name { font-size: 13.5px; font-weight: 600; }
+.app-dashboard-root .app-page-newsletter-sp-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+.app-dashboard-root .app-page-newsletter-sp-already { align-self: flex-start; padding: 1px 7px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dashboard-root .app-page-newsletter-modal-backdrop { transition: none !important; }
+  .app-dashboard-root .app-page-newsletter-modal { transition: none !important; }
+  .app-dashboard-root .app-page-newsletter-sh-collapse { transition: none !important; }
+}
+
+
+/* =============================================================================
+   AppPageLegal — scoped under .app-dashboard-root
+   Prefix: app-page-legal-
+   Source: mockups/tadaify-mvp/app-page-legal.html
+   ============================================================================= */
+
+/* ── Root ── */
+.app-dashboard-root .app-page-legal-root { max-width: 1080px; padding: 24px 20px 120px; }
+
+/* ── Breadcrumb ── */
+.app-dashboard-root .app-page-legal-crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-legal-crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; text-decoration: none; }
+.app-dashboard-root .app-page-legal-crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-legal-crumb-sep { color: var(--fg-subtle); }
+.app-dashboard-root .app-page-legal-crumb-here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+/* ── Page head ── */
+.app-dashboard-root .app-page-legal-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.app-dashboard-root .app-page-legal-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+.app-dashboard-root .app-page-legal-ph-emoji { font-size: 26px; }
+.app-dashboard-root .app-page-legal-sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+.app-dashboard-root .app-page-legal-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.app-dashboard-root .app-page-legal-url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.app-dashboard-root .app-page-legal-url-pill b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .app-page-legal-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); display: inline-block; }
+
+/* ── Title chips ── */
+.app-dashboard-root .app-page-legal-title-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.app-dashboard-root .app-page-legal-title-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: var(--bg-elevated); border: 1px solid var(--border); font-size: 11.5px; color: var(--fg-muted); cursor: pointer; transition: border-color .12s ease, color .12s ease; }
+.app-dashboard-root .app-page-legal-title-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+/* ── Buttons ── */
+.app-dashboard-root .app-page-legal-btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all .15s ease; line-height: 1.2; }
+.app-dashboard-root .app-page-legal-btn-primary { background: var(--brand-primary); color: #fff; }
+.app-dashboard-root .app-page-legal-btn-primary:hover { background: var(--brand-primary-hover); }
+.app-dashboard-root .app-page-legal-btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-legal-btn-ghost:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-legal-btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+.app-dashboard-root .app-page-legal-btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+
+/* ── Icon button ── */
+.app-dashboard-root .app-page-legal-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); transition: all .12s ease; }
+.app-dashboard-root .app-page-legal-iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-legal-iconbtn svg { width: 16px; height: 16px; }
+
+/* ── Toggle ── */
+.app-dashboard-root .app-page-legal-toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+.app-dashboard-root .app-page-legal-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+.app-dashboard-root .app-page-legal-toggle.is-on { background: var(--brand-primary); }
+.app-dashboard-root .app-page-legal-toggle.is-on::after { transform: translateX(16px); }
+.app-dashboard-root .app-page-legal-row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-legal-rt-name { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-legal-rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Tier hint / badge ── */
+.app-dashboard-root .app-page-legal-tier-hint { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 11px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; }
+.app-dashboard-root .app-page-legal-th-icon { font-size: 13px; }
+.app-dashboard-root .app-page-legal-tier-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(245,158,11,0.15); color: #92400E; }
+.app-dashboard-root .app-page-legal-tier-pro { background: rgba(245,158,11,0.18); color: #92400E; }
+
+/* ── Chip ── */
+.app-dashboard-root .app-page-legal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+.app-dashboard-root .app-page-legal-chip-live { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .app-page-legal-chip-warning { background: rgba(245,158,11,0.14); color: var(--brand-warm-dark); }
+.app-dashboard-root .app-page-legal-chip-version { background: rgba(99,102,241,0.10); color: var(--brand-primary); font-family: var(--font-mono); }
+
+/* ── Work grid (main + sidebar) ── */
+.app-dashboard-root .app-page-legal-work-grid { display: grid; gap: 18px; grid-template-columns: 1fr; }
+@media (min-width: 1280px) { .app-dashboard-root .app-page-legal-work-grid { grid-template-columns: 1fr 320px; } }
+
+/* ── Section ── */
+.app-dashboard-root .app-page-legal-section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+.app-dashboard-root .app-page-legal-section-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-legal-section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-legal-section-head .app-page-legal-sub { color: var(--fg-muted); font-size: 12.5px; }
+.app-dashboard-root .app-page-legal-head-spacer { flex: 1; }
+.app-dashboard-root .app-page-legal-section-body { padding: 18px; }
+
+/* ── Fields ── */
+.app-dashboard-root .app-page-legal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-legal-field:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-legal-field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-legal-field-hint { font-size: 11px; color: var(--fg-subtle); font-weight: 400; }
+.app-dashboard-root .app-page-legal-field-input, .app-dashboard-root .app-page-legal-field-area, .app-dashboard-root .app-page-legal-field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+.app-dashboard-root .app-page-legal-field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+.app-dashboard-root .app-page-legal-field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-legal-field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-legal-field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; color: var(--fg); font: inherit; }
+.app-dashboard-root .app-page-legal-field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-legal-field-suffix-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 11px; margin: 3px; border: 0; border-radius: 8px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* ── Swatch ── */
+.app-dashboard-root .app-page-legal-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-legal-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); position: relative; }
+.app-dashboard-root .app-page-legal-swatch.is-selected { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-legal-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+/* ── Expander ── */
+.app-dashboard-root .app-page-legal-expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-legal-expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-legal-expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-legal-expander > summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .app-page-legal-ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+.app-dashboard-root .app-page-legal-expander[open] > summary .app-page-legal-ex-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-legal-ex-body { padding: 4px 14px 14px; }
+.app-dashboard-root .app-page-legal-ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+/* ── Policy card list ── */
+.app-dashboard-root .app-page-legal-pol-list { display: flex; flex-direction: column; gap: 12px; }
+.app-dashboard-root .app-page-legal-pol-card { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); }
+.app-dashboard-root .app-page-legal-pol-card.is-collapsed .app-page-legal-pol-body { display: none; }
+.app-dashboard-root .app-page-legal-pol-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--bg-elevated); border-radius: 14px 14px 0 0; position: relative; }
+.app-dashboard-root .app-page-legal-pol-card.is-collapsed .app-page-legal-pol-head { border-bottom: 0; border-radius: 14px; }
+.app-dashboard-root .app-page-legal-pol-grip { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; flex-shrink: 0; }
+.app-dashboard-root .app-page-legal-pol-grip svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-legal-pol-icon { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(245,158,11,0.10)); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-legal-pol-meta { min-width: 0; flex: 1; }
+.app-dashboard-root .app-page-legal-pol-name { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--fg); border: 0; background: transparent; outline: 0; padding: 2px 4px; border-radius: 6px; width: 100%; max-width: 360px; }
+.app-dashboard-root .app-page-legal-pol-name:focus { background: var(--bg); box-shadow: 0 0 0 2px rgba(99,102,241,0.20) inset; }
+.app-dashboard-root .app-page-legal-pol-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+.app-dashboard-root .app-page-legal-pol-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+.app-dashboard-root .app-page-legal-pol-actions { display: flex; align-items: center; gap: 4px; }
+.app-dashboard-root .app-page-legal-pol-collapse { background: transparent; border: 0; cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--fg-subtle); }
+.app-dashboard-root .app-page-legal-pol-collapse:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-legal-pol-collapse svg { width: 14px; height: 14px; transition: transform .15s ease; }
+.app-dashboard-root .app-page-legal-pol-card.is-collapsed .app-page-legal-pol-collapse svg { transform: rotate(-90deg); }
+.app-dashboard-root .app-page-legal-pol-body { padding: 16px; }
+
+/* ── Meta grid (version + dates) ── */
+.app-dashboard-root .app-page-legal-meta-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr 1fr; margin-bottom: 14px; }
+.app-dashboard-root .app-page-legal-meta-cell { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-legal-mc-label { font-size: 10.5px; font-weight: 600; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.app-dashboard-root .app-page-legal-mc-row { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-legal-mc-input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; outline: 0; font: inherit; font-size: 13px; color: var(--fg); font-weight: 500; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-legal-mc-bump { background: transparent; border: 0; padding: 2px 6px; border-radius: 5px; font-size: 11px; color: var(--brand-primary); cursor: pointer; font-weight: 600; }
+.app-dashboard-root .app-page-legal-mc-bump:hover { background: rgba(99,102,241,0.10); }
+
+/* ── Rich-text toolbar ── */
+.app-dashboard-root .app-page-legal-rt-toolbar { display: flex; gap: 2px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--border-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--bg-muted); }
+.app-dashboard-root .app-page-legal-rt-toolbar button { width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+.app-dashboard-root .app-page-legal-rt-toolbar button:hover { background: var(--bg-elevated); color: var(--fg); }
+.app-dashboard-root .app-page-legal-rt-sep { width: 1px; height: 18px; background: var(--border); margin: 6px 4px; }
+.app-dashboard-root .app-page-legal-rt-suggest { width: auto !important; padding: 0 9px; gap: 4px; color: var(--brand-primary); font-size: 12px; display: inline-flex; align-items: center; }
+.app-dashboard-root .app-page-legal-rt-suggest:hover { background: rgba(99,102,241,0.10) !important; }
+.app-dashboard-root .app-page-legal-rt-area { width: 100%; min-height: 280px; padding: 14px 16px; border: 1px solid var(--border-strong); border-top: 0; border-radius: 0 0 10px 10px; background: var(--bg-elevated); font-family: var(--font-display); font-size: 16px; line-height: 1.65; outline: 0; resize: vertical; }
+
+/* ── Placeholder warning ── */
+.app-dashboard-root .app-page-legal-placeholder-warn { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; margin: 8px 0 0; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; line-height: 1.5; }
+
+/* ── TOC preview ── */
+.app-dashboard-root .app-page-legal-toc-preview { margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: 9px; background: var(--bg); font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-legal-toc-label { font-size: 10.5px; font-weight: 600; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.app-dashboard-root .app-page-legal-toc-preview ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.app-dashboard-root .app-page-legal-toc-preview li { display: flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-legal-toc-num { font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-subtle); flex-shrink: 0; width: 22px; }
+.app-dashboard-root .app-page-legal-toc-text { color: var(--fg); }
+
+/* ── Policy footer ── */
+.app-dashboard-root .app-page-legal-pol-foot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 14px; border-top: 1px dashed var(--border); background: var(--bg); border-radius: 0 0 14px 14px; }
+.app-dashboard-root .app-page-legal-pol-foot-spacer { flex: 1; }
+.app-dashboard-root .app-page-legal-ver-link { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 7px; color: var(--brand-primary); font-size: 12px; font-weight: 600; background: transparent; border: 0; cursor: pointer; }
+.app-dashboard-root .app-page-legal-ver-link:hover { background: rgba(99,102,241,0.10); }
+.app-dashboard-root .app-page-legal-ver-link svg { width: 12px; height: 12px; }
+
+/* ── Sec actions row ── */
+.app-dashboard-root .app-page-legal-sec-actions-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 14px; border-top: 1px dashed var(--border); background: var(--bg); border-radius: 0 0 14px 14px; margin-top: -1px; }
+.app-dashboard-root .app-page-legal-sec-actions-spacer { flex: 1; }
+
+/* ── Kebab popover ── */
+.app-dashboard-root .app-page-legal-kebab-pop { position: absolute; right: 12px; top: 42px; z-index: 5; min-width: 200px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 4px; display: none; }
+.app-dashboard-root .app-page-legal-kebab-pop.is-open { display: block; }
+.app-dashboard-root .app-page-legal-kebab-pop button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--fg); font-size: 13px; text-align: left; cursor: pointer; }
+.app-dashboard-root .app-page-legal-kebab-pop button:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-legal-kebab-pop button.danger { color: var(--danger); }
+.app-dashboard-root .app-page-legal-kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-legal-kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ── Empty state ── */
+.app-dashboard-root .app-page-legal-empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 28px; text-align: center; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04)); border: 1.5px dashed rgba(99,102,241,0.25); border-radius: 16px; }
+.app-dashboard-root .app-page-legal-es-emoji { font-size: 38px; line-height: 1; width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12)); display: flex; align-items: center; justify-content: center; }
+.app-dashboard-root .app-page-legal-empty-templates-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; max-width: 560px; width: 100%; }
+.app-dashboard-root .app-page-legal-templ-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); cursor: pointer; text-align: center; }
+.app-dashboard-root .app-page-legal-templ-tile:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+.app-dashboard-root .app-page-legal-tt-emoji { font-size: 22px; }
+.app-dashboard-root .app-page-legal-tt-name { font-size: 12px; font-weight: 600; color: var(--fg); }
+.app-dashboard-root .app-page-legal-tt-sub { font-size: 10.5px; color: var(--fg-muted); }
+
+/* ── Modal ── */
+.app-dashboard-root .app-page-legal-modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(11,15,30,0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .14s ease; }
+.app-dashboard-root .app-page-legal-modal-backdrop.is-open { display: flex; opacity: 1; }
+.app-dashboard-root .app-page-legal-modal { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25); width: min(820px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-legal-modal-md { width: min(720px, 96vw); }
+.app-dashboard-root .app-page-legal-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.app-dashboard-root .app-page-legal-modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.app-dashboard-root .app-page-legal-modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+.app-dashboard-root .app-page-legal-modal-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-legal-foot-spacer { flex: 1; }
+.app-dashboard-root .app-page-legal-foot-meta { font-size: 12px; color: var(--fg-muted); }
+
+/* ── Add policy type tiles ── */
+.app-dashboard-root .app-page-legal-type-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-legal-type-tile { cursor: pointer; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); display: flex; flex-direction: column; gap: 6px; transition: border-color .12s ease, background .12s ease; }
+.app-dashboard-root .app-page-legal-type-tile:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-legal-tt-icon { font-size: 22px; line-height: 1; }
+
+/* ── Templates grid ── */
+.app-dashboard-root .app-page-legal-templ-disclaimer { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; margin-bottom: 16px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 10px 10px 0; font-size: 13px; color: #92400E; line-height: 1.55; }
+.app-dashboard-root .app-page-legal-td-icon { font-size: 18px; flex-shrink: 0; line-height: 1.2; }
+.app-dashboard-root .app-page-legal-templates-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-legal-templ-card { cursor: pointer; padding: 14px; border: 1.5px solid rgba(99,102,241,0.30); border-radius: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04)); display: flex; flex-direction: column; gap: 6px; transition: border-color .12s ease, transform .12s ease; }
+.app-dashboard-root .app-page-legal-templ-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+.app-dashboard-root .app-page-legal-tc-emoji { font-size: 22px; }
+.app-dashboard-root .app-page-legal-tc-name { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-legal-tc-list { list-style: none; padding: 0; margin: 4px 0 0; font-size: 11px; color: var(--fg-muted); line-height: 1.5; }
+.app-dashboard-root .app-page-legal-tc-list li::before { content: "• "; color: var(--brand-primary); }
+
+/* ── Version history modal ── */
+.app-dashboard-root .app-page-legal-version-list { display: flex; flex-direction: column; gap: 8px; }
+.app-dashboard-root .app-page-legal-version-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-legal-version-row.is-current { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-legal-vr-version { font-family: var(--font-mono); font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--bg-elevated); color: var(--brand-primary); font-size: 12.5px; border: 1px solid var(--border); }
+.app-dashboard-root .app-page-legal-version-row.is-current .app-page-legal-vr-version { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-legal-vr-meta { min-width: 0; }
+.app-dashboard-root .app-page-legal-vr-eff { font-weight: 600; font-size: 13px; }
+.app-dashboard-root .app-page-legal-vr-changes { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.45; }
+.app-dashboard-root .app-page-legal-vr-actions { display: flex; gap: 4px; }
+
+/* ── Compliance helper sidebar ── */
+.app-dashboard-root .app-page-legal-helper { position: sticky; top: 70px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 16px; max-height: calc(100vh - 90px); overflow-y: auto; align-self: start; }
+.app-dashboard-root .app-page-legal-helper h3 { font-family: var(--font-display); font-weight: 600; font-size: 15px; margin: 0 0 4px; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-legal-h-sub { font-size: 11.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-legal-h-block { margin-bottom: 18px; }
+.app-dashboard-root .app-page-legal-h-block:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-legal-h-block-title { font-size: 11px; font-weight: 700; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-legal-check-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.app-dashboard-root .app-page-legal-check-list li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 12.5px; line-height: 1.45; }
+.app-dashboard-root .app-page-legal-check-list li.is-needed { border-color: rgba(245,158,11,0.40); background: rgba(245,158,11,0.06); }
+.app-dashboard-root .app-page-legal-check-list li.is-met { border-color: rgba(16,185,129,0.40); background: rgba(16,185,129,0.06); }
+.app-dashboard-root .app-page-legal-cl-ico { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.app-dashboard-root .app-page-legal-check-list li.is-needed .app-page-legal-cl-ico { background: var(--brand-warm); color: #7C2D12; }
+.app-dashboard-root .app-page-legal-check-list li.is-met .app-page-legal-cl-ico { background: var(--success); color: #fff; }
+.app-dashboard-root .app-page-legal-cl-name { font-weight: 600; color: var(--fg); }
+.app-dashboard-root .app-page-legal-cl-sub { color: var(--fg-muted); font-size: 11.5px; margin-top: 1px; }
+.app-dashboard-root .app-page-legal-review-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); font-size: 12.5px; }
+.app-dashboard-root .app-page-legal-review-row.is-stale { border-color: rgba(245,158,11,0.40); background: rgba(245,158,11,0.06); }
+.app-dashboard-root .app-page-legal-rr-meta { flex: 1; min-width: 0; }
+.app-dashboard-root .app-page-legal-rr-name { font-weight: 600; color: var(--fg); }
+.app-dashboard-root .app-page-legal-rr-sub { color: var(--fg-muted); font-size: 11.5px; margin-top: 1px; }
+.app-dashboard-root .app-page-legal-translation-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.app-dashboard-root .app-page-legal-translation-list li { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 12.5px; }
+.app-dashboard-root .app-page-legal-tl-flag { font-size: 14px; line-height: 1; flex-shrink: 0; }
+.app-dashboard-root .app-page-legal-tl-name { flex: 1; font-weight: 500; }
+.app-dashboard-root .app-page-legal-tl-status { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+.app-dashboard-root .app-page-legal-tl-status.is-done { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .app-page-legal-tl-status.is-todo { background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .app-page-legal-cookie-banner-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; color: var(--brand-primary); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .12s ease; }
+.app-dashboard-root .app-page-legal-cookie-banner-link:hover { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-legal-cookie-banner-link svg { width: 13px; height: 13px; }
+
+/* ── Sticky save bar ── */
+.app-dashboard-root .app-page-legal-savebar { position: sticky; bottom: 0; z-index: 30; margin: 18px -20px -120px; padding: 12px 20px; background: var(--bg-elevated); border-top: 1px solid var(--border); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.app-dashboard-root .app-page-legal-sb-status { font-size: 12.5px; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-legal-sb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+.app-dashboard-root .app-page-legal-sb-spacer { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dashboard-root .app-page-legal-modal-backdrop { transition: none !important; }
+  .app-dashboard-root .app-page-legal-modal { transition: none !important; }
+}
+
+
+/* =============================================================================
+   AppPageContact — scoped under .app-dashboard-root
+   Prefix: app-page-contact-
+   Source: mockups/tadaify-mvp/app-page-contact.html
+   ============================================================================= */
+
+/* ── Root ── */
+.app-dashboard-root .app-page-contact-root { max-width: 1080px; padding: 24px 20px 120px; }
+
+/* ── Breadcrumb ── */
+.app-dashboard-root .app-page-contact-crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-contact-crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; text-decoration: none; }
+.app-dashboard-root .app-page-contact-crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-contact-crumb-sep { color: var(--fg-subtle); }
+.app-dashboard-root .app-page-contact-crumb-here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+/* ── Page head ── */
+.app-dashboard-root .app-page-contact-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.app-dashboard-root .app-page-contact-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+.app-dashboard-root .app-page-contact-ph-emoji { font-size: 26px; }
+.app-dashboard-root .app-page-contact-sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+.app-dashboard-root .app-page-contact-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.app-dashboard-root .app-page-contact-url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.app-dashboard-root .app-page-contact-url-pill b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .app-page-contact-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); display: inline-block; }
+
+/* ── Buttons ── */
+.app-dashboard-root .app-page-contact-btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all .15s ease; line-height: 1.2; }
+.app-dashboard-root .app-page-contact-btn-primary { background: var(--brand-primary); color: #fff; }
+.app-dashboard-root .app-page-contact-btn-primary:hover { background: var(--brand-primary-hover); }
+.app-dashboard-root .app-page-contact-btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-contact-btn-ghost:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-contact-btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+.app-dashboard-root .app-page-contact-btn-danger-ghost:hover { background: var(--danger-bg); }
+.app-dashboard-root .app-page-contact-btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+
+/* ── Icon button ── */
+.app-dashboard-root .app-page-contact-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); transition: all .12s ease; }
+.app-dashboard-root .app-page-contact-iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-contact-iconbtn svg { width: 16px; height: 16px; }
+.app-dashboard-root .app-page-contact-iconbtn-danger:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* ── Toggle ── */
+.app-dashboard-root .app-page-contact-toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+.app-dashboard-root .app-page-contact-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+.app-dashboard-root .app-page-contact-toggle.is-on { background: var(--brand-primary); }
+.app-dashboard-root .app-page-contact-toggle.is-on::after { transform: translateX(16px); }
+.app-dashboard-root .app-page-contact-row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-contact-rt-name { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-contact-rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Tier hint / badge ── */
+.app-dashboard-root .app-page-contact-tier-hint { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 11px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; }
+.app-dashboard-root .app-page-contact-th-icon { font-size: 13px; }
+.app-dashboard-root .app-page-contact-tier-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(245,158,11,0.15); color: #92400E; }
+.app-dashboard-root .app-page-contact-tier-badge.t-creator { background: rgba(99,102,241,0.13); color: var(--brand-primary); }
+.app-dashboard-root .app-page-contact-tier-badge.t-pro { background: rgba(245,158,11,0.18); color: #92400E; }
+.app-dashboard-root .app-page-contact-tier-badge.t-business { background: rgba(220,38,38,0.13); color: #991B1B; }
+
+/* ── Chip ── */
+.app-dashboard-root .app-page-contact-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; border: 1px solid var(--border); cursor: default; }
+.app-dashboard-root .app-page-contact-chip-live { background: var(--success-bg); color: #065F46; border-color: transparent; }
+.app-dashboard-root .app-page-contact-chip-required { background: rgba(239,68,68,0.10); color: var(--danger); border-color: transparent; }
+
+/* ── Section card ── */
+.app-dashboard-root .app-page-contact-section { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: visible; }
+.app-dashboard-root .app-page-contact-section.is-collapsed .app-page-contact-section-body { display: none; }
+.app-dashboard-root .app-page-contact-section-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-contact-section.is-collapsed .app-page-contact-section-head { border-bottom: 0; }
+.app-dashboard-root .app-page-contact-section-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-contact-sh-grip { display: inline-flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; padding: 2px; }
+.app-dashboard-root .app-page-contact-sh-grip svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-contact-head-spacer { flex: 1; }
+.app-dashboard-root .app-page-contact-sh-actions { display: inline-flex; gap: 4px; align-items: center; }
+.app-dashboard-root .app-page-contact-sh-collapse { transition: transform .15s ease; }
+.app-dashboard-root .app-page-contact-section.is-collapsed .app-page-contact-sh-collapse { transform: rotate(-90deg); }
+.app-dashboard-root .app-page-contact-section-body { padding: 18px; }
+
+/* ── Fields ── */
+.app-dashboard-root .app-page-contact-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-contact-field:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-contact-field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-contact-field-hint { font-size: 11px; color: var(--fg-subtle); font-weight: 400; }
+.app-dashboard-root .app-page-contact-field-input, .app-dashboard-root .app-page-contact-field-area, .app-dashboard-root .app-page-contact-field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+.app-dashboard-root .app-page-contact-field-area { min-height: 80px; resize: vertical; line-height: 1.5; }
+.app-dashboard-root .app-page-contact-field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-contact-field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-contact-field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; color: var(--fg); font: inherit; }
+.app-dashboard-root .app-page-contact-field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-contact-field-suffix-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 11px; margin: 3px; border: 0; border-radius: 8px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* ── Swatch ── */
+.app-dashboard-root .app-page-contact-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-contact-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); position: relative; }
+.app-dashboard-root .app-page-contact-swatch.is-selected { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-contact-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+/* ── Expander ── */
+.app-dashboard-root .app-page-contact-expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-contact-expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-contact-expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-contact-expander > summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .app-page-contact-ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+.app-dashboard-root .app-page-contact-expander[open] > summary .app-page-contact-ex-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-contact-ex-body { padding: 4px 14px 14px; }
+.app-dashboard-root .app-page-contact-ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+/* ── Cover drop ── */
+.app-dashboard-root .app-page-contact-cover-drop { border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg); display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: border-color .12s ease, background .12s ease; }
+.app-dashboard-root .app-page-contact-cover-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-contact-cd-emoji { font-size: 30px; }
+.app-dashboard-root .app-page-contact-cd-title { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-contact-cd-sub { color: var(--fg-muted); font-size: 12.5px; }
+
+/* ── Form field builder ── */
+.app-dashboard-root .app-page-contact-ff-list { display: flex; flex-direction: column; gap: 8px; }
+.app-dashboard-root .app-page-contact-ff-row { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); overflow: hidden; }
+.app-dashboard-root .app-page-contact-ff-row.is-expanded { border-color: var(--brand-primary); background: rgba(99,102,241,0.03); }
+.app-dashboard-root .app-page-contact-ff-row.is-required-locked { border-style: dashed; }
+.app-dashboard-root .app-page-contact-ff-grip { display: flex; align-items: center; justify-content: center; width: 28px; color: var(--fg-subtle); cursor: grab; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--bg-elevated); }
+.app-dashboard-root .app-page-contact-ff-grip svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-contact-ff-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-contact-ff-summary { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; flex-wrap: wrap; }
+.app-dashboard-root .app-page-contact-ff-type-icon { width: 28px; height: 28px; border-radius: 7px; background: rgba(99,102,241,0.10); color: var(--brand-primary); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.app-dashboard-root .app-page-contact-ff-name { font-weight: 600; font-size: 14px; min-width: 0; flex-shrink: 1; }
+.app-dashboard-root .app-page-contact-ff-type-name { font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-contact-ff-spacer { flex: 1; }
+.app-dashboard-root .app-page-contact-ff-row-actions { display: inline-flex; gap: 2px; }
+.app-dashboard-root .app-page-contact-ff-config { display: none; padding: 12px 14px 14px; border-top: 1px solid var(--border); background: var(--bg-elevated); }
+.app-dashboard-root .app-page-contact-ff-row.is-expanded .app-page-contact-ff-config { display: block; }
+.app-dashboard-root .app-page-contact-ff-caret { transition: transform .15s ease; color: var(--fg-subtle); }
+.app-dashboard-root .app-page-contact-ff-row.is-expanded .app-page-contact-ff-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-contact-ff-add { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border: 1px dashed var(--border-strong); border-radius: 10px; background: transparent; color: var(--fg-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; align-self: flex-start; margin-top: 10px; }
+.app-dashboard-root .app-page-contact-ff-add:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+/* ── Field-type picker grid ── */
+.app-dashboard-root .app-page-contact-ftp-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.app-dashboard-root .app-page-contact-ftp-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; transition: all .12s ease; text-align: left; position: relative; }
+.app-dashboard-root .app-page-contact-ftp-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-contact-ftp-emoji { font-size: 22px; line-height: 1; }
+.app-dashboard-root .app-page-contact-ftp-name { font-size: 13.5px; font-weight: 600; }
+.app-dashboard-root .app-page-contact-ftp-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+
+/* ── Delivery channels ── */
+.app-dashboard-root .app-page-contact-delivery-channels { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-top: 4px; }
+.app-dashboard-root .app-page-contact-dch-card { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); padding: 12px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: all .12s ease; position: relative; }
+.app-dashboard-root .app-page-contact-dch-card:hover { border-color: var(--border-strong); }
+.app-dashboard-root .app-page-contact-dch-card.is-on { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-contact-dch-row { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-contact-dch-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-contact-dch-name { font-weight: 600; font-size: 13.5px; flex: 1; }
+.app-dashboard-root .app-page-contact-dch-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+.app-dashboard-root .app-page-contact-dch-config { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); display: none; }
+.app-dashboard-root .app-page-contact-dch-card.is-on .app-page-contact-dch-config { display: block; }
+.app-dashboard-root .app-page-contact-dch-config input { width: 100%; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--bg-elevated); font: inherit; font-size: 12px; color: var(--fg); outline: 0; font-family: var(--font-mono); }
+
+/* ── Inbound endpoint row ── */
+.app-dashboard-root .app-page-contact-endpoint-row { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-contact-endpoint-row code { flex: 1; font-family: var(--font-mono); font-size: 12px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-dashboard-root .app-page-contact-ep-copy { padding: 4px 9px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg); cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600; color: var(--fg-muted); }
+.app-dashboard-root .app-page-contact-ep-copy:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+/* ── Office hours ── */
+.app-dashboard-root .app-page-contact-hours-grid { display: flex; flex-direction: column; gap: 6px; }
+.app-dashboard-root .app-page-contact-hours-row { display: grid; gap: 8px; align-items: center; grid-template-columns: 90px 1fr; }
+.app-dashboard-root .app-page-contact-hr-day { font-size: 12.5px; font-weight: 600; color: var(--fg); display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-contact-hr-times { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-contact-hours-row.is-off .app-page-contact-hr-times { opacity: 0.45; pointer-events: none; }
+.app-dashboard-root .app-page-contact-hr-time { padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg-elevated); font: inherit; font-size: 12px; font-family: var(--font-mono); width: 76px; outline: 0; }
+.app-dashboard-root .app-page-contact-hr-sep { color: var(--fg-muted); font-size: 12px; }
+.app-dashboard-root .app-page-contact-hr-closed { font-size: 12px; color: var(--fg-subtle); font-style: italic; }
+
+/* ── Other contact methods ── */
+.app-dashboard-root .app-page-contact-other-methods { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .app-dashboard-root .app-page-contact-other-methods { grid-template-columns: 1fr 1fr; } }
+.app-dashboard-root .app-page-contact-om-card { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); padding: 12px; display: flex; align-items: center; gap: 10px; }
+.app-dashboard-root .app-page-contact-om-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border-strong); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.app-dashboard-root .app-page-contact-om-card input { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--bg-elevated); font: inherit; font-size: 13px; color: var(--fg); outline: 0; }
+
+/* ── Map preview ── */
+.app-dashboard-root .app-page-contact-map-preview { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #DCFCE7 0%, #A7F3D0 50%, #BBF7D0 100%); height: 160px; display: flex; align-items: center; justify-content: center; position: relative; }
+.app-dashboard-root .app-page-contact-map-preview::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(0deg, rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px); background-size: 24px 24px; }
+.app-dashboard-root .app-page-contact-mp-pin { position: relative; z-index: 1; font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+
+/* ── FAQ items ── */
+.app-dashboard-root .app-page-contact-faq-item { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); padding: 12px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.app-dashboard-root .app-page-contact-faq-head { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-contact-faq-grip { color: var(--fg-subtle); cursor: grab; }
+.app-dashboard-root .app-page-contact-faq-q { flex: 1; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--bg-elevated); font: inherit; font-size: 13.5px; outline: 0; font-weight: 600; }
+.app-dashboard-root .app-page-contact-faq-a { width: 100%; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--bg-elevated); font: inherit; font-size: 13px; min-height: 56px; resize: vertical; outline: 0; line-height: 1.5; }
+
+/* ── Add section row ── */
+.app-dashboard-root .app-page-contact-add-section-row { display: flex; justify-content: center; margin: 18px 0; }
+.app-dashboard-root .app-page-contact-add-section-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1.5px dashed var(--border-strong); border-radius: 999px; background: var(--bg-elevated); color: var(--fg-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .12s ease; }
+.app-dashboard-root .app-page-contact-add-section-btn:hover { color: var(--brand-primary); border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+
+/* ── Empty state ── */
+.app-dashboard-root .app-page-contact-empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 28px; text-align: center; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04)); border: 1.5px dashed rgba(99,102,241,0.25); border-radius: 16px; }
+.app-dashboard-root .app-page-contact-es-emoji { font-size: 38px; line-height: 1; width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12)); display: flex; align-items: center; justify-content: center; }
+
+/* ── Section picker modal ── */
+.app-dashboard-root .app-page-contact-modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(11,15,30,0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .14s ease; }
+.app-dashboard-root .app-page-contact-modal-backdrop.is-open { display: flex; opacity: 1; }
+.app-dashboard-root .app-page-contact-modal { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25); width: min(820px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-contact-modal-md { width: min(620px, 96vw); }
+.app-dashboard-root .app-page-contact-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.app-dashboard-root .app-page-contact-modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.app-dashboard-root .app-page-contact-modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+.app-dashboard-root .app-page-contact-modal-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-contact-foot-spacer { flex: 1; }
+
+/* ── Section picker grid ── */
+.app-dashboard-root .app-page-contact-section-picker-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.app-dashboard-root .app-page-contact-sp-card { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; transition: all .12s ease; text-align: left; }
+.app-dashboard-root .app-page-contact-sp-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-contact-sp-emoji { font-size: 24px; }
+.app-dashboard-root .app-page-contact-sp-name { font-size: 13.5px; font-weight: 600; }
+.app-dashboard-root .app-page-contact-sp-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; }
+.app-dashboard-root .app-page-contact-sp-already { align-self: flex-start; padding: 1px 7px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Sticky save bar ── */
+.app-dashboard-root .app-page-contact-save-bar { position: sticky; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--bg-elevated); border-top: 1px solid var(--border-strong); padding: 12px 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 -4px 16px rgba(11,15,30,0.04); margin: 24px -32px -80px; }
+.app-dashboard-root .app-page-contact-save-status { font-size: 12px; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-contact-ss-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+.app-dashboard-root .app-page-contact-foot-spacer { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dashboard-root .app-page-contact-modal-backdrop { transition: none !important; }
+  .app-dashboard-root .app-page-contact-modal { transition: none !important; }
+  .app-dashboard-root .app-page-contact-sh-collapse { transition: none !important; }
+}
