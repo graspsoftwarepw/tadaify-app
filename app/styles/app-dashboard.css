@@ -8884,3 +8884,312 @@ body.dark-mode .app-dashboard-root .welcome-banner {
   .platform-row,
   .skip-link { transition: none; }
 }
+
+/* =============================================================================
+   Onboarding Profile — Step 3/5: Make it yours
+   Source: mockups/tadaify-mvp/onboarding-profile.html
+   All selectors use .onb-profile-* prefix; keyframes prefixed onb-profile-.
+   ============================================================================= */
+
+/* ── 2-col shell (form + preview) ─────────────────────────────────────────── */
+.ob-twocol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (min-width: 960px) {
+  .ob-twocol {
+    grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+    gap: 28px;
+    align-items: start;
+  }
+}
+
+/* ── Section label ─────────────────────────────────────────────────────────── */
+.onb-profile-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 24px 0 10px;
+}
+.onb-profile-field-label h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.onb-profile-field-hint {
+  font-size: 12px;
+  color: var(--fg-subtle);
+  font-weight: 500;
+}
+.onb-profile-field-hint.is-warn {
+  color: var(--warm-primary, #D97706);
+}
+
+/* ── Display name input ────────────────────────────────────────────────────── */
+.onb-profile-name-input {
+  width: 100%;
+  border: 1.5px solid var(--border-strong, #D1D5DB);
+  background: var(--bg, #fff);
+  border-radius: var(--radius, 12px);
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--fg);
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+  box-sizing: border-box;
+}
+.onb-profile-name-input:focus {
+  outline: 0;
+  border-color: var(--brand-primary, #6366F1);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* ── Avatar grid ───────────────────────────────────────────────────────────── */
+.onb-profile-av-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 520px) {
+  .onb-profile-av-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+.onb-profile-av-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px solid var(--border, #E5E7EB);
+  background: var(--bg-elevated, #fff);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  min-height: 132px;
+}
+@media (max-width: 599px) {
+  .onb-profile-av-card { min-height: 120px; }
+}
+.onb-profile-av-card:hover {
+  border-color: var(--fg-subtle, #9CA3AF);
+  transform: translateY(-1px);
+}
+.onb-profile-av-card.is-selected {
+  border-color: var(--brand-primary, #6366F1);
+  box-shadow:
+    0 0 0 2px var(--brand-primary, #6366F1),
+    0 12px 28px -14px rgba(99,102,241,0.45);
+}
+.onb-profile-av-card.is-selected::after {
+  content: '✓';
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--brand-primary, #6366F1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.onb-profile-av-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px -4px rgba(15,23,42,0.18);
+  overflow: hidden;
+}
+.onb-profile-av-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.onb-profile-av-thumb[data-source="upload"],
+.onb-profile-av-thumb[data-source="initials"] {
+  background: var(--bg-sunken, #F3F4F6);
+  color: var(--fg-muted);
+  border: 1.5px dashed var(--border-strong, #D1D5DB);
+  box-shadow: none;
+}
+.onb-profile-av-thumb.initials-selected {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: #fff;
+  border: 0;
+}
+.onb-profile-av-source {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted, #4B5563);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+/* ── Bio rows ──────────────────────────────────────────────────────────────── */
+.onb-profile-bio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.onb-profile-bio-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px solid var(--border, #E5E7EB);
+  background: var(--bg-elevated, #fff);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+.onb-profile-bio-row:hover {
+  border-color: var(--fg-subtle, #9CA3AF);
+}
+.onb-profile-bio-row.is-selected {
+  border-color: var(--brand-primary, #6366F1);
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+}
+.onb-profile-bio-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong, #D1D5DB);
+  flex-shrink: 0;
+  margin-top: 2px;
+  position: relative;
+  transition: border-color 140ms;
+  display: inline-block;
+}
+.onb-profile-bio-row.is-selected .onb-profile-bio-radio {
+  border-color: var(--brand-primary, #6366F1);
+}
+.onb-profile-bio-row.is-selected .onb-profile-bio-radio::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--brand-primary, #6366F1);
+}
+.onb-profile-bio-content {
+  flex: 1;
+  min-width: 0;
+}
+.onb-profile-bio-source {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-muted, #4B5563);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  margin-top: 0;
+}
+.onb-profile-bio-text {
+  font-size: 14px;
+  color: var(--fg);
+  line-height: 1.45;
+  word-wrap: break-word;
+  margin: 0;
+}
+.onb-profile-bio-textarea {
+  width: 100%;
+  border: 1px solid var(--border, #E5E7EB);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--fg);
+  background: var(--bg, #fff);
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+  resize: vertical;
+  min-height: 60px;
+  margin-top: 6px;
+  box-sizing: border-box;
+}
+.onb-profile-bio-textarea:focus {
+  outline: 0;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+
+/* ── Actions row ───────────────────────────────────────────────────────────── */
+.onb-profile-actions-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 28px;
+}
+
+/* ── Skip link ─────────────────────────────────────────────────────────────── */
+.onb-profile-skip-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--fg-subtle, #6B7280);
+  text-decoration: none;
+}
+.onb-profile-skip-link:hover {
+  color: var(--fg-muted);
+  text-decoration: underline;
+}
+
+/* ── Trust strip ───────────────────────────────────────────────────────────── */
+.onb-profile-trust-strip {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-subtle);
+}
+
+/* ── Spinner keyframe ──────────────────────────────────────────────────────── */
+@keyframes onb-profile-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Card entry animation ──────────────────────────────────────────────────── */
+@keyframes onb-profile-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.onb-profile-av-card {
+  animation: onb-profile-card-in 200ms ease both;
+}
+
+/* ── Bio row entry animation ───────────────────────────────────────────────── */
+@keyframes onb-profile-bio-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.onb-profile-bio-row {
+  animation: onb-profile-bio-in 180ms ease both;
+}
+
+/* ── Reduced-motion overrides for onboarding profile ── */
+@media (prefers-reduced-motion: reduce) {
+  .onb-profile-av-card,
+  .onb-profile-bio-row { animation: none; }
+  .onb-profile-name-input,
+  .onb-profile-av-card,
+  .onb-profile-bio-row,
+  .onb-profile-bio-radio { transition: none; }
+}
