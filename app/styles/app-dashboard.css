@@ -5572,3 +5572,482 @@ body.dark-mode .app-dashboard-root .welcome-banner {
       .app-dashboard-root .main-settings .modal-backdrop { animation: none !important; }
     }
     body.dark-mode .app-dashboard-root .main-settings .domain-addon-row { border-bottom-color: #1F2937; }
+
+    /* =========================================================================
+       Settings — GDPR & data sub-page (SettingsGdpr)
+       Visual contract: mockups/tadaify-mvp/app-settings-gdpr.html
+       All new selectors prefixed gdpr- to avoid collisions.
+       body[data-*] → .app-dashboard-root[data-*] per task constraint.
+       @keyframes prefixed gdpr- to avoid global collisions.
+       ========================================================================= */
+
+    /* ── Section title with inline action ── */
+    .app-dashboard-root .main-settings .settings-section-title.gdpr-with-action {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* ── Export ready notification bar ── */
+    .app-dashboard-root .main-settings .gdpr-export-ready-bar {
+      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.04));
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+    }
+    .app-dashboard-root .main-settings .gdpr-erb-ico {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: rgba(34,197,94,0.15); color: #16a34a;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .gdpr-erb-ico svg { width: 18px; height: 18px; }
+    .app-dashboard-root .main-settings .gdpr-erb-text { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .gdpr-erb-title { font-weight: 600; color: var(--fg); font-size: 13.5px; margin-bottom: 2px; }
+    .app-dashboard-root .main-settings .gdpr-erb-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+    /* ── Export hero ── */
+    .app-dashboard-root .main-settings .gdpr-export-hero {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 6px 0 16px;
+    }
+    .app-dashboard-root .main-settings .gdpr-icon-bubble {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(139,92,246,0.10));
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--brand-primary);
+    }
+    .app-dashboard-root .main-settings .gdpr-icon-bubble svg { width: 28px; height: 28px; }
+    .app-dashboard-root .main-settings .gdpr-ehead-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 20px; margin: 0 0 4px; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .gdpr-ehead-sub { font-size: 13.5px; color: var(--fg-muted); line-height: 1.55; margin: 0; }
+    @media (max-width: 599px) {
+      .app-dashboard-root .main-settings .gdpr-export-hero { flex-direction: column; gap: 10px; }
+    }
+
+    /* ── Data table (recent exports + policies) ── */
+    .app-dashboard-root .main-settings .gdpr-data-table { width: 100%; border-collapse: collapse; }
+    .app-dashboard-root .main-settings .gdpr-data-table th {
+      text-align: left; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--fg-subtle); font-weight: 600;
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .gdpr-data-table td {
+      padding: 11px 10px; font-size: 13px; color: var(--fg);
+      border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .gdpr-data-table tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .main-settings .gdpr-col-date {
+      white-space: nowrap; color: var(--fg-muted);
+      font-family: var(--font-mono); font-size: 12.5px;
+    }
+    .app-dashboard-root .main-settings .gdpr-col-size { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-muted); }
+    .app-dashboard-root .main-settings .gdpr-col-exp { font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+    .app-dashboard-root .main-settings .gdpr-col-action { text-align: right; }
+
+    /* ── Pill status (ready / pending / expired) ── */
+    .app-dashboard-root .main-settings .gdpr-pill-status {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 9px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 600; line-height: 1.4;
+    }
+    .app-dashboard-root .main-settings .gdpr-pill-status.ready    { background: var(--success-bg); color: #065F46; }
+    .app-dashboard-root .main-settings .gdpr-pill-status.pending  { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+    .app-dashboard-root .main-settings .gdpr-pill-status.expired  { background: var(--bg-muted); color: var(--fg-subtle); }
+    .app-dashboard-root .main-settings .gdpr-pill-status .dot     { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.85; }
+
+    /* ── Table footnote ── */
+    .app-dashboard-root .main-settings .gdpr-table-footnote {
+      font-size: 12px; color: var(--fg-muted);
+      margin-top: 14px; line-height: 1.5;
+    }
+    .app-dashboard-root .main-settings .gdpr-fn-key { color: var(--fg); font-weight: 600; }
+
+    /* ── Section lead text ── */
+    .app-dashboard-root .main-settings .gdpr-section-lead {
+      font-size: 13.5px; color: var(--fg-muted); margin: 0 0 16px;
+      line-height: 1.6;
+    }
+    .app-dashboard-root .main-settings .gdpr-section-lead strong { color: var(--fg); font-weight: 600; }
+    .app-dashboard-root .main-settings .gdpr-section-lead code {
+      font-family: var(--font-mono); font-size: 12px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      padding: 1px 5px; border-radius: 4px;
+    }
+
+    /* ── Cookie row ── */
+    .app-dashboard-root .main-settings .gdpr-cookie-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .gdpr-cookie-row:last-of-type { border-bottom: 0; }
+    .app-dashboard-root .main-settings .gdpr-cookie-info { flex: 1; padding-right: 8px; }
+    .app-dashboard-root .main-settings .gdpr-cookie-name {
+      font-size: 13.5px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .app-dashboard-root .main-settings .gdpr-cookie-desc { font-size: 12.5px; color: var(--fg-muted); margin-top: 4px; line-height: 1.5; }
+    .app-dashboard-root .main-settings .gdpr-cookie-meta-list {
+      margin: 8px 0 0; padding-left: 18px;
+      font-size: 12px; color: var(--fg-subtle); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .gdpr-cookie-meta-list li { margin: 2px 0; }
+    .app-dashboard-root .main-settings .gdpr-cookie-meta-list code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      padding: 1px 5px; border-radius: 4px;
+    }
+
+    /* ── Banner preview wrap ── */
+    .app-dashboard-root .main-settings .gdpr-banner-preview-wrap {
+      margin-top: 16px;
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 14px;
+      background: var(--bg);
+    }
+    .app-dashboard-root .main-settings .gdpr-banner-preview-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--fg-subtle); margin-bottom: 10px;
+    }
+    .app-dashboard-root .main-settings .gdpr-banner-preview-stage {
+      position: relative;
+      background: linear-gradient(135deg, var(--bg-muted), var(--bg-sunken));
+      border-radius: 10px;
+      height: 220px;
+      overflow: hidden;
+      display: flex; align-items: flex-end;
+      box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .app-dashboard-root .main-settings .gdpr-stage-fauxnav {
+      position: absolute; top: 8px; left: 12px;
+      display: flex; gap: 4px;
+    }
+    .app-dashboard-root .main-settings .gdpr-stage-fauxnav span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border-strong); opacity: 0.5;
+    }
+    .app-dashboard-root .main-settings .gdpr-stage-faux-label {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      font-size: 10.5px; color: var(--fg-subtle);
+      font-family: var(--font-mono);
+    }
+
+    /* ── Banner bar preview ── */
+    .app-dashboard-root .main-settings .gdpr-banner-bar {
+      width: 100%;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .app-dashboard-root .main-settings .gdpr-bb-text { flex: 1; min-width: 180px; color: var(--fg); line-height: 1.4; }
+    .app-dashboard-root .main-settings .gdpr-bb-text small { color: var(--fg-muted); display: block; margin-top: 2px; font-size: 11px; }
+    .app-dashboard-root .main-settings .gdpr-bb-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .app-dashboard-root .main-settings .gdpr-banner-bar .btn { font-size: 12px; padding: 5px 11px; }
+
+    /* ── Banner corner card preview ── */
+    .app-dashboard-root .main-settings .gdpr-banner-corner {
+      position: absolute; bottom: 12px; right: 12px;
+      max-width: 280px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 24px rgba(17,24,39,0.18);
+      font-size: 12px;
+    }
+    .app-dashboard-root .main-settings .gdpr-bc-title { font-weight: 600; margin-bottom: 4px; color: var(--fg); }
+    .app-dashboard-root .main-settings .gdpr-bc-desc  { color: var(--fg-muted); line-height: 1.45; margin-bottom: 8px; font-size: 11.5px; }
+    .app-dashboard-root .main-settings .gdpr-bc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .app-dashboard-root .main-settings .gdpr-banner-corner .btn { font-size: 11.5px; padding: 4px 10px; }
+
+    /* ── Banner modal-wrap preview ── */
+    .app-dashboard-root .main-settings .gdpr-banner-modal-wrap {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(11,15,30,0.35);
+    }
+    .app-dashboard-root .main-settings .gdpr-banner-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      width: 80%; max-width: 320px;
+      box-shadow: 0 16px 36px rgba(17,24,39,0.25);
+      font-size: 12px;
+    }
+    .app-dashboard-root .main-settings .gdpr-bm-title { font-weight: 600; margin-bottom: 4px; color: var(--fg); font-size: 13px; }
+    .app-dashboard-root .main-settings .gdpr-bm-desc { color: var(--fg-muted); line-height: 1.45; margin-bottom: 10px; font-size: 11.5px; }
+    .app-dashboard-root .main-settings .gdpr-bm-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .app-dashboard-root .main-settings .gdpr-banner-modal .btn { font-size: 11.5px; padding: 4px 10px; }
+
+    /* ── Banner style picker ── */
+    .app-dashboard-root .main-settings .gdpr-banner-style-picker {
+      display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0;
+    }
+    .app-dashboard-root .main-settings .gdpr-bsp-btn {
+      padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      background: var(--bg); border: 1px solid var(--border); color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-sans); cursor: pointer;
+    }
+    .app-dashboard-root .main-settings .gdpr-bsp-btn:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .main-settings .gdpr-bsp-btn.active {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: rgba(99,102,241,0.08);
+      font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .gdpr-bsp-pro-tag {
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 99px;
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    /* ── Personal data summary grid ── */
+    .app-dashboard-root .main-settings .gdpr-data-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .app-dashboard-root .main-settings .gdpr-data-stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .app-dashboard-root .main-settings .gdpr-ds-num {
+      font-family: var(--font-display); font-size: 26px; font-weight: 600;
+      color: var(--fg); line-height: 1.1;
+    }
+    .app-dashboard-root .main-settings .gdpr-ds-label { font-size: 12px; color: var(--fg-muted); margin-top: 4px; }
+
+    /* ── Breakdown toggle button ── */
+    .app-dashboard-root .main-settings .gdpr-breakdown-toggle {
+      background: transparent; border: 0; color: var(--brand-primary);
+      font-size: 13px; font-weight: 600; padding: 8px 0;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-sans); cursor: pointer;
+    }
+    .app-dashboard-root .main-settings .gdpr-breakdown-toggle svg {
+      width: 14px; height: 14px;
+      transition: transform .18s ease;
+    }
+    .app-dashboard-root .main-settings .gdpr-breakdown-toggle.open svg { transform: rotate(90deg); }
+
+    /* ── Breakdown panel ── */
+    .app-dashboard-root .main-settings .gdpr-breakdown-panel {
+      padding-top: 12px; border-top: 1px solid var(--border); margin-top: 8px;
+    }
+    .app-dashboard-root .main-settings .gdpr-breakdown-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .app-dashboard-root .main-settings .gdpr-breakdown-table th,
+    .app-dashboard-root .main-settings .gdpr-breakdown-table td {
+      padding: 8px 6px; text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 400;
+    }
+    .app-dashboard-root .main-settings .gdpr-breakdown-table th {
+      color: var(--fg-subtle); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .app-dashboard-root .main-settings .gdpr-breakdown-table td.num {
+      text-align: right; font-family: var(--font-mono); color: var(--fg-muted); font-size: 12.5px;
+    }
+    .app-dashboard-root .main-settings .gdpr-breakdown-table tr:last-child td { border-bottom: 0; }
+
+    /* ── Policy table rows ── */
+    .app-dashboard-root .main-settings .gdpr-policy-row td:first-child { font-weight: 600; color: var(--fg); }
+    .app-dashboard-root .main-settings .gdpr-ver-tag {
+      display: inline-block; padding: 1px 7px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      background: var(--bg-muted); color: var(--fg-muted);
+      font-family: var(--font-mono);
+    }
+    .app-dashboard-root .main-settings .gdpr-ver-tag.new {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .app-dashboard-root .main-settings .gdpr-policy-row a { color: var(--brand-primary); font-size: 12.5px; }
+    .app-dashboard-root .main-settings .gdpr-policy-row a:hover { text-decoration: underline; }
+    .app-dashboard-root .main-settings .gdpr-changed-link {
+      display: inline-block; margin-left: 8px;
+      color: var(--brand-warm-dark); font-size: 12px; font-weight: 600;
+    }
+
+    /* ── DPA rows ── */
+    .app-dashboard-root .main-settings .gdpr-dpa-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .gdpr-dpa-row:last-child { border-bottom: 0; }
+    .app-dashboard-root .main-settings .gdpr-dpa-info { flex: 1; }
+    .app-dashboard-root .main-settings .gdpr-dpa-title {
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+    }
+    .app-dashboard-root .main-settings .gdpr-dpa-desc { font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; }
+    .app-dashboard-root .main-settings .gdpr-dpa-desc code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      padding: 1px 5px; border-radius: 4px;
+    }
+
+    /* ── Erasure cross-link card ── */
+    .app-dashboard-root .main-settings .gdpr-erasure-card {
+      border: 1px solid rgba(239,68,68,0.25);
+      background: rgba(239,68,68,0.03);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .app-dashboard-root .main-settings .gdpr-ec-ico {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(239,68,68,0.10); color: var(--danger);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .gdpr-ec-ico svg { width: 18px; height: 18px; }
+    .app-dashboard-root .main-settings .gdpr-ec-body { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .gdpr-ec-title {
+      font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 4px;
+    }
+    .app-dashboard-root .main-settings .gdpr-ec-desc { font-size: 12.5px; color: var(--fg-muted); line-height: 1.55; }
+    .app-dashboard-root .main-settings .gdpr-ec-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--danger); font-size: 13px; font-weight: 600;
+      margin-top: 8px; text-decoration: none;
+    }
+    .app-dashboard-root .main-settings .gdpr-ec-link svg { width: 14px; height: 14px; }
+    .app-dashboard-root .main-settings .gdpr-ec-link:hover { text-decoration: underline; }
+
+    /* ── Export modal: include list ── */
+    .app-dashboard-root .main-settings .gdpr-export-include-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 14px 0 6px;
+    }
+    @media (min-width: 600px) {
+      .app-dashboard-root .main-settings .gdpr-export-include-list { grid-template-columns: 1fr 1fr; }
+    }
+    .app-dashboard-root .main-settings .gdpr-export-include-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .app-dashboard-root .main-settings .gdpr-export-include-row:hover {
+      border-color: var(--border-strong); background: var(--bg-muted);
+    }
+    .app-dashboard-root .main-settings .gdpr-export-include-row.checked {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.04);
+    }
+    .app-dashboard-root .main-settings .gdpr-export-include-row input {
+      margin-top: 2px; flex-shrink: 0; accent-color: var(--brand-primary);
+    }
+    .app-dashboard-root .main-settings .gdpr-ei-name { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+    .app-dashboard-root .main-settings .gdpr-ei-meta { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.4; }
+
+    /* ── Export format pill ── */
+    .app-dashboard-root .main-settings .gdpr-export-format-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 8px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 500;
+      margin-top: 8px;
+    }
+    .app-dashboard-root .main-settings .gdpr-export-format-pill code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg); padding: 1px 5px; border-radius: 4px;
+      border: 1px solid var(--border); color: var(--fg);
+    }
+
+    /* ── Export progress ── */
+    .app-dashboard-root .main-settings .gdpr-export-progress {
+      margin-top: 18px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .gdpr-ep-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .app-dashboard-root .main-settings .gdpr-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--bg-sunken);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      animation: gdpr-spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    .app-dashboard-root .main-settings .gdpr-ep-bar {
+      width: 100%; height: 6px;
+      background: var(--bg-sunken); border-radius: 999px;
+      overflow: hidden;
+    }
+    .app-dashboard-root .main-settings .gdpr-ep-bar > div {
+      width: 38%; height: 100%;
+      background: var(--brand-primary); border-radius: 999px;
+      animation: gdpr-progressPulse 1.6s ease-in-out infinite;
+    }
+
+    /* ── @keyframes (gdpr- prefix) ── */
+    @keyframes gdpr-spin { to { transform: rotate(360deg); } }
+    @keyframes gdpr-progressPulse {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(280%); }
+    }
+    @keyframes gdpr-modalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ── Dark mode overrides — GDPR ── */
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-export-ready-bar {
+      background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04));
+      border-color: rgba(34,197,94,0.30);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-data-stat {
+      background: #0B0F1E; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-data-table th { color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-data-table td { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-breakdown-table th,
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-breakdown-table td { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-breakdown-panel { border-top-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-cookie-row { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-dpa-row { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-erasure-card {
+      background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.30);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-banner-preview-stage {
+      background: linear-gradient(135deg, #141A2D, #0B0F1E);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-banner-bar,
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-banner-corner,
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-banner-modal {
+      background: #141A2D; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-bsp-btn { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-bsp-btn.active {
+      border-color: var(--brand-primary); background: rgba(99,102,241,0.12);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-export-include-row { background: #0B0F1E; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-export-include-row.checked {
+      background: rgba(99,102,241,0.10); border-color: var(--brand-primary);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .gdpr-export-progress { background: #0B0F1E; border-color: #1F2937; }
