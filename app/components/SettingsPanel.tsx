@@ -25,6 +25,7 @@ import { SettingsDanger } from "./app-settings/SettingsDanger";
 import { SettingsGdpr } from "./app-settings/SettingsGdpr";
 import { SettingsSecurity } from "./app-settings/SettingsSecurity";
 import { SettingsTeam } from "./app-settings/SettingsTeam";
+import { SettingsTheme } from "./app-settings/SettingsTheme";
 
 // ─── Valid settings sub-tabs ─────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ export const SETTINGS_SUB_TABS = [
   "billing",
   "security",
   "gdpr",
+  "theme",
   "apikeys",
   "team",
   "danger",
@@ -151,6 +153,23 @@ export function SettingsPanel({ activeSubTab, handle, email = "" }: SettingsPane
             GDPR &amp; data
           </a>
 
+          {/* Theme */}
+          <a
+            href="/app?tab=settings&subtab=theme"
+            className={`settings-nav-item${validSubTab === "theme" ? " active" : ""}`}
+            aria-current={validSubTab === "theme" ? "page" : undefined}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+              <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+              <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+              <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+              <path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z"/>
+            </svg>
+            Theme
+            <span className="sn-pill new-pill">New</span>
+          </a>
+
           <div className="settings-nav-divider" />
 
           {/* API keys (Pro) */}
@@ -218,6 +237,8 @@ export function SettingsPanel({ activeSubTab, handle, email = "" }: SettingsPane
           <SettingsSecurity />
         ) : validSubTab === "gdpr" ? (
           <SettingsGdpr />
+        ) : validSubTab === "theme" ? (
+          <SettingsTheme />
         ) : validSubTab === "apikeys" ? (
           <SettingsApiKeys />
         ) : validSubTab === "team" ? (
