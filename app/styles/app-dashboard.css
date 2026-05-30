@@ -7522,3 +7522,344 @@ body.dark-mode .app-dashboard-root .welcome-banner {
     @media (prefers-reduced-motion: reduce) {
       .app-dashboard-root .block-picker-modal .modal { transition: none !important; }
     }
+
+    /* =========================================================================
+       TierGateModal — shared upsell modal shown at save time.
+       Visual contract: mockups/tadaify-mvp/app-tier-gate-modal.html (2003 LOC)
+       All selectors scoped under .app-dashboard-root .tier-gate-modal.
+       @keyframes prefixed with tier-gate- to avoid collisions.
+       Story: tadaify-app#209 DEC-382=A
+       ========================================================================= */
+
+    /* Backdrop overlay (Radix Dialog.Overlay) */
+    .app-dashboard-root .tier-gate-modal.tg-backdrop {
+      position: fixed; inset: 0; z-index: 80;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+
+    /* Modal panel (Radix Dialog.Content) — centered, ~640px wide */
+    .app-dashboard-root .tier-gate-modal.tg-backdrop-content {
+      position: fixed; inset: 0; z-index: 80;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      pointer-events: none;
+    }
+    .app-dashboard-root .tier-gate-modal.tg-backdrop-content .tg-modal {
+      pointer-events: auto;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      width: min(640px, 100%);
+      max-height: calc(100vh - 32px);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    @media (max-width: 600px) {
+      .app-dashboard-root .tier-gate-modal.tg-backdrop-content {
+        padding: 0; align-items: stretch;
+      }
+      .app-dashboard-root .tier-gate-modal .tg-modal {
+        border-radius: 0; max-height: 100vh; height: 100vh; width: 100%;
+      }
+    }
+
+    /* Head (sticky) */
+    .app-dashboard-root .tier-gate-modal .tg-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-head h3 {
+      font-family: var(--font-display);
+      font-size: 19px; font-weight: 600;
+      flex: 1; margin: 0;
+      letter-spacing: -0.01em; line-height: 1.3;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-head h3 .sparkle { color: var(--brand-warm); margin-right: 6px; }
+    .app-dashboard-root .tier-gate-modal .tg-head h3 .feature-name { color: var(--brand-primary); }
+    .app-dashboard-root .tier-gate-modal .tg-head h3 .tier-name { color: var(--brand-warm-dark); font-weight: 700; }
+
+    /* Icon button (close X) */
+    .app-dashboard-root .tier-gate-modal .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      cursor: pointer; transition: background .12s, color .12s;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .tier-gate-modal .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .tier-gate-modal .iconbtn svg { width: 16px; height: 16px; }
+
+    /* Body (scrollable) */
+    .app-dashboard-root .tier-gate-modal .tg-body {
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 18px;
+      flex: 1;
+    }
+
+    /* Section 1 — "You set up:" trigger context */
+    .app-dashboard-root .tier-gate-modal .tg-context {
+      padding: 14px 16px;
+      background: var(--bg-muted);
+      border-radius: 12px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-context .ctx-h {
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.04em; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-context ul {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-context li {
+      font-size: 13.5px; line-height: 1.5;
+      color: var(--fg); padding-left: 18px; position: relative;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-context li::before {
+      content: "•"; position: absolute; left: 6px;
+      color: var(--brand-primary); font-weight: 700;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-context li code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      padding: 1px 5px; background: var(--bg-elevated);
+      color: var(--brand-primary); border-radius: 4px; border: 1px solid var(--border);
+    }
+    .app-dashboard-root .tier-gate-modal .tg-context li b { font-weight: 600; color: var(--fg); }
+
+    /* Section 2 — Tier panel */
+    .app-dashboard-root .tier-gate-modal .tg-tier-panel {
+      padding: 16px 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04));
+      border: 1.5px solid rgba(99,102,241,0.18);
+      border-radius: 14px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-panel.is-business {
+      background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(253,230,138,0.10));
+      border-color: rgba(245,158,11,0.30);
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-head {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-head .tier-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; background: var(--brand-primary); color: #FFF;
+      border-radius: 99px; font-family: var(--font-sans);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-panel.is-business .tier-pill { background: var(--brand-warm-dark); }
+    .app-dashboard-root .tier-gate-modal .tg-tier-head .tier-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 600;
+      letter-spacing: -0.01em; color: var(--fg);
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-head .tier-price {
+      margin-left: auto; font-family: var(--font-sans);
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-head .tier-price .price-amt { font-size: 17px; }
+    .app-dashboard-root .tier-gate-modal .tg-tier-head .tier-price .price-cadence {
+      color: var(--fg-muted); font-weight: 500; font-size: 12px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-features {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-features li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 13.5px; line-height: 1.5; color: var(--fg);
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-features li .check {
+      flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--success); color: #FFF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; margin-top: 2px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-tier-panel.is-business .tg-tier-features li .check { background: var(--brand-warm-dark); }
+    .app-dashboard-root .tier-gate-modal .tg-tier-features li b { font-weight: 600; color: var(--fg); }
+
+    /* Section 3 — "Your work is saved as draft" reassurance */
+    .app-dashboard-root .tier-gate-modal .tg-draft {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; background: var(--success-bg);
+      border: 1px solid rgba(16,185,129,0.22);
+      border-radius: 10px; font-size: 13px; color: var(--fg); line-height: 1.5;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-draft .draft-icon { flex-shrink: 0; font-size: 18px; }
+    .app-dashboard-root .tier-gate-modal .tg-draft b { color: var(--fg); font-weight: 600; }
+
+    /* Section 4 — "Or save without X" partial-save inline link */
+    .app-dashboard-root .tier-gate-modal .tg-partial {
+      padding: 11px 14px; background: var(--bg);
+      border: 1px dashed var(--border-strong); border-radius: 10px;
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-partial a {
+      color: var(--brand-primary); font-weight: 600; cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: rgba(99,102,241,0.35);
+      text-underline-offset: 2px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-partial a:hover { text-decoration-color: var(--brand-primary); }
+
+    /* Yearly/monthly billing toggle */
+    .app-dashboard-root .tier-gate-modal .tg-bill-toggle {
+      display: inline-flex; gap: 0; background: var(--bg);
+      border: 1px solid var(--border-strong); border-radius: 99px;
+      padding: 3px; font-family: var(--font-sans);
+    }
+    .app-dashboard-root .tier-gate-modal .tg-bill-toggle button {
+      padding: 5px 12px; font-size: 11.5px; font-weight: 600;
+      border-radius: 99px; border: 0; background: transparent;
+      color: var(--fg-muted); cursor: pointer;
+      transition: background .14s, color .14s;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-bill-toggle button.is-active { background: var(--fg); color: #FFF; }
+    .app-dashboard-root .tier-gate-modal .tg-bill-toggle .save-chip {
+      font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;
+      padding: 1px 5px; background: var(--success); color: #FFF;
+      border-radius: 99px; margin-left: 4px; vertical-align: 1px;
+    }
+
+    /* Foot (sticky) */
+    .app-dashboard-root .tier-gate-modal .tg-foot {
+      padding: 14px 22px; border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex; gap: 10px; align-items: center;
+      flex-shrink: 0; flex-wrap: wrap;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-foot .left { display: flex; gap: 8px; align-items: center; }
+    .app-dashboard-root .tier-gate-modal .tg-foot .right { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+    @media (max-width: 600px) {
+      .app-dashboard-root .tier-gate-modal .tg-foot { flex-direction: column; align-items: stretch; }
+      .app-dashboard-root .tier-gate-modal .tg-foot .left,
+      .app-dashboard-root .tier-gate-modal .tg-foot .right { width: 100%; }
+      .app-dashboard-root .tier-gate-modal .tg-foot .right { margin-left: 0; flex-direction: column; }
+      .app-dashboard-root .tier-gate-modal .tg-foot .right .btn { width: 100%; }
+    }
+
+    /* Button primitives — scoped to tier-gate-modal */
+    .app-dashboard-root .tier-gate-modal .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 10px 16px;
+      font-family: var(--font-sans); font-size: 13.5px; font-weight: 600;
+      border-radius: 10px; border: 1px solid transparent;
+      cursor: pointer; white-space: nowrap;
+      transition: background .14s, border-color .14s, color .14s, transform .12s, box-shadow .14s;
+    }
+    .app-dashboard-root .tier-gate-modal .btn-primary {
+      background: var(--brand-primary); color: #FFF;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.30);
+    }
+    .app-dashboard-root .tier-gate-modal .btn-primary:not(:disabled):hover {
+      background: var(--brand-primary-hover);
+      transform: translateY(-1px); box-shadow: 0 6px 18px rgba(99,102,241,0.40);
+    }
+    .app-dashboard-root .tier-gate-modal .btn-primary:disabled {
+      background: var(--bg-sunken); color: var(--fg-subtle); box-shadow: none; cursor: not-allowed;
+    }
+    .app-dashboard-root .tier-gate-modal .btn-secondary {
+      background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong);
+    }
+    .app-dashboard-root .tier-gate-modal .btn-secondary:hover { background: var(--bg-muted); }
+    .app-dashboard-root .tier-gate-modal .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .app-dashboard-root .tier-gate-modal .btn-ghost { background: transparent; color: var(--fg-muted); }
+    .app-dashboard-root .tier-gate-modal .btn-ghost:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .tier-gate-modal .btn-warm {
+      background: var(--brand-warm-dark); color: #FFF;
+      box-shadow: 0 4px 14px rgba(245,158,11,0.30);
+    }
+    .app-dashboard-root .tier-gate-modal .btn-warm:not(:disabled):hover {
+      background: #B45309; transform: translateY(-1px);
+    }
+    .app-dashboard-root .tier-gate-modal .btn-spinner {
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #FFF;
+      border-radius: 50%;
+      animation: tier-gate-spin .8s linear infinite;
+    }
+    .app-dashboard-root .tier-gate-modal .price-sub {
+      font-size: 11px; color: var(--fg-subtle); font-weight: 500; margin-left: 4px;
+    }
+
+    /* Success state */
+    .app-dashboard-root .tier-gate-modal .tg-success {
+      padding: 36px 28px 28px; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; position: relative; overflow: hidden;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-success .burst {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+      color: #FFF; display: flex; align-items: center; justify-content: center;
+      font-size: 38px; box-shadow: 0 10px 36px rgba(99,102,241,0.40);
+      position: relative; z-index: 2;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-success h3 {
+      font-family: var(--font-display); font-size: 24px; font-weight: 600;
+      letter-spacing: -0.02em; margin: 0; max-width: 480px; line-height: 1.25;
+      position: relative; z-index: 2;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-success p {
+      font-size: 14px; color: var(--fg-muted); max-width: 440px;
+      line-height: 1.55; margin: 0; position: relative; z-index: 2;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-success .actions {
+      margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap;
+      justify-content: center; position: relative; z-index: 2;
+    }
+
+    /* Confetti pieces */
+    .app-dashboard-root .tier-gate-modal .tier-gate-confetti-piece {
+      position: absolute; top: -8px; width: 8px; height: 12px;
+      border-radius: 1px; animation: tier-gate-confetti-fall 2s ease-out forwards;
+      z-index: 1;
+    }
+    @keyframes tier-gate-confetti-fall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translateY(380px) rotate(540deg); opacity: 0; }
+    }
+
+    /* Cancel state */
+    .app-dashboard-root .tier-gate-modal .tg-cancel {
+      padding: 32px 28px 24px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-cancel .icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--bg-muted); color: var(--fg-muted);
+      display: flex; align-items: center; justify-content: center; font-size: 30px;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-cancel h3 {
+      font-family: var(--font-display); font-size: 21px; font-weight: 600;
+      margin: 0; letter-spacing: -0.02em;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-cancel p {
+      font-size: 13.5px; color: var(--fg-muted); max-width: 420px;
+      line-height: 1.55; margin: 0;
+    }
+    .app-dashboard-root .tier-gate-modal .tg-cancel .actions {
+      margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    }
+
+    /* @keyframes — prefixed tier-gate- to avoid collisions */
+    @keyframes tier-gate-spin { to { transform: rotate(360deg); } }
+
+    /* prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+      .app-dashboard-root .tier-gate-modal .tier-gate-confetti-piece { display: none; }
+      .app-dashboard-root .tier-gate-modal .btn-spinner { animation: none; }
+      .app-dashboard-root .tier-gate-modal .tg-modal { transition: none !important; }
+    }
