@@ -8,7 +8,7 @@ The full functional specification lives in `docs/specs/functional-spec.md`. This
 
 | ID | Title | Spec ref | Status |
 |---|---|---|---|
-| BR-001 | Creator page public profile | `specs/functional-spec.md` §3 | Planned |
+| BR-001 | Creator page public profile | `specs/functional-spec.md` §3 | Implemented (slice via tadaify-app#202) |
 | BR-LANDING-001 | Landing page with handle claim flow | `specs/functional-spec.md` §1, Issue #1 | Implemented |
 | BR-AUTH-01 | User can register with a unique @handle | Issue #129 | Implemented |
 | BR-AUTH-02 | Email-OTP verification (6-digit code) for new users | Issue #129 | Implemented |

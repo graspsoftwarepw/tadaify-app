@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action } from "./api.blocks";
+import * as cachePurge from "~/lib/cache-purge";
 
 const SUPABASE_URL = "http://localhost:54321";
 const SERVICE_KEY = "test-service-key";
@@ -173,5 +174,42 @@ describe("U2 — POST /api/blocks create", () => {
     } as any)) as Response;
 
     expect(res.status).toBe(404);
+  });
+
+  // U4 — TR-tadaify-010 cache-purge hook (#202)
+  it("calls purgeCacheForHandle with the creator's handle after successful INSERT", async () => {
+    const purgeSpy = vi
+      .spyOn(cachePurge, "purgeCacheForHandle")
+      .mockResolvedValue({ ok: true });
+
+    // /auth/v1/user → ok
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    // GET position query
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+    // POST /rest/v1/blocks → 201
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([MOCK_CREATED_BLOCK]), { status: 201 }),
+    );
+    // profiles lookup for handle → returns the creator's handle
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({
+        body: { page_id: PAGE_ID, block_type: "link", title: "x" },
+        bearer: "tok",
+      }),
+      context: makeContext(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(purgeSpy).toHaveBeenCalledTimes(1);
+    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    purgeSpy.mockRestore();
   });
 });

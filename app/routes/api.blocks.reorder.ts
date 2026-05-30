@@ -21,12 +21,16 @@
 
 import type { Route } from "./+types/api.blocks.reorder";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
+import { purgeCacheForHandle } from "~/lib/cache-purge";
+import { resolveHandleForUser } from "~/lib/resolve-handle-for-purge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface WorkerEnv {
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  CF_ZONE_ID?: string;
+  CF_API_TOKEN?: string;
 }
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -155,6 +159,19 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     console.error("[api.blocks.reorder] RPC error:", rpcRes.status, text);
     return Response.json({ error: "Reorder failed", detail: text }, { status: 500 });
+  }
+
+  // TR-tadaify-010 — purge edge cache after successful reorder.
+  const handle = await resolveHandleForUser(
+    userId,
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+  );
+  if (handle) {
+    void purgeCacheForHandle(handle, undefined, {
+      CF_ZONE_ID: env.CF_ZONE_ID,
+      CF_API_TOKEN: env.CF_API_TOKEN,
+    }).catch((e) => console.error("[cache-purge] threw unexpectedly", e));
   }
 
   return Response.json({ ok: true }, { status: 200 });

@@ -53,4 +53,10 @@ export default [
 
   // Test harness — IconPicker (Playwright S1–S6, tadaify-app#205)
   route("/test-icon-picker", "routes/test-icon-picker.tsx"),
+
+  // Public creator page (F-BLOCK-INFRA-PUBLIC-RENDER-001, tadaify-app#202).
+  // MUST stay last — catch-all for any single-segment path that did not match
+  // the specific routes above. Order matters: this would otherwise shadow
+  // /app, /login, /register, /api/*, /onboarding/*, and the test harness routes.
+  route("/:handle", "routes/$handle.tsx"),
 ] satisfies RouteConfig;

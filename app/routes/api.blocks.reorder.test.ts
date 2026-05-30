@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action } from "./api.blocks.reorder";
+import * as cachePurge from "~/lib/cache-purge";
 
 const SUPABASE_URL = "http://localhost:54321";
 const SERVICE_KEY = "test-service-key";
@@ -140,5 +141,36 @@ describe("U5 — POST /api/blocks/reorder", () => {
     } as any)) as Response;
 
     expect(res.status).toBe(422);
+  });
+
+  // U4 — TR-tadaify-010 cache-purge hook (#202)
+  it("calls purgeCacheForHandle after successful reorder", async () => {
+    const purgeSpy = vi
+      .spyOn(cachePurge, "purgeCacheForHandle")
+      .mockResolvedValue({ ok: true });
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(null), { status: 200 }),
+    );
+    // profiles lookup for handle
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({
+        body: { page_id: PAGE_ID, ordered_ids: IDS },
+        bearer: "tok",
+      }),
+      context: makeContext(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(purgeSpy).toHaveBeenCalledTimes(1);
+    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    purgeSpy.mockRestore();
   });
 });

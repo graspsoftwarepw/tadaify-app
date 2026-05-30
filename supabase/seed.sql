@@ -69,3 +69,185 @@ INSERT INTO auth.identities (
   now(),
   now()
 ) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- ── F-BLOCK-INFRA-PUBLIC-RENDER-001 seeds (idempotent) ───────────────────────
+-- Story: tadaify-app#202
+-- Three creators for Playwright public-render.spec.ts (S1, S5, S8). All three:
+--   - have a confirmed auth.users row + matching auth.identities row
+--   - have a profiles row with handle
+--   - have a published homepage (pages.is_homepage=true AND published_at NOT NULL)
+-- Variation:
+--   - test-render-s1 → 3 visible blocks at positions 0/1/2
+--   - test-render-s5 → 3 blocks at positions 0/1/2, middle one is_visible=false
+--   - test-render-s8 → 0 blocks (published page with empty block list)
+
+-- ---- creator 1: test-render-s1 (3 visible blocks) ----
+
+INSERT INTO auth.users (
+  id, email, encrypted_password, email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data, aud, role
+) VALUES (
+  '00000000-0000-0000-0000-000000000a01',
+  'test-render-s1@local.test',
+  crypt('TestPass123!', gen_salt('bf')),
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"]}',
+  '{}', 'authenticated', 'authenticated'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000a01',
+  '00000000-0000-0000-0000-000000000a01',
+  'test-render-s1@local.test', 'email',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000a01',
+    'email', 'test-render-s1@local.test',
+    'email_verified', true
+  ),
+  now(), now(), now()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+INSERT INTO profiles (id, handle, email, display_name, bio, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-000000000a01',
+  'test-render-s1',
+  'test-render-s1@local.test',
+  'S1 Test Creator',
+  'Seeded by F-BLOCK-INFRA-PUBLIC-RENDER-001 (#202).',
+  now(), now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO pages (id, user_id, title, is_homepage, published_at, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-0000000a0001',
+  '00000000-0000-0000-0000-000000000a01',
+  'Home', true, now(), now(), now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO blocks (id, page_id, user_id, block_type, title, url, is_visible, position, created_at, updated_at)
+VALUES
+  ('00000000-0000-0000-0000-0000000b1001',
+   '00000000-0000-0000-0000-0000000a0001',
+   '00000000-0000-0000-0000-000000000a01',
+   'link', 'S1 block 1', 'https://example.com/1', true, 0, now(), now()),
+  ('00000000-0000-0000-0000-0000000b1002',
+   '00000000-0000-0000-0000-0000000a0001',
+   '00000000-0000-0000-0000-000000000a01',
+   'link', 'S1 block 2', 'https://example.com/2', true, 1, now(), now()),
+  ('00000000-0000-0000-0000-0000000b1003',
+   '00000000-0000-0000-0000-0000000a0001',
+   '00000000-0000-0000-0000-000000000a01',
+   'link', 'S1 block 3', 'https://example.com/3', true, 2, now(), now())
+ON CONFLICT (id) DO NOTHING;
+
+-- ---- creator 5: test-render-s5 (3 blocks, middle one hidden) ----
+
+INSERT INTO auth.users (
+  id, email, encrypted_password, email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data, aud, role
+) VALUES (
+  '00000000-0000-0000-0000-000000000a05',
+  'test-render-s5@local.test',
+  crypt('TestPass123!', gen_salt('bf')),
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"]}',
+  '{}', 'authenticated', 'authenticated'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000a05',
+  '00000000-0000-0000-0000-000000000a05',
+  'test-render-s5@local.test', 'email',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000a05',
+    'email', 'test-render-s5@local.test',
+    'email_verified', true
+  ),
+  now(), now(), now()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+INSERT INTO profiles (id, handle, email, display_name, bio, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-000000000a05',
+  'test-render-s5',
+  'test-render-s5@local.test',
+  'S5 Test Creator',
+  'Seeded by F-BLOCK-INFRA-PUBLIC-RENDER-001 (#202).',
+  now(), now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO pages (id, user_id, title, is_homepage, published_at, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-0000000a0005',
+  '00000000-0000-0000-0000-000000000a05',
+  'Home', true, now(), now(), now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO blocks (id, page_id, user_id, block_type, title, url, is_visible, position, created_at, updated_at)
+VALUES
+  ('00000000-0000-0000-0000-0000000b5001',
+   '00000000-0000-0000-0000-0000000a0005',
+   '00000000-0000-0000-0000-000000000a05',
+   'link', 'S5 block 1 (visible)', 'https://example.com/s5-1', true, 0, now(), now()),
+  ('00000000-0000-0000-0000-0000000b5002',
+   '00000000-0000-0000-0000-0000000a0005',
+   '00000000-0000-0000-0000-000000000a05',
+   'link', 'S5 block 2 (HIDDEN)', 'https://example.com/s5-2', false, 1, now(), now()),
+  ('00000000-0000-0000-0000-0000000b5003',
+   '00000000-0000-0000-0000-0000000a0005',
+   '00000000-0000-0000-0000-000000000a05',
+   'link', 'S5 block 3 (visible)', 'https://example.com/s5-3', true, 2, now(), now())
+ON CONFLICT (id) DO NOTHING;
+
+-- ---- creator 8: test-render-s8 (published page, ZERO blocks) ----
+
+INSERT INTO auth.users (
+  id, email, encrypted_password, email_confirmed_at, created_at, updated_at,
+  raw_app_meta_data, raw_user_meta_data, aud, role
+) VALUES (
+  '00000000-0000-0000-0000-000000000a08',
+  'test-render-s8@local.test',
+  crypt('TestPass123!', gen_salt('bf')),
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"]}',
+  '{}', 'authenticated', 'authenticated'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, provider, identity_data,
+  last_sign_in_at, created_at, updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000a08',
+  '00000000-0000-0000-0000-000000000a08',
+  'test-render-s8@local.test', 'email',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000a08',
+    'email', 'test-render-s8@local.test',
+    'email_verified', true
+  ),
+  now(), now(), now()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+INSERT INTO profiles (id, handle, email, display_name, bio, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-000000000a08',
+  'test-render-s8',
+  'test-render-s8@local.test',
+  'S8 Test Creator',
+  'Seeded by F-BLOCK-INFRA-PUBLIC-RENDER-001 (#202).',
+  now(), now()
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO pages (id, user_id, title, is_homepage, published_at, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-0000000a0008',
+  '00000000-0000-0000-0000-000000000a08',
+  'Home', true, now(), now(), now()
+) ON CONFLICT (id) DO NOTHING;
+-- No blocks for s8 — that's the test contract.

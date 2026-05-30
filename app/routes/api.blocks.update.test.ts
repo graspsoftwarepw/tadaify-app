@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action } from "./api.blocks.$id";
+import * as cachePurge from "~/lib/cache-purge";
 
 const SUPABASE_URL = "http://localhost:54321";
 const SERVICE_KEY = "test-service-key";
@@ -126,5 +127,35 @@ describe("U3 — PATCH /api/blocks/:id update", () => {
     expect(res.status).toBe(400);
     const body = (await res.json()) as { error: string };
     expect(body.error).toContain("Validation failed");
+  });
+
+  // U4 — TR-tadaify-010 cache-purge hook (#202)
+  it("calls purgeCacheForHandle after successful PATCH", async () => {
+    const purgeSpy = vi
+      .spyOn(cachePurge, "purgeCacheForHandle")
+      .mockResolvedValue({ ok: true });
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    const headers = new Headers({ "Content-Range": "0-0/1" });
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([MOCK_UPDATED_BLOCK]), { status: 200, headers }),
+    );
+    // profiles lookup for handle
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({ body: { title: "x" }, bearer: "tok" }),
+      context: makeContext(),
+      params: makeParams(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(purgeSpy).toHaveBeenCalledTimes(1);
+    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    purgeSpy.mockRestore();
   });
 });

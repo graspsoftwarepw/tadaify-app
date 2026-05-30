@@ -22,6 +22,8 @@
 
 import type { Route } from "./+types/api.blocks";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
+import { purgeCacheForHandle } from "~/lib/cache-purge";
+import { resolveHandleForUser } from "~/lib/resolve-handle-for-purge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,8 @@ interface WorkerEnv {
   SUPABASE_URL?: string;
   SUPABASE_ANON_KEY?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  CF_ZONE_ID?: string;
+  CF_API_TOKEN?: string;
 }
 
 export interface Block {
@@ -251,5 +255,20 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const blocks = (await insertRes.json()) as Block[];
+
+  // TR-tadaify-010 — purge edge cache for the creator's public page.
+  // Fire-and-forget; purge failure must not fail the creator's save.
+  const handle = await resolveHandleForUser(
+    userId,
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+  );
+  if (handle) {
+    void purgeCacheForHandle(handle, undefined, {
+      CF_ZONE_ID: env.CF_ZONE_ID,
+      CF_API_TOKEN: env.CF_API_TOKEN,
+    }).catch((e) => console.error("[cache-purge] threw unexpectedly", e));
+  }
+
   return Response.json({ block: blocks[0] }, { status: 201 });
 }

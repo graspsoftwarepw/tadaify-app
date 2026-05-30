@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action } from "./api.blocks.$id";
+import * as cachePurge from "~/lib/cache-purge";
 
 const SUPABASE_URL = "http://localhost:54321";
 const SERVICE_KEY = "test-service-key";
@@ -104,5 +105,33 @@ describe("U4 — DELETE /api/blocks/:id hard-delete", () => {
     } as any)) as Response;
 
     expect(res.status).toBe(404);
+  });
+
+  // U4 — TR-tadaify-010 cache-purge hook (#202)
+  it("calls purgeCacheForHandle after successful DELETE", async () => {
+    const purgeSpy = vi
+      .spyOn(cachePurge, "purgeCacheForHandle")
+      .mockResolvedValue({ ok: true });
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    const headers = new Headers({ "Content-Range": "0-0/1" });
+    mockFetch.mockResolvedValueOnce(new Response(null, { status: 204, headers }));
+    // profiles lookup for handle
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({ bearer: "tok" }),
+      context: makeContext(),
+      params: makeParams(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(purgeSpy).toHaveBeenCalledTimes(1);
+    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    purgeSpy.mockRestore();
   });
 });

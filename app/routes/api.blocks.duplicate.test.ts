@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action } from "./api.blocks.$id.duplicate";
+import * as cachePurge from "~/lib/cache-purge";
 
 const SUPABASE_URL = "http://localhost:54321";
 const SERVICE_KEY = "test-service-key";
@@ -123,5 +124,35 @@ describe("U6 — POST /api/blocks/:id/duplicate", () => {
     } as any)) as Response;
 
     expect(res.status).toBe(404);
+  });
+
+  // U4 — TR-tadaify-010 cache-purge hook (#202)
+  it("calls purgeCacheForHandle after successful duplicate", async () => {
+    const purgeSpy = vi
+      .spyOn(cachePurge, "purgeCacheForHandle")
+      .mockResolvedValue({ ok: true });
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    // RPC returns the new block uuid
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(NEW_BLOCK_ID), { status: 200 }),
+    );
+    // profiles lookup for handle
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({ bearer: "tok" }),
+      context: makeContext(),
+      params: makeParams(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(purgeSpy).toHaveBeenCalledTimes(1);
+    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    purgeSpy.mockRestore();
   });
 });
