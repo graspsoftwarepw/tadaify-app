@@ -23,6 +23,7 @@ import { SettingsApiKeys } from "./app-settings/SettingsApiKeys";
 import { SettingsBilling } from "./app-settings/SettingsBilling";
 import { SettingsDanger } from "./app-settings/SettingsDanger";
 import { SettingsGdpr } from "./app-settings/SettingsGdpr";
+import { SettingsSecurity } from "./app-settings/SettingsSecurity";
 
 // ─── Valid settings sub-tabs ─────────────────────────────────────────────────
 
@@ -213,7 +214,7 @@ export function SettingsPanel({ activeSubTab, handle, email = "" }: SettingsPane
         ) : validSubTab === "billing" ? (
           <SettingsBilling />
         ) : validSubTab === "security" ? (
-          <div className="settings-content"><SubpagePlaceholder label="Security" /></div>
+          <SettingsSecurity />
         ) : validSubTab === "gdpr" ? (
           <SettingsGdpr />
         ) : validSubTab === "apikeys" ? (
