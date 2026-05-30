@@ -1,13 +1,15 @@
 /**
  * DesignBreadcrumbStepper — 3-cell window breadcrumb at top of Design panel.
  *
- * Visual contract: mockups/tadaify-mvp/app-dashboard.html (Design panel breadcrumb)
+ * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 2907-2924
+ * Uses CSS classes `.design-stepper / .stepper-cell / .stepper-divider /
+ * .stepper-dropdown` defined in app/styles/app-dashboard.css.
  *
  * Contains:
  *   - 3-cell window: prev (faded) / current (highlighted) / next (faded)
  *   - Click current → dropdown opens with all 8 sub-tab options
  *   - Keyboard ←/→ navigate prev/next sub-tab
- *   - Mobile: collapses to chevrons `<` current `>`
+ *   - Mobile: collapses to chevrons (CSS owned)
  *
  * Story: F-APP-DASHBOARD-001b (#173)
  * Covers: VE-26b-05, VE-26b-06, VE-26b-07, VE-26b-08
@@ -49,6 +51,36 @@ interface DesignBreadcrumbStepperProps {
   onSubTabChange: (subTab: SubTabId) => void;
 }
 
+const ChevLeft = () => (
+  <svg
+    className="chev"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+const ChevRight = () => (
+  <svg
+    className="chev"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
 export function DesignBreadcrumbStepper({
   activeSubTab,
   onSubTabChange,
@@ -57,7 +89,8 @@ export function DesignBreadcrumbStepper({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { prev, current, next } = deriveStepperWindow(activeSubTab);
-
+  const prevLabel = prev ? SUB_TABS.find((t) => t.id === prev)?.label : null;
+  const nextLabel = next ? SUB_TABS.find((t) => t.id === next)?.label : null;
   const currentLabel = SUB_TABS.find((t) => t.id === current)?.label ?? "";
 
   // Close dropdown on outside click
@@ -76,7 +109,6 @@ export function DesignBreadcrumbStepper({
   // Keyboard ←/→ navigation — scoped to avoid interference with form inputs
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Ignore when focus is on an editable element or modifier keys are held
       const target = e.target as HTMLElement;
       if (
         target.tagName === "INPUT" ||
@@ -103,198 +135,89 @@ export function DesignBreadcrumbStepper({
 
   return (
     <nav
+      className="design-stepper"
       data-testid="design-breadcrumb-stepper"
-      aria-label="Design sub-tab navigation"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 0,
-        padding: "10px 20px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-elevated)",
-        fontSize: 13,
-      }}
+      aria-label="Design sub-section stepper"
+      id="design-stepper"
     >
-      {/* Mobile chevron left */}
+      {/* Prev arrow */}
       <button
         type="button"
-        className="stepper-chevron-left"
-        onClick={() => prev && onSubTabChange(prev)}
+        className="stepper-cell stepper-arrow"
+        data-stepper="prev"
+        aria-label="Previous sub-section"
         disabled={!prev}
-        aria-label="Previous sub-tab"
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: prev ? "pointer" : "default",
-          color: prev ? "var(--fg-muted)" : "var(--fg-subtle)",
-          padding: "4px 8px",
-          fontSize: 16,
-          opacity: prev ? 1 : 0.3,
-        }}
+        onClick={() => prev && onSubTabChange(prev)}
       >
-        ‹
+        <ChevLeft />
+        <span className="stepper-arrow-label">{prevLabel ?? "—"}</span>
       </button>
 
-      {/* 3-cell window */}
+      <span className="stepper-divider" aria-hidden="true" />
+
+      {/* Current cell (opens dropdown) */}
       <div
-        style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}
+        ref={dropdownRef}
+        style={{ display: "contents" }}
       >
-        {/* Prev cell */}
-        {prev && (
-          <>
-            <button
-              type="button"
-              onClick={() => onSubTabChange(prev)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--fg-muted)",
-                fontSize: 13,
-                padding: "4px 10px",
-                borderRadius: 6,
-                opacity: 0.6,
-              }}
-              aria-label={`Go to ${SUB_TABS.find((t) => t.id === prev)?.label}`}
-            >
-              {SUB_TABS.find((t) => t.id === prev)?.label}
-            </button>
-            <span style={{ color: "var(--fg-subtle)", opacity: 0.4 }}>›</span>
-          </>
-        )}
-
-        {/* Current cell with dropdown */}
-        <div ref={dropdownRef} style={{ position: "relative" }}>
-          <button
-            type="button"
-            data-testid="stepper-current"
-            onClick={() => setDropdownOpen((v) => !v)}
-            aria-haspopup="listbox"
-            aria-expanded={dropdownOpen}
-            style={{
-              background: "var(--bg-muted)",
-              border: "1px solid var(--border)",
-              cursor: "pointer",
-              color: "var(--fg)",
-              fontSize: 13,
-              fontWeight: 600,
-              padding: "5px 12px",
-              borderRadius: 6,
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            {currentLabel}
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              style={{ transform: dropdownOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-
-          {/* Dropdown */}
-          {dropdownOpen && (
-            <div
-              role="listbox"
-              aria-label="Sub-tab picker"
-              style={{
-                position: "absolute",
-                top: "calc(100% + 6px)",
-                left: "50%",
-                transform: "translateX(-50%)",
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                minWidth: 160,
-                zIndex: 100,
-                overflow: "hidden",
-              }}
-            >
-              {SUB_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="option"
-                  aria-selected={tab.id === current}
-                  onClick={() => {
-                    onSubTabChange(tab.id);
-                    setDropdownOpen(false);
-                  }}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "9px 14px",
-                    border: "none",
-                    background: tab.id === current ? "var(--bg-muted)" : "transparent",
-                    color: tab.id === current ? "var(--brand-primary)" : "var(--fg)",
-                    fontSize: 13,
-                    fontWeight: tab.id === current ? 600 : 400,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Next cell */}
-        {next && (
-          <>
-            <span style={{ color: "var(--fg-subtle)", opacity: 0.4 }}>›</span>
-            <button
-              type="button"
-              onClick={() => onSubTabChange(next)}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--fg-muted)",
-                fontSize: 13,
-                padding: "4px 10px",
-                borderRadius: 6,
-                opacity: 0.6,
-              }}
-              aria-label={`Go to ${SUB_TABS.find((t) => t.id === next)?.label}`}
-            >
-              {SUB_TABS.find((t) => t.id === next)?.label}
-            </button>
-          </>
-        )}
+        <button
+          type="button"
+          className="stepper-cell is-current"
+          data-stepper="current"
+          data-testid="stepper-current"
+          aria-haspopup="listbox"
+          aria-expanded={dropdownOpen}
+          aria-controls="stepper-dropdown"
+          onClick={() => setDropdownOpen((v) => !v)}
+        >
+          <span className="step-spark" aria-hidden="true" />
+          <span data-stepper-current-label>{currentLabel}</span>
+        </button>
       </div>
 
-      {/* Mobile chevron right */}
+      <span className="stepper-divider" aria-hidden="true" />
+
+      {/* Next arrow */}
       <button
         type="button"
-        className="stepper-chevron-right"
-        onClick={() => next && onSubTabChange(next)}
+        className="stepper-cell stepper-arrow"
+        data-stepper="next"
+        aria-label="Next sub-section"
         disabled={!next}
-        aria-label="Next sub-tab"
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: next ? "pointer" : "default",
-          color: next ? "var(--fg-muted)" : "var(--fg-subtle)",
-          padding: "4px 8px",
-          fontSize: 16,
-          opacity: next ? 1 : 0.3,
-        }}
+        onClick={() => next && onSubTabChange(next)}
       >
-        ›
+        <span className="stepper-arrow-label">{nextLabel ?? "—"}</span>
+        <ChevRight />
       </button>
+
+      {/* Dropdown — all 8 sub-tabs */}
+      <div
+        className="stepper-dropdown"
+        id="stepper-dropdown"
+        data-open={dropdownOpen ? "true" : "false"}
+        role="listbox"
+        aria-label="All Design sub-sections"
+      >
+        {SUB_TABS.map((tab) => {
+          const isCurrent = tab.id === current;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="option"
+              aria-selected={isCurrent}
+              className={`stepper-dropdown-item${isCurrent ? " is-current" : ""}`}
+              onClick={() => {
+                onSubTabChange(tab.id);
+                setDropdownOpen(false);
+              }}
+            >
+              <span className="radio-dot" aria-hidden="true" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }

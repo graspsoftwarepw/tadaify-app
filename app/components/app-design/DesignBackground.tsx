@@ -1,155 +1,32 @@
 /**
  * DesignBackground — Background sub-tab content. DEFAULT sub-tab.
  *
- * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 3077-3120
+ * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 3077-3118
  *
- * Contains:
- *   - Background style tile-grid: Fill / Gradient / Blur / Pattern / Image / Video
- *   - Image + Video tiles show Creator-tier badge (cost: bandwidth/storage)
- *   - Background color input field with hex + swatch
+ * Markup uses CSS classes from app/styles/app-dashboard.css:
+ *   .field-group, .fg-label, .fg-help, .tile-grid, .tile, .tile-label,
+ *   .wp-{fill,gradient,blur,pattern,image,video}, .pro-badge,
+ *   .color-input, .swatch.
  *
- * Tier-gate: at SAVE not at DISPLAY (feedback_no_blur_premium_features.md).
- * VE-26b-17: Tooltip uses CURRENT PRICING from config ($7.99), NOT mockup's stale $5/mo.
+ * Tier-gate at SAVE not at DISPLAY (feedback_no_blur_premium_features.md).
+ * VE-26b-17: Tooltip uses CURRENT pricing from config, NOT mockup's stale $5/mo.
  * DEC-043: Fill/Gradient/Blur/Pattern are FREE.
  *
  * Story: F-APP-DASHBOARD-001b (#173)
- * Covers: VE-26b-16, VE-26b-17, VE-26b-18, ECN-26b-09
+ * Covers: VE-26b-16..18, ECN-26b-09
  */
 
 import { useState } from "react";
 import { CREATOR_PRICE_MONTHLY, checkSaveAllowed } from "~/lib/tier-gate";
 
-interface BackgroundTile {
-  id: string;
-  label: string;
-  creatorGated?: boolean;
-  preview: React.ReactNode;
-}
-
-const BACKGROUND_TILES: BackgroundTile[] = [
-  {
-    id: "fill",
-    label: "Fill",
-    preview: (
-      <div
-        style={{
-          width: "100%",
-          height: 44,
-          background: "#6366F1",
-          borderRadius: "6px 6px 0 0",
-        }}
-      />
-    ),
-  },
-  {
-    id: "gradient",
-    label: "Gradient",
-    preview: (
-      <div
-        style={{
-          width: "100%",
-          height: 44,
-          background: "linear-gradient(135deg, #6366F1 0%, #a78bfa 100%)",
-          borderRadius: "6px 6px 0 0",
-        }}
-      />
-    ),
-  },
-  {
-    id: "blur",
-    label: "Blur",
-    preview: (
-      <div
-        style={{
-          width: "100%",
-          height: 44,
-          background: "radial-gradient(ellipse at 30% 50%, #6366F155 0%, transparent 60%), linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%)",
-          borderRadius: "6px 6px 0 0",
-        }}
-      />
-    ),
-  },
-  {
-    id: "pattern",
-    label: "Pattern",
-    preview: (
-      <div
-        style={{
-          width: "100%",
-          height: 44,
-          background: "repeating-linear-gradient(45deg, #e5e7eb 0px, #e5e7eb 2px, transparent 2px, transparent 8px)",
-          borderRadius: "6px 6px 0 0",
-        }}
-      />
-    ),
-  },
-  {
-    id: "image",
-    label: "Image",
-    creatorGated: true,
-    preview: (
-      <div
-        style={{
-          width: "100%",
-          height: 44,
-          background: "linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)",
-          borderRadius: "6px 6px 0 0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#6b7280"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
-        </svg>
-      </div>
-    ),
-  },
-  {
-    id: "video",
-    label: "Video",
-    creatorGated: true,
-    preview: (
-      <div
-        style={{
-          width: "100%",
-          height: 44,
-          background: "linear-gradient(135deg, #1e293b 0%, #374151 100%)",
-          borderRadius: "6px 6px 0 0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#9ca3af"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
-      </div>
-    ),
-  },
-];
+const BG_TILES = [
+  { id: "fill", label: "Fill", gated: false },
+  { id: "gradient", label: "Gradient", gated: false },
+  { id: "blur", label: "Blur", gated: false },
+  { id: "pattern", label: "Pattern", gated: false },
+  { id: "image", label: "Image", gated: true },
+  { id: "video", label: "Video", gated: true },
+] as const;
 
 interface DesignBackgroundProps {
   currentTier?: string;
@@ -163,185 +40,86 @@ export function DesignBackground({
   onTierGateTriggered,
 }: DesignBackgroundProps) {
   const [selectedBg, setSelectedBg] = useState<string>("fill");
-  const [colorHex, setColorHex] = useState("#6366F1");
+  const [bgColor, setBgColor] = useState("#6366F1");
   const [showGateModal, setShowGateModal] = useState(false);
   const [gatedTile, setGatedTile] = useState<string | null>(null);
 
-  const handleTileClick = (tileId: string, isGated?: boolean) => {
-    setSelectedBg(tileId);
-    // Visually select tile immediately (not gated at display)
-  };
-
-  const handleSave = () => {
-    const action =
-      selectedBg === "image"
-        ? "set-bg-image"
-        : selectedBg === "video"
-        ? "set-bg-video"
-        : "set-bg-fill";
-
-    const result = checkSaveAllowed(action, currentTier);
-    if (!result.allowed) {
-      setGatedTile(selectedBg);
-      setShowGateModal(true);
-      onTierGateTriggered?.();
-      return;
+  const handleTileClick = (id: string, gated: boolean) => {
+    setSelectedBg(id);
+    if (gated) {
+      // Check tier on tile-pick — DEC: select visually then save-gate
+      const action = id === "image" ? "set-bg-image" : "set-bg-video";
+      const result = checkSaveAllowed(action, currentTier);
+      if (!result.allowed) {
+        setGatedTile(id);
+        setShowGateModal(true);
+        onTierGateTriggered?.();
+        return;
+      }
     }
     onSave?.("Saved");
   };
 
   return (
-    <section data-panel="background" style={{ padding: "24px 28px", maxWidth: 680 }}>
-      <h3
-        style={{
-          fontSize: 15,
-          fontWeight: 700,
-          color: "var(--fg)",
-          marginBottom: 6,
-        }}
-      >
-        Background
-      </h3>
-      <p style={{ fontSize: 13, color: "var(--fg-muted)", marginBottom: 18, lineHeight: 1.5 }}>
-        Choose how your page background looks. Free styles apply immediately.
-      </p>
-
-      {/* 6-tile style grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 12,
-          marginBottom: 28,
-        }}
-      >
-        {BACKGROUND_TILES.map((tile) => {
-          const isSelected = selectedBg === tile.id;
-          return (
-            <button
-              key={tile.id}
-              type="button"
-              data-bg-tile={tile.id}
-              onClick={() => handleTileClick(tile.id, tile.creatorGated)}
-              style={{
-                border: `2px solid ${isSelected ? "var(--brand-primary)" : "var(--border)"}`,
-                borderRadius: 10,
-                background: isSelected
-                  ? "color-mix(in srgb, var(--brand-primary) 6%, var(--bg-elevated))"
-                  : "var(--bg-elevated)",
-                cursor: "pointer",
-                padding: 0,
-                overflow: "hidden",
-                position: "relative",
-                transition: "border-color .15s",
-              }}
-              aria-pressed={isSelected}
-              aria-label={tile.label}
-            >
-              {tile.preview}
-              <div style={{ padding: "8px 10px", textAlign: "left" }}>
-                <div
-                  style={{
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: isSelected ? "var(--brand-primary)" : "var(--fg)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  {tile.label}
-                  {tile.creatorGated && (
-                    <span
-                      data-pro-badge
-                      title={`Image/Video backgrounds require Creator tier — ${CREATOR_PRICE_MONTHLY}/mo`}
-                      style={{
-                        fontSize: 9.5,
-                        fontWeight: 700,
-                        background: "#fef3c7",
-                        color: "#92400e",
-                        borderRadius: 4,
-                        padding: "1px 5px",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      💡 Creator
-                    </span>
-                  )}
-                </div>
+    <>
+      <div className="field-group">
+        <label className="fg-label">Background style</label>
+        <div className="fg-help">
+          Pick the vibe behind your blocks. Image and Video live on Creator tier (
+          {CREATOR_PRICE_MONTHLY}/mo) — your page still works on Free without them.
+        </div>
+        <div className="tile-grid">
+          {BG_TILES.map((tile) => {
+            const isSelected = selectedBg === tile.id;
+            return (
+              <div
+                key={tile.id}
+                className={`tile${isSelected ? " selected" : ""}`}
+                data-wallpaper-kind={tile.id}
+                data-bg-tile={tile.id}
+                data-tip={
+                  tile.gated ? `Creator tier — ${CREATOR_PRICE_MONTHLY}/mo` : undefined
+                }
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                aria-label={tile.label}
+                onClick={() => handleTileClick(tile.id, tile.gated)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleTileClick(tile.id, tile.gated);
+                  }
+                }}
+              >
+                <div className={`wp-${tile.id}`} style={{ position: "absolute", inset: 0 }} />
+                {tile.gated && (
+                  <span className="pro-badge" data-pro-badge>
+                    💡 Creator
+                  </span>
+                )}
+                <div className="tile-label">{tile.label}</div>
               </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Background color input */}
-      <div
-        style={{
-          border: "1px solid var(--border)",
-          borderRadius: 10,
-          padding: "16px 18px",
-          background: "var(--bg-elevated)",
-          marginBottom: 20,
-        }}
-      >
-        <label
-          style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", display: "block", marginBottom: 10 }}
-        >
-          Background color
-        </label>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <input
-            type="color"
-            value={colorHex}
-            onChange={(e) => setColorHex(e.target.value)}
-            style={{
-              width: 36,
-              height: 36,
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 2,
-              cursor: "pointer",
-              background: "none",
-            }}
-            aria-label="Background color swatch"
-          />
-          <input
-            type="text"
-            value={colorHex}
-            onChange={(e) => setColorHex(e.target.value)}
-            maxLength={7}
-            style={{
-              width: 90,
-              padding: "7px 10px",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              background: "var(--bg)",
-              color: "var(--fg)",
-              fontSize: 13,
-              fontFamily: "monospace",
-            }}
-            aria-label="Background color hex"
-          />
+            );
+          })}
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleSave}
-        style={{
-          padding: "9px 22px",
-          border: "none",
-          borderRadius: 8,
-          background: "var(--brand-primary)",
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: 13.5,
-          fontWeight: 600,
-        }}
-      >
-        Apply
-      </button>
+      <div className="field-group">
+        <label className="fg-label" htmlFor="bg-color">
+          Background color
+        </label>
+        <div className="color-input">
+          <input
+            id="bg-color"
+            type="text"
+            value={bgColor}
+            onChange={(e) => setBgColor(e.target.value)}
+            aria-label="Background color hex"
+          />
+          <span className="swatch" style={{ background: bgColor }} />
+        </div>
+      </div>
 
       {/* Tier-gate modal */}
       {showGateModal && (
@@ -375,40 +153,30 @@ export function DesignBackground({
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--fg)", marginBottom: 8 }}>
               {gatedTile === "image" ? "Image" : "Video"} backgrounds are Creator-tier
             </div>
-            <p style={{ fontSize: 13.5, color: "var(--fg-muted)", lineHeight: 1.55, marginBottom: 20 }}>
+            <p
+              style={{
+                fontSize: 13.5,
+                color: "var(--fg-muted)",
+                lineHeight: 1.55,
+                marginBottom: 20,
+              }}
+            >
               Upgrade to Creator ({CREATOR_PRICE_MONTHLY}/mo) to use custom{" "}
-              {gatedTile === "image" ? "image" : "video"} backgrounds. Free, Gradient, and Pattern
-              styles are available on all tiers.
+              {gatedTile === "image" ? "image" : "video"} backgrounds. Fill, Gradient, Blur and
+              Pattern styles are available on all tiers.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
                 type="button"
+                className="btn btn-ghost btn-sm"
                 onClick={() => setShowGateModal(false)}
-                style={{
-                  padding: "8px 18px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  background: "transparent",
-                  color: "var(--fg)",
-                  cursor: "pointer",
-                  fontSize: 13,
-                }}
               >
                 Maybe later
               </button>
               <button
                 type="button"
+                className="btn btn-primary btn-sm"
                 onClick={() => setShowGateModal(false)}
-                style={{
-                  padding: "8px 18px",
-                  border: "none",
-                  borderRadius: 8,
-                  background: "var(--brand-primary)",
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
               >
                 Upgrade to Creator
               </button>
@@ -416,6 +184,6 @@ export function DesignBackground({
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 }
