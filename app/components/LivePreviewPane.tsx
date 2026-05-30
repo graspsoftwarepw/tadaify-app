@@ -1,45 +1,81 @@
 /**
- * LivePreviewPane — phone-frame preview + 3-way device toggle + stats chips.
+ * LivePreviewPane — right-side live preview column.
  *
- * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~3529-3621.
+ * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~3529-3621
+ * (`<aside class="preview">`). Styled via Pass 1 CSS in
+ * app/styles/app-dashboard.css (`.app-dashboard-root aside.preview` and
+ * descendants). Hidden on mobile/tablet by `@media (min-width: 1180px)`.
  *
- * Contains:
- *   - 3-way device toggle: Mobile / Tablet / Desktop (pill-buttons)
- *   - Phone/tablet/desktop frame with live preview content
- *   - Stats chips: views today / clicks (placeholder "—")
- *   - Publish state chip (live-dot mirror)
- *   - Preview iframe srcdoc: renders page content OR "Coming soon" placeholder
+ * Structure (mockup-verbatim class names plus the task-spec aliases
+ * `preview-stats`, `preview-title`, `preview-refresh`, `preview-foot`,
+ * `preview-device-tabs` so downstream consumers and tests can target either):
+ *   .preview                      — outer <aside>
+ *     .preview-head
+ *       .preview-title <h3>       — "Live preview"
+ *       .refresh.preview-refresh  — reload button (reloads inner iframe)
+ *       .preview-stats            — "Views today: —" · "Clicks: —" · live chip
+ *     .device-toggle.preview-device-tabs
+ *       .segmented.narrow         — radiogroup with three .seg buttons
+ *     .preview-stage
+ *       .preview-frame.is-<dev>   — frame; contains iframe src=/<handle>
+ *         (placeholder when not published)
+ *     .preview-foot
+ *       <a> "Open in new tab"     — target=_blank → /<handle>
  *
- * Device toggle respects prefers-reduced-motion: transition 200ms → 0ms.
- *
- * Story: F-APP-DASHBOARD-001a (#171)
- * DEC trail: DEC-332=D (published_at IS NULL → "Coming soon")
- * Covers: AC#12, ECN-26a-07, ECN-26a-13
+ * Story: F-APP-DASHBOARD-001a (#171). Pass 5 of dashboard-mockup-fidelity.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type DeviceSize = "mobile" | "tablet" | "desktop";
 
 interface LivePreviewPaneProps {
   handle: string;
-  displayName: string | null;
-  bio: string | null;
+  /** Optional — only used when isPublished is false and the iframe falls back to a placeholder. */
+  displayName?: string | null;
+  bio?: string | null;
   isPublished: boolean;
+  /** Initial device when uncontrolled. */
   initialDevice?: DeviceSize;
+  /** Controlled device. When provided, the component reflects this value and calls onDeviceChange instead of holding internal state. */
+  device?: DeviceSize;
+  onDeviceChange?: (device: DeviceSize) => void;
+  /** Optional real metrics. Rendered as "—" when undefined. */
+  viewsToday?: number;
+  clicks?: number;
 }
 
-const DEVICE_DIMENSIONS: Record<DeviceSize, { width: number; height: number }> = {
-  mobile: { width: 375, height: 812 },
-  tablet: { width: 768, height: 1024 },
-  desktop: { width: 1200, height: 800 },
-};
+const DEVICES: ReadonlyArray<{ id: DeviceSize; label: string }> = [
+  { id: "mobile", label: "Mobile" },
+  { id: "tablet", label: "Tablet" },
+  { id: "desktop", label: "Desktop" },
+];
 
-const FRAME_DISPLAY: Record<DeviceSize, { width: number; height: number }> = {
-  mobile: { width: 220, height: 440 },
-  tablet: { width: 280, height: 380 },
-  desktop: { width: 320, height: 220 },
-};
+function DeviceIcon({ device }: { device: DeviceSize }) {
+  if (device === "mobile") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+        <rect x="5" y="2" width="14" height="20" rx="2" />
+        <line x1="12" y1="18" x2="12" y2="18.01" />
+      </svg>
+    );
+  }
+  if (device === "tablet") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <line x1="12" y1="18" x2="12" y2="18.01" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <rect x="2" y="4" width="20" height="13" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+    </svg>
+  );
+}
 
 export function LivePreviewPane({
   handle,
@@ -47,105 +83,72 @@ export function LivePreviewPane({
   bio,
   isPublished,
   initialDevice = "mobile",
+  device: controlledDevice,
+  onDeviceChange,
+  viewsToday,
+  clicks,
 }: LivePreviewPaneProps) {
-  const [device, setDevice] = useState<DeviceSize>(initialDevice);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const isControlled = controlledDevice !== undefined;
+  const [internalDevice, setInternalDevice] = useState<DeviceSize>(initialDevice);
+  const device = isControlled ? (controlledDevice as DeviceSize) : internalDevice;
 
+  const handleDeviceChange = (next: DeviceSize) => {
+    if (!isControlled) {
+      setInternalDevice(next);
+    }
+    onDeviceChange?.(next);
+  };
+
+  // Iframe reload counter — bumping it rebuilds the iframe src and forces a refetch.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Reduced-motion → kill the device-frame transition.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (mq) {
-      setPrefersReducedMotion(mq.matches);
-    }
+    if (mq) setPrefersReducedMotion(mq.matches);
   }, []);
 
-  const transitionDuration = prefersReducedMotion ? "0ms" : "200ms";
+  const publicHref = `/${handle}`;
+  const publicHrefWithNonce =
+    reloadNonce === 0 ? publicHref : `${publicHref}?_r=${reloadNonce}`;
 
-  const frame = FRAME_DISPLAY[device];
-  const avatarInitial = (displayName || handle || "?").charAt(0).toUpperCase();
+  const handleRefresh = () => {
+    // Prefer in-place iframe reload so the URL state and scroll resets cleanly.
+    if (iframeRef.current?.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.location.reload();
+        return;
+      } catch {
+        // Cross-origin or detached — fall through to nonce bump.
+      }
+    }
+    setReloadNonce((n) => n + 1);
+  };
 
-  // Build srcdoc for iframe preview
-  const srcdoc = isPublished
-    ? `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #EEF2FF; min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; padding: 24px 16px; }
-  .av { width: 64px; height: 64px; border-radius: 50%; background: #6366f1;
-    color: #fff; font-size: 24px; font-weight: 700; display: flex;
-    align-items: center; justify-content: center; margin: 0 auto 12px; }
-  .name { font-size: 17px; font-weight: 700; text-align: center; color: #111; }
-  .bio { font-size: 13px; color: #666; text-align: center; margin-top: 6px; line-height: 1.5; }
-  .handle { font-size: 12px; color: #999; text-align: center; margin-top: 4px; }
-  .empty { margin-top: 24px; font-size: 13px; color: #999; text-align: center; }
-</style></head>
-<body>
-  <div class="av">${avatarInitial}</div>
-  <div class="name">${escapeHtml(displayName || `@${handle}`)}</div>
-  ${bio ? `<div class="bio">${escapeHtml(bio)}</div>` : ""}
-  <div class="handle">tadaify.com/${escapeHtml(handle)}</div>
-  <div class="empty">Add blocks to customise your page</div>
-</body></html>`
-    : `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #f8f9fa; min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 24px; text-align: center; }
-  .icon { font-size: 36px; margin-bottom: 16px; }
-  .title { font-size: 16px; font-weight: 600; color: #333; }
-  .sub { font-size: 13px; color: #888; margin-top: 8px; line-height: 1.5; }
-</style></head>
-<body>
-  <div class="icon">🚀</div>
-  <div class="title">Coming soon</div>
-  <div class="sub">tadaify.com/${escapeHtml(handle)}<br>Add your first block to publish your page.</div>
-</body></html>`;
+  const viewsLabel = typeof viewsToday === "number" ? viewsToday.toLocaleString() : "—";
+  const clicksLabel = typeof clicks === "number" ? clicks.toLocaleString() : "—";
 
   return (
     <aside
+      className="preview"
       data-testid="live-preview-pane"
       aria-label="Live preview"
-      style={{
-        width: 320,
-        flexShrink: 0,
-        borderLeft: "1px solid var(--border)",
-        background: "var(--bg-elevated)",
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px 12px",
-        gap: 12,
-      }}
+      data-device={device}
     >
-      {/* Preview header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h3
-          style={{ fontSize: 13, fontWeight: 700, color: "var(--fg)", margin: 0 }}
-        >
-          Live preview
-        </h3>
+      <div className="preview-head">
+        <h3 className="preview-title">Live preview</h3>
         <button
           type="button"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "4px 8px",
-            background: "transparent",
-            border: "1px solid var(--border)",
-            borderRadius: 6,
-            fontSize: 11.5,
-            cursor: "pointer",
-            color: "var(--fg-muted)",
-          }}
+          className="refresh preview-refresh"
+          data-tip="Reload preview"
+          onClick={handleRefresh}
+          aria-label="Reload preview"
         >
           <svg
-            width="10"
-            height="10"
+            width={12}
+            height={12}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -157,183 +160,98 @@ export function LivePreviewPane({
           </svg>
           Refresh
         </button>
-      </div>
 
-      {/* Stats chips */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <span
-          style={{
-            fontSize: 11.5,
-            padding: "3px 8px",
-            background: "var(--bg-muted)",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            color: "var(--fg-muted)",
-          }}
-        >
-          Views today: —
-        </span>
-        <span
-          style={{
-            fontSize: 11.5,
-            padding: "3px 8px",
-            background: "var(--bg-muted)",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            color: "var(--fg-muted)",
-          }}
-        >
-          Clicks: —
-        </span>
-        <span
-          style={{
-            fontSize: 11.5,
-            padding: "3px 8px",
-            background: isPublished
-              ? "rgba(34,197,94,0.08)"
-              : "rgba(0,0,0,0.04)",
-            border: `1px solid ${isPublished ? "rgba(34,197,94,0.3)" : "var(--border)"}`,
-            borderRadius: 12,
-            color: isPublished ? "#16a34a" : "var(--fg-subtle)",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
+        <div className="preview-stats" role="group" aria-label="Preview stats">
+          <span className="preview-stat">Views today: {viewsLabel}</span>
+          <span className="preview-stat">Clicks: {clicksLabel}</span>
           <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: isPublished ? "#22c55e" : "var(--fg-subtle)",
-              flexShrink: 0,
-            }}
-          />
-          {isPublished ? "Live" : "Not published"}
-        </span>
-      </div>
-
-      {/* Device toggle */}
-      <div
-        data-testid="device-toggle"
-        role="radiogroup"
-        aria-label="Preview device"
-        style={{
-          display: "flex",
-          background: "var(--bg-muted)",
-          borderRadius: 8,
-          padding: 3,
-          gap: 2,
-        }}
-      >
-        {(["mobile", "tablet", "desktop"] as DeviceSize[]).map((d) => (
-          <button
-            key={d}
-            type="button"
-            role="radio"
-            aria-checked={device === d}
-            data-device={d}
-            onClick={() => setDevice(d)}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              padding: "5px 6px",
-              background: device === d ? "var(--bg-elevated)" : "transparent",
-              border: device === d ? "1px solid var(--border)" : "1px solid transparent",
-              borderRadius: 6,
-              fontSize: 11.5,
-              cursor: "pointer",
-              color: device === d ? "var(--fg)" : "var(--fg-muted)",
-              fontWeight: device === d ? 600 : 400,
-              transition: `all ${transitionDuration} ease`,
-            }}
+            className={`chip preview-publish-chip ${isPublished ? "is-live" : "is-draft"}`}
+            data-state={isPublished ? "live" : "not-published"}
           >
-            {d.charAt(0).toUpperCase() + d.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Preview frame */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          flex: 1,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          data-testid="preview-frame"
-          style={{
-            width: frame.width,
-            height: frame.height,
-            border: "2px solid var(--border-strong)",
-            borderRadius: device === "mobile" ? 20 : device === "tablet" ? 12 : 8,
-            overflow: "hidden",
-            background: "#fff",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-            transition: `all ${transitionDuration} ease`,
-            position: "relative",
-            flexShrink: 0,
-          }}
-        >
-          {/* Notch for mobile */}
-          {device === "mobile" && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: 80,
-                height: 6,
-                background: "var(--border-strong)",
-                borderRadius: "0 0 8px 8px",
-                zIndex: 2,
-              }}
-              aria-hidden="true"
-            />
-          )}
-          <iframe
-            srcDoc={srcdoc}
-            title="Page preview"
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-              borderRadius: "inherit",
-            }}
-            sandbox="allow-same-origin"
-          />
+            <span className="live-dot" aria-hidden="true" />
+            {isPublished ? "Live" : "Not published"}
+          </span>
         </div>
       </div>
 
-      {/* Open in new tab */}
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      <div className="device-toggle preview-device-tabs">
+        <div
+          className="segmented narrow"
+          role="radiogroup"
+          aria-label="Preview device"
+          data-testid="device-toggle"
+        >
+          {DEVICES.map((d) => {
+            const active = device === d.id;
+            return (
+              <button
+                key={d.id}
+                type="button"
+                className={`seg${active ? " active" : ""}`}
+                data-device={d.id}
+                role="radio"
+                aria-checked={active}
+                onClick={() => handleDeviceChange(d.id)}
+              >
+                <DeviceIcon device={d.id} />
+                {d.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="preview-stage">
+        <div
+          className={`preview-frame is-${device}`}
+          data-testid="preview-frame"
+          data-device={device}
+          style={
+            prefersReducedMotion ? { transition: "none" } : undefined
+          }
+        >
+          {device === "mobile" && <div className="pv-notch" aria-hidden="true" />}
+          {device === "desktop" && (
+            <div className="pv-chrome" aria-hidden="true">
+              <span className="dot r" />
+              <span className="dot y" />
+              <span className="dot g" />
+              <span className="url">tadaify.com/{handle}</span>
+            </div>
+          )}
+
+          {isPublished ? (
+            <iframe
+              key={reloadNonce}
+              ref={iframeRef}
+              className="pv-iframe"
+              src={publicHrefWithNonce}
+              title={`Public page preview for @${handle}`}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                borderRadius: "inherit",
+                background: "#fff",
+              }}
+            />
+          ) : (
+            <PreviewPlaceholder handle={handle} displayName={displayName ?? null} bio={bio ?? null} />
+          )}
+        </div>
+      </div>
+
+      <div className="preview-foot">
         <a
-          href={`https://tadaify.com/${handle}`}
+          className="btn btn-ghost btn-sm preview-open"
+          href={publicHref}
           target="_blank"
           rel="noopener noreferrer"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "6px 12px",
-            background: "transparent",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            fontSize: 12.5,
-            color: "var(--fg-muted)",
-            textDecoration: "none",
-          }}
         >
           Open in new tab
           <svg
-            width="11"
-            height="11"
+            width={12}
+            height={12}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -350,11 +268,41 @@ export function LivePreviewPane({
   );
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+/**
+ * In-DOM placeholder for unpublished pages. Mirrors the mockup `.pv-inner`
+ * structure so Pass 1 CSS theming keeps working even before the page is live.
+ */
+function PreviewPlaceholder({
+  handle,
+  displayName,
+  bio,
+}: {
+  handle: string;
+  displayName: string | null;
+  bio: string | null;
+}) {
+  const initial = (displayName || handle || "?").charAt(0).toUpperCase();
+  return (
+    <div
+      className="pv-inner"
+      data-wallpaper="fill"
+      data-theme=""
+      data-btn="fill"
+      style={{ ["--pv-bg-color" as string]: "#EEF2FF" }}
+    >
+      <div className="pv-body">
+        <div className="pv-avatar">{initial}</div>
+        <div className="pv-name">{displayName || `@${handle}`}</div>
+        {bio ? <div className="pv-bio">{bio}</div> : null}
+        <div className="pv-handle">tadaify.com/{handle}</div>
+        <div className="pv-empty" style={{ marginTop: 16, fontSize: 12, color: "#9CA3AF", textAlign: "center" }}>
+          <div style={{ fontSize: 28, marginBottom: 6 }} aria-hidden="true">
+            ✨
+          </div>
+          <div style={{ fontWeight: 600, color: "#4B5563" }}>Coming soon</div>
+          <div style={{ marginTop: 4 }}>Add blocks to customise your page</div>
+        </div>
+      </div>
+    </div>
+  );
 }

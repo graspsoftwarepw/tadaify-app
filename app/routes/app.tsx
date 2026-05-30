@@ -378,8 +378,14 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
   }, [setSearchParams]);
 
   return (
+    // `app-dashboard-root` scopes app/styles/app-dashboard.css to the dashboard
+    // subtree (Pass 1 of the mockup-fidelity rework). Placed on the outermost
+    // wrapper so AppAppbar / AppSidebar / HomepagePanel / LivePreviewPane /
+    // AppMobileTabs all render under the scope — Passes 3–6 rely on this.
     <div
+      className="app-dashboard-root"
       data-testid="app-dashboard"
+      data-state={blocks.length > 0 ? "ready" : "empty"}
       style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}
     >
       {/* Top appbar */}
@@ -388,10 +394,15 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
         isPublished={isPublished}
       />
 
-      {/* Main layout: sidebar + content + preview */}
+      {/* Main layout: sidebar + content + preview.
+          Display + grid columns are owned by app-dashboard.css `.layout`
+          (1fr on mobile, 72px + 1fr on tablet, 240px + 1fr + 400px on
+          desktop). Only flex: 1 + overflow are inlined so the layout
+          row stretches inside the column flex parent. */}
       <div
-        className="app-layout"
-        style={{ display: "flex", flex: 1, overflow: "hidden" }}
+        className="app-layout layout"
+        data-tab={activeTab}
+        style={{ flex: 1, minHeight: 0, overflow: "hidden" }}
       >
         {/* Left sidebar (hidden on mobile via CSS) */}
         <AppSidebar
@@ -411,10 +422,14 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           }
         />
 
-        {/* Main content area */}
+        {/* Main content area. Mockup uses `main.content`; padding and
+            min-width are owned by `.app-dashboard-root main.content` in
+            app-dashboard.css. `overflowY: auto` lets the column scroll
+            independently inside the fixed-height dashboard root. */}
         <main
+          className="content"
           data-testid="app-main"
-          style={{ flex: 1, overflowY: "auto" }}
+          style={{ overflowY: "auto", minWidth: 0 }}
         >
           {activeTab === "page" && (
             <HomepagePanel
