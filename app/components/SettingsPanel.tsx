@@ -20,6 +20,7 @@
 
 import { SettingsAccount } from "./app-settings/SettingsAccount";
 import { SettingsApiKeys } from "./app-settings/SettingsApiKeys";
+import { SettingsBilling } from "./app-settings/SettingsBilling";
 
 // ─── Valid settings sub-tabs ─────────────────────────────────────────────────
 
@@ -208,7 +209,7 @@ export function SettingsPanel({ activeSubTab, handle, email = "" }: SettingsPane
         {validSubTab === "account" ? (
           <SettingsAccount handle={handle} email={email} />
         ) : validSubTab === "billing" ? (
-          <div className="settings-content"><SubpagePlaceholder label="Billing" /></div>
+          <SettingsBilling />
         ) : validSubTab === "security" ? (
           <div className="settings-content"><SubpagePlaceholder label="Security" /></div>
         ) : validSubTab === "gdpr" ? (
