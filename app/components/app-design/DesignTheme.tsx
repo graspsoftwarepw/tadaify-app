@@ -1,22 +1,40 @@
 /**
  * DesignTheme — Theme sub-tab content.
  *
- * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 2927-3015
+ * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 2927-3013
  *
- * Contains:
- *   - AI theme matcher card ("Generate with AI" + sparkle icon + help copy)
- *   - AI credits pill (4/5 AI credits left) right-aligned in card header
- *   - AI prompt input (placeholder text, maxlength 120)
- *   - Image upload button next to prompt input
- *   - Preset catalogue (placeholder)
+ * Markup uses CSS classes from app/styles/app-dashboard.css:
+ *   .field-group, .ai-theme-card, .ai-theme-head, .ai-spark, .ai-tokens-pill,
+ *   .ai-theme-input-row, .ai-theme-prompt, .ai-image-btn, .ai-generate-btn,
+ *   .ai-suggest-chips, .ai-chip, .ai-tier-hint, .tile-grid, .tile,
+ *   .theme-{minimal,bold,editorial,playful,dark,sunset,ocean,nord}.
  *
- * Visual only — no persistence in this slice.
+ * Visual only — AI generate is a no-op stub; tier ladder copy is static.
  *
  * Story: F-APP-DASHBOARD-001b (#173)
- * Covers: VE-26b-09, VE-26b-10, VE-26b-11, VE-26b-12
+ * Covers: VE-26b-09..12
  */
 
 import { useState } from "react";
+
+const THEME_PRESETS = [
+  { id: "minimal", label: "Minimal" },
+  { id: "bold", label: "Bold" },
+  { id: "editorial", label: "Editorial" },
+  { id: "playful", label: "Playful" },
+  { id: "dark", label: "Dark" },
+  { id: "sunset", label: "Sunset" },
+  { id: "ocean", label: "Ocean" },
+  { id: "nord", label: "Nord" },
+] as const;
+
+const AI_HINTS = [
+  "cozy bookstore",
+  "90s zine",
+  "brutalist concrete",
+  "soft pastel skincare",
+  "vinyl record store",
+];
 
 interface DesignThemeProps {
   onSave?: (toast: string) => void;
@@ -24,132 +42,75 @@ interface DesignThemeProps {
 
 export function DesignTheme({ onSave }: DesignThemeProps) {
   const [prompt, setPrompt] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<string>("bold");
 
+  // TODO(#173 backend): wire AI theme generation to API
   const handleGenerate = () => {
-    if (onSave) onSave("Saved");
+    onSave?.("AI matching…");
+  };
+
+  // TODO(#173 backend): wire image-based theme match (extract 2 dominant colors)
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) onSave?.("Inspiration uploaded");
   };
 
   return (
-    <section data-panel="theme" style={{ padding: "24px 28px", maxWidth: 680 }}>
-      {/* AI theme matcher card */}
-      <div
-        data-ai-theme-card
-        style={{
-          border: "1px solid var(--border)",
-          borderRadius: 12,
-          padding: "20px 22px",
-          marginBottom: 28,
-          background: "var(--bg-elevated)",
-        }}
-      >
-        {/* Card header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginBottom: 8,
-          }}
-        >
+    <>
+      {/* ✨ AI theme matcher card (mockup lines 2930-2994) */}
+      <div className="field-group ai-theme-card">
+        <div className="ai-theme-head">
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 15,
-                fontWeight: 700,
-                color: "var(--fg)",
-              }}
+            <label
+              className="fg-label"
+              style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}
             >
-              {/* Sparkle icon */}
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-                style={{ color: "var(--brand-primary)" }}
-              >
-                <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
-              </svg>
-              <span>Generate with AI</span>
+              <span className="ai-spark" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width={18}
+                  height={18}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2l2.4 5.4L20 10l-5.6 2.6L12 18l-2.4-5.4L4 10l5.6-2.6L12 2z" />
+                  <path d="M19 17l.6 1.4L21 19l-1.4.6L19 21l-.6-1.4L17 19l1.4-.6L19 17z" />
+                </svg>
+              </span>
+              Generate with AI
+            </label>
+            <div className="fg-help" style={{ marginTop: 6 }}>
+              Describe what you like — or upload a photo that captures the vibe. We'll match you
+              to the closest theme from our catalogue of 1000+ presets.
             </div>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: 13,
-                color: "var(--fg-muted)",
-                lineHeight: 1.45,
-              }}
-            >
-              Describe what you like — or upload a photo
-              <br />
-              We match from 1000+ presets
-            </p>
           </div>
-          {/* AI credits pill */}
-          <span
-            data-ai-credits
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              background: "var(--bg-muted)",
-              color: "var(--fg-muted)",
-              borderRadius: 20,
-              padding: "3px 10px",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            4/5 AI credits left
+          <span className="ai-tokens-pill" data-tip="AI credits reset on the 1st of each month">
+            <strong>4</strong>
+            &nbsp;/&nbsp;5 AI credits left
           </span>
         </div>
 
-        {/* Prompt row */}
-        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <div className="ai-theme-input-row">
           <input
             type="text"
-            data-ai-prompt
+            className="ai-theme-prompt"
+            placeholder="e.g. warm sunset over Lisbon rooftops, editorial feel"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             maxLength={120}
-            placeholder="e.g. warm sunset over Lisbon rooftops, editorial feel"
-            style={{
-              flex: 1,
-              padding: "9px 12px",
-              fontSize: 13.5,
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              background: "var(--bg)",
-              color: "var(--fg)",
-              outline: "none",
-            }}
             aria-label="AI theme prompt"
           />
-          {/* Image upload button */}
-          <button
-            type="button"
+          <label
+            htmlFor="ai-theme-image"
+            className="ai-image-btn"
             data-tip="Upload an inspiration image — we extract the 2 dominant colors and match a theme"
-            title="Upload an inspiration image — we extract the 2 dominant colors and match a theme"
-            style={{
-              padding: "9px 12px",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              background: "var(--bg)",
-              color: "var(--fg-muted)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 13,
-            }}
-            aria-label="Upload inspiration image"
           >
             <svg
-              width="14"
-              height="14"
               viewBox="0 0 24 24"
+              width={18}
+              height={18}
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
@@ -157,74 +118,95 @@ export function DesignTheme({ onSave }: DesignThemeProps) {
               strokeLinejoin="round"
               aria-hidden="true"
             >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="9" cy="9" r="2" />
+              <path d="M21 15l-5-5-9 9" />
             </svg>
-            <span>Photo</span>
-          </button>
+            <span className="hide-sm">Image</span>
+          </label>
+          <input
+            type="file"
+            id="ai-theme-image"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleImageSelected}
+          />
           <button
             type="button"
+            className="btn btn-warm ai-generate-btn"
             onClick={handleGenerate}
-            style={{
-              padding: "9px 16px",
-              border: "none",
-              borderRadius: 8,
-              background: "var(--brand-primary)",
-              color: "#fff",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
           >
-            Generate
+            <span className="ai-btn-label">✨ Generate</span>
           </button>
         </div>
-      </div>
 
-      {/* Preset catalogue placeholder */}
-      <div>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: "var(--fg-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            marginBottom: 14,
-          }}
-        >
-          Preset themes
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {["Minimal", "Editorial", "Vibrant", "Dark", "Warm", "Cool"].map((name) => (
+        {/* Suggested chips */}
+        <div className="ai-suggest-chips">
+          <span className="ai-suggest-label">Try:</span>
+          {AI_HINTS.map((hint) => (
             <button
-              key={name}
+              key={hint}
               type="button"
-              onClick={() => onSave?.("Saved")}
-              style={{
-                padding: "28px 16px",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-                background: "var(--bg-elevated)",
-                color: "var(--fg)",
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 500,
-                textAlign: "center",
-              }}
+              className="ai-chip"
+              onClick={() => setPrompt(hint)}
             >
-              {name}
+              {hint}
             </button>
           ))}
         </div>
+
+        {/* Tier hint (subtle, AP-028) — DEC-286: 5/20/100/∞ */}
+        <div className="ai-tier-hint">
+          💡 Free: <strong>5 AI credits/mo</strong>. Creator <strong>20</strong> · Pro{" "}
+          <strong>100</strong> · Business <strong>unlimited</strong>. Price locked for life.
+        </div>
       </div>
-    </section>
+
+      {/* Preset catalogue */}
+      <div className="field-group">
+        <label className="fg-label">Or pick a preset</label>
+        <div className="fg-help">
+          A preset sets all seven layers at once — you can still tweak any of them after.
+        </div>
+        <div className="tile-grid">
+          {THEME_PRESETS.map((preset) => {
+            const isSelected = selectedPreset === preset.id;
+            return (
+              <div
+                key={preset.id}
+                className={`tile${isSelected ? " selected" : ""}`}
+                data-theme-preset={preset.id}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                onClick={() => {
+                  setSelectedPreset(preset.id);
+                  onSave?.("Saved");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedPreset(preset.id);
+                    onSave?.("Saved");
+                  }
+                }}
+              >
+                <div
+                  className={`theme-${preset.id}`}
+                  style={{ position: "absolute", inset: 0 }}
+                />
+                <div className="tile-label">{preset.label}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="fg-help" style={{ marginTop: 10, fontSize: 12 }}>
+          Browsing all <strong>1000+ themes</strong>?{" "}
+          <a href="#" className="link-inline">
+            Open theme library →
+          </a>
+        </div>
+      </div>
+    </>
   );
 }

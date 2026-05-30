@@ -1,267 +1,192 @@
 /**
  * DesignFooter — Footer sub-tab content.
  *
- * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 3376-3458
+ * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 3376-3453
  *
- * Contains:
- *   - Help copy "Your footer is yours. tadaify doesn't stick a 'Powered by' line..."
- *   - 3 footer-option radios: Empty footer / Custom text / Social handles
- *   - .footer-tadaify-note strong banner reaffirming AP-001
- *   - .support-badge-group opt-in support badge toggle (DEC-OPT-BADGE: default OFF)
+ * Markup uses CSS classes from app/styles/app-dashboard.css:
+ *   .field-group, .fg-label, .fg-help, .footer-option, .fo-radio, .fo-body,
+ *   .fo-title, .fo-sub, .footer-tadaify-note, .support-badge-group,
+ *   .support-row, .support-toggle, .support-row-body, .support-row-title,
+ *   .opt-in-pill, .support-row-sub, .support-preview, .support-preview-frame,
+ *   .support-preview-block, .support-preview-badge, .support-fineprint,
+ *   .wm-mini.
  *
  * AP-001 enforced: NEVER add "Powered by tadaify" toggle.
  * Wordmark canonical 3-span (DEC-WORDMARK-01).
+ * DEC-OPT-BADGE: default OFF.
  *
  * Story: F-APP-DASHBOARD-001b (#173)
- * Covers: VE-26b-30, VE-26b-31, VE-26b-32, VE-26b-33, AP-001, DEC-OPT-BADGE
+ * Covers: VE-26b-30..33, AP-001, DEC-OPT-BADGE
  */
 
 import { useState } from "react";
 
-type FooterOption = "empty" | "custom" | "social";
+type FooterChoice = "empty" | "custom" | "social";
 
 interface DesignFooterProps {
   onSave?: (toast: string) => void;
 }
 
+const WordmarkMini = () => (
+  <span className="wm-mini">
+    <span className="ta">ta</span>
+    <span className="da">da!</span>
+    <span className="ify">ify</span>
+  </span>
+);
+
 export function DesignFooter({ onSave }: DesignFooterProps) {
-  const [footerOption, setFooterOption] = useState<FooterOption>("custom");
+  const [choice, setChoice] = useState<FooterChoice>("custom");
   const [customText, setCustomText] = useState(
-    "© 2026 Alexandra Silva · hello@alexandra.co"
+    "© 2026 Alexandra Silva · hello@alexandra.co",
   );
   const [supportBadge, setSupportBadge] = useState(false); // DEC-OPT-BADGE: default OFF
 
   return (
-    <section data-panel="footer" style={{ padding: "24px 28px", maxWidth: 680 }}>
-      <h3
-        style={{
-          fontSize: 15,
-          fontWeight: 700,
-          color: "var(--fg)",
-          marginBottom: 6,
-        }}
-      >
-        Footer
-      </h3>
-      {/* Help copy — VE-26b-30 */}
-      <p style={{ fontSize: 13, color: "var(--fg-muted)", marginBottom: 22, lineHeight: 1.55 }}>
-        Your footer is yours.{" "}
-        <span style={{ fontWeight: 700 }}>tada</span>
-        <span style={{ fontWeight: 900, color: "var(--brand-primary)" }}>!</span>
-        <span style={{ fontWeight: 700 }}>ify</span> doesn't stick a 'Powered by' line on
-        your page. On any tier, free included.
-      </p>
+    <>
+      <div className="field-group">
+        <label className="fg-label">Footer content</label>
+        <div className="fg-help">
+          Your footer is yours. tadaify doesn't stick a "Powered by" line on your page — your
+          creator brand stays yours, even on Free.
+        </div>
 
-      {/* 3 footer-option radios — VE-26b-31 */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          marginBottom: 24,
-        }}
-      >
-        {/* Empty footer */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12,
-            padding: "14px 16px",
-            border: `2px solid ${footerOption === "empty" ? "var(--brand-primary)" : "var(--border)"}`,
-            borderRadius: 10,
-            background: footerOption === "empty"
-              ? "color-mix(in srgb, var(--brand-primary) 6%, var(--bg-elevated))"
-              : "var(--bg-elevated)",
-            cursor: "pointer",
-          }}
-        >
-          <input
-            type="radio"
-            name="footer-option"
-            value="empty"
-            checked={footerOption === "empty"}
-            onChange={() => {
-              setFooterOption("empty");
-              onSave?.("Saved");
-            }}
-            style={{ marginTop: 2 }}
-          />
-          <div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>
-              Empty footer
-            </div>
-            <div style={{ fontSize: 12.5, color: "var(--fg-muted)", marginTop: 2 }}>
-              No footer on your page
-            </div>
-          </div>
-        </label>
-
-        {/* Custom text */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12,
-            padding: "14px 16px",
-            border: `2px solid ${footerOption === "custom" ? "var(--brand-primary)" : "var(--border)"}`,
-            borderRadius: 10,
-            background: footerOption === "custom"
-              ? "color-mix(in srgb, var(--brand-primary) 6%, var(--bg-elevated))"
-              : "var(--bg-elevated)",
-            cursor: "pointer",
-          }}
-        >
-          <input
-            type="radio"
-            name="footer-option"
-            value="custom"
-            checked={footerOption === "custom"}
-            onChange={() => setFooterOption("custom")}
-            style={{ marginTop: 2 }}
-          />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)", marginBottom: 8 }}>
-              Custom text
-            </div>
-            <textarea
-              value={customText}
-              onChange={(e) => setCustomText(e.target.value)}
-              rows={2}
-              disabled={footerOption !== "custom"}
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                background: "var(--bg)",
-                color: "var(--fg)",
-                fontSize: 13,
-                resize: "vertical",
-                fontFamily: "inherit",
-                opacity: footerOption !== "custom" ? 0.5 : 1,
-                boxSizing: "border-box",
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
+          {/* Empty footer */}
+          <label className={`footer-option${choice === "empty" ? " selected" : ""}`}>
+            <input
+              type="radio"
+              name="footer-option"
+              value="empty"
+              checked={choice === "empty"}
+              onChange={() => {
+                setChoice("empty");
+                onSave?.("Saved");
               }}
-              aria-label="Custom footer text"
+              style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+              aria-label="Empty footer"
             />
+            <span className="fo-radio" />
+            <div className="fo-body">
+              <div className="fo-title">Empty footer</div>
+              <div className="fo-sub">Nothing below your last block — the cleanest look.</div>
+            </div>
+          </label>
+
+          {/* Custom text */}
+          <label className={`footer-option${choice === "custom" ? " selected" : ""}`}>
+            <input
+              type="radio"
+              name="footer-option"
+              value="custom"
+              checked={choice === "custom"}
+              onChange={() => {
+                setChoice("custom");
+                onSave?.("Saved");
+              }}
+              style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+              aria-label="Custom text"
+            />
+            <span className="fo-radio" />
+            <div className="fo-body">
+              <div className="fo-title">Custom text</div>
+              <div className="fo-sub">
+                A line in your own voice — copyright, tagline, contact hint, anything.
+              </div>
+              <textarea
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                rows={2}
+                disabled={choice !== "custom"}
+                aria-label="Custom footer text"
+              />
+            </div>
+          </label>
+
+          {/* Social handles */}
+          <label className={`footer-option${choice === "social" ? " selected" : ""}`}>
+            <input
+              type="radio"
+              name="footer-option"
+              value="social"
+              checked={choice === "social"}
+              onChange={() => {
+                setChoice("social");
+                onSave?.("Saved");
+              }}
+              style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+              aria-label="Social handles"
+            />
+            <span className="fo-radio" />
+            <div className="fo-body">
+              <div className="fo-title">Social handles</div>
+              <div className="fo-sub">
+                Repeat your @ handles in the footer so people can find you across platforms.
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div className="footer-tadaify-note">
+          <strong>Your footer, your call.</strong> tadaify never inserts a "Powered by" line on
+          your page. Your footer is entirely yours on every tier — Free included.
+        </div>
+      </div>
+
+      {/* Opt-in support badge — DEC-OPT-BADGE: default OFF */}
+      <div className="field-group support-badge-group">
+        <label className="fg-label">Help tadaify grow (optional)</label>
+        <div className="fg-help">
+          We're a young, indie team. We <strong>never</strong> force our brand on your page —
+          but if you'd like to help others discover us, you can add a small, understated{" "}
+          <WordmarkMini /> mark below your footer.
+        </div>
+
+        <label className="support-row">
+          <span className="support-toggle">
+            <input
+              type="checkbox"
+              checked={supportBadge}
+              onChange={(e) => {
+                setSupportBadge(e.target.checked);
+                onSave?.("Saved");
+              }}
+              aria-label="Show made with tadaify badge"
+            />
+            <span className="support-toggle-track">
+              <span className="support-toggle-thumb" />
+            </span>
+          </span>
+          <div className="support-row-body">
+            <div className="support-row-title">
+              Show <em>made with</em> <WordmarkMini /> badge
+              <span className="opt-in-pill">Opt-in · Off by default</span>
+            </div>
+            <div className="support-row-sub">
+              Adds a tiny line under your last block: <em>made with <WordmarkMini /></em>{" "}
+              linking to <code>tadaify.com</code>. Your visitors who like your page can discover
+              us — and you help an indie team grow. No discount, no incentive needed; just a
+              thank-you option.
+            </div>
           </div>
         </label>
 
-        {/* Social handles */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12,
-            padding: "14px 16px",
-            border: `2px solid ${footerOption === "social" ? "var(--brand-primary)" : "var(--border)"}`,
-            borderRadius: 10,
-            background: footerOption === "social"
-              ? "color-mix(in srgb, var(--brand-primary) 6%, var(--bg-elevated))"
-              : "var(--bg-elevated)",
-            cursor: "pointer",
-          }}
-        >
-          <input
-            type="radio"
-            name="footer-option"
-            value="social"
-            checked={footerOption === "social"}
-            onChange={() => {
-              setFooterOption("social");
-              onSave?.("Saved");
-            }}
-            style={{ marginTop: 2 }}
-          />
-          <div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>
-              Social handles
-            </div>
-            <div style={{ fontSize: 12.5, color: "var(--fg-muted)", marginTop: 2 }}>
-              Show icons linking to your social profiles
-            </div>
+        <div className="support-preview" aria-live="polite">
+          <span className="support-preview-label">Preview</span>
+          <div className="support-preview-frame">
+            <div className="support-preview-block">your last block</div>
+            {supportBadge && (
+              <div className="support-preview-badge">
+                made with <WordmarkMini />
+              </div>
+            )}
           </div>
-        </label>
-      </div>
+        </div>
 
-      {/* footer-tadaify-note banner — VE-26b-32, AP-001 */}
-      <div
-        className="footer-tadaify-note"
-        style={{
-          background: "color-mix(in srgb, var(--brand-primary) 8%, var(--bg-elevated))",
-          border: "1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent)",
-          borderRadius: 10,
-          padding: "14px 18px",
-          fontSize: 13,
-          color: "var(--fg)",
-          lineHeight: 1.55,
-          marginBottom: 20,
-        }}
-      >
-        <strong>Your footer, your call.</strong>{" "}
-        <span style={{ fontWeight: 700 }}>tada</span>
-        <span style={{ fontWeight: 900, color: "var(--brand-primary)" }}>!</span>
-        <span style={{ fontWeight: 700 }}>ify</span> never inserts a 'Powered by' line on your
-        page. Your footer is entirely yours on every tier — Free included.
+        <p className="support-fineprint">
+          Free to remove anytime · Never affects your plan · We don't track who turns this on
+        </p>
       </div>
-
-      {/* support-badge-group opt-in — VE-26b-33, DEC-OPT-BADGE: default OFF */}
-      <div
-        className="support-badge-group"
-        style={{
-          border: "1px solid var(--border)",
-          borderRadius: 10,
-          padding: "14px 18px",
-          background: "var(--bg-elevated)",
-          marginBottom: 24,
-        }}
-      >
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            cursor: "pointer",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={supportBadge}
-            onChange={(e) => {
-              setSupportBadge(e.target.checked);
-              onSave?.("Saved");
-            }}
-            style={{ width: 16, height: 16 }}
-            aria-label="Show support badge"
-          />
-          <div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--fg)" }}>
-              Show a small support badge <em>(opt-in, default off)</em>
-            </div>
-            <div style={{ fontSize: 12.5, color: "var(--fg-muted)", marginTop: 2 }}>
-              Adds a subtle "Made with tadaify" badge to your footer — if you'd like to support
-              us. Completely optional. You can remove it any time.
-            </div>
-          </div>
-        </label>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onSave?.("Saved")}
-        style={{
-          padding: "9px 22px",
-          border: "none",
-          borderRadius: 8,
-          background: "var(--brand-primary)",
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: 13.5,
-          fontWeight: 600,
-        }}
-      >
-        Save footer
-      </button>
-    </section>
+    </>
   );
 }
