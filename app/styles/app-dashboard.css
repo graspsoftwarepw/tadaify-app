@@ -2050,3 +2050,1001 @@ body.dark-mode .app-dashboard-root .welcome-banner {
     body.dark-mode .app-dashboard-root .support-row-sub code { background: rgba(255,255,255,0.06); }
     body.dark-mode .app-dashboard-root .support-preview-frame { background: #141A2D; border-color: #374151; }
     body.dark-mode .app-dashboard-root .support-preview-block { background: #1F2937; color: #9CA3AF; }
+
+/* =============================================================================
+   INSIGHTS PANEL
+   -----------------------------------------------------------------------------
+   Source: mockups/tadaify-mvp/app-insights.html (inline <style> block).
+   Extracted verbatim and scoped under `.app-dashboard-root` (Pass: insights
+   mockup-fidelity). Selectors that duplicate the dashboard mockup
+   (e.g. `.page-head`, `.btn`, `.chip`, `.iconbtn`, `.wm`) are NOT duplicated
+   here — they live above in the dashboard section.
+
+   Mockup `body[data-tier="..."]` selectors become
+   `.app-dashboard-root[data-tier="..."]` (the dashboard root carries
+   `data-tier` via app/routes/app.tsx).
+   ============================================================================= */
+
+    /* Chip variants used by the insights panel that the dashboard mockup
+       does not need. Added per mockup selectors `.chip.business`, `.chip.success`,
+       `.chip.warm`, `.chip.danger`, `.chip.muted`. */
+    .app-dashboard-root .chip.business {
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08));
+      color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.3);
+    }
+    .app-dashboard-root .chip.success { background: var(--success-bg); color: #065F46; }
+    .app-dashboard-root .chip.warm {
+      background: rgba(245,158,11,0.12);
+      color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .app-dashboard-root .chip.danger { background: var(--danger-bg); color: #991B1B; }
+    .app-dashboard-root .chip.muted {
+      background: var(--bg-muted); color: var(--fg-subtle);
+      border: 1px solid var(--border);
+    }
+
+    /* btn-xs (mockup line 98) */
+    .app-dashboard-root .btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+    .app-dashboard-root .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ---------------------------------------------------------------------
+       Page header — insights variant (mockup lines 270-339)
+       The dashboard mockup ships a simpler `.page-head` (flex row with
+       title + actions); the insights mockup uses a column flex with
+       `.page-head-row` inside. Rather than overwrite the dashboard rules,
+       this block scopes the insights structure under
+       `[data-tab="insights"] .page-head` so the page tab is unaffected.
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .layout[data-tab="insights"] .page-head {
+      display: flex; flex-direction: column; gap: 14px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+      align-items: stretch;
+    }
+    .app-dashboard-root .page-head-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .layout[data-tab="insights"] .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+      display: inline-flex; align-items: baseline; gap: 8px;
+    }
+    .app-dashboard-root .page-head h1 .crumb-sep {
+      color: var(--fg-subtle); font-weight: 400; font-size: 22px;
+    }
+    .app-dashboard-root .page-head h1 .crumb-page {
+      font-size: 22px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .layout[data-tab="insights"] .page-head .sub {
+      color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; line-height: 1.5;
+    }
+
+    /* Page selector dropdown */
+    .app-dashboard-root .page-selector { position: relative; display: inline-block; }
+    .app-dashboard-root .page-selector-trigger {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .app-dashboard-root .page-selector-trigger:hover { background: var(--bg-muted); border-color: var(--brand-primary); }
+    .app-dashboard-root .page-selector-trigger svg { width: 14px; height: 14px; color: var(--fg-subtle); }
+    .app-dashboard-root .page-selector-menu {
+      position: absolute; top: calc(100% + 6px); left: 0;
+      min-width: 240px; max-width: 320px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: 0 12px 32px rgba(17,24,39,0.10);
+      display: none; z-index: 30;
+    }
+    .app-dashboard-root .page-selector-menu.open { display: block; }
+    .app-dashboard-root .page-menu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg);
+      text-align: left; cursor: pointer; width: 100%;
+    }
+    .app-dashboard-root .page-menu-item:hover { background: var(--bg-muted); }
+    .app-dashboard-root .page-menu-item.active { background: rgba(99,102,241,0.10); color: var(--brand-primary); font-weight: 600; }
+    .app-dashboard-root .page-menu-item.is-disabled { color: var(--fg-subtle); cursor: not-allowed; font-style: italic; }
+    .app-dashboard-root .page-menu-item.is-disabled:hover { background: transparent; }
+    .app-dashboard-root .page-menu-item .meta { margin-left: auto; font-size: 11px; color: var(--fg-subtle); font-weight: 500; }
+    .app-dashboard-root .page-menu-divider { border-top: 1px solid var(--border); margin: 4px 2px; }
+    .app-dashboard-root .page-menu-hint {
+      padding: 8px 10px 4px; font-size: 11px; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    }
+
+    /* Header right-side controls cluster */
+    .app-dashboard-root .head-controls {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Time range picker */
+    .app-dashboard-root .time-range {
+      display: inline-flex; align-items: center;
+      border: 1px solid var(--border-strong); border-radius: 9px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+      font-size: 13px;
+    }
+    .app-dashboard-root .time-range button {
+      padding: 7px 12px; border: 0; background: transparent; color: var(--fg-muted);
+      font-weight: 600; cursor: pointer;
+      border-right: 1px solid var(--border);
+      transition: background .12s ease, color .12s ease;
+    }
+    .app-dashboard-root .time-range button:last-child { border-right: 0; }
+    .app-dashboard-root .time-range button.active { background: var(--brand-primary); color: #fff; }
+    .app-dashboard-root .time-range button:not(.active):hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .time-range button.is-locked { color: var(--fg-subtle); cursor: not-allowed; opacity: 0.6; }
+    .app-dashboard-root .time-range button.is-locked:hover { background: transparent; color: var(--fg-subtle); }
+
+    .app-dashboard-root .time-range-static {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 13px; font-weight: 600; color: var(--fg-muted);
+    }
+
+    /* API tile (right-aligned) */
+    .app-dashboard-root .api-tile {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 9px;
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease;
+      border: 1px solid;
+      position: relative;
+    }
+    .app-dashboard-root .api-tile.active {
+      background: rgba(16,185,129,0.10);
+      color: #065F46;
+      border-color: rgba(16,185,129,0.30);
+    }
+    .app-dashboard-root .api-tile.active:hover { background: rgba(16,185,129,0.16); }
+    .app-dashboard-root .api-tile.locked {
+      background: var(--bg-elevated);
+      color: var(--fg-muted);
+      border-color: var(--border-strong);
+    }
+    .app-dashboard-root .api-tile.locked:hover { background: var(--bg-muted); }
+    .app-dashboard-root .api-tile .api-icon { font-size: 14px; }
+    .app-dashboard-root .api-tile .api-meta {
+      font-family: var(--font-mono); font-size: 11.5px;
+      color: inherit; opacity: 0.85;
+    }
+
+    /* Compare toggle (Pro+) */
+    .app-dashboard-root .compare-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 11px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .app-dashboard-root .compare-toggle:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .compare-toggle.on { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.35); color: var(--brand-primary); }
+    .app-dashboard-root .compare-toggle .check { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid currentColor; display: inline-block; }
+    .app-dashboard-root .compare-toggle.on .check { background: var(--brand-primary); border-color: var(--brand-primary); position: relative; }
+    .app-dashboard-root .compare-toggle.on .check::after { content: ""; position: absolute; left: 1px; top: -2px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+    /* CSV export button (tier-aware) */
+    .app-dashboard-root .csv-btn { padding: 7px 12px; font-size: 12.5px; font-weight: 600; }
+
+    /* Free tier "🎁 most generous Free" pill */
+    .app-dashboard-root .free-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.14), rgba(253,230,138,0.10));
+      border: 1px solid rgba(245,158,11,0.35);
+      font-size: 12.5px; font-weight: 600;
+      color: var(--brand-warm-dark);
+      cursor: help;
+    }
+
+    /* Last-updated chip */
+    .app-dashboard-root .updated-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--fg-muted);
+      padding: 4px 0;
+    }
+    .app-dashboard-root .updated-chip .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .updated-chip.stale .live-dot { background: var(--fg-subtle); box-shadow: none; }
+
+    /* ---------------------------------------------------------------------
+       Tooltip — universal popover (info icons)
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.2px solid var(--fg-subtle);
+      color: var(--fg-subtle);
+      font-size: 11px; font-weight: 700; line-height: 1;
+      cursor: help;
+      transition: color .12s ease, border-color .12s ease;
+      vertical-align: middle;
+      background: transparent;
+      font-family: var(--font-sans);
+    }
+    .app-dashboard-root .info-icon:hover { color: var(--brand-primary); border-color: var(--brand-primary); }
+
+    .app-dashboard-root .tooltip-wrap { position: relative; display: inline-block; }
+    .app-dashboard-root .tooltip-popover {
+      visibility: hidden;
+      position: absolute;
+      z-index: 80;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      width: max-content;
+      max-width: min(360px, calc(100vw - 32px));
+      background: var(--bg-dark);
+      color: #F3F4F6;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 12.5px; line-height: 1.55;
+      font-weight: 400;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.30);
+      opacity: 0;
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      text-align: left;
+    }
+    .app-dashboard-root .tooltip-popover::after {
+      content: "";
+      position: absolute;
+      top: 100%; left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--bg-dark);
+    }
+    .app-dashboard-root .tooltip-wrap:hover .tooltip-popover,
+    .app-dashboard-root .tooltip-wrap:focus-within .tooltip-popover {
+      visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+    .app-dashboard-root .tooltip-popover strong { color: #fff; font-weight: 600; }
+    .app-dashboard-root .tooltip-popover a { color: #A5B4FC; text-decoration: underline; pointer-events: auto; }
+    .app-dashboard-root .tooltip-popover.tooltip-wide { max-width: min(420px, calc(100vw - 32px)); }
+    .app-dashboard-root .tooltip-popover.tooltip-right { left: auto; right: 0; transform: translateX(0) translateY(4px); }
+    .app-dashboard-root .tooltip-popover.tooltip-right::after { left: auto; right: 14px; transform: none; }
+    .app-dashboard-root .tooltip-popover.tooltip-right:hover,
+    .app-dashboard-root .tooltip-wrap:hover .tooltip-popover.tooltip-right,
+    .app-dashboard-root .tooltip-wrap:focus-within .tooltip-popover.tooltip-right { transform: translateX(0) translateY(0); }
+
+    /* ---------------------------------------------------------------------
+       Section title pattern
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .app-dashboard-root .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .app-dashboard-root .panel-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      display: inline-flex; align-items: center; gap: 8px;
+      margin: 0;
+    }
+    .app-dashboard-root .panel-sub {
+      font-size: 12.5px; color: var(--fg-muted); margin-top: -2px; line-height: 1.5;
+      max-width: 720px;
+    }
+    .app-dashboard-root .panel-action {
+      font-size: 12.5px; font-weight: 600; color: var(--brand-primary);
+      background: transparent; border: 0; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px;
+    }
+    .app-dashboard-root .panel-action:hover { background: rgba(99,102,241,0.08); }
+
+    /* ---------------------------------------------------------------------
+       Hero KPI tiles
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    @media (min-width: 900px) {
+      .app-dashboard-root .kpi-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    }
+
+    .app-dashboard-root .kpi-tile {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px 14px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .app-dashboard-root .kpi-tile:hover { border-color: var(--border-strong); }
+    .app-dashboard-root .kpi-tile .kpi-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: none;
+      letter-spacing: 0.01em;
+      margin-bottom: 6px;
+    }
+    .app-dashboard-root .kpi-tile .kpi-num {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 38px;
+      line-height: 1.1;
+      color: var(--fg);
+      letter-spacing: -0.02em;
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .app-dashboard-root .kpi-tile .kpi-suffix { font-size: 16px; color: var(--fg-muted); font-weight: 400; }
+    .app-dashboard-root .kpi-tile .kpi-delta {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 12px; font-weight: 600;
+      padding: 2px 7px; border-radius: 999px;
+      margin-top: 4px;
+    }
+    .app-dashboard-root .kpi-tile .kpi-delta.up   { background: rgba(16,185,129,0.10); color: #059669; }
+    .app-dashboard-root .kpi-tile .kpi-delta.down { background: rgba(239,68,68,0.10);  color: var(--danger); }
+    .app-dashboard-root .kpi-tile .kpi-delta.flat { background: var(--bg-muted); color: var(--fg-muted); }
+    .app-dashboard-root .kpi-tile .kpi-spark {
+      margin-top: 12px; height: 36px; width: 100%;
+    }
+    .app-dashboard-root .kpi-tile .kpi-foot {
+      font-size: 11.5px; color: var(--fg-subtle); margin-top: 6px;
+    }
+
+    /* Hide delta on Free tier */
+    .app-dashboard-root[data-tier="free"] .kpi-delta { display: none; }
+    .app-dashboard-root[data-tier="free"] .kpi-foot.tier-pro { display: none; }
+
+    /* ---------------------------------------------------------------------
+       Time-series chart
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .chart-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px 14px;
+      margin-bottom: 20px;
+    }
+    .app-dashboard-root .chart-canvas {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      margin-top: 10px;
+    }
+    .app-dashboard-root .chart-canvas svg { display: block; width: 100%; height: 100%; }
+
+    .app-dashboard-root .chart-legend {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      font-size: 12.5px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .chart-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .app-dashboard-root .chart-legend-dot {
+      width: 10px; height: 10px; border-radius: 3px;
+      background: var(--brand-primary);
+    }
+    .app-dashboard-root .chart-legend-dot.dot-clicks { background: var(--brand-warm); border-radius: 999px; }
+    .app-dashboard-root .chart-legend-dot.dot-prev { background: transparent; border: 1.5px dashed var(--fg-subtle); border-radius: 999px; }
+
+    .app-dashboard-root .chart-toggles { display: inline-flex; gap: 4px; }
+    .app-dashboard-root .chart-toggles button {
+      font-size: 11.5px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .app-dashboard-root .chart-toggles button.active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+    /* Annotation pin on chart (e.g. "TikTok went viral") */
+    .app-dashboard-root .chart-pin {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: var(--bg-elevated);
+      border: 1px solid var(--brand-warm);
+      color: var(--brand-warm-dark);
+      border-radius: 999px;
+      font-size: 10.5px; font-weight: 600;
+      padding: 2px 9px;
+      white-space: nowrap;
+      cursor: help;
+      box-shadow: 0 2px 6px rgba(245,158,11,0.18);
+    }
+    .app-dashboard-root .chart-pin::after {
+      content: ""; position: absolute;
+      top: 100%; left: 50%; transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--brand-warm);
+    }
+
+    /* Hover guide */
+    .app-dashboard-root .chart-hover-guide {
+      position: absolute; top: 0; bottom: 0; width: 1px;
+      background: rgba(99,102,241,0.4);
+      display: none; pointer-events: none;
+      transition: left .04s linear;
+    }
+    .app-dashboard-root .chart-hover-tooltip {
+      position: absolute;
+      transform: translate(-50%, calc(-100% - 12px));
+      background: var(--bg-dark);
+      color: #F3F4F6;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      z-index: 5;
+    }
+    .app-dashboard-root .chart-hover-tooltip .htt-date { font-weight: 600; margin-bottom: 4px; }
+    .app-dashboard-root .chart-hover-tooltip .htt-row { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+    .app-dashboard-root .chart-hover-tooltip .htt-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--brand-primary); }
+    .app-dashboard-root .chart-hover-tooltip .htt-dot.dot-clicks { background: var(--brand-warm); border-radius: 999px; }
+
+    /* ---------------------------------------------------------------------
+       Two-pane: Traffic sources (left) + drill panel (right)
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .sources-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .app-dashboard-root .sources-method {
+      font-size: 12.5px; line-height: 1.55;
+      color: var(--fg-muted);
+      background: rgba(99,102,241,0.05);
+      border: 1px solid rgba(99,102,241,0.15);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .app-dashboard-root .sources-method .lock { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+    .app-dashboard-root .sources-method strong { color: var(--fg); font-weight: 600; }
+
+    .app-dashboard-root .sources-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 900px) {
+      .app-dashboard-root .sources-grid { grid-template-columns: 0.9fr 1.1fr; gap: 22px; }
+    }
+
+    .app-dashboard-root .source-list { display: flex; flex-direction: column; gap: 4px; }
+    .app-dashboard-root .source-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 70px 60px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background .12s ease, border-color .12s ease;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+    }
+    .app-dashboard-root .source-row:hover { background: var(--bg-muted); }
+    .app-dashboard-root .source-row.active {
+      background: rgba(99,102,241,0.08);
+      border-color: rgba(99,102,241,0.25);
+    }
+    .app-dashboard-root .source-row .src-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      background: var(--bg-muted);
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .source-row .src-name { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+    .app-dashboard-root .source-row .src-bar-track {
+      grid-column: 2 / 3;
+      height: 4px; border-radius: 999px;
+      background: var(--bg-sunken);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .app-dashboard-root .source-row .src-bar-fill {
+      height: 100%; background: var(--brand-primary);
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .app-dashboard-root .source-row.active .src-bar-fill { background: var(--brand-primary); }
+    .app-dashboard-root .source-row .src-pct {
+      font-size: 13px; font-weight: 600; color: var(--fg);
+      text-align: right;
+    }
+    .app-dashboard-root .source-row .src-count {
+      font-size: 11.5px; color: var(--fg-subtle);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .app-dashboard-root .src-detail {
+      background: var(--bg-muted);
+      border-radius: 12px;
+      padding: 14px 16px;
+      min-height: 240px;
+    }
+    .app-dashboard-root .src-detail-head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .app-dashboard-root .src-detail-head .src-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; background: var(--bg-elevated);
+      border: 1px solid var(--border);
+    }
+    .app-dashboard-root .src-detail-head h4 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 16px; margin: 0;
+    }
+    .app-dashboard-root .src-detail-head .src-detail-meta { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+
+    .app-dashboard-root .top-block-row {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .app-dashboard-root .top-block-row:last-child { border-bottom: 0; }
+    .app-dashboard-root .top-block-row .tb-rank { font-size: 11px; font-weight: 700; color: var(--fg-subtle); font-variant-numeric: tabular-nums; }
+    .app-dashboard-root .top-block-row .tb-name { font-weight: 500; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+    .app-dashboard-root .top-block-row .tb-name .tb-icon { font-size: 13px; flex-shrink: 0; }
+    .app-dashboard-root .top-block-row .tb-name span.tb-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .app-dashboard-root .top-block-row .tb-clicks { font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+    /* ---------------------------------------------------------------------
+       Top blocks ranking (full table)
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .blocks-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .app-dashboard-root .blocks-table { width: 100%; border-collapse: collapse; }
+    .app-dashboard-root .blocks-table thead th {
+      text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--fg-subtle); padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .app-dashboard-root .blocks-table thead th.num { text-align: right; }
+    .app-dashboard-root .blocks-table tbody td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .app-dashboard-root .blocks-table tbody tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .blocks-table tbody tr {
+      cursor: pointer;
+      transition: background .12s ease;
+    }
+    .app-dashboard-root .blocks-table tbody tr:hover { background: var(--bg-muted); }
+    .app-dashboard-root .blocks-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .app-dashboard-root .blocks-table .b-name {
+      display: flex; align-items: center; gap: 8px;
+      min-width: 0;
+    }
+    .app-dashboard-root .blocks-table .b-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      background: var(--bg-muted); flex-shrink: 0;
+    }
+    .app-dashboard-root .blocks-table .b-label { font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .app-dashboard-root .blocks-table .b-page-pill {
+      font-size: 10.5px; font-weight: 600;
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-subtle);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .blocks-table .b-spark { width: 84px; height: 22px; }
+    @media (max-width: 700px) {
+      .app-dashboard-root .blocks-table .col-page,
+      .app-dashboard-root .blocks-table .col-spark { display: none; }
+    }
+    .app-dashboard-root .blocks-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--fg-muted);
+    }
+
+    /* ---------------------------------------------------------------------
+       3-up mini-cards: Geo / Devices / Referrers
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .three-up {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 900px) {
+      .app-dashboard-root .three-up { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    .app-dashboard-root .mini-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .app-dashboard-root .mini-card .mc-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
+    }
+    .app-dashboard-root .mini-card h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 15px; margin: 0;
+    }
+    .app-dashboard-root .mini-card .mc-action {
+      font-size: 11.5px; font-weight: 600;
+      color: var(--brand-primary);
+      background: transparent; border: 0; cursor: pointer;
+    }
+
+    .app-dashboard-root .bar-list { display: flex; flex-direction: column; gap: 8px; }
+    .app-dashboard-root .bar-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 50px;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+    }
+    .app-dashboard-root .bar-row .bar-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-weight: 500; color: var(--fg);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-dashboard-root .bar-row .bar-track {
+      height: 6px; background: var(--bg-sunken); border-radius: 999px; overflow: hidden;
+    }
+    .app-dashboard-root .bar-row .bar-fill {
+      height: 100%; background: var(--brand-primary); border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .app-dashboard-root .bar-row .bar-fill.warm { background: var(--brand-warm); }
+    .app-dashboard-root .bar-row .bar-pct {
+      font-size: 11.5px; font-weight: 600; color: var(--fg-muted);
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+
+    .app-dashboard-root .device-toggle-row {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: 6px; padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      font-size: 11.5px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .device-toggle-row strong { font-weight: 600; color: var(--fg); margin-right: 6px; }
+
+    /* ---------------------------------------------------------------------
+       Cross-tab analysis (redesigned)
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .crosstab-shell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .app-dashboard-root .crosstab-help {
+      font-size: 12.5px; line-height: 1.55;
+      color: var(--fg-muted);
+      background: var(--bg-muted);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .app-dashboard-root .crosstab-help strong { color: var(--fg); font-weight: 600; }
+    .app-dashboard-root .crosstab-help kbd {
+      font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .app-dashboard-root .crosstab-controls {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 12px;
+    }
+    .app-dashboard-root .crosstab-controls label {
+      font-size: 12px; color: var(--fg-muted); font-weight: 600;
+    }
+    .app-dashboard-root .crosstab-controls select {
+      font-family: var(--font-sans); font-size: 12.5px; font-weight: 600;
+      padding: 6px 10px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); color: var(--fg);
+      cursor: pointer;
+    }
+
+    .app-dashboard-root .crosstab-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid var(--border); }
+    .app-dashboard-root .crosstab-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .app-dashboard-root .crosstab-table th,
+    .app-dashboard-root .crosstab-table td {
+      padding: 7px 10px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .app-dashboard-root .crosstab-table th:last-child,
+    .app-dashboard-root .crosstab-table td:last-child { border-right: 0; }
+    .app-dashboard-root .crosstab-table tbody tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .crosstab-table th {
+      background: var(--bg-muted);
+      font-weight: 600; color: var(--fg-muted);
+      font-size: 11.5px;
+    }
+    .app-dashboard-root .crosstab-table th.row-header,
+    .app-dashboard-root .crosstab-table td.row-header {
+      text-align: left;
+      font-weight: 600;
+      background: var(--bg-muted);
+      color: var(--fg);
+      position: sticky; left: 0;
+      z-index: 1;
+    }
+    .app-dashboard-root .crosstab-table .ct-cell {
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      transition: transform .08s ease;
+      position: relative;
+    }
+    .app-dashboard-root .crosstab-table .ct-cell:hover {
+      outline: 2px solid var(--brand-primary);
+      outline-offset: -2px;
+      z-index: 2;
+    }
+    .app-dashboard-root .crosstab-table .ct-cell.ct-zero { color: var(--fg-subtle); font-weight: 400; background: var(--bg) !important; }
+
+    /* ---------------------------------------------------------------------
+       Locked panels (tier-gated)
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .locked-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 700px) {
+      .app-dashboard-root .locked-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .app-dashboard-root .locked-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .app-dashboard-root .locked-card.is-unlocked { border-color: var(--border); }
+    .app-dashboard-root .locked-card-head {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+    .app-dashboard-root .locked-card-head h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 16px; margin: 0;
+    }
+    .app-dashboard-root .locked-card-sub {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.55;
+    }
+    .app-dashboard-root .locked-card-body {
+      position: relative;
+      flex: 1;
+      padding: 12px 0;
+    }
+    /* Power-feature preview — ALWAYS fully visible per feedback_no_blur_premium_features. */
+    .app-dashboard-root .locked-card .lc-preview {
+      opacity: 1;
+      transition: none;
+    }
+    .app-dashboard-root .lc-cta-footer {
+      display: none;
+      align-items: center; gap: 10px;
+      padding: 10px 12px;
+      margin-top: 4px;
+      border-radius: 10px;
+      background: var(--bg-muted);
+      border: 1px dashed var(--border-strong);
+      font-size: 12.5px; color: var(--fg-muted);
+      line-height: 1.45;
+    }
+    body.dark-mode .app-dashboard-root .lc-cta-footer { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.30); }
+    .app-dashboard-root .locked-card[data-locked="true"] .lc-cta-footer { display: flex; }
+    .app-dashboard-root .lc-cta-footer .lc-cta-msg { flex: 1; min-width: 0; }
+    .app-dashboard-root .lc-cta-footer .lc-cta-msg strong { color: var(--fg); font-weight: 600; }
+    .app-dashboard-root .lc-cta-footer .btn { flex-shrink: 0; white-space: nowrap; }
+
+    /* Faux preview content inside locked cards */
+    .app-dashboard-root .faux-row {
+      display: grid;
+      grid-template-columns: 22px 1fr 60px;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      font-size: 12.5px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .app-dashboard-root .faux-row:last-child { border-bottom: 0; }
+    .app-dashboard-root .faux-row .faux-pic {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--bg-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--fg-subtle);
+    }
+    .app-dashboard-root .faux-row .faux-name { font-weight: 500; color: var(--fg-muted); }
+    .app-dashboard-root .faux-row .faux-num { font-variant-numeric: tabular-nums; color: var(--fg-muted); text-align: right; }
+
+    /* Saved view chip */
+    .app-dashboard-root .saved-view-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 600;
+      color: var(--fg);
+    }
+    .app-dashboard-root .saved-view-chip .sv-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-primary); }
+
+    /* ---------------------------------------------------------------------
+       Footer privacy banner (always visible)
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .privacy-footer {
+      margin-top: 28px;
+      padding: 14px 18px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+      flex-wrap: wrap;
+    }
+    .app-dashboard-root .privacy-footer .lock-icon { font-size: 16px; }
+    .app-dashboard-root .privacy-footer strong { color: var(--fg); font-weight: 600; }
+    .app-dashboard-root .privacy-footer a { color: var(--brand-primary); font-weight: 500; }
+
+    /* ---------------------------------------------------------------------
+       Section stack
+       ------------------------------------------------------------------- */
+    .app-dashboard-root .stack-section + .stack-section { margin-top: 22px; }
+    .app-dashboard-root .section-heading {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13px; letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--fg-subtle);
+      margin: 22px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ---------------------------------------------------------------------
+       Print styles
+       ------------------------------------------------------------------- */
+    @media print {
+      .app-dashboard-root .appbar,
+      .app-dashboard-root aside.side,
+      .app-dashboard-root .compare-toggle,
+      .app-dashboard-root .panel-action,
+      .app-dashboard-root .mc-action,
+      .app-dashboard-root .csv-btn,
+      .app-dashboard-root .api-tile.locked,
+      .app-dashboard-root .locked-card[data-locked="true"] { display: none !important; }
+      .app-dashboard-root main.content { padding: 0 !important; }
+      .app-dashboard-root .panel,
+      .app-dashboard-root .chart-shell,
+      .app-dashboard-root .sources-shell,
+      .app-dashboard-root .blocks-shell,
+      .app-dashboard-root .crosstab-shell,
+      .app-dashboard-root .mini-card,
+      .app-dashboard-root .kpi-tile {
+        break-inside: avoid; box-shadow: none !important; border-color: #ddd !important;
+      }
+    }
+
+    /* ---------------------------------------------------------------------
+       Mobile niceties (insights)
+       ------------------------------------------------------------------- */
+    @media (max-width: 599px) {
+      .app-dashboard-root .layout[data-tab="insights"] .page-head h1 { font-size: 24px; }
+      .app-dashboard-root .layout[data-tab="insights"] .page-head h1 .crumb-page { font-size: 18px; }
+      .app-dashboard-root .kpi-tile .kpi-num { font-size: 30px; }
+      .app-dashboard-root .api-tile { font-size: 11.5px; padding: 6px 9px; }
+      .app-dashboard-root .api-tile .api-meta { font-size: 11px; }
+      .app-dashboard-root .api-tile .api-text-long { display: none; }
+      .app-dashboard-root .api-tile .api-text-short { display: inline; }
+      .app-dashboard-root .panel-title { font-size: 16px; }
+      .app-dashboard-root .crosstab-controls select { font-size: 12px; }
+    }
+    .app-dashboard-root .api-tile .api-text-short { display: none; }
+    @media (max-width: 599px) {
+      .app-dashboard-root .api-tile .api-text-short { display: inline; }
+    }
+
+    /* ---------------------------------------------------------------------
+       Dark mode overrides (insights)
+       ------------------------------------------------------------------- */
+    body.dark-mode .app-dashboard-root .panel,
+    body.dark-mode .app-dashboard-root .chart-shell,
+    body.dark-mode .app-dashboard-root .sources-shell,
+    body.dark-mode .app-dashboard-root .blocks-shell,
+    body.dark-mode .app-dashboard-root .crosstab-shell,
+    body.dark-mode .app-dashboard-root .mini-card,
+    body.dark-mode .app-dashboard-root .kpi-tile,
+    body.dark-mode .app-dashboard-root .locked-card,
+    body.dark-mode .app-dashboard-root .privacy-footer { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .src-detail { background: #0B0F1E; }
+    body.dark-mode .app-dashboard-root .crosstab-help { background: #1A2236; }
+    body.dark-mode .app-dashboard-root .blocks-table thead th { color: #6B7280; border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .blocks-table tbody td { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .blocks-table tbody tr:hover { background: #1A2236; }
+    body.dark-mode .app-dashboard-root .crosstab-table th { background: #1A2236; color: #9CA3AF; }
+    body.dark-mode .app-dashboard-root .crosstab-table th.row-header,
+    body.dark-mode .app-dashboard-root .crosstab-table td.row-header { background: #1A2236; color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .source-row:hover { background: #1A2236; }
+    body.dark-mode .app-dashboard-root .crosstab-controls select { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .free-pill {
+      background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(253,230,138,0.06));
+      color: #FCD34D;
+    }
+    body.dark-mode .app-dashboard-root .api-tile.active { background: rgba(16,185,129,0.16); color: #6EE7B7; }
+    body.dark-mode .app-dashboard-root .api-tile.locked { background: #141A2D; color: #9CA3AF; }
+    body.dark-mode .app-dashboard-root .layout[data-tab="insights"] .page-head { border-bottom-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .page-selector-trigger { background: #141A2D; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .page-selector-menu { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .time-range { background: #141A2D; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .compare-toggle { background: #141A2D; border-color: #374151; }
+    body.dark-mode .app-dashboard-root .updated-chip { color: #9CA3AF; }
+    body.dark-mode .app-dashboard-root .sources-method { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.25); }
