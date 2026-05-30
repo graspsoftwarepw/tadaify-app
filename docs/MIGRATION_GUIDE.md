@@ -9,6 +9,25 @@ Migrations apply automatically to DEV on merge to `main` (GitHub Actions
 
 ---
 
+## Pending Edge Function redeploys (post-merge)
+
+After merge of #227 (Edge Functions aligned to untiltify convention — `npm:`/`jsr:` + `Deno.serve`):
+
+```bash
+supabase functions deploy before-user-created --project-ref <DEV_PROJECT_REF>
+supabase functions deploy user-export-data --project-ref <DEV_PROJECT_REF>
+```
+
+Same commands against PROD project-ref on `v*` tag deploy. No DB migrations,
+no config changes — pure function source updates.
+
+**Verification post-deploy:**
+- `before-user-created`: trigger signup flow on DEV, confirm OTP arrives in <2s.
+- `user-export-data`: trigger GDPR export from `/settings/privacy`, confirm
+  JSON download.
+
+---
+
 ## Pending for PROD
 
 ### 20260505182021_profile_extras_base.sql

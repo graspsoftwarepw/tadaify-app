@@ -51,7 +51,10 @@ let pagesResult: MockResponse<unknown[]>;
 let blocksResult: MockResponse<unknown[]>;
 let profileExtrasResult: MockResponse<unknown[]>;
 
-vi.mock("https://esm.sh/@supabase/supabase-js@2", () => {
+// Stub the types-only side-effect import (Deno-only specifier; harmless in Node).
+vi.mock("jsr:@supabase/functions-js/edge-runtime.d.ts", () => ({}));
+
+vi.mock("npm:@supabase/supabase-js@2.49.1", () => {
   return {
     createClient: () => mockClient,
     // Re-export PostgrestError type (used as instanceof — not needed at runtime)

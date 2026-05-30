@@ -21,7 +21,7 @@
  * DEC trail: DEC-294 (force-email Auth Hook ON)
  */
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 interface HookPayload {
   user: {
@@ -40,7 +40,7 @@ interface HookResponse {
   };
 }
 
-serve(async (req: Request): Promise<Response> => {
+Deno.serve(async (req: Request): Promise<Response> => {
   // Only accept POST requests
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });

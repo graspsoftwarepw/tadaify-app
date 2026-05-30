@@ -24,7 +24,8 @@
  * to be included; covers tier_slug and any future columns added via ALTER).
  */
 
-import { createClient, PostgrestError } from "https://esm.sh/@supabase/supabase-js@2";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient, type PostgrestError } from "npm:@supabase/supabase-js@2.49.1";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
