@@ -1524,3 +1524,138 @@ body:has(.creator-shell) {
   align-items: center;
   justify-content: center;
 }
+
+/* ── Countdown block (F-BLOCK-COUNTDOWN-001) ─────────────────────────────
+ *
+ * Rendered as `<article class="block-countdown-wrap"><div class="block-countdown block-countdown-<style>">
+ * <div class="block-countdown-label">…</div><div class="block-countdown-units">
+ * <div class="block-countdown-unit"><span class="block-countdown-num">00</span>
+ * <span class="block-countdown-unit-label">Days</span></div>…</div>…</div></article>`.
+ * Snapshot at load with a `data-countdown-target` hook for a future live tick.
+ *
+ * Visual contract: app-block-editor.html BLOCK_TYPES.countdown styles. */
+.blocks article.block-countdown-wrap {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.block-countdown-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.block-countdown-label-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.block-countdown-units {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+}
+
+.block-countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 60px;
+}
+
+.block-countdown-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 12px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--fg);
+  font-family: var(--font-mono, var(--font-sans));
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.block-countdown-unit-label {
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Compact / inline variants tighten the unit boxes. */
+.block-countdown-compact .block-countdown-num,
+.block-countdown-inline .block-countdown-num {
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 20px;
+  border-radius: 8px;
+}
+.block-countdown-inline .block-countdown-units {
+  gap: 6px;
+}
+
+.block-countdown-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  background: var(--brand-primary);
+  border-radius: 12px;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.block-countdown-link:hover {
+  filter: brightness(1.05);
+}
+
+.block-countdown-replacement {
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.block-countdown-empty {
+  margin: 0;
+  padding: 16px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  background: var(--bg-muted);
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  text-align: center;
+}
