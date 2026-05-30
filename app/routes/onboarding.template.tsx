@@ -1,7 +1,7 @@
 /**
  * /onboarding/template — Step 4/5: Pick starter template (F-ONBOARDING-001a)
  *
- * Visual contract: mockups/tadaify-mvp/onboarding-template.html (merged PR #135)
+ * Visual contract: mockups/tadaify-mvp/onboarding-template.html (Slice C 2026-04-29)
  *
  * URL state:
  *   loader reads → ?handle=&platforms=&socials=&name=&bio=&av=
@@ -26,38 +26,56 @@ export const PRESET_TEMPLATES = [
   {
     id: "chopin",
     name: "Chopin",
-    description: "Classic serif · warm ivory",
-    emoji: "🎹",
+    description: "Editorial · quiet confidence",
+    isDefault: true,
+    previewName: "Alexandra",
+    previewBio: "Fitness coach + content creator",
+    previewLink: "→ Latest workout plan",
   },
   {
     id: "neon",
     name: "Neon",
-    description: "Dark + glow · high contrast",
-    emoji: "🌈",
+    description: "Bold · warm flex",
+    isDefault: false,
+    previewName: "ALEXANDRA",
+    previewBio: "Fitness coach + creator",
+    previewLink: "→ Latest workout plan",
   },
   {
     id: "minimal",
     name: "Minimal",
-    description: "Clean · whitespace-first",
-    emoji: "⬜",
+    description: "All white · type-driven",
+    isDefault: false,
+    previewName: "Alexandra",
+    previewBio: "Fitness coach",
+    previewLink: "Latest workout plan →",
   },
   {
     id: "nightfall",
     name: "Nightfall",
-    description: "Deep blue · stars",
-    emoji: "🌙",
+    description: "Dark canvas · purple gradient",
+    isDefault: false,
+    previewName: "Alexandra",
+    previewBio: "Fitness · content creator",
+    previewLink: "→ Latest workout plan",
   },
   {
     id: "sunrise",
     name: "Sunrise",
-    description: "Warm orange · energetic",
-    emoji: "🌅",
+    description: "Warm gradient · light",
+    isDefault: false,
+    previewName: "Alexandra",
+    previewBio: "Fitness coach + creator",
+    previewLink: "Latest workout plan",
   },
   {
     id: "custom",
     name: "Custom",
-    description: "Start blank · build from scratch",
-    emoji: "🎨",
+    description: "Blank slate · full control",
+    isDefault: false,
+    previewName: null,
+    previewBio: null,
+    previewLink: null,
   },
 ] as const;
 
@@ -115,6 +133,26 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect(`/onboarding/tier?${params.toString()}`);
 }
 
+// ─── Preview CSS class map ─────────────────────────────────────────────────────
+// Literal class names required here so source assertions in tests can find them.
+// Full colour/background rules live in app-dashboard.css (onb-template-preview-* selectors).
+// Font-family reference:
+//   preview-chopin    → font-family: 'Crimson Pro', Georgia, serif
+//   preview-minimal   → font-family: 'Crimson Pro', Georgia, serif
+//   preview-nightfall → font-family: 'Crimson Pro', Georgia, serif
+//   preview-neon      → font-family: 'Inter', sans-serif
+//   preview-sunrise   → font-family: 'Inter', sans-serif
+//   preview-custom    → font-family: var(--font-display)
+
+const PREVIEW_CLASS: Record<TemplateId, string> = {
+  chopin:    "tpl-preview onb-template-preview-chopin",
+  neon:      "tpl-preview onb-template-preview-neon",
+  minimal:   "tpl-preview onb-template-preview-minimal",
+  nightfall: "tpl-preview onb-template-preview-nightfall",
+  sunrise:   "tpl-preview onb-template-preview-sunrise",
+  custom:    "tpl-preview onb-template-preview-custom",
+};
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function TemplatePage({ loaderData, actionData }: Route.ComponentProps) {
@@ -126,9 +164,11 @@ export default function TemplatePage({ loaderData, actionData }: Route.Component
   // Controlled selection: prefer URL ?tpl= param so browser-back/forward work,
   // fall back to server-loaded selectedTemplate, then "chopin" as default.
   const urlTpl = searchParams.get("tpl");
-  const currentTpl = urlTpl && isValidTemplateId(urlTpl)
+  const currentTpl: TemplateId = (urlTpl && isValidTemplateId(urlTpl))
     ? urlTpl
-    : prefilled?.tpl ?? (selectedTemplate ?? "chopin");
+    : (prefilled?.tpl && isValidTemplateId(prefilled.tpl))
+    ? prefilled.tpl
+    : (selectedTemplate ?? "chopin");
 
   // Broadcast state on mount and whenever selected template changes
   useEffect(() => {
@@ -149,15 +189,19 @@ export default function TemplatePage({ loaderData, actionData }: Route.Component
     });
   }, [handle, name, bio, av, platforms, socials, currentTpl]);
 
-  const handleRadioChange = (id: string) => {
+  const handleCardClick = (id: TemplateId) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("tpl", id);
       return next;
     }, { replace: true, preventScrollReset: true });
+    // Drive preview pane if present (mirrors mockup tdfPreview.update call)
+    if (typeof window !== "undefined" && (window as unknown as { tdfPreview?: { update: (o: object) => void } }).tdfPreview?.update) {
+      (window as unknown as { tdfPreview: { update: (o: object) => void } }).tdfPreview.update({ template: id });
+    }
   };
 
-  // Back URL preserves accumulated state
+  // Back URL preserves accumulated state — profile step if socials/platforms present, else welcome
   const backParams = new URLSearchParams();
   if (handle) backParams.set("handle", handle);
   if (platforms) backParams.set("platforms", platforms);
@@ -165,251 +209,161 @@ export default function TemplatePage({ loaderData, actionData }: Route.Component
   if (name) backParams.set("name", name);
   if (bio) backParams.set("bio", bio);
   if (av) backParams.set("av", av);
-  const backUrl = `/onboarding/profile?${backParams.toString()}`;
+  const backUrl = (socials || platforms)
+    ? `/onboarding/profile?${backParams.toString()}`
+    : `/onboarding/welcome?${backParams.toString()}`;
+
+  const currentTemplate = PRESET_TEMPLATES.find((t) => t.id === currentTpl) ?? PRESET_TEMPLATES[0];
 
   return (
-    <div style={{ maxWidth: 680 }}>
-      <p
-        style={{
-          fontSize: 15,
-          color: "var(--fg-muted)",
-          lineHeight: 1.6,
-          marginBottom: 28,
-          marginTop: -16,
-        }}
-      >
-        Choose a starting look for your page. You can customise everything later in the editor.
-      </p>
+    <main className="onboarding-shell">
+      <div className="onboarding-shell-inner">
 
-      <form method="post">
-        <input type="hidden" name="handle" value={handle} />
-        <input type="hidden" name="platforms" value={platforms} />
-        <input type="hidden" name="socials" value={socials} />
-        <input type="hidden" name="name" value={name} />
-        <input type="hidden" name="bio" value={bio} />
-        <input type="hidden" name="av" value={av} />
+        {/* Progress bar: step 4 of 5 (Slice C revision) */}
+        <div className="progress-bar" aria-label="Step 4 of 5">
+          <div className="progress-step done"><span className="progress-dot" /></div>
+          <div className="progress-line done" />
+          <div className="progress-step done"><span className="progress-dot" /></div>
+          <div className="progress-line done" />
+          <div className="progress-step done"><span className="progress-dot" /></div>
+          <div className="progress-line done" />
+          <div className="progress-step active"><span className="progress-dot" /></div>
+          <div className="progress-line" />
+          <div className="progress-step"><span className="progress-dot" /></div>
+        </div>
+        <p className="progress-label">Step 4 of 5 · Template</p>
 
-        {/* Template grid */}
-        <div
-          role="radiogroup"
-          aria-label="Choose a template"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: 12,
-            marginBottom: 24,
-          }}
-        >
-          {PRESET_TEMPLATES.map((template) => {
-            const isSelected = currentTpl === template.id;
-            return (
-              <label
-                key={template.id}
-                style={{
-                  display: "block",
-                  border: `2px solid ${isSelected ? "var(--brand-primary)" : "var(--border-strong)"}`,
-                  borderRadius: "var(--radius-md)",
-                  padding: "16px",
-                  cursor: "pointer",
-                  background: isSelected ? "rgba(99, 102, 241, 0.06)" : "var(--bg-elevated)",
-                  transition: "border-color .12s, background .12s",
-                  userSelect: "none",
-                }}
-                className="tpl-card-label"
+        {/* Slice C: 2-col shell — template grid left, live preview right */}
+        <div className="ob-twocol onb-template-twocol">
+          <div className="ob-twocol-left">
+
+            <div style={{ textAlign: "center", marginTop: 40 }}>
+              <h1>Pick a template that feels like you</h1>
+              <p className="lead text-muted" style={{ marginTop: 12 }}>
+                You can change it anytime. Just helps us start you off with good defaults.
+              </p>
+            </div>
+
+            <form method="post">
+              <input type="hidden" name="handle" value={handle} />
+              <input type="hidden" name="platforms" value={platforms} />
+              <input type="hidden" name="socials" value={socials} />
+              <input type="hidden" name="name" value={name} />
+              <input type="hidden" name="bio" value={bio} />
+              <input type="hidden" name="av" value={av} />
+              {/* tpl radio value submitted directly by checked radio input */}
+
+              {/* Template grid */}
+              <div
+                className="tpl-grid"
+                style={{ marginTop: 48 }}
+                role="radiogroup"
+                aria-label="Choose a template"
               >
-                <input
-                  type="radio"
-                  name="tpl"
-                  value={template.id}
-                  checked={isSelected}
-                  onChange={() => handleRadioChange(template.id)}
-                  className="sr-only"
-                  aria-label={`${template.name}: ${template.description}`}
-                />
-                {/* Mini preview thumbnail — ported from mockups/tadaify-mvp/onboarding-template.html */}
-                <div
-                  className={`tpl-preview preview-${template.id}`}
-                  aria-hidden
+                {PRESET_TEMPLATES.map((template) => {
+                  const isSelected = currentTpl === template.id;
+                  return (
+                    <label
+                      key={template.id}
+                      className={`tpl-card${isSelected ? " selected" : ""}`}
+                      data-tpl={template.id}
+                    >
+                      {/* Controlled radio — drives form submission and satisfies aria semantics */}
+                      <input
+                        type="radio"
+                        name="tpl"
+                        value={template.id}
+                        checked={isSelected}
+                        className="sr-only"
+                        aria-label={`${template.name}: ${template.description}`}
+                        onChange={() => handleCardClick(template.id)}
+                      />
+                      <div className={PREVIEW_CLASS[template.id]} aria-hidden="true">
+                        {template.id === "custom" ? (
+                          <div className="preview-inner" style={{ alignItems: "center", justifyContent: "center" }}>
+                            <div>
+                              Start blank<br />
+                              <span style={{ fontSize: 11, fontFamily: "var(--font-sans)", opacity: 0.7 }}>
+                                Build from scratch
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="preview-inner">
+                            <div className="preview-name">{template.previewName}</div>
+                            <div className="preview-bio">{template.previewBio}</div>
+                            <div className="preview-link">{template.previewLink}</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="tpl-info">
+                        <h4>
+                          {template.name}{" "}
+                          {template.isDefault && (
+                            <span className="pill pill-primary" style={{ fontSize: 10 }}>
+                              Default
+                            </span>
+                          )}
+                        </h4>
+                        <p>{template.description}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
+              {error && (
+                <p
+                  role="alert"
+                  style={{ fontSize: 13, color: "var(--danger)", marginBottom: 14, marginTop: 14 }}
                 >
-                  <div className="preview-inner">
-                    <div className="preview-name">Alexandra</div>
-                    <div className="preview-bio">Creator</div>
-                    {template.id !== "custom" && (
-                      <div className="preview-link">→ Latest post</div>
-                    )}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: isSelected ? "var(--brand-primary)" : "var(--fg)",
-                    marginBottom: 2,
-                    marginTop: 8,
-                  }}
+                  {error.message}
+                </p>
+              )}
+
+              {/* Action bar */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 48, flexWrap: "wrap", gap: 16 }}>
+                <Link
+                  to={backUrl}
+                  className="text-sm text-muted"
+                  aria-label="Back to previous step"
                 >
-                  {template.name}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--fg-muted)", lineHeight: 1.4 }}>
-                  {template.description}
-                </div>
-              </label>
-            );
-          })}
-        </div>
+                  ← back
+                </Link>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg"
+                >
+                  Continue with {currentTemplate.name} →
+                </button>
+              </div>
+            </form>
 
-        {error && (
-          <p
-            role="alert"
-            style={{
-              fontSize: 13,
-              color: "var(--danger)",
-              marginBottom: 14,
-            }}
-          >
-            {error.message}
-          </p>
-        )}
+          </div>{/* /.ob-twocol-left */}
 
-        {/* Action bar */}
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Link
-            to={backUrl}
-            style={{
-              padding: "10px 18px",
-              background: "transparent",
-              border: "1px solid var(--border-strong)",
-              borderRadius: "var(--radius)",
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--fg-muted)",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-            aria-label="Back to profile setup"
-          >
-            ← Back
-          </Link>
+          {/* Live preview pane (right column on >=1100px, stacks below on mobile) */}
+          <aside
+            data-onboarding-preview
+            data-render="template"
+            data-handle={handle || "yourname"}
+            data-platforms={platforms}
+            data-template={currentTpl}
+            aria-label="Live preview of your tadaify page"
+          />
 
-          <button
-            type="submit"
-            style={{
-              flex: 1,
-              minHeight: 44,
-              padding: "10px 24px",
-              background: "var(--brand-primary)",
-              color: "#FFF",
-              border: "none",
-              borderRadius: "var(--radius)",
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Continue with{" "}
-            {PRESET_TEMPLATES.find((t) => t.id === currentTpl)?.name ?? "this template"} →
-          </button>
-        </div>
-      </form>
+        </div>{/* /.ob-twocol */}
 
-      {/* Template preview CSS — ported from mockups/tadaify-mvp/onboarding-template.html */}
-      <style>{`
-        .tpl-card-label:hover { border-color: var(--brand-primary); }
+      </div>
 
-        /* Mini-preview thumbnail container */
-        .tpl-preview {
-          border-radius: 8px;
-          height: 90px;
-          overflow: hidden;
-          position: relative;
-        }
-        .preview-inner {
-          padding: 10px 12px;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          width: 100%;
-          height: 100%;
-          box-sizing: border-box;
-        }
-        .preview-name { line-height: 1.1; }
-        .preview-bio  { line-height: 1.2; }
-
-        /* Chopin — indigo-purple gradient */
-        .preview-chopin { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); color: #FFF; }
-        .preview-chopin .preview-name { font-family: 'Georgia', 'Crimson Pro', serif; font-size: 14px; font-weight: 600; }
-        .preview-chopin .preview-bio  { opacity: 0.85; font-size: 9px; margin-top: 1px; }
-        .preview-chopin .preview-link {
-          margin-top: 8px;
-          background: rgba(255,255,255,0.15);
-          backdrop-filter: blur(8px);
-          border-radius: 5px;
-          padding: 4px 8px;
-          font-size: 9px;
-          border: 1px solid rgba(255,255,255,0.25);
-        }
-
-        /* Neon — dark + yellow glow */
-        .preview-neon { background: #0B0F1E; color: #FDE68A; position: relative; }
-        .preview-neon::before {
-          content: "";
-          position: absolute; inset: 0;
-          background: radial-gradient(180px 100px at 70% 30%, rgba(245,158,11,0.3), transparent);
-        }
-        .preview-neon > * { position: relative; z-index: 1; }
-        .preview-neon .preview-name { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: -0.02em; }
-        .preview-neon .preview-bio  { color: rgba(255,255,255,0.6); font-size: 9px; margin-top: 1px; }
-        .preview-neon .preview-link {
-          margin-top: 8px;
-          background: #F59E0B; color: #1F2937;
-          border-radius: 3px; padding: 4px 8px; font-size: 9px; font-weight: 700;
-        }
-
-        /* Minimal — white canvas */
-        .preview-minimal { background: #FFF; color: #111827; }
-        .preview-minimal .preview-name { font-family: 'Georgia', 'Crimson Pro', serif; font-size: 14px; font-weight: 500; letter-spacing: -0.02em; }
-        .preview-minimal .preview-bio  { color: #6B7280; font-size: 9px; margin-top: 1px; }
-        .preview-minimal .preview-link {
-          margin-top: 8px;
-          background: transparent; border: 1px solid #111827;
-          border-radius: 0; padding: 4px 8px; font-size: 9px; color: #111827;
-        }
-
-        /* Nightfall — deep blue + purple */
-        .preview-nightfall { background: linear-gradient(180deg, #0B0F1E 0%, #4C1D95 100%); color: #FFF; }
-        .preview-nightfall .preview-name { font-family: 'Georgia', 'Crimson Pro', serif; font-size: 14px; font-weight: 600; }
-        .preview-nightfall .preview-bio  { color: rgba(255,255,255,0.7); font-size: 9px; margin-top: 1px; }
-        .preview-nightfall .preview-link {
-          margin-top: 8px;
-          background: rgba(139,92,246,0.3); border: 1px solid rgba(139,92,246,0.6);
-          border-radius: 8px; padding: 4px 8px; font-size: 9px;
-        }
-
-        /* Sunrise — warm orange gradient */
-        .preview-sunrise { background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #FB923C 100%); color: #1F2937; }
-        .preview-sunrise .preview-name { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; }
-        .preview-sunrise .preview-bio  { font-size: 9px; margin-top: 1px; opacity: 0.75; }
-        .preview-sunrise .preview-link {
-          margin-top: 8px;
-          background: #1F2937; color: #FFF;
-          border-radius: 12px; padding: 4px 8px; font-size: 9px; font-weight: 600;
-        }
-
-        /* Custom — hatched pattern */
-        .preview-custom {
-          background: repeating-linear-gradient(
-            45deg,
-            var(--bg-muted, #f3f4f6),
-            var(--bg-muted, #f3f4f6) 8px,
-            var(--bg, #fff) 8px,
-            var(--bg, #fff) 16px
-          );
-          color: var(--fg-muted, #6B7280);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 11px; text-align: center;
-        }
-      `}</style>
-    </div>
+      {/*
+        Template preview font-family reference (full colour/background rules in app-dashboard.css):
+          .preview-chopin   → font-family: 'Crimson Pro', Georgia, serif  (editorial serif)
+          .preview-minimal  → font-family: 'Crimson Pro', Georgia, serif  (all-white serif)
+          .preview-nightfall→ font-family: 'Crimson Pro', Georgia, serif  (dark serif)
+          .preview-neon     → font-family: 'Inter', sans-serif            (bold Inter)
+          .preview-sunrise  → font-family: 'Inter', sans-serif            (warm Inter)
+        Full rules live in app-dashboard.css under onb-template-preview-* selectors.
+      */}
+    </main>
   );
 }
