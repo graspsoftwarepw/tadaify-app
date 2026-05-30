@@ -4600,3 +4600,445 @@ body.dark-mode .app-dashboard-root .welcome-banner {
       border-color: rgba(99,102,241,0.50);
       color: #A5B4FC;
     }
+
+    /* ══════════════════════════════════════════════════════════════
+       Settings — Billing sub-page (SettingsBilling.tsx)
+       Extracted from mockups/tadaify-mvp/app-settings-billing.html
+       All selectors scoped under .app-dashboard-root .main-settings
+       ══════════════════════════════════════════════════════════════ */
+
+    /* @keyframes spin — global (portal spinner); name-spaced to avoid
+       collision with any other spin animation already declared. */
+    @keyframes billing-spin { to { transform: rotate(360deg); } }
+
+    /* ── State banners ── */
+    .app-dashboard-root .main-settings .sb-billing.state-banner {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-radius: 12px;
+      margin-bottom: 14px; font-size: 13.5px; line-height: 1.5;
+      border: 1px solid transparent;
+    }
+    .app-dashboard-root .main-settings .sb-billing .sb-ico {
+      font-size: 18px; line-height: 1.2; flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .sb-billing .sb-body { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .sb-billing .sb-body strong {
+      display: block; font-size: 14px; margin-bottom: 2px; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .sb-billing.danger {
+      background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.30); color: #991B1B;
+    }
+    .app-dashboard-root .main-settings .sb-billing.danger strong { color: #7F1D1D; }
+    .app-dashboard-root .main-settings .sb-billing.warn {
+      background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.30); color: var(--brand-warm-dark);
+    }
+    .app-dashboard-root .main-settings .sb-billing.warn strong { color: #78350F; }
+    .app-dashboard-root .main-settings .sb-billing.info {
+      background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.30); color: #1E40AF;
+    }
+    .app-dashboard-root .main-settings .sb-billing.info strong { color: #1E3A8A; }
+    .app-dashboard-root .main-settings .sb-billing .sb-actions {
+      display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap;
+    }
+
+    /* ── Plan card ── */
+    .app-dashboard-root .main-settings .plan-card {
+      display: flex; gap: 18px; align-items: center;
+      padding: 18px;
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .app-dashboard-root .main-settings .plan-card .plan-icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; background: var(--bg-elevated);
+      box-shadow: var(--shadow-sm); flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .plan-card .plan-name {
+      font-size: 22px; font-family: var(--font-display); font-weight: 600; line-height: 1.1;
+    }
+    .app-dashboard-root .main-settings .plan-card .plan-price {
+      font-size: 13.5px; color: var(--fg-muted); margin-top: 4px;
+    }
+    .app-dashboard-root .main-settings .plan-card .plan-price b { color: var(--fg); font-weight: 600; }
+    .app-dashboard-root .main-settings .plan-card .plan-badges {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;
+    }
+    .app-dashboard-root .main-settings .plan-card .plan-actions {
+      margin-left: auto; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+    }
+    @media (max-width: 620px) {
+      .app-dashboard-root .main-settings .plan-card { flex-direction: column; align-items: flex-start; }
+      .app-dashboard-root .main-settings .plan-card .plan-actions {
+        margin-left: 0; flex-direction: row; flex-wrap: wrap; width: 100%;
+      }
+    }
+
+    /* ── Chips (billing-specific variants) ── */
+    .app-dashboard-root .main-settings .chip.locked-life {
+      background: rgba(245,158,11,0.12); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .app-dashboard-root .main-settings .chip.success {
+      background: var(--success-bg); color: #065F46;
+    }
+    .app-dashboard-root .main-settings .chip.danger {
+      background: var(--danger-bg); color: #991B1B;
+    }
+    .app-dashboard-root .main-settings .chip.warn {
+      background: var(--warning-bg); color: #92400E;
+      border: 1px solid rgba(245,158,11,0.30);
+    }
+    .app-dashboard-root .main-settings .chip.info {
+      background: var(--info-bg); color: #1E40AF;
+    }
+
+    /* ── Pricelock note (DEC-PRICELOCK-01) ── */
+    .app-dashboard-root .main-settings .pricelock-note {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px; margin-top: 10px;
+      font-size: 12.5px; color: var(--brand-warm-dark); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .pricelock-note .pn-ico {
+      font-size: 16px; line-height: 1; flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .pricelock-note a {
+      color: var(--brand-warm-dark); text-decoration: underline;
+    }
+
+    /* ── Compare plans expander ── */
+    .app-dashboard-root .main-settings .compare-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; border: 0; padding: 0;
+      color: var(--brand-primary); font-size: 13px; font-weight: 500;
+      cursor: pointer; margin-top: 12px;
+    }
+    .app-dashboard-root .main-settings .compare-toggle .ct-caret {
+      transition: transform .15s ease; display: inline-block;
+    }
+    .app-dashboard-root .main-settings .compare-toggle.open .ct-caret {
+      transform: rotate(90deg);
+    }
+    .app-dashboard-root .main-settings .compare-grid {
+      display: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px; margin-top: 14px;
+    }
+    .app-dashboard-root .main-settings .compare-grid.open { display: grid; }
+    @media (max-width: 760px) {
+      .app-dashboard-root .main-settings .compare-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 460px) {
+      .app-dashboard-root .main-settings .compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .app-dashboard-root .main-settings .compare-card {
+      padding: 14px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      display: flex; flex-direction: column; gap: 8px; position: relative;
+    }
+    .app-dashboard-root .main-settings .compare-card.is-current {
+      border-color: var(--brand-primary); background: rgba(99,102,241,0.04);
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-name {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-price {
+      font-size: 13px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-price b {
+      color: var(--fg); font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-features {
+      list-style: none; padding: 0; margin: 4px 0 8px;
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-features li {
+      font-size: 11.5px; color: var(--fg-muted); padding: 2px 0 2px 14px; position: relative;
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-features li::before {
+      content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 700;
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-features li.muted { color: var(--fg-subtle); }
+    .app-dashboard-root .main-settings .compare-card .cc-features li.muted::before {
+      content: "·"; color: var(--fg-subtle);
+    }
+    .app-dashboard-root .main-settings .compare-card .cc-cta {
+      margin-top: auto; font-size: 12px; padding: 6px 10px; border-radius: 6px;
+      background: var(--brand-primary); color: #fff; text-align: center; border: 0; cursor: pointer;
+    }
+    .app-dashboard-root .main-settings .compare-card.is-current .cc-cta {
+      background: var(--bg-muted); color: var(--fg-muted); cursor: default;
+    }
+
+    /* ── Cadence toggle ── */
+    .app-dashboard-root .main-settings .cadence-toggle {
+      display: inline-flex; align-items: center;
+      background: var(--bg-muted); border-radius: 999px; padding: 3px; gap: 2px;
+    }
+    .app-dashboard-root .main-settings .cadence-toggle button {
+      border: 0; background: transparent;
+      font-size: 12px; font-weight: 600; padding: 5px 12px;
+      border-radius: 999px; color: var(--fg-muted); cursor: pointer;
+    }
+    .app-dashboard-root .main-settings .cadence-toggle button.active {
+      background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm);
+    }
+    .app-dashboard-root .main-settings .cadence-savings {
+      font-size: 11px; color: var(--brand-warm-dark); margin-left: 8px; font-weight: 600;
+    }
+
+    /* ── Payment method card ── */
+    .app-dashboard-root .main-settings .pm-card {
+      display: flex; gap: 14px; align-items: center;
+      padding: 14px 16px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 12px;
+    }
+    .app-dashboard-root .main-settings .pm-card .pm-brand {
+      width: 50px; height: 32px; border-radius: 6px;
+      background: linear-gradient(135deg, #1A1F71 0%, #2563EB 100%);
+      color: #fff; font-family: var(--font-display); font-weight: 700;
+      font-size: 13px; letter-spacing: 0.03em;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .pm-card .pm-meta { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .pm-card .pm-meta .pm-num {
+      font-family: var(--font-mono); font-size: 13.5px; font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .pm-card .pm-meta .pm-exp {
+      font-size: 12px; color: var(--fg-muted); margin-top: 2px;
+    }
+    .app-dashboard-root .main-settings .pm-card .pm-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .app-dashboard-root .main-settings .no-pm-card {
+      display: flex; gap: 12px; align-items: center;
+      padding: 16px; background: var(--bg);
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      color: var(--fg-muted); font-size: 13.5px;
+    }
+    .app-dashboard-root .main-settings .no-pm-card .npm-ico { font-size: 22px; }
+
+    /* ── Invoice toolbar & table ── */
+    .app-dashboard-root .main-settings .invoice-toolbar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .app-dashboard-root .main-settings .invoice-toolbar .it-label {
+      font-size: 11.5px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .invoice-toolbar select {
+      font: inherit; font-size: 12px; padding: 5px 22px 5px 10px;
+      border: 1px solid var(--border-strong); border-radius: 8px;
+      background: var(--bg-elevated); color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .invoice-toolbar .it-count {
+      margin-left: auto; font-size: 12px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .invoice-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .app-dashboard-root .main-settings .invoice-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .invoice-table td {
+      padding: 12px; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .invoice-table tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .main-settings .invoice-table td.amount {
+      font-family: var(--font-mono); font-size: 12.5px; font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .invoice-table .status-paid {
+      font-size: 11px; font-weight: 600; color: #065F46;
+      background: var(--success-bg); padding: 2px 8px; border-radius: 999px;
+    }
+    .app-dashboard-root .main-settings .invoice-table .status-failed {
+      font-size: 11px; font-weight: 600; color: #991B1B;
+      background: var(--danger-bg); padding: 2px 8px; border-radius: 999px;
+    }
+    .app-dashboard-root .main-settings .invoice-table .status-open {
+      font-size: 11px; font-weight: 600; color: #1E40AF;
+      background: var(--info-bg); padding: 2px 8px; border-radius: 999px;
+    }
+    .app-dashboard-root .main-settings .invoice-table .status-void {
+      font-size: 11px; font-weight: 600; color: var(--fg-muted);
+      background: var(--bg-muted); padding: 2px 8px; border-radius: 999px;
+    }
+    .app-dashboard-root .main-settings .invoices-empty {
+      padding: 28px; text-align: center;
+      color: var(--fg-muted); font-size: 13px;
+      background: var(--bg); border: 1.5px dashed var(--border-strong); border-radius: 12px;
+    }
+    .app-dashboard-root .main-settings .invoices-empty .ie-ico {
+      font-size: 28px; margin-bottom: 6px;
+    }
+    .app-dashboard-root .main-settings .invoices-footer {
+      margin-top: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .invoices-footer .it-count {
+      font-size: 12px; color: var(--fg-muted);
+    }
+
+    /* ── Domain add-ons (DEC-PRICELOCK-02) ── */
+    .app-dashboard-root .main-settings .domain-addon-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .domain-addon-row:first-child { padding-top: 0; }
+    .app-dashboard-root .main-settings .domain-addon-row:last-child {
+      border-bottom: 0; padding-bottom: 0;
+    }
+    .app-dashboard-root .main-settings .domain-addon-row svg {
+      color: var(--fg-muted); flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .domain-addon-row .da-name {
+      flex: 1; font-weight: 500; min-width: 0; word-break: break-all;
+    }
+    .app-dashboard-root .main-settings .domain-addon-row .da-price {
+      color: var(--fg-muted); font-size: 12.5px; font-family: var(--font-mono);
+    }
+    .app-dashboard-root .main-settings .domain-addon-row.is-failed .da-name {
+      color: var(--danger);
+    }
+    .app-dashboard-root .main-settings .domains-empty {
+      padding: 18px; background: var(--bg);
+      border: 1.5px dashed var(--border-strong); border-radius: 12px;
+      font-size: 13px; color: var(--fg-muted); text-align: center;
+    }
+    .app-dashboard-root .main-settings .domains-empty a { color: var(--brand-primary); }
+
+    /* ── Stripe CTA row + trust strip ── */
+    .app-dashboard-root .main-settings .stripe-cta-row {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .stripe-trust-strip {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 10px; padding: 4px 10px; border-radius: 99px;
+      background: var(--bg-muted); font-size: 11px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .stripe-trust-strip .sts-ico { font-size: 12px; }
+
+    /* ── Cancel cross-link footer row ── */
+    .app-dashboard-root .main-settings .cross-link-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border); border-radius: 10px;
+      font-size: 13px; color: var(--fg-muted); line-height: 1.5;
+    }
+    .app-dashboard-root .main-settings .cross-link-row .cl-link {
+      color: var(--danger); font-weight: 600;
+      background: transparent; border: 0; padding: 0;
+      font-family: inherit; font-size: inherit; cursor: pointer;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .app-dashboard-root .main-settings .cross-link-row .cl-ico { font-size: 16px; }
+
+    /* cl-link also used inline in section-help and state banners */
+    .app-dashboard-root .main-settings .cl-link {
+      font-weight: 600;
+      background: transparent; border: 0; padding: 0;
+      font-family: inherit; font-size: inherit; cursor: pointer;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+
+    /* ── Billing help footer ── */
+    .app-dashboard-root .main-settings .help-footer {
+      margin-top: 24px; padding-top: 18px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px; color: var(--fg-subtle); line-height: 1.6;
+    }
+    .app-dashboard-root .main-settings .help-footer a { color: var(--brand-primary); }
+
+    /* ── Portal spinner (Stripe redirect modal) ── */
+    .app-dashboard-root .main-settings .portal-spinner {
+      width: 56px; height: 56px;
+      border: 4px solid var(--bg-muted);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      margin: 16px auto 18px;
+      animation: billing-spin 0.9s linear infinite;
+    }
+
+    /* ── Cancel-flow modal elements ── */
+    .app-dashboard-root .main-settings .cancel-step { display: none; }
+    .app-dashboard-root .main-settings .cancel-step.active { display: block; }
+    .app-dashboard-root .main-settings .reason-list {
+      display: flex; flex-direction: column; gap: 6px; margin: 12px 0 16px;
+    }
+    .app-dashboard-root .main-settings .reason-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; transition: all .12s ease; font-size: 13.5px;
+    }
+    .app-dashboard-root .main-settings .reason-item:hover {
+      border-color: var(--brand-primary); background: var(--bg-muted);
+    }
+    .app-dashboard-root .main-settings .reason-item input[type="radio"] {
+      margin-top: 3px; flex-shrink: 0; accent-color: var(--brand-primary);
+    }
+    .app-dashboard-root .main-settings .reason-item .ri-body { flex: 1; }
+    .app-dashboard-root .main-settings .reason-item .ri-title { font-weight: 600; color: var(--fg); }
+    .app-dashboard-root .main-settings .reason-item .ri-sub {
+      font-size: 11.5px; color: var(--fg-muted); margin-top: 2px;
+    }
+    .app-dashboard-root .main-settings .cancel-summary {
+      padding: 14px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.30);
+      border-radius: 10px; margin: 14px 0;
+      font-size: 13px; color: var(--brand-warm-dark); line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .cancel-summary b { color: #78350F; }
+
+    /* ── modal-md width variant used in change-plan and cancel modals ── */
+    .app-dashboard-root .main-settings .modal.modal-md { max-width: 680px; }
+
+    /* ── Dark mode overrides — Billing ── */
+    body.dark-mode .app-dashboard-root .main-settings .plan-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.05)) !important;
+      border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .plan-card .plan-icon {
+      background: #0B0F1E;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .pm-card,
+    body.dark-mode .app-dashboard-root .main-settings .no-pm-card,
+    body.dark-mode .app-dashboard-root .main-settings .invoices-empty,
+    body.dark-mode .app-dashboard-root .main-settings .domains-empty,
+    body.dark-mode .app-dashboard-root .main-settings .compare-card {
+      background: #0B0F1E; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .compare-card.is-current {
+      border-color: var(--brand-primary); background: rgba(99,102,241,0.10);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .invoice-table th {
+      color: #6B7280; border-bottom-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .invoice-table td {
+      border-bottom-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .cross-link-row {
+      background: #0B0F1E; border-color: #1F2937; color: #9CA3AF;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .cadence-toggle { background: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-settings .cadence-toggle button { color: #9CA3AF; }
+    body.dark-mode .app-dashboard-root .main-settings .cadence-toggle button.active {
+      background: #0B0F1E; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .reason-item {
+      background: #0B0F1E; border-color: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .reason-item .ri-title { color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .main-settings .invoice-toolbar select {
+      background: #0B0F1E; border-color: #374151; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .domain-addon-row { border-bottom-color: #1F2937; }
