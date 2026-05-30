@@ -437,6 +437,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
               displayName={profile.display_name}
               bio={profile.bio}
               blocks={blocks}
+              pageId={page?.id ?? null}
               onboardingState={onboardingState}
               welcomeDismissed={welcomeDismissed}
               onWelcomeDismiss={handleWelcomeDismiss}
