@@ -19,6 +19,8 @@ import { HeadingBlockRenderer } from "~/components/blocks/public/HeadingBlockRen
 import { DividerBlockRenderer } from "~/components/blocks/public/DividerBlockRenderer";
 import { ImageBlockRenderer } from "~/components/blocks/public/ImageBlockRenderer";
 import { VideoBlockRenderer } from "~/components/blocks/public/VideoBlockRenderer";
+import { AccordionBlockRenderer } from "~/components/blocks/public/AccordionBlockRenderer";
+import { SocialBlockRenderer } from "~/components/blocks/public/SocialBlockRenderer";
 
 registerBlockRenderer("link", LinkBlockRenderer);
 registerBlockRenderer("product", ProductBlockRenderer);
@@ -26,3 +28,5 @@ registerBlockRenderer("heading", HeadingBlockRenderer);
 registerBlockRenderer("divider", DividerBlockRenderer);
 registerBlockRenderer("image", ImageBlockRenderer);
 registerBlockRenderer("video", VideoBlockRenderer);
+registerBlockRenderer("accordion", AccordionBlockRenderer);
+registerBlockRenderer("social", SocialBlockRenderer);
