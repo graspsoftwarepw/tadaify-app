@@ -1,20 +1,27 @@
 /**
  * AppSidebar — left sidebar navigation for the /app dashboard.
  *
- * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~2417-2575.
+ * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~2417-2577.
+ *
+ * Markup mirrors the mockup <aside class="side"> verbatim; styling is provided
+ * by the scoped rules in app/styles/app-dashboard.css (`.side`, `.side-user`,
+ * `.nav-group`, `.nav-item`, `.nav-sub-list`, `.nav-sub-item`, `.nav-divider`,
+ * `.nav-design-parent`, `.nav-pages-parent`, etc.).
  *
  * Contains:
- *   - Profile card (avatar initial, display name, handle + tier)
- *   - Pages group: Home active item + "+ Add page" disabled (DEC-MULTIPAGE-01=B)
- *   - Configuration accordion (Design sub-items + Domain sub-item)
+ *   - .side-user card (avatar initial, display name, handle · tier)
+ *   - Pages accordion (Home active sub-item + "+ Add page" disabled per
+ *     DEC-MULTIPAGE-01=B; tooltip "Multi-page coming Q+1")
+ *   - Configuration accordion (slot — AppSidebarDesignAccordion)
  *   - Insights + Affiliate nav items
- *   - Administration accordion (Blog, Store v2, Schedule, Portfolio, Paid articles)
- *   - Settings + Help + Feedback nav items
- *   - 3 dividers per mockup
+ *   - Administration accordion (Blog, Store v2, Schedule, Portfolio,
+ *     Paid articles)
+ *   - Settings + Help & docs + Feedback bottom nav items
+ *   - 4 dividers per mockup
  *
- * Hidden on mobile (≤1024px) per responsive contract.
+ * Hidden on mobile (≤900px) via `.side { display:none }` in the dashboard CSS.
  *
- * Story: F-APP-DASHBOARD-001a (#171)
+ * Story: F-APP-DASHBOARD-001a (#171), Pass 4 of dashboard-mockup-fidelity.
  * DEC trail: DEC-MULTIPAGE-01=B (+Add page disabled, tooltip "Multi-page coming Q+1")
  * Covers: AC#3, Visual checklist sidebar items
  */
@@ -39,80 +46,44 @@ export function AppSidebar({
   onTabChange,
   designAccordion,
 }: AppSidebarProps) {
-  const [adminExpanded, setAdminExpanded] = useState(false);
+  // Pages accordion is open by default in the mockup (data-expanded="true").
+  const [pagesExpanded, setPagesExpanded] = useState(true);
+  // Administration accordion is open by default in the mockup.
+  const [adminExpanded, setAdminExpanded] = useState(true);
 
-  // Avatar initial from display name or handle
+  // Avatar initial from display name or handle.
   const avatarInitial = (displayName || handle || "?").charAt(0).toUpperCase();
 
-  // Tier label
+  // Tier label — capitalised. "free" → "Free", "creator" → "Creator", etc.
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+
+  // `is-active` on the Home sub-item when on the page tab.
+  const isHomeActive = activeTab === "page";
 
   return (
     <aside
       data-testid="app-sidebar"
+      className="side"
       aria-label="Primary navigation"
-      style={{
-        width: 220,
-        flexShrink: 0,
-        borderRight: "1px solid var(--border)",
-        background: "var(--bg-elevated)",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 0,
-        // Hidden on mobile (≤1024px) via CSS class
-      }}
-      className="app-sidebar"
     >
       {/* Profile card */}
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "14px 14px 12px",
-          cursor: "pointer",
-        }}
+        className="side-user"
         role="button"
         tabIndex={0}
         aria-label="User profile menu"
       >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "var(--brand-primary)",
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 14,
-            fontWeight: 600,
-            flexShrink: 0,
-          }}
-          aria-hidden="true"
-        >
+        <div className="av" aria-hidden="true">
           {avatarInitial}
         </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div
-            style={{
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: "var(--fg)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {displayName || `@${handle}`}
-          </div>
-          <div style={{ fontSize: 11.5, color: "var(--fg-muted)" }}>
+        <div className="utxt">
+          <div className="uname">{displayName || `@${handle}`}</div>
+          <div className="uhandle">
             @{handle} · {tierLabel}
           </div>
         </div>
         <svg
+          className="chevron"
           width="12"
           height="12"
           viewBox="0 0 24 24"
@@ -122,41 +93,26 @@ export function AppSidebar({
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
-          style={{ flexShrink: 0 }}
         >
           <polyline points="8 9 12 5 16 9" />
           <polyline points="8 15 12 19 16 15" />
         </svg>
       </div>
 
-      {/* GROUP 1: Pages */}
-      <div style={{ padding: "0 8px" }}>
-        {/* Pages accordion header */}
+      {/* GROUP 1: Pages (accordion parent + Home + Add page disabled) */}
+      <div className="nav-group">
         <button
           type="button"
           data-testid="nav-pages-parent"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "7px 8px",
-            background: "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "var(--fg-muted)",
-            fontSize: 12.5,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-          aria-expanded
+          className={`nav-item nav-pages-parent${isHomeActive ? " active" : ""}`}
+          data-nav="pages"
+          data-tip="Pages"
+          aria-expanded={pagesExpanded}
           aria-controls="nav-pages-sub"
+          aria-label="Pages"
+          onClick={() => setPagesExpanded((v) => !v)}
         >
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -168,47 +124,41 @@ export function AppSidebar({
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
-          <span style={{ flex: 1, textAlign: "left" }}>Pages</span>
-          <span
-            style={{
-              background: "var(--bg-muted)",
-              borderRadius: 10,
-              padding: "1px 6px",
-              fontSize: 11,
-              fontWeight: 600,
-            }}
-          >
+          <span className="label">Pages</span>
+          <span className="nav-count" id="nav-pages-count">
             1
           </span>
+          <svg
+            className="nav-caret"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </button>
-
-        {/* Pages sub-list */}
-        <div id="nav-pages-sub" role="group" aria-label="Pages list" style={{ paddingLeft: 8 }}>
-          {/* Homepage nav item — active when tab=page */}
+        <div
+          className="nav-sub-list"
+          id="nav-pages-sub"
+          data-expanded={pagesExpanded ? "true" : "false"}
+          role="group"
+          aria-label="Pages list"
+        >
           <button
             type="button"
             data-testid="nav-home-item"
+            className={`nav-sub-item${isHomeActive ? " active" : ""}`}
             data-nav-sub="home"
+            data-nav="page"
+            data-tip="Home — your main page"
+            aria-current={isHomeActive ? "page" : undefined}
             onClick={() => onTabChange("page")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              width: "100%",
-              padding: "7px 10px",
-              background: activeTab === "page" ? "var(--bg-muted)" : "transparent",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              color: activeTab === "page" ? "var(--fg)" : "var(--fg-muted)",
-              fontSize: 13.5,
-              fontWeight: activeTab === "page" ? 600 : 400,
-            }}
-            aria-current={activeTab === "page" ? "page" : undefined}
           >
             <svg
-              width="14"
-              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -222,30 +172,17 @@ export function AppSidebar({
             </svg>
             <span>Home</span>
           </button>
-
-          {/* + Add page — disabled (DEC-MULTIPAGE-01=B) */}
+          {/* "+ Add page" — disabled per DEC-MULTIPAGE-01=B. Tooltip via data-tip
+              in the mockup; we keep title= for native browser hover + aria. */}
           <button
             type="button"
-            disabled
+            className="nav-sub-item nav-sub-add"
+            data-tip="Multi-page coming Q+1"
             title="Multi-page coming Q+1"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              width: "100%",
-              padding: "7px 10px",
-              background: "transparent",
-              border: "none",
-              borderRadius: 8,
-              cursor: "not-allowed",
-              color: "var(--fg-subtle)",
-              fontSize: 13.5,
-              opacity: 0.5,
-            }}
+            aria-disabled="true"
+            disabled
           >
             <svg
-              width="14"
-              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -263,42 +200,24 @@ export function AppSidebar({
       </div>
 
       {/* DIVIDER 1 */}
-      <div
-        style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
-        aria-hidden="true"
-      />
+      <div className="nav-divider" aria-hidden="true" />
 
-      {/* GROUP 2: Design accordion — rendered by AppSidebarDesignAccordion (slot) */}
+      {/* GROUP 2: Configuration (Design accordion slot) */}
       {designAccordion}
 
       {/* DIVIDER 2 */}
-      <div
-        style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
-        aria-hidden="true"
-      />
+      <div className="nav-divider" aria-hidden="true" />
 
       {/* GROUP 3: Insights + Affiliate */}
-      <div style={{ padding: "0 8px" }}>
+      <div className="nav-group" style={{ paddingTop: 0 }}>
         <button
           type="button"
+          className={`nav-item${activeTab === "insights" ? " active" : ""}`}
+          data-nav="insights"
+          data-tip="Insights"
           onClick={() => onTabChange("insights")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: activeTab === "insights" ? "var(--bg-muted)" : "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: activeTab === "insights" ? "var(--fg)" : "var(--fg-muted)",
-            fontSize: 13.5,
-          }}
         >
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -310,28 +229,16 @@ export function AppSidebar({
             <path d="M3 3v18h18" />
             <path d="M7 14l4-4 4 4 5-7" />
           </svg>
-          <span>Insights</span>
+          <span className="label">Insights</span>
         </button>
         <button
           type="button"
+          className={`nav-item${activeTab === "affiliate" ? " active" : ""}`}
+          data-nav="affiliate"
+          data-tip="Affiliate program — earn 30% recurring"
           onClick={() => onTabChange("affiliate")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: activeTab === "affiliate" ? "var(--bg-muted)" : "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: activeTab === "affiliate" ? "var(--fg)" : "var(--fg-muted)",
-            fontSize: 13.5,
-          }}
         >
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -343,40 +250,25 @@ export function AppSidebar({
             <line x1="12" y1="1" x2="12" y2="23" />
             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
-          <span>Affiliate</span>
+          <span className="label">Affiliate</span>
         </button>
       </div>
 
       {/* DIVIDER 3 */}
-      <div
-        style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
-        aria-hidden="true"
-      />
+      <div className="nav-divider" aria-hidden="true" />
 
-      {/* GROUP 3b: Administration accordion */}
-      <div style={{ padding: "0 8px" }}>
+      {/* GROUP 3b: Administration accordion (TADA-BUG-005). */}
+      <div className="nav-group" style={{ paddingTop: 0 }}>
         <button
           type="button"
-          onClick={() => setAdminExpanded((v) => !v)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "var(--fg-muted)",
-            fontSize: 13.5,
-          }}
+          className="nav-item nav-design-parent"
+          data-nav="admin"
+          data-tip="Administration"
           aria-expanded={adminExpanded}
           aria-controls="nav-admin-sub"
+          onClick={() => setAdminExpanded((v) => !v)}
         >
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -388,10 +280,9 @@ export function AppSidebar({
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
           </svg>
-          <span style={{ flex: 1, textAlign: "left" }}>Administration</span>
+          <span className="label">Administration</span>
           <svg
-            width="12"
-            height="12"
+            className="nav-caret"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -399,87 +290,146 @@ export function AppSidebar({
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
-            style={{ transform: adminExpanded ? "rotate(90deg)" : "none", transition: "transform .15s" }}
           >
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
-
-        {adminExpanded && (
-          <div id="nav-admin-sub" role="group" aria-label="Administration sub-sections" style={{ paddingLeft: 8 }}>
-            {[
-              { label: "Blog", note: null },
-              { label: "Store", note: "v2" },
-              { label: "Schedule", note: null },
-              { label: "Portfolio", note: null },
-              { label: "Paid articles", note: null },
-            ].map(({ label, note }) => (
-              <button
-                key={label}
-                type="button"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  width: "100%",
-                  padding: "6px 10px",
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  color: "var(--fg-muted)",
-                  fontSize: 13,
-                }}
-              >
-                <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
-                {note && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      background: "var(--bg-muted)",
-                      color: "var(--fg-muted)",
-                      borderRadius: 8,
-                      padding: "1px 5px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {note}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+        <div
+          className="nav-sub-list"
+          id="nav-admin-sub"
+          data-expanded={adminExpanded ? "true" : "false"}
+          role="group"
+          aria-label="Administration sub-sections"
+        >
+          <button
+            type="button"
+            className="nav-sub-item"
+            data-nav-sub="admin-blog"
+            data-tip="Blog publishing"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="9" y1="13" x2="15" y2="13" />
+              <line x1="9" y1="17" x2="13" y2="17" />
+            </svg>
+            <span>Blog</span>
+          </button>
+          <button
+            type="button"
+            className="nav-sub-item"
+            data-nav-sub="admin-store"
+            data-tip="Store — coming v2"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            <span>Store</span>
+            <span
+              className="nav-pill nav-pill-soon"
+              style={{ marginLeft: "auto" }}
+            >
+              v2
+            </span>
+          </button>
+          <button
+            type="button"
+            className="nav-sub-item"
+            data-nav-sub="admin-schedule"
+            data-tip="Bookings"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <span>Schedule</span>
+          </button>
+          <button
+            type="button"
+            className="nav-sub-item"
+            data-nav-sub="admin-portfolio"
+            data-tip="Projects"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="4" />
+              <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+              <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+            </svg>
+            <span>Portfolio</span>
+          </button>
+          <button
+            type="button"
+            className="nav-sub-item"
+            data-nav-sub="admin-paid-articles"
+            data-tip="Paid articles"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            <span>Paid articles</span>
+          </button>
+        </div>
       </div>
 
       {/* DIVIDER 4 */}
-      <div
-        style={{ height: 1, background: "var(--border)", margin: "4px 0" }}
-        aria-hidden="true"
-      />
+      <div className="nav-divider" aria-hidden="true" />
 
-      {/* GROUP 4: Settings + Help + Feedback */}
-      <div style={{ padding: "0 8px 12px" }}>
+      {/* GROUP 4: Settings + Help & docs + Feedback (no section header). */}
+      <div className="nav-group" style={{ paddingTop: 0 }}>
         <button
           type="button"
+          className={`nav-item${activeTab === "settings" ? " active" : ""}`}
+          data-nav="settings"
+          data-tip="Settings"
           onClick={() => onTabChange("settings")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: activeTab === "settings" ? "var(--bg-muted)" : "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: activeTab === "settings" ? "var(--fg)" : "var(--fg-muted)",
-            fontSize: 13.5,
-          }}
         >
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -491,27 +441,10 @@ export function AppSidebar({
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
           </svg>
-          <span>Settings</span>
+          <span className="label">Settings</span>
         </button>
-        <button
-          type="button"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "var(--fg-muted)",
-            fontSize: 13.5,
-          }}
-        >
+        <button type="button" className="nav-item" data-tip="Help & docs">
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -523,27 +456,15 @@ export function AppSidebar({
             <circle cx="12" cy="12" r="9" />
             <path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01" />
           </svg>
-          <span>Help &amp; docs</span>
+          <span className="label">Help &amp; docs</span>
         </button>
         <button
           type="button"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "8px 10px",
-            background: "transparent",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "var(--fg-muted)",
-            fontSize: 13.5,
-          }}
+          className="nav-item"
+          data-nav="feedback"
+          data-tip="Send feedback to tadaify"
         >
           <svg
-            width="14"
-            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -554,7 +475,7 @@ export function AppSidebar({
           >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <span>Feedback</span>
+          <span className="label">Feedback</span>
         </button>
       </div>
     </aside>
