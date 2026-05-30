@@ -9381,3 +9381,251 @@ body.dark-mode .app-dashboard-root .welcome-banner {
   .tpl-card,
   .tpl-card.selected { transition: none; }
 }
+
+/* =============================================================================
+   Onboarding Tier — Step 5/5: Plan comparison (DEC-311=A refined, 2026-05-01)
+   Source: mockups/tadaify-mvp/onboarding-tier.html
+   All selectors use .onb-tier-* prefix; keyframes prefixed onb-tier-.
+   Read-only comparison — no tier selection, no billing toggle.
+   ============================================================================= */
+
+.onb-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+@media (max-width: 1000px) {
+  .onb-tier-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 580px) {
+  .onb-tier-grid { grid-template-columns: 1fr; }
+}
+
+.onb-tier-card {
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6, 24px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* DEC-311=A: read-only comparison; no cursor:pointer, no hover transform. */
+}
+
+/* Free is the user's starting plan — visually highlighted but not "selected" */
+.onb-tier-card.onb-tier-starting {
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-brand);
+}
+
+.onb-tier-ribbon {
+  position: absolute;
+  top: -12px;
+  right: 16px;
+  background: var(--brand-primary);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.onb-tier-price {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1;
+  margin: 8px 0 4px;
+}
+
+.onb-tier-price .onb-tier-per {
+  font-size: 14px;
+  font-family: var(--font-sans);
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.onb-tier-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.onb-tier-card ul li {
+  padding: 4px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.onb-tier-card ul li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* DEC-311=A refined: billing-toggle and .save-badge removed —
+   no monthly/annual choice in onboarding; that lives in F-PRICING-001
+   (Settings → Billing). */
+
+.onb-tier-recommendation {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(245, 158, 11, 0.1));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-top: 24px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--fg);
+}
+
+/* Price-lock-for-life banner */
+.onb-tier-pricelock {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #0B0F1E 0%, #1F2937 100%);
+  color: #F9FAFB;
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-top: 20px;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.onb-tier-pricelock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.25), transparent 55%),
+    radial-gradient(circle at 90% 100%, rgba(245, 158, 11, 0.2), transparent 55%);
+  pointer-events: none;
+}
+
+.onb-tier-pricelock-icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+  padding-top: 2px;
+  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4));
+  position: relative;
+  z-index: 1;
+}
+
+.onb-tier-pricelock-body {
+  position: relative;
+  z-index: 1;
+}
+
+.onb-tier-pricelock-title {
+  font-family: var(--font-display, serif);
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #FDE68A;
+  letter-spacing: -0.01em;
+}
+
+.onb-tier-pricelock-text {
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+  color: rgba(249, 250, 251, 0.88);
+}
+
+.onb-tier-pricelock-text strong {
+  color: #FFF;
+  font-weight: 600;
+}
+
+@media (max-width: 580px) {
+  .onb-tier-pricelock { flex-direction: column; padding: 18px; }
+  .onb-tier-pricelock-title { font-size: 17px; }
+  .onb-tier-pricelock-text { font-size: 13px; }
+}
+
+/* Lock-for-life badge on paid cards */
+.onb-tier-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #B45309;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-top: 8px;
+  width: fit-content;
+}
+
+/* Universal $2 add-on — one row under the whole grid */
+.onb-tier-addon {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto 0;
+  max-width: 680px;
+  padding: 14px 20px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  border-radius: 14px;
+  text-align: left;
+}
+
+.onb-tier-addon p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.onb-tier-addon strong {
+  font-weight: 700;
+}
+
+.onb-tier-addon-plus {
+  background: var(--warm-primary, #F59E0B);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+@media (max-width: 580px) {
+  .onb-tier-addon { padding: 12px 14px; }
+  .onb-tier-addon p { font-size: 13px; }
+}
+
+/* Coming-soon badge inline in feature list */
+.onb-tier-soon {
+  font-size: 11px;
+  color: #9CA3AF;
+  font-weight: 500;
+  background: #F3F4F6;
+  padding: 1px 6px;
+  border-radius: 99px;
+  margin-left: 4px;
+}
+
+/* ── Reduced-motion overrides for onboarding tier ── */
+@media (prefers-reduced-motion: reduce) {
+  .onb-tier-card,
+  .onb-tier-pricelock { transition: none; }
+}
