@@ -2,8 +2,8 @@
  * BlockPickerModal — gallery of block types with search, category tabs,
  * tier-gating, and AI Suggest tab.
  *
- * Visual contract: mockups/tadaify-mvp/app-block-picker.html
- * Lines 451–485 (modal shell), 624–680 (JS filter/render logic).
+ * Visual contract: mockups/tadaify-mvp/app-block-picker.html (751 LOC)
+ * Full 1:1 rewrite matching mockup markup, CSS class names, and JS logic.
  *
  * Usage:
  * ```tsx
@@ -16,22 +16,20 @@
  * ```
  *
  * Tech:
- *   - @radix-ui/react-dialog (TR-tadaify-008, DEC-375=B) — same as BlockEditorModal
- *   - Tailwind v4 + design tokens from app.css
+ *   - @radix-ui/react-dialog (TR-tadaify-008, DEC-375=B)
+ *   - CSS classes from app/styles/app-dashboard.css scoped under
+ *     .app-dashboard-root .block-picker-modal
  *   - Pure filterBlockTypes from app/lib/block-search.ts (no DOM required)
  *
- * Responsive grid:
- *   - Desktop ≥1024px : 3 columns
- *   - Tablet 600–1023px: 2 columns
- *   - Mobile <600px   : 1 column
- *   Per: feedback_tadaify_three_viewport_support.md, TR-tadaify-008
- *   NOTE: DO NOT use max-[860px] — banned per TR-tadaify-008 Codex P1 finding.
+ * Responsive grid (matches mockup):
+ *   - Desktop ≥760px : 3 columns
+ *   - Tablet 460–759px: 2 columns
+ *   - Mobile <460px   : 1 column
  *
  * Tier gating:
- *   - Locked cards render with 🔒 badge + muted styling (fully visible, NOT blurred)
+ *   - Locked cards: is-locked class + opacity-0.85, NOT blurred
  *   - Per: feedback_no_blur_premium_features.md
- *   - Click on locked card: does NOT fire onSelect; picker stays open
- *   - Interactive tier-gate hint deferred to tadaify-app#209
+ *   - Click locked card: does NOT fire onSelect; picker stays open
  *
  * Story: tadaify-app#201 F-BLOCK-INFRA-PICKER-MODAL-001
  * Covers: BR-BLOCK-PICKER-001..005, AC 1–12
@@ -44,49 +42,74 @@ import { useEffect, useRef, useState } from "react";
 import {
   BLOCK_TYPES,
   isBlockTypeLocked,
-  TIER_LEVELS,
   type BlockTypeMeta,
   type TierLevel,
 } from "~/lib/block-types";
 import {
   CATEGORY_ALL,
   filterBlockTypes,
-  getPopularBlockTypes,
-  type CategoryFilterValue,
 } from "~/lib/block-search";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Delay (ms) before auto-focusing the search input on open. Matches mockup. */
+/** Delay (ms) before auto-focusing the search input on open. Matches mockup line 736. */
 const SEARCH_AUTOFOCUS_DELAY_MS = 200;
 
-/** Picker modal max-width (narrower than BlockEditorModal at 960px). */
-const PICKER_MAX_WIDTH = "720px";
-
-/** Picker z-index: same "base" level as BlockEditorModal. */
+/** Picker z-index: matches .modal-backdrop z-index: 50 in mockup. */
 const PICKER_Z_INDEX = 50;
 
 // ---------------------------------------------------------------------------
-// Tab definitions
+// Mockup category mapping
 // ---------------------------------------------------------------------------
 
-/** Tab config for the category nav (mirrors CATEGORIES in mockup JS). */
-const CATEGORY_TABS = [
-  { value: CATEGORY_ALL, label: "All" },
-  { value: "popular", label: "Popular" },
-  { value: "social", label: "Social" },
-  { value: "music-video", label: "Music & Video" },
-  { value: "shop", label: "Shop" },
-  { value: "communication", label: "Communication" },
-  { value: "content", label: "Content" },
-  { value: "ai-suggest", label: "AI Suggest" },
+/**
+ * Mockup display category labels (from mockup CATEGORIES array, line 601).
+ * These drive the category tab nav — order is preserved 1:1.
+ */
+const MOCKUP_CATEGORIES = [
+  "All",
+  "Links",
+  "Media",
+  "Forms",
+  "Shop",
+  "Layout",
+  "AI ✨",
 ] as const;
 
-/** Sentinel for the AI Suggest special tab (not a real BlockCategory). */
-const AI_SUGGEST_TAB = "ai-suggest" as const;
-type TabValue = CategoryFilterValue | typeof AI_SUGGEST_TAB;
+type MockupCategory = (typeof MOCKUP_CATEGORIES)[number];
+const AI_TAB: MockupCategory = "AI ✨";
+
+/**
+ * Map mockup display category → registry BlockCategory keys used in BLOCK_TYPES.
+ * Derived by cross-referencing mockup TYPES[].cat vs registry BlockCategory values.
+ */
+const CATEGORY_TO_REGISTRY: Record<
+  Exclude<MockupCategory, "All" | "AI ✨">,
+  string[]
+> = {
+  Links: ["social", "generic"],
+  Media: ["music-video", "content"],
+  Forms: ["communication"],
+  Shop: ["shop"],
+  Layout: ["content", "generic"],
+};
+
+/** Filter BLOCK_TYPES for a given mockup display category. */
+function filterByMockupCategory(cat: MockupCategory): BlockTypeMeta[] {
+  if (cat === "All") return BLOCK_TYPES;
+  if (cat === AI_TAB) return [];
+  const registryCats = CATEGORY_TO_REGISTRY[cat as Exclude<MockupCategory, "All" | "AI ✨">];
+  return BLOCK_TYPES.filter((bt) => registryCats.includes(bt.category));
+}
+
+/** Count block types for a given mockup tab (shown in .ct badge). */
+function mockupTabCount(cat: MockupCategory): number {
+  if (cat === "All") return BLOCK_TYPES.length;
+  if (cat === AI_TAB) return 0;
+  return filterByMockupCategory(cat).length;
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -111,54 +134,7 @@ export interface BlockPickerModalProps {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-/** Count badge shown on tabs (hidden when 0 or on AI Suggest tab). */
-function TabCount({ count }: { count: number }) {
-  if (count === 0) return null;
-  return (
-    <span
-      className="ml-[5px] px-[5px] py-px rounded-full bg-[var(--bg-muted)] text-[10px] font-semibold text-[var(--fg-muted)] tabular-nums leading-[1.6]"
-      aria-hidden="true"
-    >
-      {count}
-    </span>
-  );
-}
-
-/** Locked-tier badge rendered on gated cards ("Pro+" label with lock icon). */
-function LockedBadge({ label }: { label: string }) {
-  return (
-    <span
-      className="inline-flex items-center gap-[3px] px-[6px] py-[2px] rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200"
-      data-testid="locked-badge"
-    >
-      🔒 {label}
-    </span>
-  );
-}
-
-/** "Most clicked" popular badge. */
-function PopularBadge() {
-  return (
-    <span className="inline-flex items-center px-[6px] py-[2px] rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
-      Most clicked
-    </span>
-  );
-}
-
-/** "New" badge. */
-function NewBadge() {
-  return (
-    <span className="inline-flex items-center px-[6px] py-[2px] rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-      New
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// BlockTypeCard
+// BlockTypeCard — matches mockup .type-card markup (lines 216–271)
 // ---------------------------------------------------------------------------
 
 interface BlockTypeCardProps {
@@ -169,32 +145,43 @@ interface BlockTypeCardProps {
 
 function BlockTypeCard({ blockType, locked, onPick }: BlockTypeCardProps) {
   const handleClick = () => {
-    if (!locked) {
-      onPick(blockType.id);
+    if (locked) {
+      // TODO: wire to picker selection callback
+      return;
     }
-    // Locked: no-op; picker stays open per BR-BLOCK-PICKER-005
+    // TODO: wire to picker selection callback
+    onPick(blockType.id);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleClick();
     }
   };
+
+  /**
+   * Derive mockup display category slug from registry category.
+   * Used for .type-card.is-<cat> class (icon bg color) per mockup lines 241-244.
+   */
+  const displayCat = ((): string => {
+    const map: Record<string, string> = {
+      social: "links",
+      generic: "links",
+      "music-video": "media",
+      content: "media",
+      communication: "forms",
+      shop: "shop",
+    };
+    return map[blockType.category] ?? "links";
+  })();
 
   return (
     <a
       role="listitem"
       className={[
         "type-card",
-        "flex flex-col gap-[6px] p-[14px] rounded-[12px]",
-        "border border-[var(--border)] bg-[var(--bg-elevated)]",
-        "cursor-pointer outline-none",
-        "transition-colors duration-100",
-        locked
-          ? "opacity-60 cursor-default"
-          : "hover:border-[var(--brand-primary)] hover:bg-indigo-50/40 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
-        `is-${blockType.category}`,
+        `is-${displayCat}`,
         locked ? "is-locked" : "",
       ]
         .filter(Boolean)
@@ -207,73 +194,67 @@ function BlockTypeCard({ blockType, locked, onPick }: BlockTypeCardProps) {
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
-      {/* Icon */}
-      <div
-        className="w-[38px] h-[38px] rounded-[10px] bg-indigo-100/50 flex items-center justify-center text-[18px] flex-shrink-0 font-mono leading-none"
-        aria-hidden="true"
-      >
+      {/* Icon chip — matches mockup .type-card .ic */}
+      <div className="ic" aria-hidden="true">
         {blockType.icon}
       </div>
 
-      {/* Name */}
-      <div className="font-semibold text-[13.5px] text-[var(--fg)] leading-tight">
-        {blockType.name}
-      </div>
+      {/* Name — matches mockup .ttl */}
+      <div className="ttl">{blockType.name}</div>
 
-      {/* Description */}
-      <div className="text-[12px] text-[var(--fg-muted)] leading-[1.45] line-clamp-2">
-        {blockType.description}
-      </div>
+      {/* Description — matches mockup .desc */}
+      <div className="desc">{blockType.description}</div>
 
-      {/* Badges row */}
-      {(blockType.popular || blockType.isNew || locked) && (
-        <div className="flex flex-wrap gap-[4px] mt-[2px]">
-          {blockType.popular && !locked && <PopularBadge />}
-          {blockType.isNew && !locked && <NewBadge />}
-          {locked && (
-            <LockedBadge
-              label={blockType.requiredTier
-                ? `${blockType.requiredTier.charAt(0).toUpperCase()}${blockType.requiredTier.slice(1)}+`
-                : "Pro+"}
-            />
+      {/* Badges row — matches mockup .badges / .bd */}
+      {(blockType.popular || blockType.isNew || blockType.requiredTier) && (
+        <div className="badges">
+          {blockType.popular && (
+            <span className="bd popular">Most clicked</span>
+          )}
+          {blockType.isNew && <span className="bd new">New</span>}
+          {blockType.requiredTier && (
+            <span className="bd tier" data-testid="locked-badge">
+              {blockType.requiredTier.charAt(0).toUpperCase() +
+                blockType.requiredTier.slice(1)}
+              +
+            </span>
           )}
         </div>
       )}
 
-      {/* Add CTA (non-locked only) */}
-      {!locked && (
-        <span className="mt-auto text-[11.5px] text-[var(--brand-primary)] font-semibold opacity-0 group-hover:opacity-100">
-          Add this block →
-        </span>
-      )}
+      {/* Add CTA — matches mockup .add-cta (opacity-0, shown on :hover) */}
+      {!locked && <span className="add-cta">Add this block →</span>}
     </a>
   );
 }
 
 // ---------------------------------------------------------------------------
-// AI Suggest empty state
+// AI Suggest empty state (matches mockup filterCards AI ✨ branch, lines 663-666)
 // ---------------------------------------------------------------------------
 
 function AiSuggestEmptyState() {
   return (
     <div
-      className="col-span-full flex flex-col items-center justify-center gap-3 py-12 text-center"
+      className="grid-empty"
+      style={{ gridColumn: "1 / -1" }}
       data-testid="ai-suggest-empty-state"
     >
-      <div className="text-4xl leading-none" aria-hidden="true">
-        ✨
-      </div>
-      <b className="text-[15px] font-semibold text-[var(--fg)]">AI Suggest is per field</b>
-      <p className="text-[12.5px] text-[var(--fg-muted)] max-w-[320px] leading-[1.5]">
-        Pick any block from the other tabs, then tap the ✨ Suggest button next to a text field
-        while editing to get copy suggestions.
-      </p>
+      <div className="ic">✨</div>
+      <b>AI Suggest is per field</b>
+      <br />
+      <span style={{ fontSize: "12px" }}>
+        Pick any block from the other tabs, then tap the ✨ Suggest button next to
+        a text field while editing to get copy suggestions.
+      </span>
+      <br />
+      <br />
       <button
+        className="btn btn-ghost btn-sm"
         type="button"
-        className="mt-1 px-[14px] py-[8px] rounded-[9px] border border-[var(--border-strong)] bg-transparent text-[12.5px] font-semibold text-[var(--fg-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--fg)] transition-colors"
+        style={{ marginTop: "6px" }}
         data-testid="ai-suggest-preview-btn"
         onClick={() => {
-          /* Stub — wired later via tadaify-app#12 */
+          // TODO: wire to picker selection callback
         }}
       >
         Preview the AI Suggest modal
@@ -283,28 +264,176 @@ function AiSuggestEmptyState() {
 }
 
 // ---------------------------------------------------------------------------
-// No-results empty state
+// No-results empty state (matches mockup filterCards no-results, lines 668-671)
 // ---------------------------------------------------------------------------
 
 function NoResultsEmptyState() {
   return (
-    <div
-      className="col-span-full flex flex-col items-center justify-center gap-3 py-12 text-center"
-      data-testid="no-results-empty-state"
-    >
-      <div className="text-4xl leading-none" aria-hidden="true">
-        🔍
-      </div>
-      <b className="text-[15px] font-semibold text-[var(--fg)]">No block types match.</b>
-      <p className="text-[12.5px] text-[var(--fg-muted)]">
+    <div className="grid-empty" data-testid="no-results-empty-state">
+      <div className="ic">🔍</div>
+      <b>No block types match.</b>
+      <br />
+      <span style={{ fontSize: "12px" }}>
         Try a different search or check the category tabs above.
-      </p>
+      </span>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// BlockPickerModal (root)
+// AI Suggest sub-modal (matches mockup #ai-backdrop / .ai-modal, lines 496-559)
+// ---------------------------------------------------------------------------
+
+interface AiSubModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+function AiSubModal({ open, onClose }: AiSubModalProps) {
+  const AI_SETS = [
+    {
+      name: "Music creator starter",
+      title: "🎵 Music creator starter",
+      chips: [
+        "📺 Latest YT drop",
+        "🔗 Spotify",
+        "🌐 Social row",
+        "✉️ Newsletter",
+      ],
+    },
+    {
+      name: "Fitness coach launch",
+      title: "💪 Fitness coach launch",
+      chips: [
+        "📝 Heading",
+        "🛍 Workout PDF",
+        "🛍 1:1 coaching",
+        "❓ FAQ",
+        "✉️ Mailing list",
+      ],
+    },
+    {
+      name: "Agency / talent rep",
+      title: "👥 Agency / talent rep",
+      chips: [
+        "🖼 Logo image",
+        "📝 Roster",
+        "🔗 Booking link",
+        "✉️ Press inquiries",
+      ],
+    },
+    {
+      name: "Live event promo",
+      title: "⏳ Live event promo",
+      chips: [
+        "⏳ Countdown",
+        "🔗 Tickets",
+        "🖼 Venue map",
+        "📺 Stream embed",
+      ],
+    },
+    {
+      name: "Ecom + AOV booster",
+      title: "🛍 Ecom shop AOV booster",
+      chips: [
+        "🛍 Featured product",
+        "🛍 Bundle",
+        "⏳ Sale countdown",
+        "❓ Returns FAQ",
+      ],
+    },
+  ];
+
+  return (
+    <div
+      className={["ai-modal-backdrop", open ? "is-open" : ""].filter(Boolean).join(" ")}
+      id="ai-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-h"
+      style={{ zIndex: 80 }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="ai-modal" role="document">
+        <header className="ai-modal-head">
+          <span style={{ fontSize: "22px" }} aria-hidden="true">
+            ✨
+          </span>
+          <h3 id="ai-h">AI block suggestions</h3>
+          <button
+            className="iconbtn"
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close (Esc)"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </header>
+
+        <div className="ai-modal-body" id="ai-body">
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--fg-muted)",
+              marginBottom: "14px",
+            }}
+          >
+            Tap a set to add all of its blocks at once. Each can be edited
+            individually after.
+            <span
+              style={{
+                display: "block",
+                color: "var(--fg-subtle)",
+                fontSize: "11px",
+                marginTop: "4px",
+              }}
+            >
+              Free 5 / Creator 20 / Pro 100 / Business unlimited per
+              DEC-AI-QUOTA-LADDER-01.
+            </span>
+          </p>
+
+          {AI_SETS.map((set) => (
+            <button
+              key={set.name}
+              className="ai-set"
+              type="button"
+              onClick={() => {
+                onClose();
+                // TODO: wire to picker selection callback
+              }}
+            >
+              <div className="ttl">{set.title}</div>
+              <div className="blocks-row">
+                {set.chips.map((chip) => (
+                  <span key={chip} className="b-chip">
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BlockPickerModal (root) — matches mockup modal structure (lines 451-491)
 // ---------------------------------------------------------------------------
 
 /**
@@ -313,26 +442,16 @@ function NoResultsEmptyState() {
  */
 function resolveCards(
   query: string,
-  activeTab: TabValue,
+  activeTab: MockupCategory,
 ): BlockTypeMeta[] | null {
-  if (activeTab === AI_SUGGEST_TAB) return null;
+  if (activeTab === AI_TAB) return null;
 
-  if (activeTab === "popular") {
-    const popular = getPopularBlockTypes(BLOCK_TYPES);
-    if (!query.trim()) return popular;
-    // Apply text filter on popular subset
-    return filterBlockTypes(popular, query, CATEGORY_ALL);
-  }
+  const base = filterByMockupCategory(activeTab);
 
-  return filterBlockTypes(BLOCK_TYPES, query, activeTab as CategoryFilterValue);
-}
-
-/** Count how many block types belong to a given tab (for the badge). */
-function tabCount(tabValue: TabValue): number {
-  if (tabValue === CATEGORY_ALL) return BLOCK_TYPES.length;
-  if (tabValue === AI_SUGGEST_TAB) return 0;
-  if (tabValue === "popular") return BLOCK_TYPES.filter((bt) => bt.popular).length;
-  return BLOCK_TYPES.filter((bt) => bt.category === tabValue).length;
+  // Apply text search — matches mockup filterCards logic (lines 652-659)
+  const q = query.trim();
+  if (!q) return base;
+  return filterBlockTypes(base, q, CATEGORY_ALL);
 }
 
 export function BlockPickerModal({
@@ -342,10 +461,11 @@ export function BlockPickerModal({
   currentTier = "free",
 }: BlockPickerModalProps) {
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<TabValue>(CATEGORY_ALL);
+  const [activeTab, setActiveTab] = useState<MockupCategory>("All");
+  const [aiOpen, setAiOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus search input 200ms after open (matches mockup pattern line 736)
+  // Auto-focus search input 200ms after open (matches mockup line 736)
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
@@ -358,11 +478,13 @@ export function BlockPickerModal({
   useEffect(() => {
     if (!open) {
       setQuery("");
-      setActiveTab(CATEGORY_ALL);
+      setActiveTab("All");
+      setAiOpen(false);
     }
   }, [open]);
 
   const handlePick = (id: string) => {
+    // TODO: wire to picker selection callback
     onSelect(id);
     onOpenChange(false);
   };
@@ -372,223 +494,188 @@ export function BlockPickerModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        {/* Backdrop */}
+        {/* Backdrop — matches mockup .modal-backdrop (fixed inset, flex center) */}
         <Dialog.Overlay
-          className="
-            fixed inset-0
-            bg-[rgba(11,15,30,0.55)] backdrop-blur-[3px]
-            data-[state=open]:animate-fadeIn
-            data-[state=closed]:animate-fadeOut
-          "
+          className="modal-backdrop is-open block-picker-modal"
           style={{ zIndex: PICKER_Z_INDEX }}
         />
 
-        {/* Modal panel — Dialog.Content IS the modal box (not a full-screen wrapper).
-            Same Radix pattern as BlockEditorModal (Finding 1 from PR tadaify-app#211). */}
+        {/*
+          Modal panel — Dialog.Content wraps the entire .modal-backdrop flex layout
+          so clicks outside .modal close the dialog via Radix's default onPointerDownOutside.
+          The inner .modal div matches mockup .modal markup exactly.
+        */}
         <Dialog.Content
-          className="
-            fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-            bg-[var(--bg-elevated)]
-            border border-[var(--border)]
-            rounded-[18px]
-            shadow-[var(--shadow-xl)]
-            flex flex-col
-            overflow-hidden
-            data-[state=open]:animate-modalIn
-            data-[state=closed]:animate-modalOut
-            max-[599px]:rounded-none max-[599px]:max-h-screen max-[599px]:h-screen max-[599px]:w-screen
-            max-[599px]:left-0 max-[599px]:top-0 max-[599px]:translate-x-0 max-[599px]:translate-y-0
-          "
-          style={{
-            zIndex: PICKER_Z_INDEX,
-            width: `min(${PICKER_MAX_WIDTH}, calc(100vw - 32px))`,
-            maxHeight: "calc(100vh - 32px)",
-          }}
+          className="modal-backdrop-content block-picker-modal"
+          style={{ zIndex: PICKER_Z_INDEX }}
           aria-describedby={undefined}
           data-testid="block-picker-modal-box"
         >
-          {/* ── Modal head: title + search + close ── */}
-          <header className="flex items-center gap-3 px-[18px] py-[14px] border-b border-[var(--border)] flex-shrink-0 flex-wrap gap-y-2">
-            <Dialog.Title className="font-display text-[19px] font-semibold text-[var(--fg)] tracking-[-0.01em] flex-1 min-w-[120px]">
-              Add a block
-            </Dialog.Title>
+          {/* Inner .modal — matches mockup .modal class */}
+          <div className="modal" role="document">
+            {/* ── Modal head: title + search + close — matches mockup .modal-head */}
+            <header className="modal-head">
+              <Dialog.Title id="picker-h">Add a block</Dialog.Title>
 
-            {/* Search input */}
-            <div className="flex items-center gap-2 flex-1 min-w-[180px] relative">
-              <label htmlFor="block-picker-search" className="sr-only">
-                Find a block type
-              </label>
-              <svg
-                className="absolute left-[10px] text-[var(--fg-muted)] pointer-events-none flex-shrink-0"
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                id="block-picker-search"
-                ref={searchRef}
-                type="text"
-                className="
-                  w-full pl-[32px] pr-[10px] py-[7px]
-                  rounded-[9px] border border-[var(--border)]
-                  bg-[var(--bg)] text-[13px] text-[var(--fg)]
-                  placeholder:text-[var(--fg-subtle)]
-                  focus:outline-none focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)]
-                  transition-colors
-                "
-                placeholder="Find a block type…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoComplete="off"
-                data-testid="block-picker-search"
-              />
-            </div>
-
-            {/* Close button */}
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                className="w-[34px] h-[34px] flex items-center justify-center rounded-[8px] text-[var(--fg-subtle)] hover:bg-[var(--bg-muted)] hover:text-[var(--fg)] transition-colors flex-shrink-0"
-                aria-label="Close picker"
-                title="Close (Esc)"
-              >
+              {/* Search input — matches mockup .search-wrap / input.search */}
+              <div className="search-wrap">
                 <svg
-                  width="16"
-                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  className="search"
+                  id="block-picker-search"
+                  ref={searchRef}
+                  type="text"
+                  placeholder="Find a block type…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoComplete="off"
+                  data-testid="block-picker-search"
+                  aria-label={SEARCH_INPUT_LABEL}
+                />
+              </div>
+
+              {/* Close button — matches mockup .iconbtn close */}
+              <Dialog.Close asChild>
+                <button
+                  type="button"
+                  className="iconbtn"
+                  aria-label={PICKER_CLOSE_BUTTON_LABEL}
+                  title="Close (Esc)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </Dialog.Close>
+            </header>
+
+            {/* ── Category tabs — matches mockup .modal-tabs / nav */}
+            <nav
+              className="modal-tabs"
+              id="cat-tabs"
+              aria-label="Block categories"
+              role="tablist"
+            >
+              {MOCKUP_CATEGORIES.map((cat) => {
+                const count = mockupTabCount(cat);
+                const isActive = activeTab === cat;
+                return (
+                  <button
+                    key={cat}
+                    role="tab"
+                    aria-selected={isActive}
+                    type="button"
+                    className={isActive ? "is-active" : ""}
+                    onClick={() => setActiveTab(cat)}
+                    data-testid={`tab-${cat}`}
+                  >
+                    {cat}
+                    {cat !== AI_TAB && count > 0 && (
+                      <span className="ct" aria-hidden="true">
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* ── Modal body — matches mockup .modal-body */}
+            <div className="modal-body">
+              {/* Card grid — matches mockup .card-grid */}
+              <div
+                className="card-grid"
+                id="card-grid"
+                role="list"
+                data-testid="block-picker-card-grid"
+              >
+                {/* AI Suggest special tab */}
+                {activeTab === AI_TAB && <AiSuggestEmptyState />}
+
+                {/* No-results state (non-AI tab, query matches nothing) */}
+                {cards !== null && cards.length === 0 && <NoResultsEmptyState />}
+
+                {/* Block type cards */}
+                {cards !== null &&
+                  cards.map((bt) => (
+                    <BlockTypeCard
+                      key={bt.id}
+                      blockType={bt}
+                      locked={isBlockTypeLocked(bt, currentTier)}
+                      onPick={handlePick}
+                    />
+                  ))}
+              </div>
+            </div>
+
+            {/* ── Footer — matches mockup .modal-foot */}
+            <footer className="modal-foot">
+              <span className="reorder">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+                Drag to reorder blocks after adding.
+              </span>
+              <button
+                type="button"
+                className="templates"
+                onClick={() => {
+                  // TODO: wire to picker selection callback
+                }}
+              >
+                Browse our templates
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="9 6 15 12 9 18" />
                 </svg>
               </button>
-            </Dialog.Close>
-          </header>
-
-          {/* ── Category tabs ── */}
-          <nav
-            className="flex items-center gap-[2px] px-[14px] pt-[10px] pb-[2px] border-b border-[var(--border)] overflow-x-auto scrollbar-none flex-shrink-0"
-            aria-label="Block categories"
-            role="tablist"
-          >
-            {CATEGORY_TABS.map((tab) => {
-              const count = tabCount(tab.value);
-              const isActive = activeTab === tab.value;
-              return (
-                <button
-                  key={tab.value}
-                  role="tab"
-                  aria-selected={isActive}
-                  type="button"
-                  className={[
-                    "flex items-center gap-[3px] whitespace-nowrap",
-                    "px-[10px] py-[7px] rounded-[8px]",
-                    "text-[12.5px] font-semibold border-0 cursor-pointer",
-                    "transition-colors duration-100",
-                    isActive
-                      ? "bg-[var(--brand-primary)] text-white"
-                      : "bg-transparent text-[var(--fg-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--fg)]",
-                  ].join(" ")}
-                  onClick={() => setActiveTab(tab.value)}
-                  data-testid={`tab-${tab.value}`}
-                >
-                  {tab.label}
-                  {tab.value !== AI_SUGGEST_TAB && <TabCount count={count} />}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* ── Card grid ── */}
-          <div className="flex-1 overflow-y-auto px-[14px] py-[16px]">
-            <div
-              className="
-                grid gap-[10px]
-                grid-cols-1
-                min-[600px]:grid-cols-2
-                min-[1024px]:grid-cols-3
-              "
-              role="list"
-              id="block-picker-card-grid"
-              data-testid="block-picker-card-grid"
-            >
-              {/* AI Suggest special tab */}
-              {activeTab === AI_SUGGEST_TAB && <AiSuggestEmptyState />}
-
-              {/* No-results state (non-AI tab with query + no matches) */}
-              {cards !== null && cards.length === 0 && <NoResultsEmptyState />}
-
-              {/* Cards */}
-              {cards !== null &&
-                cards.map((bt) => (
-                  <BlockTypeCard
-                    key={bt.id}
-                    blockType={bt}
-                    locked={isBlockTypeLocked(bt, currentTier)}
-                    onPick={handlePick}
-                  />
-                ))}
-            </div>
+            </footer>
           </div>
-
-          {/* ── Footer ── */}
-          <footer className="flex items-center justify-between gap-3 px-[18px] py-[10px] border-t border-[var(--border)] flex-shrink-0">
-            <span className="flex items-center gap-[6px] text-[11.5px] text-[var(--fg-muted)]">
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-              Drag to reorder blocks after adding.
-            </span>
-            <button
-              type="button"
-              className="text-[11.5px] text-[var(--brand-primary)] font-semibold bg-transparent border-0 cursor-pointer hover:underline flex items-center gap-[3px]"
-              onClick={() => {
-                /* Stub — templates gallery */
-              }}
-            >
-              Browse our templates
-              <svg
-                width="11"
-                height="11"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="9 6 15 12 9 18" />
-              </svg>
-            </button>
-          </footer>
         </Dialog.Content>
+
+        {/* AI Suggest sub-modal — rendered in same portal, z-index 80 */}
+        <AiSubModal open={aiOpen} onClose={() => setAiOpen(false)} />
       </Dialog.Portal>
     </Dialog.Root>
   );
