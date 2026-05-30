@@ -4,6 +4,9 @@ export default [
   // Landing
   index("routes/_index.tsx"),
 
+  // Pricing landing (F-PRICING-LANDING-001)
+  route("/pricing", "routes/pricing.tsx"),
+
   // Registration + login (F-REGISTER-001a)
   route("/register", "routes/register.tsx"),
   route("/login", "routes/login.tsx"),

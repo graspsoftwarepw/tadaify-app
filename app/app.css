@@ -1279,3 +1279,319 @@ body.dark-mode .pw-input-wrap-card input { background: #0E1428; border-color: #1
 .landing-foot-bottom a { color: #6B7280; }
 .landing-foot-bottom a:hover { color: #fff; }
 body.dark-mode .pw-min-hint { color: #6B7280; }
+
+/* ── Pricing page (mockups/tadaify-mvp/pricing.html — F-PRICING-LANDING-001) ──
+   Scope: global selectors prefixed with `pricing-` (outside .app-dashboard-root).
+   @keyframes prefixed `pricing-` per CLAUDE.md token-hygiene rule.
+   ────────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Billing toggle ─── */
+.pricing-billing-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  margin: 24px 0 16px;
+}
+.pricing-billing-toggle button {
+  border: 0; background: transparent;
+  padding: 10px 22px; border-radius: var(--radius-full);
+  font-weight: 600; color: var(--fg-muted);
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer;
+}
+.pricing-billing-toggle button.active {
+  background: var(--bg-elevated); color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ─── Tier grid ─── */
+.pricing-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+@media (max-width: 1080px) { .pricing-tier-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .pricing-tier-grid { grid-template-columns: 1fr; } }
+
+.pricing-tier {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  display: flex; flex-direction: column;
+}
+.pricing-tier-popular {
+  border: 2px solid var(--brand-primary);
+  box-shadow: var(--shadow-lg);
+}
+.pricing-tier-badge {
+  position: absolute;
+  top: -14px; left: 50%; transform: translateX(-50%);
+}
+.pricing-tier h3 { font-family: var(--font-sans); font-size: 20px; font-weight: 600; }
+.pricing-price {
+  font-family: var(--font-display);
+  font-size: 44px; font-weight: 600; line-height: 1;
+  margin: 10px 0 4px;
+}
+.pricing-price-currency { font-size: 28px; vertical-align: super; margin-right: 2px; }
+.pricing-price-cadence { font-size: 14px; font-weight: 500; color: var(--fg-muted); margin-left: 6px; font-family: var(--font-sans); }
+.pricing-tagline { color: var(--fg-muted); font-size: 14px; min-height: 42px; margin-bottom: 16px; }
+.pricing-tier ul { list-style: none; padding: 0; margin: 20px 0 0; flex-grow: 1; }
+.pricing-tier li { padding: 8px 0; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
+.pricing-tier li::before { content: "✓"; color: var(--success); font-weight: 700; flex-shrink: 0; }
+.pricing-tier .btn { margin-top: 18px; width: 100%; min-height: 44px; font-size: 15px; }
+
+/* ─── Domain add-on hint inside Free card ─── */
+.pricing-domain-addon-hint {
+  margin-top: 12px; padding: 10px 14px;
+  background: rgba(245,158,11,0.10);
+  border: 1.5px dashed #F59E0B;
+  border-radius: 10px; font-size: 13px; color: var(--fg);
+}
+
+/* ─── Business "need more?" note ─── */
+.pricing-business-note {
+  margin-top: 12px; padding: 8px 14px;
+  background: rgba(99,102,241,0.08);
+  border-radius: 8px; font-size: 12px; color: var(--fg-muted);
+}
+.pricing-business-note a { color: var(--brand-primary); font-weight: 600; }
+
+/* ─── Locked-for-life badge on paid cards ─── */
+.pricing-lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #B45309;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-top: 8px;
+  width: fit-content;
+}
+
+/* ─── Save badge ─── */
+.pricing-save-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--success-bg); color: #065F46;
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full);
+}
+
+/* ─── Price-lock-for-life banner ─── */
+.pricing-pricelock-banner {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #0B0F1E 0%, #1F2937 100%);
+  color: #F9FAFB;
+  border-radius: 18px;
+  padding: 20px 28px;
+  margin: 0 auto 16px;
+  max-width: 880px;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+.pricing-pricelock-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.25), transparent 55%),
+              radial-gradient(circle at 90% 100%, rgba(245, 158, 11, 0.2), transparent 55%);
+  pointer-events: none;
+}
+.pricing-pricelock-icon {
+  font-size: 32px; line-height: 1; flex-shrink: 0; padding-top: 2px;
+  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.4));
+  position: relative; z-index: 1;
+}
+.pricing-pricelock-body { position: relative; z-index: 1; }
+.pricing-pricelock-title {
+  font-family: var(--font-display, serif);
+  font-size: 19px; font-weight: 600; margin: 0 0 6px;
+  color: #FDE68A; letter-spacing: -0.01em;
+}
+.pricing-pricelock-text {
+  font-size: 14px; line-height: 1.55; margin: 0;
+  color: rgba(249, 250, 251, 0.88);
+}
+.pricing-pricelock-text strong { color: #FFF; font-weight: 600; }
+@media (max-width: 640px) {
+  .pricing-pricelock-banner { flex-direction: column; padding: 18px; }
+  .pricing-pricelock-title { font-size: 17px; }
+}
+
+/* ─── Universal $2 add-on (amber dashed row) ─── */
+.pricing-addon-universal {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 28px auto 0;
+  max-width: 880px;
+  padding: 14px 20px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  border-radius: 14px;
+}
+.pricing-addon-universal p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--fg); }
+.pricing-addon-universal strong { font-weight: 700; }
+.pricing-addon-plus {
+  background: #F59E0B; color: #fff;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0; font-size: 16px;
+}
+@media (max-width: 640px) { .pricing-addon-universal { padding: 12px 14px; } .pricing-addon-universal p { font-size: 13px; } }
+
+/* ─── AI credits explainer ─── */
+.pricing-ai-explainer {
+  background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06));
+  border: 1px solid rgba(99,102,241,0.18);
+  border-radius: 14px;
+  padding: 18px 22px;
+  max-width: 880px;
+  margin: 20px auto 0;
+  font-size: 14px;
+  color: var(--fg);
+  line-height: 1.6;
+}
+.pricing-ai-explainer strong { color: var(--brand-primary); }
+
+/* ─── Creator API spotlight ─── */
+.pricing-creator-api-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.pricing-creator-api-section h2 { font-size: clamp(22px, 3vw, 30px); margin-bottom: 8px; }
+.pricing-creator-api-section .pill-pro { margin-bottom: 16px; display: inline-flex; }
+.pricing-creator-api-section ul { list-style: none; padding: 0; margin: 20px 0 0; }
+.pricing-creator-api-section ul li { padding: 10px 0; font-size: 15px; display: flex; gap: 10px; border-bottom: 1px solid var(--border); }
+.pricing-creator-api-section ul li:last-child { border-bottom: none; }
+.pricing-creator-api-section ul li::before { content: "→"; color: var(--brand-primary); font-weight: 700; flex-shrink: 0; }
+
+/* ─── Compare tabs (expandable) ─── */
+.pricing-compare-tab {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+.pricing-compare-tab summary {
+  list-style: none; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 600; font-size: 17px;
+}
+.pricing-compare-tab summary::after { content: "+"; font-size: 22px; color: var(--fg-muted); }
+.pricing-compare-tab[open] summary::after { content: "–"; }
+.pricing-compare-tab table { width: 100%; margin-top: 18px; border-collapse: collapse; font-size: 14px; }
+.pricing-compare-tab th, .pricing-compare-tab td {
+  padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: center;
+}
+.pricing-compare-tab th:first-child, .pricing-compare-tab td:first-child { text-align: left; }
+.pricing-compare-tab th { color: var(--fg-muted); font-weight: 600; }
+.pricing-check { color: var(--success); font-weight: 700; }
+.pricing-cross { color: var(--fg-subtle); }
+
+/* ─── Compare matrix ─── */
+.pricing-compare-matrix-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+.pricing-compare-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 560px;
+}
+.pricing-compare-matrix th {
+  background: var(--bg-muted);
+  padding: 14px 16px;
+  text-align: center;
+  font-weight: 700;
+  border-bottom: 2px solid var(--border);
+  position: sticky; top: 0;
+}
+.pricing-compare-matrix th:first-child { text-align: left; }
+.pricing-compare-matrix td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.pricing-compare-matrix td:first-child { text-align: left; font-weight: 500; }
+.pricing-compare-matrix tr:last-child td { border-bottom: none; }
+.pricing-category-row td {
+  background: var(--bg-muted);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  padding: 8px 16px;
+}
+
+/* ─── FAQ ─── */
+.pricing-faq-item {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 10px;
+}
+.pricing-faq-item summary { font-weight: 600; cursor: pointer; font-size: 15px; list-style: none; }
+.pricing-faq-item p { color: var(--fg-muted); margin-top: 12px; font-size: 14px; line-height: 1.6; }
+
+/* ─── Optional badge section ─── */
+.pricing-opt-badge-section {
+  background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.06));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+.pricing-opt-badge-section h3 { font-size: 20px; margin-bottom: 12px; }
+.pricing-opt-badge-section p { font-size: 14px; color: var(--fg-muted); line-height: 1.65; max-width: 520px; margin: 0 auto; }
+
+/* ─── Sticky CTA bar ─── */
+.pricing-sticky-cta {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  z-index: 100;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  flex-wrap: wrap;
+}
+.pricing-sticky-cta.visible { transform: translateY(0); }
+.pricing-sticky-cta p { margin: 0; font-size: 14px; font-weight: 600; }
+@media (max-width: 640px) { .pricing-sticky-cta { padding: 10px 16px; } .pricing-sticky-cta p { display: none; } }
+
+/* ─── Responsive tablet-tier for pricing grid ─── */
+@media (max-width: 1023px) and (min-width: 600px) {
+  .pricing-tier-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 599px) {
+  .pricing-tier-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
