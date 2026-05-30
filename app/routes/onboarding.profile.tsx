@@ -1,7 +1,7 @@
 /**
  * /onboarding/profile — Step 3/5: Display name + bio + avatar (F-ONBOARDING-001a)
  *
- * Visual contract: mockups/tadaify-mvp/onboarding-profile.html (merged PR #135)
+ * Visual contract: mockups/tadaify-mvp/onboarding-profile.html (Slice C 2026-04-30)
  *
  * URL state:
  *   loader reads → ?handle=&platforms=&socials=&name=&bio=&av=
@@ -14,7 +14,7 @@
  *
  * DEC trail:
  *   DEC-297=B  profile is step 3/5
- *   DEC-298=A  manual-only; no platform scraping
+ *   DEC-298=A  manual-only; no platform scraping; Upload + Initials avatar; Write-your-own bio
  *   DEC-310=B  avatar is optional
  *
  * Covers: BR-ONBOARDING-003 (step 3 profile setup)
@@ -114,6 +114,17 @@ type AvatarState =
   | { status: "success"; r2Key: string; previewUrl: string }
   | { status: "error"; message: string; retryable: boolean };
 
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function initialsFor(name: string, handle: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) {
+    return handle ? handle[0].toUpperCase() : "YOU";
+  }
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function ProfilePage({ loaderData, actionData }: Route.ComponentProps) {
@@ -135,6 +146,19 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
     }
     return { status: "idle" };
   });
+
+  // Selected avatar source: 'upload' | 'initials' | null
+  const [avatarSource, setAvatarSource] = useState<"upload" | "initials" | null>(
+    prefillAv ? "upload" : null
+  );
+
+  // Live name for initials card refresh
+  const [liveName, setLiveName] = useState(currentName);
+
+  // Bio textarea content
+  const [liveBio, setLiveBio] = useState(currentBio);
+  const [bioLength, setBioLength] = useState(currentBio.length);
+  const [bioSelected, setBioSelected] = useState(false);
 
   // Current r2_key for the hidden form field
   const currentR2Key =
@@ -174,9 +198,9 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
   // Broadcast when avatar changes
   useEffect(() => {
     if (avatarState.status === "success") {
-      broadcastState(currentName, currentBio, avatarState.previewUrl);
+      broadcastState(liveName, liveBio, avatarState.previewUrl);
     }
-  }, [avatarState, broadcastState, currentName, currentBio]);
+  }, [avatarState, broadcastState, liveName, liveBio]);
 
   // Back URL preserves accumulated state
   const backParams = new URLSearchParams();
@@ -184,6 +208,8 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
   if (platforms) backParams.set("platforms", platforms);
   if (socials) backParams.set("socials", socials);
   const backUrl = `/onboarding/social?${backParams.toString()}`;
+
+  const displayHandle = handle || "yourname";
 
   // ── Avatar upload handler ─────────────────────────────────────────────────
 
@@ -211,7 +237,6 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload/avatar");
 
-      // Progress tracking (visual checklist item 4)
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const pct = Math.round((event.loaded / event.total) * 100);
@@ -267,504 +292,398 @@ export default function ProfilePage({ loaderData, actionData }: Route.ComponentP
     handleFileSelected(file);
   }
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileSelected(file);
-  }
+  // ── Avatar card selection ────────────────────────────────────────────────
 
-  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-  }
-
-  function handleUploadZoneClick() {
+  function selectUpload() {
+    setAvatarSource("upload");
     if (avatarState.status !== "loading") {
       fileInputRef.current?.click();
     }
   }
 
-  function handleRetry() {
-    fileInputRef.current?.click();
-  }
-
-  function handleSkip() {
+  function selectInitials() {
+    setAvatarSource("initials");
     setAvatarState({ status: "idle" });
+    broadcastState(liveName, liveBio, null);
   }
 
-  // ── Derived display values ────────────────────────────────────────────────
+  // ── Bio handlers ─────────────────────────────────────────────────────────
 
-  const displayInitials = currentName
-    ? currentName
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase()
-    : handle
-    ? handle[0]?.toUpperCase()
-    : "?";
+  function handleBioSelect() {
+    setBioSelected(true);
+  }
+
+  function handleBioChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value;
+    setLiveBio(val);
+    setBioLength(val.length);
+    broadcastState(
+      liveName,
+      val,
+      avatarState.status === "success" ? avatarState.previewUrl : null
+    );
+  }
+
+  // ── Name change ──────────────────────────────────────────────────────────
+
+  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setLiveName(val);
+    broadcastState(
+      val,
+      liveBio,
+      avatarState.status === "success" ? avatarState.previewUrl : null
+    );
+  }
+
+  // ── Skip profile ─────────────────────────────────────────────────────────
+
+  function handleSkipProfile(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    const url = new URLSearchParams();
+    if (handle) url.set("handle", handle);
+    if (platforms) url.set("platforms", platforms);
+    if (socials) url.set("socials", socials);
+    window.location.href = `/onboarding/template?${url.toString()}`;
+  }
+
+  // ── Derived ──────────────────────────────────────────────────────────────
+
+  const initials = initialsFor(liveName, handle);
+
+  const uploadThumbContent = () => {
+    if (avatarState.status === "loading") {
+      return (
+        <>
+          <div
+            role="status"
+            aria-label="Uploading..."
+            data-testid="avatar-upload-spinner"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              border: "3px solid var(--border-strong)",
+              borderTopColor: "var(--brand-primary)",
+              animation: "onb-profile-spin 0.8s linear infinite",
+            }}
+          />
+        </>
+      );
+    }
+    if (avatarState.status === "success") {
+      return (
+        <img
+          src={avatarState.previewUrl}
+          alt="Your avatar"
+          data-testid="avatar-preview-image"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      );
+    }
+    if (avatarState.status === "error") {
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      );
+    }
+    // idle
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    );
+  };
 
   return (
-    <div style={{ maxWidth: 560 }}>
-      <p
-        style={{
-          fontSize: 15,
-          color: "var(--fg-muted)",
-          lineHeight: 1.6,
-          marginBottom: 28,
-          marginTop: -16,
-        }}
-      >
-        This is how you'll appear on your page. You can change everything later.
-      </p>
+    <>
+      <main className="onboarding-shell">
+        <div className="onboarding-shell-inner">
 
-      <form method="post" noValidate style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <input type="hidden" name="handle" value={handle} />
-        <input type="hidden" name="platforms" value={platforms} />
-        <input type="hidden" name="socials" value={socials} />
-
-        {/* ── Display name ──────────────────────────────────────────────── */}
-        <div>
-          <label
-            htmlFor="name"
-            style={{ display: "block", fontSize: 14, fontWeight: 600, marginBottom: 6 }}
-          >
-            Display name <span aria-hidden style={{ color: "var(--danger)" }}>*</span>
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            autoComplete="name"
-            defaultValue={currentName}
-            placeholder="Your name or brand"
-            maxLength={80}
-            aria-describedby={error?.field === "name" ? "name-error" : undefined}
-            aria-invalid={error?.field === "name"}
-            onChange={(e) => {
-              const bioEl = document.getElementById("bio") as HTMLTextAreaElement | null;
-              broadcastState(
-                e.target.value,
-                bioEl?.value ?? currentBio,
-                avatarState.status === "success" ? avatarState.previewUrl : null
-              );
-            }}
-            style={{
-              width: "100%",
-              minHeight: 44,
-              border: `1.5px solid ${error?.field === "name" ? "var(--danger)" : "var(--border-strong)"}`,
-              borderRadius: "var(--radius)",
-              background: "var(--bg-elevated)",
-              padding: "10px 14px",
-              fontSize: 15,
-              color: "var(--fg)",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-          {error?.field === "name" && (
-            <p
-              id="name-error"
-              role="alert"
-              style={{ fontSize: 13, color: "var(--danger)", marginTop: 4 }}
-            >
-              {error.message}
-            </p>
-          )}
-        </div>
-
-        {/* ── Bio ───────────────────────────────────────────────────────── */}
-        <div>
-          <label
-            htmlFor="bio"
-            style={{ display: "block", fontSize: 14, fontWeight: 600, marginBottom: 6 }}
-          >
-            Bio{" "}
-            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--fg-muted)" }}>
-              (optional · max {BIO_MAX_LENGTH} chars)
-            </span>
-          </label>
-          <textarea
-            id="bio"
-            name="bio"
-            maxLength={BIO_MAX_LENGTH + 10}
-            rows={3}
-            defaultValue={currentBio}
-            placeholder="A short intro about you or your brand…"
-            aria-describedby={error?.field === "bio" ? "bio-error" : "bio-counter"}
-            aria-invalid={error?.field === "bio"}
-            onChange={(e) => {
-              const nameEl = document.getElementById("name") as HTMLInputElement | null;
-              broadcastState(
-                nameEl?.value ?? currentName,
-                e.target.value,
-                avatarState.status === "success" ? avatarState.previewUrl : null
-              );
-            }}
-            style={{
-              width: "100%",
-              border: `1.5px solid ${error?.field === "bio" ? "var(--danger)" : "var(--border-strong)"}`,
-              borderRadius: "var(--radius)",
-              background: "var(--bg-elevated)",
-              padding: "10px 14px",
-              fontSize: 15,
-              color: "var(--fg)",
-              outline: "none",
-              resize: "vertical",
-              boxSizing: "border-box",
-              lineHeight: 1.5,
-            }}
-          />
-          <div
-            id="bio-counter"
-            style={{
-              fontSize: 12,
-              color: "var(--fg-muted)",
-              marginTop: 4,
-              textAlign: "right",
-            }}
-            aria-live="polite"
-          >
-            {currentBio.length} / {BIO_MAX_LENGTH}
+          {/* Progress bar: step 3 of 5 */}
+          <div className="progress-bar" aria-label="Step 3 of 5">
+            <div className="progress-step done"><span className="progress-dot" /></div>
+            <div className="progress-line done" />
+            <div className="progress-step done"><span className="progress-dot" /></div>
+            <div className="progress-line done" />
+            <div className="progress-step active"><span className="progress-dot" /></div>
+            <div className="progress-line" />
+            <div className="progress-step"><span className="progress-dot" /></div>
+            <div className="progress-line" />
+            <div className="progress-step"><span className="progress-dot" /></div>
           </div>
-          {error?.field === "bio" && (
-            <p
-              id="bio-error"
-              role="alert"
-              style={{ fontSize: 13, color: "var(--danger)", marginTop: 4 }}
-            >
-              {error.message}
-            </p>
-          )}
-        </div>
+          <p className="progress-label">Step 3 of 5 · Make it yours</p>
 
-        {/* ── Avatar ────────────────────────────────────────────────────── */}
-        <div>
-          <label
-            style={{ display: "block", fontSize: 14, fontWeight: 600, marginBottom: 6 }}
-          >
-            Avatar{" "}
-            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--fg-muted)" }}>
-              (optional)
-            </span>
-          </label>
+          <div className="ob-twocol">
 
-          {/* Hidden file input (triggered programmatically) */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            aria-label="Choose avatar image"
-            data-testid="avatar-file-input"
-            style={{ display: "none" }}
-            onChange={handleFileInputChange}
-          />
+            <div className="onb-card onb-card-lg" style={{ marginTop: 24 }}>
 
-          {/* Hidden form field — carries r2_key to action */}
-          <input type="hidden" name="av" value={currentR2Key} />
-
-          {/* Upload zone */}
-          <div
-            role="button"
-            tabIndex={avatarState.status === "loading" ? -1 : 0}
-            aria-label={
-              avatarState.status === "success"
-                ? "Avatar uploaded. Click to replace."
-                : "Upload avatar — click or drag and drop"
-            }
-            data-testid="avatar-upload-zone"
-            onClick={handleUploadZoneClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleUploadZoneClick();
-              }
-            }}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            style={{
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              minHeight: 120,
-              minWidth: 44, // ECN-138-09: mobile tap target ≥ 44×44px
-              padding: "20px 16px",
-              border: `1.5px dashed ${
-                avatarState.status === "error" ? "var(--danger)" : "var(--border-strong)"
-              }`,
-              borderRadius: "var(--radius)",
-              background: "var(--bg-muted)",
-              cursor: avatarState.status === "loading" ? "wait" : "pointer",
-              textAlign: "center",
-            }}
-          >
-            {/* State: idle */}
-            {avatarState.status === "idle" && (
-              <>
-                {/* Avatar initials placeholder — dashed circle */}
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: "50%",
-                    border: "2px dashed var(--border-strong)",
-                    background: "var(--bg-elevated)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "var(--fg-muted)",
-                    fontWeight: 700,
-                    fontSize: 24,
-                  }}
-                  aria-hidden
-                >
-                  {displayInitials}
-                </div>
+              {/* Hero */}
+              <div className="onb-hero">
+                <span className="logo-mark" data-logo aria-hidden="true" />
                 <div>
-                  <p style={{ margin: 0, fontSize: 14, color: "var(--fg)", fontWeight: 500 }}>
-                    Drag &amp; drop or click to browse
-                  </p>
-                  <p
-                    data-testid="avatar-type-hint"
-                    style={{ margin: "4px 0 0", fontSize: 12, color: "var(--fg-muted)" }}
-                  >
-                    JPG, PNG, WebP · max 2MB
+                  <h2 style={{ fontSize: "clamp(24px,3vw,34px)", lineHeight: 1.1 }}>Make it yours</h2>
+                  <p className="text-muted" style={{ fontSize: 15, marginTop: 6 }}>
+                    How should visitors see you?{" "}
+                    <strong style={{ color: "var(--fg)" }}>You can always change this later.</strong>
                   </p>
                 </div>
-              </>
-            )}
+              </div>
 
-            {/* State: loading */}
-            {avatarState.status === "loading" && (
-              <>
-                <div
-                  role="status"
-                  aria-label="Uploading..."
-                  data-testid="avatar-upload-spinner"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    border: "3px solid var(--border-strong)",
-                    borderTopColor: "var(--brand-primary)",
-                    animation: "spin 0.8s linear infinite",
-                  }}
+              <form method="post" noValidate>
+                <input type="hidden" name="handle" value={handle} />
+                <input type="hidden" name="platforms" value={platforms} />
+                <input type="hidden" name="socials" value={socials} />
+                <input type="hidden" name="av" value={currentR2Key} />
+
+                {/* Hidden file input (triggered programmatically) */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Choose avatar image"
+                  data-testid="avatar-file-input"
+                  style={{ display: "none" }}
+                  onChange={handleFileInputChange}
                 />
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                <p style={{ margin: 0, fontSize: 14, color: "var(--fg-muted)" }}>Uploading...</p>
-                {avatarState.progress !== undefined && avatarState.progress > 0 && (
+
+                {/* ── 1. Display name ─────────────────────────────────────── */}
+                <div className="onb-profile-field-label">
+                  <h3>Display name</h3>
+                  <span className="onb-profile-field-hint">Required</span>
+                </div>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  spellCheck={false}
+                  defaultValue={currentName}
+                  placeholder="e.g. Alexandra Doe"
+                  maxLength={80}
+                  className="onb-profile-name-input"
+                  aria-describedby={error?.field === "name" ? "name-error" : undefined}
+                  aria-invalid={error?.field === "name" || undefined}
+                  onChange={handleNameChange}
+                />
+                {error?.field === "name" && (
+                  <p
+                    id="name-error"
+                    role="alert"
+                    style={{ fontSize: 13, color: "var(--danger)", marginTop: 4 }}
+                  >
+                    {error.message}
+                  </p>
+                )}
+
+                {/* ── 2. Avatar selector (DEC-298=A: upload + initials only) ── */}
+                <div className="onb-profile-field-label">
+                  <h3>Avatar</h3>
+                  <span className="onb-profile-field-hint" id="avatar-hint">Pick one</span>
+                </div>
+
+                <div className="onb-profile-av-grid" id="av-grid" role="radiogroup" aria-label="Choose avatar type">
+
+                  {/* Upload card */}
                   <div
-                    role="progressbar"
-                    aria-valuenow={avatarState.progress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`Upload progress: ${avatarState.progress}%`}
-                    style={{
-                      width: "80%",
-                      height: 4,
-                      background: "var(--border-strong)",
-                      borderRadius: 2,
-                      overflow: "hidden",
+                    className={`onb-profile-av-card${avatarSource === "upload" ? " is-selected" : ""}`}
+                    data-source="upload"
+                    tabIndex={0}
+                    role="radio"
+                    aria-checked={avatarSource === "upload"}
+                    data-testid="avatar-upload-zone"
+                    onClick={selectUpload}
+                    onKeyDown={(e) => {
+                      if (e.key === " " || e.key === "Enter") { e.preventDefault(); selectUpload(); }
+                    }}
+                  >
+                    <div className="onb-profile-av-thumb" data-source="upload">
+                      {uploadThumbContent()}
+                    </div>
+                    <span className="onb-profile-av-source">
+                      {avatarState.status === "loading"
+                        ? "Uploading…"
+                        : avatarState.status === "success"
+                        ? "Click to replace"
+                        : avatarState.status === "error"
+                        ? "Upload failed"
+                        : "Upload your own"}
+                    </span>
+                    {avatarState.status === "error" && (
+                      <span
+                        role="alert"
+                        data-testid="avatar-error-message"
+                        style={{ fontSize: 11, color: "var(--danger)", textAlign: "center" }}
+                      >
+                        {avatarState.message}
+                      </span>
+                    )}
+                    {avatarState.status === "loading" && avatarState.progress !== undefined && avatarState.progress > 0 && (
+                      <div
+                        role="progressbar"
+                        aria-valuenow={avatarState.progress}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Upload progress: ${avatarState.progress}%`}
+                        style={{
+                          width: "80%",
+                          height: 3,
+                          background: "var(--border-strong)",
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          marginTop: 4,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${avatarState.progress}%`,
+                            height: "100%",
+                            background: "var(--brand-primary)",
+                            transition: "width 0.2s ease",
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Initials card */}
+                  <div
+                    className={`onb-profile-av-card${avatarSource === "initials" ? " is-selected" : ""}`}
+                    data-source="initials"
+                    tabIndex={0}
+                    role="radio"
+                    aria-checked={avatarSource === "initials"}
+                    onClick={selectInitials}
+                    onKeyDown={(e) => {
+                      if (e.key === " " || e.key === "Enter") { e.preventDefault(); selectInitials(); }
                     }}
                   >
                     <div
-                      style={{
-                        width: `${avatarState.progress}%`,
-                        height: "100%",
-                        background: "var(--brand-primary)",
-                        transition: "width 0.2s ease",
-                      }}
-                    />
+                      className={`onb-profile-av-thumb${avatarSource === "initials" ? " initials-selected" : ""}`}
+                      data-source="initials"
+                      aria-hidden="true"
+                    >
+                      {initials}
+                    </div>
+                    <span className="onb-profile-av-source">Use initials</span>
                   </div>
-                )}
-              </>
-            )}
 
-            {/* State: success — circle-masked preview */}
-            {avatarState.status === "success" && (
-              <>
-                <div
-                  style={{
-                    position: "relative",
-                    width: 72,
-                    height: 72,
-                  }}
-                >
-                  <img
-                    src={avatarState.previewUrl}
-                    alt="Your avatar preview"
-                    data-testid="avatar-preview-image"
-                    style={{
-                      width: 72,
-                      height: 72,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                  {/* Replace overlay on hover */}
+                </div>
+
+                {/* ── 3. Bio (DEC-298=A: write your own only) ──────────────── */}
+                <div className="onb-profile-field-label">
+                  <h3>Bio / description</h3>
+                  <span
+                    className={`onb-profile-field-hint${bioLength > 140 ? " is-warn" : ""}`}
+                    id="bio-counter"
+                    aria-live="polite"
+                  >
+                    {bioLength} / 160
+                  </span>
+                </div>
+
+                <div className="onb-profile-bio-list" id="bio-list">
+                  {/* DEC-298=A: "Write your own" is the only bio option */}
                   <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      borderRadius: "50%",
-                      background: "rgba(0,0,0,0.45)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: 0,
-                      transition: "opacity 0.15s",
-                      pointerEvents: "none",
-                    }}
-                    className="avatar-replace-overlay"
+                    className={`onb-profile-bio-row${bioSelected ? " is-selected" : ""}`}
+                    data-source="manual"
+                    onClick={handleBioSelect}
                   >
-                    <span style={{ color: "#fff", fontSize: 12, fontWeight: 600 }}>Replace</span>
+                    <span className="onb-profile-bio-radio" />
+                    <div className="onb-profile-bio-content">
+                      <p className="onb-profile-bio-source">Write your own</p>
+                      {bioSelected ? (
+                        <textarea
+                          id="bio"
+                          name="bio"
+                          className="onb-profile-bio-textarea"
+                          placeholder="A short line about you. 160 characters max."
+                          maxLength={BIO_MAX_LENGTH}
+                          defaultValue={currentBio}
+                          autoFocus
+                          aria-describedby={error?.field === "bio" ? "bio-error" : "bio-counter"}
+                          aria-invalid={error?.field === "bio" || undefined}
+                          onChange={handleBioChange}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <p
+                          className="onb-profile-bio-text"
+                          style={{ color: "var(--fg-subtle)", fontStyle: "italic" }}
+                        >
+                          {currentBio || "Click to write your own…"}
+                        </p>
+                      )}
+                      {error?.field === "bio" && (
+                        <p
+                          id="bio-error"
+                          role="alert"
+                          style={{ fontSize: 12, color: "var(--danger)", marginTop: 4 }}
+                        >
+                          {error.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <style>{`.avatar-upload-zone:hover .avatar-replace-overlay { opacity: 1; }`}</style>
                 </div>
-                <p style={{ margin: 0, fontSize: 13, color: "var(--fg-muted)" }}>
-                  Click to replace
-                </p>
-              </>
-            )}
 
-            {/* State: error */}
-            {avatarState.status === "error" && (
-              <>
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: "50%",
-                    border: "2px solid var(--danger)",
-                    background: "var(--bg-elevated)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 28,
-                  }}
-                  aria-hidden
-                >
-                  ✕
-                </div>
-                <p
-                  role="alert"
-                  data-testid="avatar-error-message"
-                  style={{ margin: 0, fontSize: 14, color: "var(--danger)", fontWeight: 500 }}
-                >
-                  {avatarState.message}
-                </p>
-                {avatarState.retryable && (
-                  <button
-                    type="button"
-                    data-testid="avatar-retry-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRetry();
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      background: "var(--brand-primary)",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "var(--radius)",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
+                {/* ── 4. Actions ───────────────────────────────────────────── */}
+                <div className="onb-profile-actions-row">
+                  <Link
+                    to={backUrl}
+                    className="btn btn-secondary"
+                    id="back-link"
+                    aria-label="Back to social handles"
                   >
-                    Retry upload
+                    ← Back
+                  </Link>
+                  <button
+                    type="submit"
+                    id="continue-btn"
+                    className="btn btn-primary btn-lg"
+                    style={{ flex: 1 }}
+                  >
+                    Continue →
                   </button>
-                )}
-              </>
-            )}
+                </div>
+
+                {/* ── 5. Skip link ─────────────────────────────────────────── */}
+                <a
+                  href="#"
+                  className="onb-profile-skip-link"
+                  onClick={handleSkipProfile}
+                >
+                  Skip for now — set up later
+                </a>
+
+                {/* ── 6. Trust strip ──────────────────────────────────────── */}
+                <p className="onb-profile-trust-strip">
+                  🔒 GDPR-compliant · We never share your profile data
+                </p>
+
+              </form>
+            </div>
+
+            {/* Live preview pane (right column on >=960px, stacks <960px) */}
+            <aside
+              data-onboarding-preview
+              data-render="profile"
+              data-handle={displayHandle}
+              data-platforms={platforms}
+              aria-label="Live preview of your tadaify page"
+            />
+
           </div>
+          {/* /.ob-twocol */}
 
-          {/* Hint text (shown when idle or after error) */}
-          {(avatarState.status === "idle" || avatarState.status === "error") && (
-            <p
-              style={{ fontSize: 12, color: "var(--fg-muted)", marginTop: 6 }}
-            >
-              JPG, PNG, WebP · max 2MB
-            </p>
-          )}
-
-          {/* Skip link (visual checklist item 8 — avatar is optional per DEC-310=B) */}
-          {avatarState.status !== "success" && (
-            <p style={{ marginTop: 8, textAlign: "center" }}>
-              <button
-                type="button"
-                data-testid="avatar-skip-button"
-                onClick={handleSkip}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--fg-muted)",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  padding: 0,
-                }}
-              >
-                Skip avatar — add later
-              </button>
-            </p>
-          )}
         </div>
-
-        {/* General error */}
-        {error && !error.field && (
-          <p role="alert" style={{ fontSize: 13, color: "var(--danger)" }}>
-            {error.message}
-          </p>
-        )}
-
-        {/* Action bar */}
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Link
-            to={backUrl}
-            style={{
-              padding: "10px 18px",
-              background: "transparent",
-              border: "1px solid var(--border-strong)",
-              borderRadius: "var(--radius)",
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--fg-muted)",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-            aria-label="Back to social handles"
-          >
-            ← Back
-          </Link>
-
-          <button
-            type="submit"
-            style={{
-              flex: 1,
-              minHeight: 44,
-              padding: "10px 24px",
-              background: "var(--brand-primary)",
-              color: "#FFF",
-              border: "none",
-              borderRadius: "var(--radius)",
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Continue →
-          </button>
-        </div>
-      </form>
-    </div>
+      </main>
+    </>
   );
 }
