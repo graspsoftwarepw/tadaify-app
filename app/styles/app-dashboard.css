@@ -3267,3 +3267,785 @@ body.dark-mode .app-dashboard-root .welcome-banner {
     body.dark-mode .app-dashboard-root .main-affiliate .share-card pre { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
     body.dark-mode .app-dashboard-root .main-affiliate .ref-link { background: #0B0F1E; color: #A5B4FC; }
     body.dark-mode .app-dashboard-root .main-affiliate .btn-sm { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }
+
+    /* =========================================================================
+       SETTINGS PANEL
+       -------------------------------------------------------------------------
+       Source: mockups/tadaify-mvp/app-settings-account.html inline <style>
+       block (1919 LOC mockup). Extracted verbatim and scoped under
+       `.app-dashboard-root .main-settings` so the selectors do not collide
+       with the existing dashboard / public-creator stylesheets.
+
+       Sub-pages other than Account ship in follow-up PRs. The shell rules
+       (.settings-layout / .settings-nav / .settings-content / .settings-section)
+       are shared across sub-pages so they live here once.
+
+       Mockup `body { ... }` rules and `body.dark-mode .x` rules are rewritten as
+       `.app-dashboard-root .main-settings` and `body.dark-mode .app-dashboard-root
+       .main-settings .x` respectively. `:root` and `@keyframes` blocks stay
+       global because they are name-spaced by token / keyframe name.
+       ========================================================================= */
+
+    /* ── Atoms (settings-only — chip, toggle, iconbtn variants from the
+           account mockup; many overlap with the dashboard atoms already extracted
+           above, so we only redeclare what the mockup uses inside `.main-settings`
+           with a different value). The base .btn / .chip / .iconbtn declared on
+           the dashboard remain inherited. ── */
+    .app-dashboard-root .main-settings .chip.warn {
+      background: rgba(245,158,11,0.14); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .app-dashboard-root .main-settings .chip.danger {
+      background: var(--danger-bg); color: #991B1B;
+    }
+    .app-dashboard-root .main-settings .chip.brand {
+      background: rgba(99,102,241,0.10); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.22);
+    }
+
+    .app-dashboard-root .main-settings .btn-danger-ghost {
+      background: var(--bg-elevated); color: var(--danger); border: 1px solid var(--danger);
+      border-radius: 10px; padding: 9px 16px;
+      font-family: var(--font-sans); font-weight: 500; font-size: 14px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer; transition: all .15s ease; line-height: 1.2;
+    }
+    .app-dashboard-root .main-settings .btn-danger-ghost:hover { background: var(--danger-bg); }
+    .app-dashboard-root .main-settings .btn-xs {
+      padding: 4px 9px; font-size: 12px; border-radius: 6px;
+    }
+
+    .app-dashboard-root .main-settings .toggle {
+      position: relative; display: inline-block;
+      width: 38px; height: 22px;
+      background: var(--bg-sunken); border-radius: 999px;
+      cursor: pointer; transition: background .15s ease;
+      flex-shrink: 0; border: 0;
+    }
+    .app-dashboard-root .main-settings .toggle::after {
+      content: ""; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      transition: left .15s ease;
+    }
+    .app-dashboard-root .main-settings .toggle.is-on { background: var(--brand-primary); }
+    .app-dashboard-root .main-settings .toggle.is-on::after { left: 19px; }
+
+    /* ── Breadcrumb ── */
+    .app-dashboard-root .main-settings .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--fg-muted);
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .breadcrumb a { color: var(--fg-muted); }
+    .app-dashboard-root .main-settings .breadcrumb a:hover { color: var(--brand-primary); }
+    .app-dashboard-root .main-settings .breadcrumb .sep { color: var(--fg-subtle); }
+    .app-dashboard-root .main-settings .breadcrumb .current { color: var(--fg); font-weight: 600; }
+
+    /* ── Page head ── */
+    .app-dashboard-root .main-settings .page-head {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      padding-bottom: 18px; border-bottom: 1px solid var(--border);
+      margin-bottom: 26px;
+    }
+    .app-dashboard-root .main-settings .page-head h1 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 30px; margin: 0; letter-spacing: -0.01em;
+    }
+    .app-dashboard-root .main-settings .page-head .sub {
+      color: var(--fg-muted); font-size: 13.5px; margin-top: 4px;
+    }
+
+    /* ── Settings layout (sub-nav + content) ── */
+    .app-dashboard-root .main-settings .settings-layout {
+      display: flex; gap: 0; align-items: flex-start;
+    }
+    .app-dashboard-root .main-settings .settings-nav {
+      width: 200px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 2px;
+      position: sticky; top: 82px;
+    }
+    .app-dashboard-root .main-settings .settings-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500;
+      background: transparent; border: 0; color: var(--fg-muted);
+      text-align: left; cursor: pointer; text-decoration: none;
+      transition: background .12s ease, color .12s ease;
+    }
+    .app-dashboard-root .main-settings .settings-nav-item svg {
+      width: 16px; height: 16px; flex-shrink: 0; color: var(--fg-subtle);
+    }
+    .app-dashboard-root .main-settings .settings-nav-item:hover {
+      background: var(--bg-muted); color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .settings-nav-item.active {
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary); font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .settings-nav-item.active svg {
+      color: var(--brand-primary);
+    }
+    .app-dashboard-root .main-settings .settings-nav-divider {
+      border-top: 1px solid var(--border); margin: 8px 0;
+    }
+    .app-dashboard-root .main-settings .settings-nav-item .sn-pill {
+      margin-left: auto;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+      white-space: nowrap;
+    }
+    .app-dashboard-root .main-settings .settings-nav-item .sn-pill.pro-pill {
+      background: rgba(245,158,11,0.15); color: var(--brand-warm-dark);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .app-dashboard-root .main-settings .settings-nav-item .sn-pill.biz-pill {
+      background: rgba(99,102,241,0.12); color: var(--brand-primary);
+      border: 1px solid rgba(99,102,241,0.25);
+    }
+
+    @media (max-width: 719px) {
+      .app-dashboard-root .main-settings .settings-layout { flex-direction: column; gap: 0; }
+      .app-dashboard-root .main-settings .settings-nav {
+        width: 100%; flex-direction: row;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 4px; padding-bottom: 12px; margin-bottom: 4px;
+        position: static;
+      }
+      .app-dashboard-root .main-settings .settings-nav-item {
+        white-space: nowrap; flex-shrink: 0;
+        padding: 7px 14px; border-radius: 99px;
+        border: 1px solid var(--border); background: var(--bg-elevated);
+        font-size: 13px;
+      }
+      .app-dashboard-root .main-settings .settings-nav-item.active {
+        background: rgba(99,102,241,0.10);
+        border-color: rgba(99,102,241,0.25);
+      }
+      .app-dashboard-root .main-settings .settings-nav-item .sn-pill { display: none; }
+      .app-dashboard-root .main-settings .settings-nav-divider { display: none; }
+    }
+
+    .app-dashboard-root .main-settings .settings-content {
+      flex: 1; min-width: 0;
+      padding-left: 28px;
+      border-left: 1px solid var(--border);
+      min-height: 400px;
+    }
+    @media (max-width: 719px) {
+      .app-dashboard-root .main-settings .settings-content {
+        padding-left: 0; border-left: none; padding-top: 12px;
+      }
+    }
+
+    /* ── Section blocks ── */
+    .app-dashboard-root .main-settings .settings-section {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+    .app-dashboard-root .main-settings .settings-section-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--fg-subtle); margin-bottom: 4px;
+    }
+    .app-dashboard-root .main-settings .settings-section-lede {
+      font-size: 13px; color: var(--fg-muted);
+      margin: 0 0 16px; line-height: 1.55;
+    }
+
+    /* ── Field rows ── */
+    .app-dashboard-root .main-settings .field-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .field-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .app-dashboard-root .main-settings .field-row:first-of-type { padding-top: 0; }
+    .app-dashboard-root .main-settings .field-label {
+      width: 170px; flex-shrink: 0;
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      padding-top: 6px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .field-label .field-hint {
+      display: block; font-size: 12px; font-weight: 400; color: var(--fg-muted); margin-top: 2px;
+      width: 100%;
+    }
+    .app-dashboard-root .main-settings .field-body { flex: 1; min-width: 0; }
+    @media (max-width: 599px) {
+      .app-dashboard-root .main-settings .field-row { flex-direction: column; gap: 6px; }
+      .app-dashboard-root .main-settings .field-label { width: auto; padding-top: 0; }
+    }
+
+    .app-dashboard-root .main-settings .field-input {
+      font-family: var(--font-sans); font-size: 14px;
+      padding: 10px 12px; border-radius: 9px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg); color: var(--fg);
+      outline: none; transition: border-color .12s ease, box-shadow .12s ease;
+      width: 100%;
+    }
+    .app-dashboard-root .main-settings .field-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .app-dashboard-root .main-settings .field-input[readonly] {
+      background: var(--bg-muted); color: var(--fg-muted); cursor: default;
+    }
+    .app-dashboard-root .main-settings .field-input.has-error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+    }
+    .app-dashboard-root .main-settings textarea.field-input {
+      resize: vertical; min-height: 84px; line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .field-counter {
+      font-size: 11.5px; color: var(--fg-subtle); text-align: right; margin-top: 4px;
+      transition: color .15s ease;
+    }
+    .app-dashboard-root .main-settings .field-counter.is-amber {
+      color: var(--brand-warm-dark); font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .field-counter.is-red {
+      color: var(--danger); font-weight: 700;
+    }
+    .app-dashboard-root .main-settings .field-error {
+      display: none; font-size: 12px; color: var(--danger);
+      margin-top: 5px; line-height: 1.4;
+    }
+    .app-dashboard-root .main-settings .field-error.is-visible { display: block; }
+
+    .app-dashboard-root .main-settings .with-suggest {
+      display: flex; align-items: stretch; gap: 8px;
+    }
+    .app-dashboard-root .main-settings .with-suggest > .field-input { flex: 1; }
+    .app-dashboard-root .main-settings .suggest-btn {
+      flex-shrink: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--brand-primary);
+      font-size: 12.5px; font-weight: 600;
+      padding: 0 12px; border-radius: 9px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .app-dashboard-root .main-settings .suggest-btn:hover {
+      background: var(--bg-muted); border-color: rgba(99,102,241,0.32);
+    }
+
+    /* ── Avatar (140px hero) ── */
+    .app-dashboard-root .main-settings .avatar-hero-row {
+      display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .avatar-hero {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: var(--hero-gradient);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 56px;
+      flex-shrink: 0;
+      box-shadow: 0 8px 24px rgba(99,102,241,0.28);
+      position: relative;
+    }
+    .app-dashboard-root .main-settings .avatar-hero img {
+      width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+      display: block;
+    }
+    .app-dashboard-root .main-settings .avatar-hero .upload-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: rgba(11,15,30,0.42);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 12px; font-weight: 600;
+      opacity: 0; transition: opacity .15s ease;
+      cursor: pointer;
+      border: 0;
+    }
+    .app-dashboard-root .main-settings .avatar-hero:hover .upload-overlay { opacity: 1; }
+
+    .app-dashboard-root .main-settings .avatar-controls {
+      flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .app-dashboard-root .main-settings .avatar-btn-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .avatar-meta {
+      font-size: 12px; color: var(--fg-subtle); margin: 0;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted); border-radius: 10px;
+      font-size: 11.5px; color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .label {
+      font-weight: 600; color: var(--fg-muted); margin-right: 4px;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .pv {
+      border-radius: 50%; background: var(--hero-gradient);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-weight: 600;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .pv img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .pv-64 {
+      width: 64px; height: 64px; font-size: 26px;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .pv-32 {
+      width: 32px; height: 32px; font-size: 13px;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .pv-24 {
+      width: 24px; height: 24px; font-size: 11px;
+    }
+    .app-dashboard-root .main-settings .avatar-preview-strip .pv-16 {
+      width: 16px; height: 16px; font-size: 8px;
+    }
+
+    /* ── Identity preview ── */
+    .app-dashboard-root .main-settings .name-preview {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--fg-muted); margin-top: 6px;
+      padding: 6px 10px;
+      background: var(--bg-muted); border-radius: 7px;
+      width: fit-content; max-width: 100%;
+    }
+    .app-dashboard-root .main-settings .name-preview .np-label {
+      color: var(--fg-subtle); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+    }
+    .app-dashboard-root .main-settings .name-preview .np-name {
+      font-weight: 600; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .name-preview .np-sep { color: var(--fg-subtle); }
+    .app-dashboard-root .main-settings .name-preview .np-handle {
+      color: var(--brand-primary); font-family: var(--font-mono); font-size: 12.5px;
+    }
+
+    /* ── Handle input with prefix + status pill ── */
+    .app-dashboard-root .main-settings .handle-input-wrap {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .handle-input-shell {
+      position: relative; flex: 1; min-width: 240px;
+    }
+    .app-dashboard-root .main-settings .handle-prefix {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--fg-muted); font-size: 14px; pointer-events: none;
+      font-family: var(--font-sans);
+    }
+    .app-dashboard-root .main-settings .handle-status-pill {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 11px; font-weight: 600;
+      padding: 3px 8px; border-radius: 999px;
+      background: var(--bg-muted); color: var(--fg-muted);
+      transition: background .15s ease, color .15s ease;
+    }
+    .app-dashboard-root .main-settings .handle-status-pill.is-ok {
+      background: rgba(34,197,94,.18); color: #16a34a;
+    }
+    .app-dashboard-root .main-settings .handle-status-pill.is-err {
+      background: rgba(239,68,68,.15); color: var(--danger);
+    }
+    .app-dashboard-root .main-settings .handle-status-pill.is-warn {
+      background: rgba(245,158,11,.16); color: var(--brand-warm-dark);
+    }
+
+    .app-dashboard-root .main-settings .handle-history {
+      margin-top: 10px;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .app-dashboard-root .main-settings .handle-history summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 9px 12px;
+      font-size: 12.5px; font-weight: 600; color: var(--fg);
+      display: flex; align-items: center; gap: 8px;
+      user-select: none;
+    }
+    .app-dashboard-root .main-settings .handle-history summary::-webkit-details-marker {
+      display: none;
+    }
+    .app-dashboard-root .main-settings .handle-history summary::after {
+      content: '▾'; margin-left: auto; font-size: 11px; color: var(--fg-subtle);
+      transition: transform .15s ease;
+    }
+    .app-dashboard-root .main-settings .handle-history[open] summary::after {
+      transform: rotate(180deg);
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-list {
+      padding: 4px 12px 12px;
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row {
+      display: flex; align-items: center; gap: 10px; padding: 6px 0;
+      font-size: 12.5px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row:last-child {
+      border-bottom: 0;
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row .hh-old {
+      font-family: var(--font-mono); color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row .hh-arrow {
+      color: var(--fg-subtle);
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row .hh-new {
+      font-family: var(--font-mono); color: var(--brand-primary); font-weight: 600;
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row .hh-when {
+      margin-left: auto; color: var(--fg-muted); font-size: 11.5px;
+    }
+    .app-dashboard-root .main-settings .handle-history .hh-row .hh-status {
+      font-size: 10.5px;
+    }
+
+    /* ── Email row + verified badge ── */
+    .app-dashboard-root .main-settings .email-display {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; border-radius: 9px;
+      background: var(--bg-muted); border: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .email-display .email-text {
+      font-family: var(--font-mono); font-size: 13px; color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .email-display .email-actions {
+      margin-left: auto;
+    }
+
+    /* ── Toggles list (notification prefs + visibility) ── */
+    .app-dashboard-root .main-settings .toggle-list {
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .app-dashboard-root .main-settings .toggle-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-settings .toggle-row:last-child { border-bottom: 0; }
+    .app-dashboard-root .main-settings .toggle-row:first-child { padding-top: 0; }
+    .app-dashboard-root .main-settings .toggle-row .tr-text { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .toggle-row .tr-name {
+      font-size: 13.5px; font-weight: 600; color: var(--fg);
+      display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .toggle-row .tr-desc {
+      font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; margin-top: 3px;
+    }
+
+    /* ── Location autocomplete ── */
+    .app-dashboard-root .main-settings .autocomplete-shell { position: relative; }
+    .app-dashboard-root .main-settings .autocomplete-list {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 9px;
+      box-shadow: 0 12px 32px rgba(17,24,39,0.10);
+      z-index: 30;
+      max-height: 220px; overflow-y: auto;
+      display: none;
+    }
+    .app-dashboard-root .main-settings .autocomplete-list.is-open { display: block; }
+    .app-dashboard-root .main-settings .autocomplete-list .ac-item {
+      padding: 9px 12px; font-size: 13.5px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+      background: transparent; border-left: 0; border-right: 0; border-top: 0;
+      width: 100%; text-align: left; color: var(--fg);
+      font-family: inherit;
+    }
+    .app-dashboard-root .main-settings .autocomplete-list .ac-item:last-child {
+      border-bottom: 0;
+    }
+    .app-dashboard-root .main-settings .autocomplete-list .ac-item:hover {
+      background: var(--bg-muted);
+    }
+    .app-dashboard-root .main-settings .autocomplete-list .ac-item .ac-flag {
+      font-size: 14px;
+    }
+    .app-dashboard-root .main-settings .autocomplete-list .ac-item .ac-meta {
+      color: var(--fg-muted); font-size: 11.5px; margin-left: auto;
+    }
+
+    /* ── Sticky save bar ── */
+    .app-dashboard-root .main-settings .save-bar {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 12px 22px;
+      display: none;
+      align-items: center; justify-content: space-between;
+      gap: 12px;
+      z-index: 80;
+      box-shadow: 0 -8px 24px rgba(17,24,39,0.06);
+    }
+    .app-dashboard-root .main-settings .save-bar.is-visible { display: flex; }
+    .app-dashboard-root .main-settings .save-bar.is-saved {
+      background: rgba(16,185,129,0.06); border-top-color: rgba(16,185,129,0.30);
+    }
+    .app-dashboard-root .main-settings .save-bar .save-hint {
+      font-size: 12.5px; color: var(--fg-muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .app-dashboard-root .main-settings .save-bar .save-hint .save-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--brand-warm);
+      box-shadow: 0 0 0 4px rgba(245,158,11,0.18);
+    }
+    .app-dashboard-root .main-settings .save-bar.is-saved .save-hint .save-dot {
+      background: var(--success); box-shadow: 0 0 0 4px rgba(16,185,129,0.18);
+    }
+    .app-dashboard-root .main-settings .save-bar.is-saving .save-hint .save-dot {
+      background: var(--brand-primary);
+    }
+
+    @media (min-width: 1100px) {
+      .app-dashboard-root .main-settings .save-bar { left: 240px; }
+    }
+    @media (min-width: 720px) and (max-width: 1099px) {
+      .app-dashboard-root .main-settings .save-bar { left: 72px; }
+    }
+
+    /* ── Empty state ── */
+    .app-dashboard-root .main-settings .empty-state {
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04));
+      border: 1px dashed rgba(99,102,241,0.30);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .app-dashboard-root .main-settings .empty-state .es-emoji {
+      font-size: 36px; flex-shrink: 0;
+    }
+    .app-dashboard-root .main-settings .empty-state .es-text {
+      flex: 1; min-width: 0;
+    }
+    .app-dashboard-root .main-settings .empty-state .es-title {
+      font-family: var(--font-display); font-size: 19px; font-weight: 600;
+      margin: 0 0 4px;
+    }
+    .app-dashboard-root .main-settings .empty-state .es-sub {
+      font-size: 13px; color: var(--fg-muted); margin: 0 0 8px; line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .empty-state .es-arrow {
+      color: var(--brand-primary); font-weight: 600; font-size: 13px;
+    }
+
+    /* ── Modals ── */
+    .app-dashboard-root .main-settings .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .app-dashboard-root .main-settings .modal-backdrop.is-open { display: flex; }
+    .app-dashboard-root .main-settings .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 26px;
+      width: 100%; max-width: 520px;
+      box-shadow: 0 24px 60px rgba(17,24,39,0.18);
+      animation: settingsModalIn .18s ease;
+      position: relative;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .app-dashboard-root .main-settings .modal.modal-wide { max-width: 720px; }
+    .app-dashboard-root .main-settings .modal h3 {
+      font-family: var(--font-display); font-size: 22px; margin: 0 0 6px;
+      letter-spacing: -0.005em;
+    }
+    .app-dashboard-root .main-settings .modal .modal-sub {
+      font-size: 13.5px; color: var(--fg-muted); margin-bottom: 18px; line-height: 1.55;
+    }
+    .app-dashboard-root .main-settings .modal .modal-actions {
+      display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-settings .modal .modal-close-x {
+      position: absolute; top: 16px; right: 16px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      font-size: 20px; width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .app-dashboard-root .main-settings .modal .modal-close-x:hover {
+      background: var(--bg-muted); color: var(--fg);
+    }
+    .app-dashboard-root .main-settings .modal-warning {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 13px; color: var(--danger);
+      margin-bottom: 14px; line-height: 1.5;
+    }
+    .app-dashboard-root .main-settings .modal-info {
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.22);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 13px; color: var(--fg);
+      margin-bottom: 14px; line-height: 1.55;
+    }
+
+    /* Settings modal animation — name-spaced so it does not collide with
+       other modal animations declared globally. */
+    @keyframes settingsModalIn {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Crop modal */
+    .app-dashboard-root .main-settings .crop-stage {
+      width: 100%; aspect-ratio: 1 / 1;
+      max-width: 360px; margin: 0 auto 14px;
+      background: var(--bg-muted); border-radius: 12px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--fg-subtle); font-size: 12px;
+    }
+    .app-dashboard-root .main-settings .crop-stage::after {
+      content: ''; position: absolute;
+      width: 70%; aspect-ratio: 1 / 1;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 9999px rgba(11,15,30,0.55);
+      border: 2px solid rgba(255,255,255,0.55);
+      pointer-events: none;
+    }
+    .app-dashboard-root .main-settings .crop-stage .crop-img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      background: linear-gradient(135deg, #6366F1, #F59E0B);
+    }
+    .app-dashboard-root .main-settings .crop-controls {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+    }
+    .app-dashboard-root .main-settings .crop-controls label {
+      font-size: 12.5px; color: var(--fg-muted); font-weight: 600; min-width: 50px;
+    }
+    .app-dashboard-root .main-settings .crop-controls input[type=range] { flex: 1; }
+
+    /* AI generate panel inside crop modal */
+    .app-dashboard-root .main-settings .ai-gen-panel {
+      border: 1px dashed rgba(99,102,241,0.30);
+      background: rgba(99,102,241,0.04);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+    .app-dashboard-root .main-settings .ai-gen-panel .ag-title {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--brand-primary); margin-bottom: 4px;
+    }
+    .app-dashboard-root .main-settings .ai-gen-panel .ag-sub {
+      font-size: 12px; color: var(--fg-muted); margin: 0 0 8px;
+    }
+    .app-dashboard-root .main-settings .ai-gen-panel input { width: 100%; }
+
+    /* ── Placeholder content for non-Account sub-pages
+           (apikeys / billing / security / gdpr / team / danger ship as
+           separate PRs — for now they render this notice so the shell still
+           routes correctly). ── */
+    .app-dashboard-root .main-settings .subpage-placeholder {
+      padding: 36px 28px; text-align: center;
+      border: 1px dashed var(--border-strong); border-radius: 14px;
+      background: var(--bg-elevated); color: var(--fg-muted);
+    }
+    .app-dashboard-root .main-settings .subpage-placeholder .sp-emoji {
+      font-size: 32px; margin-bottom: 10px;
+    }
+    .app-dashboard-root .main-settings .subpage-placeholder .sp-title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 600;
+      color: var(--fg); margin-bottom: 4px;
+    }
+    .app-dashboard-root .main-settings .subpage-placeholder .sp-sub {
+      font-size: 13px; line-height: 1.5;
+    }
+
+    /* ── Dark mode overrides ── */
+    body.dark-mode .app-dashboard-root .main-settings .settings-section {
+      background: #141A2D; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .field-input {
+      background: #0B0F1E; border-color: #374151; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .field-input[readonly] {
+      background: #1A2236; color: #9CA3AF;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .modal {
+      background: #141A2D; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .save-bar {
+      background: #141A2D; border-top-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .page-head {
+      border-bottom-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .empty-state {
+      border-color: rgba(99,102,241,0.45);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .email-display {
+      background: #1A2236; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .avatar-preview-strip {
+      background: #1A2236;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .name-preview {
+      background: #1A2236;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .handle-history {
+      background: #0B0F1E; border-color: #1F2937;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .ai-gen-panel {
+      background: rgba(99,102,241,0.10);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .settings-nav-item {
+      color: #9CA3AF;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .settings-nav-item:hover {
+      background: #1F2937; color: #F3F4F6;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .settings-nav-item.active {
+      background: rgba(99,102,241,0.18); color: #A5B4FC;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .settings-nav-item.active svg {
+      color: #A5B4FC;
+    }
+    body.dark-mode .app-dashboard-root .main-settings .subpage-placeholder {
+      background: #141A2D; border-color: #374151;
+    }
+
+    /* ── Settings: tier-banner (extracted from mockup app-settings-account.html) ── */
+    .app-dashboard-root .main-settings .tier-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(245,158,11,0.06));
+      border: 1px solid rgba(99,102,241,0.22);
+      font-size: 13px; line-height: 1.5;
+      color: var(--fg);
+    }
+    body.dark-mode .app-dashboard-root .main-settings .tier-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.16), rgba(245,158,11,0.10));
+      border-color: rgba(99,102,241,0.40);
+    }
+    .app-dashboard-root .main-settings .tier-banner .tb-ico {
+      flex-shrink: 0; font-size: 20px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(245,158,11,0.18);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .app-dashboard-root .main-settings .tier-banner .tb-text { flex: 1; min-width: 0; }
+    .app-dashboard-root .main-settings .tier-banner .tb-title { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
+    .app-dashboard-root .main-settings .tier-banner .tb-sub { font-size: 12.5px; color: var(--fg-muted); }
+    .app-dashboard-root .main-settings .tier-banner .btn { flex-shrink: 0; }
