@@ -7863,3 +7863,473 @@ body.dark-mode .app-dashboard-root .welcome-banner {
       .app-dashboard-root .tier-gate-modal .btn-spinner { animation: none; }
       .app-dashboard-root .tier-gate-modal .tg-modal { transition: none !important; }
     }
+
+    /* =========================================================================
+       AI Suggest sub-modal — scoped under .app-dashboard-root .ai-suggest-modal
+       Visual contract: mockups/tadaify-mvp/app-ai-suggest-modal.html
+       @keyframes prefixed ai-suggest- to avoid collisions.
+       ========================================================================= */
+
+    /* Backdrop — matches mockup .ai-modal-backdrop (lines 274-301) */
+    .app-dashboard-root .ai-suggest-modal.ai-modal-backdrop {
+      position: fixed; inset: 0; z-index: 80;
+      background: rgba(11,15,30,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity .22s ease;
+    }
+    .app-dashboard-root .ai-suggest-modal.ai-modal-backdrop.is-open { display: flex; opacity: 1; }
+
+    /* Modal panel — matches mockup .ai-modal (lines 285-301) */
+    .app-dashboard-root .ai-suggest-modal .ai-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-xl);
+      width: min(560px, 100%);
+      max-height: calc(100vh - 32px);
+      display: flex; flex-direction: column;
+      transform: translateY(8px) scale(0.98);
+      transition: transform .22s cubic-bezier(.22,.61,.36,1);
+      overflow: hidden;
+    }
+    .app-dashboard-root .ai-suggest-modal.ai-modal-backdrop.is-open .ai-modal {
+      transform: translateY(0) scale(1);
+    }
+    @media (max-width: 600px) {
+      .app-dashboard-root .ai-suggest-modal.ai-modal-backdrop { padding: 0; align-items: stretch; }
+      .app-dashboard-root .ai-suggest-modal .ai-modal {
+        border-radius: 0; max-height: 100vh; height: 100vh; width: 100%;
+      }
+    }
+
+    /* Head — matches mockup .ai-modal-head (lines 303-326) */
+    .app-dashboard-root .ai-suggest-modal .ai-modal-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .ai-suggest-modal .ai-modal-head h3 {
+      font-family: var(--font-display);
+      font-size: 19px; font-weight: 600;
+      flex: 1; margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .app-dashboard-root .ai-suggest-modal .ai-modal-head h3 .sparkle { color: var(--brand-warm); margin-right: 4px; }
+    .app-dashboard-root .ai-suggest-modal .ai-modal-head .target-name { color: var(--brand-primary); }
+
+    /* iconbtn — close button */
+    .app-dashboard-root .ai-suggest-modal .iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: 0; color: var(--fg-muted);
+      cursor: pointer;
+      transition: background .12s, color .12s;
+    }
+    .app-dashboard-root .ai-suggest-modal .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+    .app-dashboard-root .ai-suggest-modal .iconbtn svg { width: 16px; height: 16px; }
+
+    /* Cost transparency strip — DEC-176/177 */
+    .app-dashboard-root .ai-suggest-modal .ctx-cost {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px; line-height: 1.4; color: var(--fg-muted);
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost .meter { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost .line { color: var(--fg); font-weight: 500; }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost .line b { font-weight: 700; }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost .sub { font-size: 11px; color: var(--fg-subtle); }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost .bar {
+      height: 4px; background: rgba(0,0,0,0.06);
+      border-radius: 99px; overflow: hidden; margin-top: 2px;
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost .bar > i {
+      display: block; height: 100%;
+      background: var(--brand-primary); border-radius: 99px;
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost.is-low {
+      background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.32);
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost.is-low .bar > i { background: #F59E0B; }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost.is-out {
+      background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.32);
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-cost.is-out .bar > i { background: #EF4444; }
+
+    /* Body */
+    .app-dashboard-root .ai-suggest-modal .ai-modal-body {
+      padding: 16px 22px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* Context strip */
+    .app-dashboard-root .ai-suggest-modal .ctx-strip {
+      display: flex; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-muted);
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-strip .ctx-icon {
+      flex-shrink: 0; width: 14px; height: 14px;
+      margin-top: 2px;
+      color: var(--brand-primary);
+    }
+    .app-dashboard-root .ai-suggest-modal .ctx-strip .ctx-text b { color: var(--fg); font-weight: 600; }
+    .app-dashboard-root .ai-suggest-modal .ctx-strip code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      padding: 1px 5px;
+      background: rgba(99,102,241,0.10);
+      color: var(--brand-primary);
+      border-radius: 4px;
+    }
+
+    /* Refinement field */
+    .app-dashboard-root .ai-suggest-modal .refine { display: grid; gap: 6px; }
+    .app-dashboard-root .ai-suggest-modal .refine label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.01em;
+    }
+    .app-dashboard-root .ai-suggest-modal .refine label .opt {
+      font-weight: 500; color: var(--fg-subtle); font-size: 11px; letter-spacing: 0;
+    }
+    .app-dashboard-root .ai-suggest-modal .refine textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      resize: vertical;
+      min-height: 64px;
+      outline: none;
+      transition: border .14s, box-shadow .14s;
+      box-sizing: border-box;
+    }
+    .app-dashboard-root .ai-suggest-modal .refine textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+      background: var(--bg-elevated);
+    }
+    .app-dashboard-root .ai-suggest-modal .refine textarea::placeholder { color: var(--fg-subtle); }
+
+    /* Suggestions head */
+    .app-dashboard-root .ai-suggest-modal .suggestions-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+      padding-top: 4px;
+    }
+    .app-dashboard-root .ai-suggest-modal .suggestions-head .lbl {
+      font-size: 12px; font-weight: 600;
+      color: var(--fg-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .app-dashboard-root .ai-suggest-modal .suggestions-head .count { font-size: 11.5px; color: var(--fg-subtle); }
+
+    /* Suggestion list */
+    .app-dashboard-root .ai-suggest-modal .sugg-list {
+      display: flex; flex-direction: column; gap: 8px;
+      list-style: none; margin: 0; padding: 0;
+    }
+
+    /* Suggestion card */
+    .app-dashboard-root .ai-suggest-modal .sugg-card {
+      position: relative;
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px 12px 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border .14s, background .14s, transform .12s, box-shadow .14s;
+      font-family: var(--font-sans);
+      text-align: left;
+      width: 100%;
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-elevated);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card.is-selected {
+      border-color: var(--brand-primary);
+      background: rgba(99,102,241,0.06);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card .idx {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 7px;
+      background: var(--bg-muted);
+      color: var(--fg-muted);
+      font-size: 11.5px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      margin-top: 1px;
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card.is-selected .idx {
+      background: var(--brand-primary); color: #fff;
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card .copy {
+      flex: 1; min-width: 0;
+      font-size: 14px; line-height: 1.45;
+      color: var(--fg); font-weight: 500;
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card .style-tag {
+      flex-shrink: 0; align-self: flex-start; margin-top: 2px;
+      font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 3px 8px; border-radius: 99px;
+      color: var(--fg-muted); background: var(--bg-muted);
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card.is-selected .style-tag {
+      background: rgba(245,158,11,0.14); color: var(--brand-warm-dark);
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card .check {
+      position: absolute; top: 10px; right: 10px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--success); color: #fff;
+      display: none; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800;
+    }
+    .app-dashboard-root .ai-suggest-modal .sugg-card.is-selected .check { display: flex; }
+
+    /* Skeleton cards */
+    .app-dashboard-root .ai-suggest-modal .sugg-skeleton {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px 12px 12px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+    }
+    .app-dashboard-root .ai-suggest-modal .sk-block {
+      background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%);
+      background-size: 200% 100%;
+      animation: ai-suggest-shimmer 1.4s linear infinite;
+      border-radius: 6px;
+      height: 14px;
+    }
+    .app-dashboard-root .ai-suggest-modal .sk-idx {
+      width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; margin-top: 1px;
+      background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%);
+      background-size: 200% 100%;
+      animation: ai-suggest-shimmer 1.4s linear infinite;
+    }
+    .app-dashboard-root .ai-suggest-modal .sk-copy { flex: 1; }
+    .app-dashboard-root .ai-suggest-modal .sk-line-1 { width: 75%; height: 14px; }
+    .app-dashboard-root .ai-suggest-modal .sk-line-2 { width: 45%; height: 12px; margin-top: 8px; }
+    .app-dashboard-root .ai-suggest-modal .sk-tag {
+      width: 56px; height: 16px; border-radius: 99px; flex-shrink: 0; margin-top: 1px;
+      background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%);
+      background-size: 200% 100%;
+      animation: ai-suggest-shimmer 1.4s linear infinite;
+    }
+    @keyframes ai-suggest-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Error box */
+    .app-dashboard-root .ai-suggest-modal .err-box {
+      padding: 16px;
+      background: var(--danger-bg);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 12px;
+      color: var(--fg);
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-icon {
+      flex-shrink: 0; width: 20px; height: 20px; color: var(--danger); margin-top: 1px;
+    }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-msg {
+      flex: 1; font-size: 13.5px; line-height: 1.5;
+    }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-msg b {
+      display: block; margin-bottom: 2px; color: var(--fg); font-weight: 600;
+    }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-msg .err-sub { color: var(--fg-muted); font-weight: 400; }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-actions { margin-top: 10px; display: flex; gap: 8px; }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-actions button {
+      padding: 7px 12px;
+      font-size: 12.5px; font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid var(--danger);
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .app-dashboard-root .ai-suggest-modal .err-box .err-actions button:hover {
+      background: var(--danger); color: #fff;
+    }
+
+    /* Empty box */
+    .app-dashboard-root .ai-suggest-modal .empty-box {
+      padding: 18px;
+      background: var(--bg-muted);
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .app-dashboard-root .ai-suggest-modal .empty-box .empty-icon {
+      width: 32px; height: 32px; margin: 0 auto 8px; color: var(--fg-subtle);
+    }
+    .app-dashboard-root .ai-suggest-modal .empty-box .empty-h {
+      font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 4px;
+    }
+    .app-dashboard-root .ai-suggest-modal .empty-box .empty-sub {
+      font-size: 12.5px; color: var(--fg-muted); max-width: 360px;
+      margin: 0 auto 14px; line-height: 1.5;
+    }
+
+    /* Out-of-quota box */
+    .app-dashboard-root .ai-suggest-modal .out-box {
+      padding: 22px 18px; text-align: center;
+      background: rgba(239,68,68,0.04);
+      border: 1px solid rgba(239,68,68,0.20);
+      border-radius: 12px;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box .out-icon {
+      width: 40px; height: 40px; border-radius: 99px;
+      background: rgba(239,68,68,0.12); color: #EF4444;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 12px;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box .out-h {
+      font-family: var(--font-display);
+      font-size: 20px; font-weight: 600; color: var(--fg);
+      margin-bottom: 6px; letter-spacing: -0.01em;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box .out-countdown {
+      font-size: 14px; color: var(--fg-muted); margin-bottom: 14px;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box .out-countdown b {
+      font-family: var(--font-mono); color: var(--fg); font-weight: 600;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box details {
+      margin-top: 16px; padding-top: 14px;
+      border-top: 1px dashed rgba(0,0,0,0.10);
+      text-align: left;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box details summary {
+      font-size: 12px; font-weight: 600; color: var(--fg-muted);
+      cursor: pointer; list-style: none; user-select: none;
+    }
+    .app-dashboard-root .ai-suggest-modal .out-box details summary::-webkit-details-marker { display: none; }
+    .app-dashboard-root .ai-suggest-modal .out-box details p {
+      margin: 8px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--fg-muted);
+    }
+
+    /* Selected banner — confirmation flourish */
+    .app-dashboard-root .ai-suggest-modal .selected-banner {
+      padding: 10px 12px;
+      background: rgba(16,185,129,0.10);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 10px;
+      display: flex; gap: 10px; align-items: center;
+      font-size: 12.5px; color: var(--fg);
+    }
+    .app-dashboard-root .ai-suggest-modal .selected-banner .check {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--success); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; flex-shrink: 0;
+    }
+    .app-dashboard-root .ai-suggest-modal .selected-banner b { color: var(--fg); font-weight: 600; }
+
+    /* Foot */
+    .app-dashboard-root .ai-suggest-modal .ai-modal-foot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex; gap: 10px; align-items: center;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .ai-suggest-modal .ai-modal-foot .left  { display: flex; gap: 8px; }
+    .app-dashboard-root .ai-suggest-modal .ai-modal-foot .right { display: flex; gap: 8px; margin-left: auto; }
+
+    /* Buttons */
+    .app-dashboard-root .ai-suggest-modal .btn-primary,
+    .app-dashboard-root .ai-suggest-modal .btn-secondary,
+    .app-dashboard-root .ai-suggest-modal .btn-ghost {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 14px;
+      font-family: var(--font-sans); font-size: 13.5px; font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background .14s, border-color .14s, color .14s, transform .12s;
+    }
+    .app-dashboard-root .ai-suggest-modal .btn-primary {
+      background: var(--brand-primary); color: #FFFFFF;
+    }
+    .app-dashboard-root .ai-suggest-modal .btn-primary:not(:disabled):hover {
+      background: var(--brand-primary-hover); transform: translateY(-1px);
+    }
+    .app-dashboard-root .ai-suggest-modal .btn-primary:disabled {
+      background: var(--bg-sunken); color: var(--fg-subtle); cursor: not-allowed;
+    }
+    .app-dashboard-root .ai-suggest-modal .btn-secondary {
+      background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong);
+    }
+    .app-dashboard-root .ai-suggest-modal .btn-secondary:hover { background: var(--bg-muted); }
+    .app-dashboard-root .ai-suggest-modal .btn-ghost {
+      background: transparent; color: var(--fg-muted);
+    }
+    .app-dashboard-root .ai-suggest-modal .btn-ghost:hover {
+      background: var(--bg-muted); color: var(--fg);
+    }
+    .app-dashboard-root .ai-suggest-modal .refresh-cost {
+      font-size: 11px; font-weight: 500; color: var(--fg-subtle); margin-left: 2px;
+    }
+
+    /* Spinner */
+    .app-dashboard-root .ai-suggest-modal .btn-spinner {
+      width: 12px; height: 12px;
+      border: 2px solid rgba(99,102,241,0.25);
+      border-top-color: var(--brand-primary);
+      border-radius: 50%;
+      animation: ai-suggest-spin .8s linear infinite;
+      display: none;
+    }
+    .app-dashboard-root .ai-suggest-modal .is-loading .btn-spinner { display: inline-block; }
+    @keyframes ai-suggest-spin { to { transform: rotate(360deg); } }
+
+    /* Upgrade button */
+    .app-dashboard-root .ai-suggest-modal .upgrade-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border-radius: 8px;
+      background: var(--brand-warm); color: #FFFFFF;
+      font-size: 13px; font-weight: 600;
+      border: 0;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background .14s;
+    }
+    .app-dashboard-root .ai-suggest-modal .upgrade-btn:hover { background: var(--brand-warm-dark); }
+
+    /* prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+      .app-dashboard-root .ai-suggest-modal .sk-block,
+      .app-dashboard-root .ai-suggest-modal .sk-idx,
+      .app-dashboard-root .ai-suggest-modal .sk-tag { animation: none; }
+      .app-dashboard-root .ai-suggest-modal .btn-spinner { animation: none; }
+      .app-dashboard-root .ai-suggest-modal .ai-modal { transition: none !important; }
+    }
