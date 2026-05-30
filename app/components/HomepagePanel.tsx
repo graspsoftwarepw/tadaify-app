@@ -26,6 +26,7 @@
 import { useMemo, useState, type ReactElement } from "react";
 import type { OnboardingState } from "~/lib/onboarding-state";
 import { LinkBlockEditor } from "~/components/blocks/LinkBlockEditor";
+import { BlockEditorCanonical } from "~/components/blocks/BlockEditorCanonical";
 
 export interface Block {
   id: string;
@@ -290,6 +291,9 @@ export function HomepagePanel({
   const [pinnedEnabled, setPinnedEnabled] = useState(false);
   const [pinnedMsg, setPinnedMsg] = useState("");
   const [linkEditorOpen, setLinkEditorOpen] = useState(false);
+  // Canonical block editor — opens for all 12 block types.
+  // The "Add a link" CTA opens this with initialType="link".
+  const [canonicalEditorOpen, setCanonicalEditorOpen] = useState(false);
 
   // Profile editor — toggled by the pencil button. TODO: wire to profile
   // update endpoint (#171 follow-up).
@@ -933,9 +937,8 @@ export function HomepagePanel({
         </div>
       )}
 
-      {/* Link block editor — opens from "Add a link" empty-state card or the
-          "Add a block" CTA. Only mounted when we have a pageId; the editor
-          POSTs to /api/blocks which requires a page_id UUID. */}
+      {/* Link block editor (backward-compat shim) — still wired for POST /api/blocks.
+          New code should open BlockEditorCanonical instead. */}
       {pageId ? (
         <LinkBlockEditor
           open={linkEditorOpen}
@@ -945,6 +948,23 @@ export function HomepagePanel({
             // Slice A doesn't optimistically merge the new block into the
             // local list — the dashboard reloads from SSR on next nav. A
             // future slice (live-preview parity) will hot-swap without reload.
+            if (typeof window !== "undefined") {
+              window.location.reload();
+            }
+          }}
+        />
+      ) : null}
+
+      {/* Canonical block editor — full 12-type editor per tadaify-app#52.
+          Wired from "Add a link" CTA and other entry points via initialType="link".
+          Save is currently stubbed (TODO: wire to POST/PATCH /api/blocks). */}
+      {pageId ? (
+        <BlockEditorCanonical
+          open={canonicalEditorOpen}
+          onOpenChange={setCanonicalEditorOpen}
+          initialType="link"
+          pageId={pageId}
+          onSaved={() => {
             if (typeof window !== "undefined") {
               window.location.reload();
             }

@@ -1,10 +1,12 @@
 /**
  * LinkBlockEditor — composed editor controller for `block_type = "link"`.
  *
- * Wraps the generic `BlockEditorModal` shell (#200) with the link-specific
- * form body (#56 slice A), a tiny live preview, and the save flow to
- * `POST /api/blocks`. Slice A only handles CREATE — the UPDATE path will
- * land alongside the dashboard edit-pencil wiring in a later slice.
+ * BACKWARD-COMPAT SHIM: This file retains its original implementation so that
+ * existing test-suites, imports, and the HomepagePanel "Add a link" CTA
+ * continue to work without modification.
+ *
+ * New code should use `BlockEditorCanonical` with `initialType="link"` which
+ * provides the full 12-type editor per the mockup (tadaify-app#52).
  *
  * Story: F-BLOCK-LINK-001 slice A (tadaify-app#56)
  * Covers: BR-BLOCK-LINK-001/002 (creator add+edit flow), AC#1, AC#2, AC#4.
