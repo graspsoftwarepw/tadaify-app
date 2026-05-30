@@ -12663,3 +12663,754 @@ body.dark-mode .app-dashboard-root .app-page-custom-slug-warn { color: #FECACA; 
   .app-dashboard-root .app-page-custom-picker-card,
   .app-dashboard-root .app-page-custom-templ-card { transition: none !important; }
 }
+
+
+/* =============================================================================
+   AppPagePortfolio — scoped under .app-dashboard-root
+   Prefix: app-page-portfolio-
+   Source: mockups/tadaify-mvp/app-page-portfolio.html
+   ============================================================================= */
+
+/* ── Root ── */
+.app-dashboard-root .app-page-portfolio-root { max-width: 1080px; padding: 24px 20px 120px; }
+
+/* ── Breadcrumb ── */
+.app-dashboard-root .app-page-portfolio-crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-portfolio-crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; text-decoration: none; }
+.app-dashboard-root .app-page-portfolio-crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-portfolio-crumb-sep { color: var(--fg-subtle); }
+.app-dashboard-root .app-page-portfolio-crumb-here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+/* ── Page head ── */
+.app-dashboard-root .app-page-portfolio-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.app-dashboard-root .app-page-portfolio-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+.app-dashboard-root .app-page-portfolio-ph-emoji { font-size: 26px; }
+.app-dashboard-root .app-page-portfolio-sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+.app-dashboard-root .app-page-portfolio-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.app-dashboard-root .app-page-portfolio-url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.app-dashboard-root .app-page-portfolio-url-pill b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .app-page-portfolio-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); display: inline-block; }
+
+/* ── Panel ── */
+.app-dashboard-root .app-page-portfolio-panel { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+.app-dashboard-root .app-page-portfolio-panel-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-portfolio-panel-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-portfolio-panel-sub { color: var(--fg-muted); font-size: 12.5px; }
+.app-dashboard-root .app-page-portfolio-head-spacer { flex: 1; }
+.app-dashboard-root .app-page-portfolio-panel-body { padding: 18px; }
+.app-dashboard-root .app-page-portfolio-panel-body-lg { padding: 22px; }
+
+/* ── Admin banner ── */
+.app-dashboard-root .app-page-portfolio-panel-admin-banner { background: rgba(99,102,241,0.04); border-color: rgba(99,102,241,0.20); }
+.app-dashboard-root .app-page-portfolio-admin-banner-inner { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px; border-bottom: 0; }
+.app-dashboard-root .app-page-portfolio-admin-banner-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin-bottom: 2px; }
+.app-dashboard-root .app-page-portfolio-admin-banner-sub { color: var(--fg-muted); font-size: 13px; }
+
+/* ── Fields ── */
+.app-dashboard-root .app-page-portfolio-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-portfolio-field:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-portfolio-field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-portfolio-field-hint { font-size: 11px; color: var(--fg-subtle); font-weight: 400; }
+.app-dashboard-root .app-page-portfolio-field-input, .app-dashboard-root .app-page-portfolio-field-area, .app-dashboard-root .app-page-portfolio-field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+.app-dashboard-root .app-page-portfolio-field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+.app-dashboard-root .app-page-portfolio-field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-portfolio-field-row.col-3 { grid-template-columns: repeat(3, 1fr); }
+.app-dashboard-root .app-page-portfolio-field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-portfolio-field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; color: var(--fg); font: inherit; }
+.app-dashboard-root .app-page-portfolio-field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-portfolio-field-suffix-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 11px; margin: 3px; border: 0; border-radius: 8px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* ── Toggle ── */
+.app-dashboard-root .app-page-portfolio-toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+.app-dashboard-root .app-page-portfolio-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+.app-dashboard-root .app-page-portfolio-toggle.is-on { background: var(--brand-primary); }
+.app-dashboard-root .app-page-portfolio-toggle.is-on::after { transform: translateX(16px); }
+.app-dashboard-root .app-page-portfolio-row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-portfolio-rt-name { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-portfolio-rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Swatch ── */
+.app-dashboard-root .app-page-portfolio-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-portfolio-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); position: relative; }
+.app-dashboard-root .app-page-portfolio-swatch.is-selected { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-portfolio-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+/* ── Expander ── */
+.app-dashboard-root .app-page-portfolio-expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-portfolio-expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-portfolio-expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-portfolio-expander > summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .app-page-portfolio-ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+.app-dashboard-root .app-page-portfolio-expander[open] > summary .app-page-portfolio-ex-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-portfolio-ex-body { padding: 4px 14px 14px; }
+.app-dashboard-root .app-page-portfolio-ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+/* ── OG image drop zone ── */
+.app-dashboard-root .app-page-portfolio-og-drop { border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 14px; text-align: center; background: var(--bg); cursor: pointer; }
+
+/* ── Tier hint ── */
+.app-dashboard-root .app-page-portfolio-tier-hint { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 11px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; }
+.app-dashboard-root .app-page-portfolio-th-icon { font-size: 13px; }
+
+/* ── Chip ── */
+.app-dashboard-root .app-page-portfolio-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+.app-dashboard-root .app-page-portfolio-chip.live { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .app-page-portfolio-chip.draft { background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .app-page-portfolio-chip.archived { background: rgba(75,85,99,0.10); color: var(--fg-muted); }
+.app-dashboard-root .app-page-portfolio-chip.featured { background: rgba(245,158,11,0.16); color: var(--brand-warm-dark); }
+.app-dashboard-root .app-page-portfolio-chip.paid { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+
+/* ── Buttons ── */
+.app-dashboard-root .app-page-portfolio-btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+.app-dashboard-root .app-page-portfolio-btn-primary { background: var(--brand-primary); color: #fff; }
+.app-dashboard-root .app-page-portfolio-btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-portfolio-btn-warm { background: var(--brand-warm); color: #1F2937; }
+.app-dashboard-root .app-page-portfolio-btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+.app-dashboard-root .app-page-portfolio-btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+.app-dashboard-root .app-page-portfolio-btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+.app-dashboard-root .app-page-portfolio-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-portfolio-iconbtn svg { width: 16px; height: 16px; }
+
+/* ── Layout selector ── */
+.app-dashboard-root .app-page-portfolio-layout-cards { display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); }
+.app-dashboard-root .app-page-portfolio-layout-card { position: relative; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; display: flex; flex-direction: column; gap: 10px; }
+.app-dashboard-root .app-page-portfolio-layout-card:hover { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-portfolio-layout-card.is-selected { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); box-shadow: 0 0 0 3px rgba(99,102,241,0.10); }
+.app-dashboard-root .app-page-portfolio-layout-card.is-selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--brand-primary); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.app-dashboard-root .app-page-portfolio-lc-title { font-weight: 600; font-size: 13.5px; }
+.app-dashboard-root .app-page-portfolio-lc-sub { font-size: 12px; color: var(--fg-muted); line-height: 1.45; }
+.app-dashboard-root .app-page-portfolio-lc-thumb { height: 80px; padding: 6px; border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border); display: flex; gap: 4px; overflow: hidden; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry { padding: 6px; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .col { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .blk { background: linear-gradient(135deg, #FDE68A, #F59E0B); border-radius: 3px; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .blk.t-i { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .blk.t-r { background: linear-gradient(135deg, #FB7185, #BE185D); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .blk.t-e { background: linear-gradient(135deg, #34D399, #047857); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .blk.t-s { background: linear-gradient(135deg, #475569, #0F172A); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.masonry .blk.t-y { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid { display: grid; gap: 4px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk { border-radius: 3px; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk.a { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk.b { background: linear-gradient(135deg, #FB7185, #BE185D); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk.c { background: linear-gradient(135deg, #34D399, #047857); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk.d { background: linear-gradient(135deg, #FDE68A, #F59E0B); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk.e { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.grid .blk.f { background: linear-gradient(135deg, #475569, #0F172A); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.carousel { display: flex; flex-direction: column; gap: 4px; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.carousel .hero { flex: 1; border-radius: 3px; background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.carousel .dots { display: flex; gap: 4px; justify-content: center; }
+.app-dashboard-root .app-page-portfolio-lc-thumb.carousel .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+.app-dashboard-root .app-page-portfolio-lc-thumb.carousel .dot.is-current { background: var(--brand-primary); }
+
+/* ── Slider ── */
+.app-dashboard-root .app-page-portfolio-slider-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
+.app-dashboard-root .app-page-portfolio-slider-row input[type="range"] { flex: 1; accent-color: var(--brand-primary); }
+.app-dashboard-root .app-page-portfolio-slider-val { min-width: 56px; text-align: center; font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 999px; background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+
+/* ── Posts toolbar ── */
+.app-dashboard-root .app-page-portfolio-posts-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.app-dashboard-root .app-page-portfolio-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-muted); border-radius: 10px; }
+.app-dashboard-root .app-page-portfolio-tab { padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-portfolio-tab-count { margin-left: 6px; font-size: 11px; background: var(--bg-sunken); color: var(--fg-muted); padding: 1px 6px; border-radius: 999px; }
+.app-dashboard-root .app-page-portfolio-tab.is-active .app-page-portfolio-tab-count { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+.app-dashboard-root .app-page-portfolio-search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 260px; }
+.app-dashboard-root .app-page-portfolio-search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--fg-subtle); }
+.app-dashboard-root .app-page-portfolio-search-wrap input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; outline: 0; }
+.app-dashboard-root .app-page-portfolio-sort-wrap select { padding: 8px 28px 8px 12px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; outline: 0; cursor: pointer; appearance: none; }
+.app-dashboard-root .app-page-portfolio-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.app-dashboard-root .app-page-portfolio-fchip { padding: 5px 10px; border-radius: 999px; background: var(--bg-muted); border: 1px solid transparent; font-size: 12px; color: var(--fg-muted); font-weight: 500; cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-fchip.is-active { background: rgba(99,102,241,0.12); color: var(--brand-primary); border-color: rgba(99,102,241,0.30); }
+
+/* ── Post row ── */
+.app-dashboard-root .app-page-portfolio-posts-list { display: flex; flex-direction: column; gap: 10px; }
+.app-dashboard-root .app-page-portfolio-post-row { display: grid; grid-template-columns: 96px 1fr auto; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); position: relative; }
+.app-dashboard-root .app-page-portfolio-post-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-portfolio-post-row.is-archived { opacity: 0.65; }
+.app-dashboard-root .app-page-portfolio-pr-grip-col { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-portfolio-pr-handle { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; flex-shrink: 0; }
+.app-dashboard-root .app-page-portfolio-pr-handle svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-portfolio-pr-thumb { width: 96px; height: 72px; border-radius: 8px; background: linear-gradient(135deg, #FDE68A, #F59E0B); display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 22px; overflow: hidden; flex-shrink: 0; position: relative; }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-warm    { background: linear-gradient(135deg, #F59E0B, #D97706); }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+.app-dashboard-root .app-page-portfolio-pr-thumb.t-violet  { background: linear-gradient(135deg, #C026D3, #7C3AED); }
+.app-dashboard-root .app-page-portfolio-pr-thumb-featured-pin { position: absolute; top: 6px; left: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--brand-warm); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+.app-dashboard-root .app-page-portfolio-video-pill { position: absolute; bottom: 6px; right: 6px; background: rgba(11,15,30,0.7); color: #fff; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+.app-dashboard-root .app-page-portfolio-pr-meta { min-width: 0; }
+.app-dashboard-root .app-page-portfolio-pr-title { font-weight: 600; font-size: 14.5px; color: var(--fg); margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-dashboard-root .app-page-portfolio-pr-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-portfolio-pr-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); display: inline-block; }
+.app-dashboard-root .app-page-portfolio-pr-tag { padding: 1px 8px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); font-size: 11px; font-weight: 500; }
+.app-dashboard-root .app-page-portfolio-pr-actions { display: flex; align-items: center; gap: 4px; }
+
+/* ── Kebab pop ── */
+.app-dashboard-root .app-page-portfolio-kebab-pop { position: absolute; right: 12px; top: 48px; z-index: 5; min-width: 200px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 4px; display: none; }
+.app-dashboard-root .app-page-portfolio-kebab-pop.is-open { display: block; }
+.app-dashboard-root .app-page-portfolio-kebab-pop button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--fg); font-size: 13px; text-align: left; cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-kebab-pop button:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-portfolio-kebab-pop button.danger { color: var(--danger); }
+.app-dashboard-root .app-page-portfolio-kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-portfolio-kebab-pop button.danger svg { color: var(--danger); }
+.app-dashboard-root .app-page-portfolio-kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ── Pagination ── */
+.app-dashboard-root .app-page-portfolio-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-portfolio-pg-meta { font-size: 12.5px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-portfolio-pg-controls { display: flex; gap: 4px; }
+.app-dashboard-root .app-page-portfolio-pg-controls button { padding: 6px 11px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--bg-elevated); color: var(--fg); font-size: 13px; cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-pg-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+.app-dashboard-root .app-page-portfolio-pg-controls button.is-current { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+/* ── Featured row ── */
+.app-dashboard-root .app-page-portfolio-featured-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-portfolio-fr-ico { width: 32px; height: 32px; border-radius: 50%; background: rgba(245,158,11,0.16); color: var(--brand-warm-dark); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-portfolio-fr-copy { flex: 1; min-width: 0; }
+.app-dashboard-root .app-page-portfolio-fr-name { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-portfolio-fr-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Multi-select ── */
+.app-dashboard-root .app-page-portfolio-multi-select { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); min-height: 42px; }
+.app-dashboard-root .app-page-portfolio-multi-select input { flex: 1; min-width: 120px; border: 0; outline: 0; background: transparent; font: inherit; font-size: 13px; }
+.app-dashboard-root .app-page-portfolio-ms-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(99,102,241,0.10); color: var(--brand-primary); padding: 3px 8px 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.app-dashboard-root .app-page-portfolio-ms-x-btn { background: transparent; border: 0; color: var(--brand-primary); cursor: pointer; padding: 0 0 0 2px; font-size: 14px; line-height: 1; }
+.app-dashboard-root .app-page-portfolio-ms-pill.collab { background: rgba(245,158,11,0.14); color: #92400E; }
+.app-dashboard-root .app-page-portfolio-ms-pill.collab .app-page-portfolio-ms-x-btn { color: #92400E; }
+
+/* ── RT toolbar / area ── */
+.app-dashboard-root .app-page-portfolio-rt-toolbar { display: flex; gap: 2px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--border-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--bg-muted); }
+.app-dashboard-root .app-page-portfolio-rt-toolbar button { width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+.app-dashboard-root .app-page-portfolio-rt-toolbar button:hover { background: var(--bg-elevated); color: var(--fg); }
+.app-dashboard-root .app-page-portfolio-rt-sep { width: 1px; height: 18px; background: var(--border); margin: 6px 4px; }
+.app-dashboard-root .app-page-portfolio-rt-area { width: 100%; min-height: 160px; padding: 14px 16px; border: 1px solid var(--border-strong); border-top: 0; border-radius: 0 0 10px 10px; background: var(--bg-elevated); font-family: var(--font-display); font-size: 16px; line-height: 1.65; outline: 0; resize: vertical; }
+
+/* ── Cover stack / gallery ── */
+.app-dashboard-root .app-page-portfolio-cover-stack { display: grid; gap: 10px; grid-template-columns: 1fr; }
+.app-dashboard-root .app-page-portfolio-media-kind { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-muted); border-radius: 9px; align-self: flex-start; }
+.app-dashboard-root .app-page-portfolio-media-kind button { padding: 5px 11px; border: 0; border-radius: 7px; background: transparent; color: var(--fg-muted); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.app-dashboard-root .app-page-portfolio-media-kind button.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-portfolio-cover-primary { position: relative; border-radius: 12px; overflow: hidden; height: 240px; background: linear-gradient(135deg, #6366F1, #8B5CF6); display: flex; align-items: flex-end; justify-content: flex-end; padding: 10px; }
+.app-dashboard-root .app-page-portfolio-crop-hint { position: absolute; left: 12px; top: 12px; background: rgba(11,15,30,0.6); color: #fff; padding: 4px 9px; border-radius: 999px; font-size: 11px; }
+.app-dashboard-root .app-page-portfolio-replace-btn { background: rgba(255,255,255,0.92); border: 0; border-radius: 8px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-video-tag { position: absolute; left: 12px; bottom: 12px; background: rgba(11,15,30,0.7); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.app-dashboard-root .app-page-portfolio-gallery { display: grid; gap: 8px; grid-template-columns: repeat(8, 1fr); }
+.app-dashboard-root .app-page-portfolio-gal-item { position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; cursor: grab; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+.app-dashboard-root .app-page-portfolio-gal-item.add { background: var(--bg); color: var(--fg-muted); border: 1.5px dashed var(--border-strong); font-size: 22px; cursor: pointer; }
+.app-dashboard-root .app-page-portfolio-gal-item.add:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.app-dashboard-root .app-page-portfolio-gal-x { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(11,15,30,0.7); color: #fff; border: 0; cursor: pointer; font-size: 11px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+
+/* ── Modal ── */
+.app-dashboard-root .app-page-portfolio-modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(11,15,30,0.55); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .14s ease; }
+.app-dashboard-root .app-page-portfolio-modal-backdrop.is-open { display: flex; opacity: 1; }
+.app-dashboard-root .app-page-portfolio-modal { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25); width: min(880px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-portfolio-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.app-dashboard-root .app-page-portfolio-modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.app-dashboard-root .app-page-portfolio-modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+.app-dashboard-root .app-page-portfolio-modal-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-portfolio-foot-spacer { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dashboard-root .app-page-portfolio-modal-backdrop { transition: none !important; }
+  .app-dashboard-root .app-page-portfolio-modal { transition: none !important; }
+}
+
+
+/* =============================================================================
+   AppPageFaq — scoped under .app-dashboard-root
+   Prefix: app-page-faq-
+   Source: mockups/tadaify-mvp/app-page-faq.html
+   ============================================================================= */
+
+/* ── Root ── */
+.app-dashboard-root .app-page-faq-root { max-width: 1080px; padding: 24px 20px 120px; }
+
+/* ── Breadcrumb ── */
+.app-dashboard-root .app-page-faq-crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-faq-crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; text-decoration: none; }
+.app-dashboard-root .app-page-faq-crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-faq-crumb-sep { color: var(--fg-subtle); }
+.app-dashboard-root .app-page-faq-crumb-here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+/* ── Page head ── */
+.app-dashboard-root .app-page-faq-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.app-dashboard-root .app-page-faq-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+.app-dashboard-root .app-page-faq-ph-emoji { font-size: 26px; }
+.app-dashboard-root .app-page-faq-sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+.app-dashboard-root .app-page-faq-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.app-dashboard-root .app-page-faq-url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.app-dashboard-root .app-page-faq-url-pill b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .app-page-faq-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); display: inline-block; }
+.app-dashboard-root .app-page-faq-title-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.app-dashboard-root .app-page-faq-title-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: var(--bg-elevated); border: 1px solid var(--border); font-size: 11.5px; color: var(--fg-muted); cursor: pointer; }
+.app-dashboard-root .app-page-faq-title-chip:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.app-dashboard-root .app-page-faq-sparkle { font-size: 10px; }
+
+/* ── Panel ── */
+.app-dashboard-root .app-page-faq-panel { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+.app-dashboard-root .app-page-faq-panel-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-faq-panel-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-faq-panel-sub { color: var(--fg-muted); font-size: 12.5px; }
+.app-dashboard-root .app-page-faq-head-spacer { flex: 1; }
+.app-dashboard-root .app-page-faq-panel-body { padding: 18px; }
+.app-dashboard-root .app-page-faq-panel-body-lg { padding: 22px; }
+
+/* ── Fields ── */
+.app-dashboard-root .app-page-faq-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-faq-field:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-faq-field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-faq-field-hint { font-size: 11px; color: var(--fg-subtle); font-weight: 400; }
+.app-dashboard-root .app-page-faq-field-input, .app-dashboard-root .app-page-faq-field-area, .app-dashboard-root .app-page-faq-field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+.app-dashboard-root .app-page-faq-field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+.app-dashboard-root .app-page-faq-field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-faq-field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-faq-field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; color: var(--fg); font: inherit; }
+.app-dashboard-root .app-page-faq-field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-faq-field-suffix-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 11px; margin: 3px; border: 0; border-radius: 8px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* ── Toggle ── */
+.app-dashboard-root .app-page-faq-toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+.app-dashboard-root .app-page-faq-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+.app-dashboard-root .app-page-faq-toggle.is-on { background: var(--brand-primary); }
+.app-dashboard-root .app-page-faq-toggle.is-on::after { transform: translateX(16px); }
+.app-dashboard-root .app-page-faq-row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-faq-rt-name { font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-faq-rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Swatch ── */
+.app-dashboard-root .app-page-faq-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-faq-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); position: relative; }
+.app-dashboard-root .app-page-faq-swatch.is-selected { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-faq-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+/* ── Expander ── */
+.app-dashboard-root .app-page-faq-expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-faq-expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-faq-expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-faq-expander > summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .app-page-faq-ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+.app-dashboard-root .app-page-faq-expander[open] > summary .app-page-faq-ex-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-faq-ex-body { padding: 4px 14px 14px; }
+.app-dashboard-root .app-page-faq-ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+/* ── Tier hint ── */
+.app-dashboard-root .app-page-faq-tier-hint { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 11px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; }
+.app-dashboard-root .app-page-faq-th-icon { font-size: 13px; }
+
+/* ── Chip ── */
+.app-dashboard-root .app-page-faq-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+.app-dashboard-root .app-page-faq-chip.live { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .app-page-faq-chip.draft { background: var(--bg-muted); color: var(--fg-muted); }
+
+/* ── Buttons ── */
+.app-dashboard-root .app-page-faq-btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.app-dashboard-root .app-page-faq-btn-primary { background: var(--brand-primary); color: #fff; }
+.app-dashboard-root .app-page-faq-btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-faq-btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+.app-dashboard-root .app-page-faq-btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+.app-dashboard-root .app-page-faq-btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+.app-dashboard-root .app-page-faq-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); cursor: pointer; }
+.app-dashboard-root .app-page-faq-iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-faq-iconbtn svg { width: 16px; height: 16px; }
+
+/* ── Visual radio (expand mode) ── */
+.app-dashboard-root .app-page-faq-visual-radio-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.app-dashboard-root .app-page-faq-visual-radio { cursor: pointer; padding: 12px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); display: flex; flex-direction: column; gap: 8px; }
+.app-dashboard-root .app-page-faq-visual-radio:hover { border-color: var(--border-strong); }
+.app-dashboard-root .app-page-faq-visual-radio.is-selected { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-faq-vr-name { font-weight: 600; font-size: 13px; }
+.app-dashboard-root .app-page-faq-vr-sub { font-size: 11.5px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-faq-vr-preview { height: 56px; border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border); padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+.app-dashboard-root .app-page-faq-vr-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--brand-primary), var(--brand-warm)); opacity: 0.6; }
+.app-dashboard-root .app-page-faq-vr-bar.muted { background: var(--bg-muted); opacity: 1; }
+
+/* ── Index pill ── */
+.app-dashboard-root .app-page-faq-index-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-faq-ix-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-primary); display: inline-block; }
+
+/* ── Section card ── */
+.app-dashboard-root .app-page-faq-sec-card { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); margin-bottom: 12px; }
+.app-dashboard-root .app-page-faq-sec-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--bg-elevated); border-radius: 14px 14px 0 0; }
+.app-dashboard-root .app-page-faq-sec-card.is-collapsed .app-page-faq-sec-head { border-bottom: 0; border-radius: 14px; }
+.app-dashboard-root .app-page-faq-sec-grip { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; flex-shrink: 0; }
+.app-dashboard-root .app-page-faq-sec-grip svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-faq-sec-icon { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(245,158,11,0.10)); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.app-dashboard-root .app-page-faq-sec-name { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--fg); flex: 1; min-width: 120px; border: 0; background: transparent; outline: 0; padding: 4px 6px; border-radius: 6px; }
+.app-dashboard-root .app-page-faq-sec-count { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .app-page-faq-sec-collapse { background: transparent; border: 0; cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--fg-subtle); }
+.app-dashboard-root .app-page-faq-sec-collapse:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-faq-sec-collapse svg { width: 14px; height: 14px; transition: transform .15s ease; }
+.app-dashboard-root .app-page-faq-sec-card.is-collapsed .app-page-faq-sec-collapse svg { transform: rotate(-90deg); }
+.app-dashboard-root .app-page-faq-sec-body { padding: 14px; }
+.app-dashboard-root .app-page-faq-sec-intro { width: 100%; min-height: 50px; padding: 9px 11px; border-radius: 9px; border: 1px dashed var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; line-height: 1.55; outline: 0; resize: vertical; margin-bottom: 12px; }
+
+/* ── QA row ── */
+.app-dashboard-root .app-page-faq-qa-list { display: flex; flex-direction: column; gap: 8px; }
+.app-dashboard-root .app-page-faq-qa-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); position: relative; }
+.app-dashboard-root .app-page-faq-qa-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-faq-qa-grip { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; }
+.app-dashboard-root .app-page-faq-qa-grip svg { width: 12px; height: 12px; }
+.app-dashboard-root .app-page-faq-qa-meta { min-width: 0; }
+.app-dashboard-root .app-page-faq-qa-q { font-weight: 600; font-size: 14px; color: var(--fg); margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-dashboard-root .app-page-faq-qa-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-faq-qa-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); display: inline-block; }
+.app-dashboard-root .app-page-faq-qa-tag { padding: 1px 8px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); font-size: 10.5px; font-weight: 500; }
+.app-dashboard-root .app-page-faq-qa-helpful { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--success); }
+.app-dashboard-root .app-page-faq-qa-helpful svg { width: 11px; height: 11px; }
+.app-dashboard-root .app-page-faq-qa-helpful.is-low { color: var(--brand-warm-dark); }
+.app-dashboard-root .app-page-faq-qa-actions { display: flex; align-items: center; gap: 4px; }
+.app-dashboard-root .app-page-faq-qa-add { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; margin-top: 10px; border: 1px dashed var(--border-strong); border-radius: 9px; background: transparent; color: var(--brand-primary); font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; justify-content: center; }
+.app-dashboard-root .app-page-faq-qa-add:hover { background: rgba(99,102,241,0.06); border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-faq-qa-add svg { width: 13px; height: 13px; }
+
+/* ── Kebab pop ── */
+.app-dashboard-root .app-page-faq-kebab-pop { position: absolute; right: 12px; top: 42px; z-index: 5; min-width: 180px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 4px; display: none; }
+.app-dashboard-root .app-page-faq-kebab-pop.is-open { display: block; }
+.app-dashboard-root .app-page-faq-kebab-pop button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--fg); font-size: 13px; text-align: left; cursor: pointer; }
+.app-dashboard-root .app-page-faq-kebab-pop button:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-faq-kebab-pop button.danger { color: var(--danger); }
+.app-dashboard-root .app-page-faq-kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-faq-kebab-pop button.danger svg { color: var(--danger); }
+.app-dashboard-root .app-page-faq-kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ── Composer toolbar ── */
+.app-dashboard-root .app-page-faq-composer-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.app-dashboard-root .app-page-faq-search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
+.app-dashboard-root .app-page-faq-search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--fg-subtle); }
+.app-dashboard-root .app-page-faq-search-wrap input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; outline: 0; }
+
+/* ── AI CTA strip ── */
+.app-dashboard-root .app-page-faq-sec-actions-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 14px; border-top: 1px dashed var(--border); background: var(--bg); border-radius: 0 0 14px 14px; margin-top: -1px; }
+.app-dashboard-root .app-page-faq-sec-actions-spacer { flex: 1; }
+.app-dashboard-root .app-page-faq-ai-cta { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 8px; background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(245,158,11,0.10)); border: 1px solid rgba(99,102,241,0.30); color: var(--fg); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.app-dashboard-root .app-page-faq-ai-cta:hover { border-color: var(--brand-primary); }
+
+/* ── Empty state ── */
+.app-dashboard-root .app-page-faq-empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 28px; text-align: center; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04)); border: 1.5px dashed rgba(99,102,241,0.25); border-radius: 16px; }
+.app-dashboard-root .app-page-faq-es-emoji { font-size: 38px; line-height: 1; width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12)); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-faq-empty-state h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-faq-empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 460px; }
+.app-dashboard-root .app-page-faq-es-templates-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; max-width: 560px; width: 100%; }
+.app-dashboard-root .app-page-faq-es-templ-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); cursor: pointer; text-align: center; }
+.app-dashboard-root .app-page-faq-es-templ-tile:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+.app-dashboard-root .app-page-faq-tt-emoji { font-size: 22px; }
+.app-dashboard-root .app-page-faq-tt-name { font-size: 12px; font-weight: 600; color: var(--fg); }
+.app-dashboard-root .app-page-faq-tt-sub { font-size: 10.5px; color: var(--fg-muted); }
+
+/* ── Tags input ── */
+.app-dashboard-root .app-page-faq-tags-input { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-faq-tags-input input { flex: 1; min-width: 120px; border: 0; outline: 0; background: transparent; font: inherit; font-size: 13px; }
+.app-dashboard-root .app-page-faq-tag-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(99,102,241,0.10); color: var(--brand-primary); padding: 3px 8px 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.app-dashboard-root .app-page-faq-tag-x-btn { background: transparent; border: 0; color: var(--brand-primary); cursor: pointer; padding: 0 0 0 2px; font-size: 14px; line-height: 1; }
+
+/* ── RT toolbar / area ── */
+.app-dashboard-root .app-page-faq-rt-toolbar { display: flex; gap: 2px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--border-strong); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--bg-muted); }
+.app-dashboard-root .app-page-faq-rt-toolbar button { width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+.app-dashboard-root .app-page-faq-rt-toolbar button:hover { background: var(--bg-elevated); color: var(--fg); }
+.app-dashboard-root .app-page-faq-rt-sep { width: 1px; height: 18px; background: var(--border); margin: 6px 4px; }
+.app-dashboard-root .app-page-faq-rt-area { width: 100%; min-height: 180px; padding: 14px 16px; border: 1px solid var(--border-strong); border-top: 0; border-radius: 0 0 10px 10px; background: var(--bg-elevated); font-family: var(--font-display); font-size: 16px; line-height: 1.65; outline: 0; resize: vertical; }
+
+/* ── CSV drop ── */
+.app-dashboard-root .app-page-faq-csv-drop { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px dashed var(--border-strong); border-radius: 10px; background: var(--bg); cursor: pointer; }
+.app-dashboard-root .app-page-faq-csv-drop:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-faq-cd-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.app-dashboard-root .app-page-faq-cd-meta { flex: 1; min-width: 0; }
+.app-dashboard-root .app-page-faq-cd-title { font-weight: 600; font-size: 13.5px; }
+.app-dashboard-root .app-page-faq-cd-sub { font-size: 12px; color: var(--fg-muted); }
+
+/* ── Add-section type grid ── */
+.app-dashboard-root .app-page-faq-type-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-faq-type-tile { cursor: pointer; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.app-dashboard-root .app-page-faq-type-tile:hover { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-faq-tt-icon { font-size: 22px; line-height: 1; }
+.app-dashboard-root .app-page-faq-tt-name { font-weight: 600; font-size: 13.5px; }
+.app-dashboard-root .app-page-faq-tt-sub { font-size: 11.5px; color: var(--fg-muted); line-height: 1.4; }
+.app-dashboard-root .app-page-faq-templates-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; color: var(--fg-subtle); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.app-dashboard-root .app-page-faq-templates-divider::before, .app-dashboard-root .app-page-faq-templates-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.app-dashboard-root .app-page-faq-templates-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-faq-templ-card { cursor: pointer; padding: 12px; border: 1.5px solid rgba(99,102,241,0.30); border-radius: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.04)); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.app-dashboard-root .app-page-faq-templ-card:hover { border-color: var(--brand-primary); transform: translateY(-2px); }
+.app-dashboard-root .app-page-faq-tc-emoji { font-size: 22px; }
+.app-dashboard-root .app-page-faq-tc-name { font-weight: 600; font-size: 13px; }
+.app-dashboard-root .app-page-faq-tc-list { list-style: none; padding: 0; margin: 4px 0 0; font-size: 11px; color: var(--fg-muted); line-height: 1.5; }
+.app-dashboard-root .app-page-faq-tc-list li::before { content: "• "; color: var(--brand-primary); }
+
+/* ── Save bar ── */
+.app-dashboard-root .app-page-faq-save-bar { position: sticky; bottom: 0; z-index: 30; margin: 18px -20px -120px; padding: 12px 20px; background: rgba(255,255,255,0.95); border-top: 1px solid var(--border); backdrop-filter: blur(6px); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.app-dashboard-root .app-page-faq-sb-status { font-size: 12.5px; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.app-dashboard-root .app-page-faq-sb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block; }
+.app-dashboard-root .app-page-faq-sb-spacer { flex: 1; }
+
+/* ── Modal ── */
+.app-dashboard-root .app-page-faq-modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(11,15,30,0.55); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .14s ease; }
+.app-dashboard-root .app-page-faq-modal-backdrop.is-open { display: flex; opacity: 1; }
+.app-dashboard-root .app-page-faq-modal { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25); width: min(820px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-faq-modal-sm { width: min(560px, 96vw); }
+.app-dashboard-root .app-page-faq-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.app-dashboard-root .app-page-faq-modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.app-dashboard-root .app-page-faq-modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+.app-dashboard-root .app-page-faq-modal-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-faq-foot-spacer { flex: 1; }
+.app-dashboard-root .app-page-faq-foot-meta { font-size: 12px; color: var(--fg-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dashboard-root .app-page-faq-modal-backdrop { transition: none !important; }
+  .app-dashboard-root .app-page-faq-modal { transition: none !important; }
+}
+
+
+/* =============================================================================
+   AppPageSchedule — scoped under .app-dashboard-root
+   Prefix: app-page-schedule-
+   Source: mockups/tadaify-mvp/app-page-schedule.html
+   ============================================================================= */
+
+/* ── Root ── */
+.app-dashboard-root .app-page-schedule-root { max-width: 1080px; padding: 24px 20px 120px; }
+
+/* ── Breadcrumb ── */
+.app-dashboard-root .app-page-schedule-crumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-muted); margin-bottom: 14px; }
+.app-dashboard-root .app-page-schedule-crumb a { color: var(--fg-muted); padding: 2px 6px; border-radius: 6px; text-decoration: none; }
+.app-dashboard-root .app-page-schedule-crumb a:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-schedule-crumb-sep { color: var(--fg-subtle); }
+.app-dashboard-root .app-page-schedule-crumb-here { color: var(--fg); font-weight: 600; padding: 2px 6px; }
+
+/* ── Page head ── */
+.app-dashboard-root .app-page-schedule-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.app-dashboard-root .app-page-schedule-h1 { font-family: var(--font-display); font-weight: 600; font-size: 30px; margin: 0; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 12px; }
+.app-dashboard-root .app-page-schedule-ph-emoji { font-size: 26px; }
+.app-dashboard-root .app-page-schedule-sub { color: var(--fg-muted); font-size: 13.5px; margin-top: 6px; max-width: 540px; }
+.app-dashboard-root .app-page-schedule-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.app-dashboard-root .app-page-schedule-url-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.app-dashboard-root .app-page-schedule-url-pill b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .app-page-schedule-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); display: inline-block; }
+
+/* ── Panel ── */
+.app-dashboard-root .app-page-schedule-panel { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
+.app-dashboard-root .app-page-schedule-panel-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-schedule-panel-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-schedule-panel-sub { color: var(--fg-muted); font-size: 12.5px; }
+.app-dashboard-root .app-page-schedule-head-spacer { flex: 1; }
+.app-dashboard-root .app-page-schedule-panel-body { padding: 18px; }
+.app-dashboard-root .app-page-schedule-panel-body-lg { padding: 22px; }
+
+/* ── Admin banner ── */
+.app-dashboard-root .app-page-schedule-panel-admin-banner { background: rgba(99,102,241,0.04); border-color: rgba(99,102,241,0.20); }
+.app-dashboard-root .app-page-schedule-admin-banner-inner { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 18px; }
+.app-dashboard-root .app-page-schedule-admin-banner-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin-bottom: 2px; }
+.app-dashboard-root .app-page-schedule-admin-banner-sub { color: var(--fg-muted); font-size: 13px; }
+
+/* ── Fields ── */
+.app-dashboard-root .app-page-schedule-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.app-dashboard-root .app-page-schedule-field:last-child { margin-bottom: 0; }
+.app-dashboard-root .app-page-schedule-field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-schedule-field-hint { font-size: 11px; color: var(--fg-subtle); font-weight: 400; }
+.app-dashboard-root .app-page-schedule-field-input, .app-dashboard-root .app-page-schedule-field-area, .app-dashboard-root .app-page-schedule-field-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 14px; outline: 0; }
+.app-dashboard-root .app-page-schedule-field-area { min-height: 90px; resize: vertical; line-height: 1.5; }
+.app-dashboard-root .app-page-schedule-field-row { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-schedule-field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.app-dashboard-root .app-page-schedule-field-prefix-wrap { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--bg-elevated); }
+.app-dashboard-root .app-page-schedule-field-prefix-wrap input { flex: 1; border: 0; background: transparent; padding: 10px 12px 10px 0; outline: 0; font-size: 14px; color: var(--fg); font: inherit; }
+.app-dashboard-root .app-page-schedule-field-prefix { padding: 0 10px 0 12px; color: var(--fg-muted); font-size: 13px; font-family: var(--font-mono); }
+.app-dashboard-root .app-page-schedule-field-suffix-action { display: inline-flex; align-items: center; gap: 4px; padding: 7px 11px; margin: 3px; border: 0; border-radius: 8px; background: rgba(99,102,241,0.10); color: var(--brand-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* ── Toggle ── */
+.app-dashboard-root .app-page-schedule-toggle { position: relative; display: inline-block; width: 38px; height: 22px; background: var(--bg-sunken); border-radius: 999px; cursor: pointer; flex-shrink: 0; border: 0; }
+.app-dashboard-root .app-page-schedule-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,0.2); transition: transform .15s ease; }
+.app-dashboard-root .app-page-schedule-toggle.is-on { background: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-toggle.is-on::after { transform: translateX(16px); }
+.app-dashboard-root .app-page-schedule-row-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-schedule-rt-name { font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-schedule-rt-sub { font-size: 12.5px; color: var(--fg-muted); }
+
+/* ── Swatch ── */
+.app-dashboard-root .app-page-schedule-swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-schedule-swatch { width: 36px; height: 36px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06); position: relative; }
+.app-dashboard-root .app-page-schedule-swatch.is-selected { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+/* ── Expander ── */
+.app-dashboard-root .app-page-schedule-expander { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-schedule-expander[open] { background: var(--bg-elevated); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-schedule-expander > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-schedule-expander > summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .app-page-schedule-ex-caret { width: 14px; height: 14px; color: var(--fg-subtle); transition: transform .15s ease; margin-left: auto; }
+.app-dashboard-root .app-page-schedule-expander[open] > summary .app-page-schedule-ex-caret { transform: rotate(180deg); }
+.app-dashboard-root .app-page-schedule-ex-body { padding: 4px 14px 14px; }
+.app-dashboard-root .app-page-schedule-ex-sub { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
+
+/* ── Tier hint ── */
+.app-dashboard-root .app-page-schedule-tier-hint { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 11px; background: rgba(245,158,11,0.10); border-left: 3px solid var(--brand-warm); border-radius: 0 8px 8px 0; font-size: 12px; color: #92400E; }
+.app-dashboard-root .app-page-schedule-tier-hint.is-pro { background: rgba(99,102,241,0.10); border-left-color: var(--brand-primary); color: #4338CA; }
+.app-dashboard-root .app-page-schedule-th-icon { font-size: 13px; }
+
+/* ── Info note ── */
+.app-dashboard-root .app-page-schedule-info-note { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px; color: var(--fg-muted); margin-top: 10px; }
+.app-dashboard-root .app-page-schedule-in-icon { flex-shrink: 0; font-size: 14px; line-height: 1.2; }
+.app-dashboard-root .app-page-schedule-info-note b { color: var(--fg); }
+
+/* ── Chip ── */
+.app-dashboard-root .app-page-schedule-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 1; background: var(--bg-muted); color: var(--fg-muted); white-space: nowrap; }
+.app-dashboard-root .app-page-schedule-chip.live { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .app-page-schedule-chip.draft { background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .app-page-schedule-chip.paid { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-chip.connected { background: var(--success-bg); color: #065F46; }
+
+/* ── Buttons ── */
+.app-dashboard-root .app-page-schedule-btn { font-family: var(--font-sans); font-weight: 500; font-size: 14px; border-radius: 10px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+.app-dashboard-root .app-page-schedule-btn-primary { background: var(--brand-primary); color: #fff; }
+.app-dashboard-root .app-page-schedule-btn-ghost { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.app-dashboard-root .app-page-schedule-btn-danger-ghost { background: var(--bg-elevated); color: var(--danger); border-color: var(--danger); }
+.app-dashboard-root .app-page-schedule-btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+.app-dashboard-root .app-page-schedule-btn-xs { padding: 4px 9px; font-size: 12px; border-radius: 6px; }
+.app-dashboard-root .app-page-schedule-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--fg-muted); cursor: pointer; }
+.app-dashboard-root .app-page-schedule-iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-schedule-iconbtn svg { width: 16px; height: 16px; }
+
+/* ── Provider cards ── */
+.app-dashboard-root .app-page-schedule-provider-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.app-dashboard-root .app-page-schedule-provider-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; text-align: left; }
+.app-dashboard-root .app-page-schedule-provider-card:hover { border-color: var(--border-strong); }
+.app-dashboard-root .app-page-schedule-provider-card.is-selected { border-color: var(--brand-primary); background: rgba(99,102,241,0.04); }
+.app-dashboard-root .app-page-schedule-pc-mark { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; background: var(--bg-muted); color: var(--fg); }
+.app-dashboard-root .app-page-schedule-pc-mark.g { background: linear-gradient(135deg, #4285F4, #34A853); color: #fff; }
+.app-dashboard-root .app-page-schedule-pc-mark.a { background: linear-gradient(135deg, #1F2937, #4B5563); color: #fff; }
+.app-dashboard-root .app-page-schedule-pc-mark.o { background: linear-gradient(135deg, #0078D4, #50B0F0); color: #fff; }
+.app-dashboard-root .app-page-schedule-pc-mark.m { background: linear-gradient(135deg, #FDE68A, #F59E0B); color: #7C2D12; }
+.app-dashboard-root .app-page-schedule-pc-meta { min-width: 0; flex: 1; }
+.app-dashboard-root .app-page-schedule-pc-name { font-weight: 600; font-size: 14px; color: var(--fg); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-schedule-pc-sub { color: var(--fg-muted); font-size: 12.5px; margin-top: 3px; line-height: 1.45; display: block; }
+.app-dashboard-root .app-page-schedule-pc-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-strong); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.app-dashboard-root .app-page-schedule-provider-card.is-selected .app-page-schedule-pc-radio { border-color: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-provider-card.is-selected .app-page-schedule-pc-radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-pill-soft { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 7px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .app-page-schedule-pill-soft.pill-recommended { background: rgba(16,185,129,0.14); color: #047857; }
+.app-dashboard-root .app-page-schedule-pill-soft.pill-postmvp { background: rgba(245,158,11,0.14); color: #92400E; }
+
+/* ── OAuth status ── */
+.app-dashboard-root .app-page-schedule-oauth-status { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); margin-top: 14px; }
+.app-dashboard-root .app-page-schedule-os-mark { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #4285F4, #34A853); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.app-dashboard-root .app-page-schedule-os-meta { min-width: 0; flex: 1; }
+.app-dashboard-root .app-page-schedule-os-row1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 14px; }
+.app-dashboard-root .app-page-schedule-os-row2 { color: var(--fg-muted); font-size: 12.5px; margin-top: 3px; }
+.app-dashboard-root .app-page-schedule-os-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── Working hours grid ── */
+.app-dashboard-root .app-page-schedule-hours-grid { display: flex; flex-direction: column; gap: 8px; }
+.app-dashboard-root .app-page-schedule-hours-row { display: grid; gap: 10px; align-items: center; grid-template-columns: 110px auto 1fr 1fr; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.app-dashboard-root .app-page-schedule-hours-row.is-off { opacity: 0.55; }
+.app-dashboard-root .app-page-schedule-hr-day { font-weight: 600; font-size: 13.5px; }
+.app-dashboard-root .app-page-schedule-hours-row input[type="time"] { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13.5px; outline: 0; min-width: 0; }
+
+/* ── Booking types list ── */
+.app-dashboard-root .app-page-schedule-types-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.app-dashboard-root .app-page-schedule-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-muted); border-radius: 10px; }
+.app-dashboard-root .app-page-schedule-tab { padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer; }
+.app-dashboard-root .app-page-schedule-tab.is-active { background: var(--bg-elevated); color: var(--fg); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-schedule-tab-count { margin-left: 6px; font-size: 11px; background: var(--bg-sunken); color: var(--fg-muted); padding: 1px 6px; border-radius: 999px; }
+.app-dashboard-root .app-page-schedule-tab.is-active .app-page-schedule-tab-count { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-types-list { display: flex; flex-direction: column; gap: 10px; }
+.app-dashboard-root .app-page-schedule-type-row { display: grid; grid-template-columns: 96px 1fr auto; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); position: relative; }
+.app-dashboard-root .app-page-schedule-type-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-schedule-type-row.is-off { opacity: 0.6; }
+.app-dashboard-root .app-page-schedule-tr-grip-col { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .app-page-schedule-tr-handle { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--fg-subtle); cursor: grab; flex-shrink: 0; }
+.app-dashboard-root .app-page-schedule-tr-handle svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-schedule-tr-thumb { width: 96px; height: 64px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 22px; overflow: hidden; flex-shrink: 0; background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .app-page-schedule-tr-thumb.t-warm    { background: linear-gradient(135deg, #FDE68A, #F59E0B); color: #7C2D12; }
+.app-dashboard-root .app-page-schedule-tr-thumb.t-rose    { background: linear-gradient(135deg, #FB7185, #BE185D); }
+.app-dashboard-root .app-page-schedule-tr-thumb.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+.app-dashboard-root .app-page-schedule-tr-thumb.t-slate   { background: linear-gradient(135deg, #475569, #0F172A); }
+.app-dashboard-root .app-page-schedule-tr-thumb.t-sky     { background: linear-gradient(135deg, #38BDF8, #0369A1); }
+.app-dashboard-root .app-page-schedule-tr-thumb.t-indigo  { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .app-page-schedule-tr-meta { min-width: 0; }
+.app-dashboard-root .app-page-schedule-tr-title { font-weight: 600; font-size: 14.5px; color: var(--fg); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-schedule-tr-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-schedule-tr-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); display: inline-block; }
+.app-dashboard-root .app-page-schedule-tr-tag { padding: 1px 8px; border-radius: 999px; background: var(--bg-muted); color: var(--fg-muted); font-size: 11px; font-weight: 500; }
+.app-dashboard-root .app-page-schedule-tr-actions { display: flex; align-items: center; gap: 4px; }
+
+/* ── Kebab pop ── */
+.app-dashboard-root .app-page-schedule-kebab-pop { position: absolute; right: 12px; top: 48px; z-index: 5; min-width: 200px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 4px; display: none; }
+.app-dashboard-root .app-page-schedule-kebab-pop.is-open { display: block; }
+.app-dashboard-root .app-page-schedule-kebab-pop button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--fg); font-size: 13px; text-align: left; cursor: pointer; }
+.app-dashboard-root .app-page-schedule-kebab-pop button:hover { background: var(--bg-muted); }
+.app-dashboard-root .app-page-schedule-kebab-pop button.danger { color: var(--danger); }
+.app-dashboard-root .app-page-schedule-kebab-pop button svg { width: 13px; height: 13px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-schedule-kebab-pop button.danger svg { color: var(--danger); }
+.app-dashboard-root .app-page-schedule-kebab-pop hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* ── Empty state + starter grid ── */
+.app-dashboard-root .app-page-schedule-empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 28px; text-align: center; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04)); border: 1.5px dashed rgba(99,102,241,0.25); border-radius: 16px; }
+.app-dashboard-root .app-page-schedule-es-emoji { font-size: 38px; line-height: 1; width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.14), rgba(245,158,11,0.12)); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+.app-dashboard-root .app-page-schedule-empty-state h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+.app-dashboard-root .app-page-schedule-empty-state p { color: var(--fg-muted); font-size: 13.5px; max-width: 420px; }
+.app-dashboard-root .app-page-schedule-starter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 540px; margin-top: 4px; }
+.app-dashboard-root .app-page-schedule-starter-card { padding: 12px 14px; text-align: left; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.app-dashboard-root .app-page-schedule-starter-card:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+.app-dashboard-root .app-page-schedule-sc-name { font-weight: 600; font-size: 13.5px; }
+.app-dashboard-root .app-page-schedule-sc-sub { color: var(--fg-muted); font-size: 12px; margin-top: 3px; }
+
+/* ── Availability — month grid ── */
+.app-dashboard-root .app-page-schedule-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; max-width: 380px; }
+.app-dashboard-root .app-page-schedule-mg-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 500; color: var(--fg-muted); border-radius: 6px; background: var(--bg); border: 1px solid var(--border); }
+.app-dashboard-root .app-page-schedule-mg-cell.is-busy   { background: rgba(245,158,11,0.18); color: #92400E; border-color: rgba(245,158,11,0.4); }
+.app-dashboard-root .app-page-schedule-mg-cell.is-block  { background: rgba(239,68,68,0.16); color: #B91C1C; border-color: rgba(239,68,68,0.36); }
+.app-dashboard-root .app-page-schedule-mg-cell.is-empty  { background: transparent; border: 1px dashed var(--border); color: var(--fg-subtle); }
+.app-dashboard-root .app-page-schedule-mg-cell.is-today  { outline: 2px solid var(--brand-primary); outline-offset: 1px; }
+.app-dashboard-root .app-page-schedule-legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .app-page-schedule-lg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.app-dashboard-root .app-page-schedule-lg-dot.is-free  { background: var(--bg); border: 1px solid var(--border); }
+.app-dashboard-root .app-page-schedule-lg-dot.is-busy  { background: rgba(245,158,11,0.6); }
+.app-dashboard-root .app-page-schedule-lg-dot.is-block { background: rgba(239,68,68,0.6); }
+
+/* ── Notifications ── */
+.app-dashboard-root .app-page-schedule-notif-heading { font-family: var(--font-display); font-weight: 600; font-size: 15px; margin: 0 0 10px; }
+.app-dashboard-root .app-page-schedule-provider-chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.app-dashboard-root .app-page-schedule-provider-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elevated); color: var(--fg); font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.app-dashboard-root .app-page-schedule-provider-chip:hover { border-color: var(--border-strong); }
+.app-dashboard-root .app-page-schedule-provider-chip.is-on { background: rgba(99,102,241,0.10); border-color: var(--brand-primary); color: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-pc-ico { font-size: 13px; }
+
+/* ── Stripe panel ── */
+.app-dashboard-root .app-page-schedule-stripe-panel { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(245,158,11,0.04)); }
+.app-dashboard-root .app-page-schedule-sp-mark { width: 38px; height: 38px; border-radius: 9px; background: #635BFF; color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-schedule-sp-meta { flex: 1; min-width: 0; }
+.app-dashboard-root .app-page-schedule-sp-row1 { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.app-dashboard-root .app-page-schedule-sp-row2 { font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; }
+
+/* ── Field builder ── */
+.app-dashboard-root .app-page-schedule-field-builder { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); overflow: hidden; }
+.app-dashboard-root .app-page-schedule-fb-row { display: grid; grid-template-columns: 24px 1fr auto auto auto; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.app-dashboard-root .app-page-schedule-fb-row:last-child { border-bottom: 0; }
+.app-dashboard-root .app-page-schedule-fb-grip { color: var(--fg-subtle); cursor: grab; display: flex; align-items: center; }
+.app-dashboard-root .app-page-schedule-fb-grip svg { width: 14px; height: 14px; }
+.app-dashboard-root .app-page-schedule-fb-name { font-weight: 600; font-size: 13.5px; }
+.app-dashboard-root .app-page-schedule-fb-type { font-size: 11px; color: var(--fg-muted); padding: 2px 7px; border-radius: 999px; background: var(--bg-muted); }
+.app-dashboard-root .app-page-schedule-fb-required { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 0; cursor: pointer; }
+.app-dashboard-root .app-page-schedule-fb-required.is-on  { background: rgba(99,102,241,0.12); color: var(--brand-primary); }
+.app-dashboard-root .app-page-schedule-fb-required.is-off { background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .app-page-schedule-fb-required.locked { opacity: 0.55; cursor: not-allowed; }
+.app-dashboard-root .app-page-schedule-fb-add-row { padding: 10px 12px; display: flex; gap: 8px; align-items: center; background: var(--bg-muted); border-top: 1px solid var(--border); }
+.app-dashboard-root .app-page-schedule-fb-add-row select { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--fg); font: inherit; font-size: 13px; outline: 0; flex: 1; min-width: 0; }
+
+/* ── Cover drop zone (modal) ── */
+.app-dashboard-root .app-page-schedule-cover-drop { border: 1.5px dashed var(--border-strong); border-radius: 12px; padding: 18px; text-align: center; background: var(--bg); cursor: pointer; }
+
+/* ── Modal ── */
+.app-dashboard-root .app-page-schedule-modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(11,15,30,0.55); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .14s ease; }
+.app-dashboard-root .app-page-schedule-modal-backdrop.is-open { display: flex; opacity: 1; }
+.app-dashboard-root .app-page-schedule-modal { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 60px rgba(11,15,30,0.25); width: min(880px, 96vw); max-height: 92vh; display: flex; flex-direction: column; }
+.app-dashboard-root .app-page-schedule-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.app-dashboard-root .app-page-schedule-modal-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 0; }
+.app-dashboard-root .app-page-schedule-modal-body { overflow-y: auto; padding: 20px; flex: 1; }
+.app-dashboard-root .app-page-schedule-modal-foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; flex-shrink: 0; }
+.app-dashboard-root .app-page-schedule-foot-spacer { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-dashboard-root .app-page-schedule-modal-backdrop { transition: none !important; }
+  .app-dashboard-root .app-page-schedule-modal { transition: none !important; }
+}
