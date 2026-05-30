@@ -15,6 +15,10 @@
 import { registerBlockRenderer } from "~/lib/block-render-registry";
 import { LinkBlockRenderer } from "~/components/blocks/public/LinkBlockRenderer";
 import { ProductBlockRenderer } from "~/components/blocks/public/ProductBlockRenderer";
+import { HeadingBlockRenderer } from "~/components/blocks/public/HeadingBlockRenderer";
+import { DividerBlockRenderer } from "~/components/blocks/public/DividerBlockRenderer";
 
 registerBlockRenderer("link", LinkBlockRenderer);
 registerBlockRenderer("product", ProductBlockRenderer);
+registerBlockRenderer("heading", HeadingBlockRenderer);
+registerBlockRenderer("divider", DividerBlockRenderer);

@@ -808,3 +808,137 @@ body:has(.creator-shell) {
     margin-right: auto;
   }
 }
+
+/* ── Heading block (F-BLOCK-HEADING-001) ─────────────────────────────────
+ *
+ * Rendered as `<article class="block-heading-wrap"><h1|h2|h3|p class="block-heading …">…</…></article>`.
+ * Headings are structural text, not clickable cards — so the wrapper drops the
+ * default `.blocks article` chrome (bg/border/shadow) and the element carries
+ * its own type scale via `block-heading-<level>` and alignment via
+ * `block-heading-<align>`.
+ *
+ * Visual contract: app-block-editor.html BLOCK_TYPES.heading display levels. */
+.blocks article.block-heading-wrap {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  line-height: 1.25;
+}
+
+.block-heading-text {
+  display: inline-block;
+}
+
+.block-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Alignment — flex justification keeps the optional leading icon glued to the
+   text rather than pinned to the page edge. */
+.block-heading-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+.block-heading-center {
+  justify-content: center;
+  text-align: center;
+}
+.block-heading-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+/* Type scale per display level. */
+.block-heading-hero {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.block-heading-h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.block-heading-h2 {
+  font-size: 23px;
+  font-weight: 700;
+}
+.block-heading-h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.block-heading-p {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  line-height: 1.6;
+}
+
+/* ── Divider block (F-BLOCK-DIVIDER-001) ─────────────────────────────────
+ *
+ * Rendered as `<article class="block-divider-wrap"><hr class="block-divider …"></article>`
+ * for `line`/`dotted`, or an empty `<div role="separator">` for `spacer`.
+ * The wrapper drops the default card chrome; the rule's color is applied
+ * inline (`border-color`) from the resolved swatch/hex, so CSS only owns the
+ * thickness, dash pattern, and vertical rhythm.
+ *
+ * Visual contract: app-block-editor.html BLOCK_TYPES.divider style/size. */
+.blocks article.block-divider-wrap {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-divider {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.block-divider-dotted {
+  border-top-style: dotted;
+  border-top-width: 2px;
+}
+
+/* Vertical rhythm by size — applies to all styles incl. spacer. */
+.block-divider-sm {
+  margin-block: 8px;
+}
+.block-divider-md {
+  margin-block: 16px;
+}
+.block-divider-lg {
+  margin-block: 28px;
+}
+
+/* Spacer — invisible whitespace; height scales with size, no visible rule. */
+.block-divider-spacer {
+  border: 0;
+  background: transparent;
+}
+.block-divider-spacer.block-divider-sm {
+  height: 16px;
+}
+.block-divider-spacer.block-divider-md {
+  height: 32px;
+}
+.block-divider-spacer.block-divider-lg {
+  height: 56px;
+}
