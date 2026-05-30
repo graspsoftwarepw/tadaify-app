@@ -10753,3 +10753,608 @@ body.dark-mode .app-dashboard-root .main-settings .sec-auto-status {
 body.dark-mode .app-dashboard-root .main-settings .sec-log-row.is-failed {
   background: linear-gradient(90deg, rgba(239,68,68,0.14), transparent 60%);
 }
+
+/* ============================================================
+   SETTINGS — TEAM TAB
+   Scope: .app-dashboard-root .main-settings
+   All @keyframes prefixed with "team-"
+   Selectors: classes used by SettingsTeam.tsx verbatim from
+              mockups/tadaify-mvp/app-settings-team.html
+   ============================================================ */
+
+/* ── Seats card ── */
+.app-dashboard-root .main-settings .team-seats-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(245,158,11,0.04));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+@media (max-width: 620px) {
+  .app-dashboard-root .main-settings .team-seats-card { grid-template-columns: 1fr; }
+}
+.app-dashboard-root .main-settings .team-seats-card .sc-text { min-width: 0; }
+.app-dashboard-root .main-settings .team-seats-card .sc-headline {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 22px; line-height: 1.2; color: var(--fg);
+}
+.app-dashboard-root .main-settings .team-seats-card .sc-headline b { color: var(--brand-primary); font-weight: 700; }
+.app-dashboard-root .main-settings .team-seats-card .sc-sub { font-size: 13px; color: var(--fg-muted); margin-top: 4px; }
+.app-dashboard-root .main-settings .team-seats-card .sc-actions {
+  display: flex; gap: 6px; flex-direction: column; flex-shrink: 0; align-items: stretch;
+}
+@media (max-width: 620px) {
+  .app-dashboard-root .main-settings .team-seats-card .sc-actions { flex-direction: row; flex-wrap: wrap; }
+}
+
+.app-dashboard-root .main-settings .team-seats-foot-links {
+  display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px;
+}
+.app-dashboard-root .main-settings .team-seats-foot-links a,
+.app-dashboard-root .main-settings .team-foot-link-btn {
+  color: var(--brand-primary); background: transparent; border: 0; padding: 0;
+  cursor: pointer; font: inherit; font-size: 12.5px;
+  text-decoration: none;
+}
+.app-dashboard-root .main-settings .team-seats-foot-links a:hover,
+.app-dashboard-root .main-settings .team-foot-link-btn:hover { text-decoration: underline; }
+.app-dashboard-root .main-settings .team-sfl-sep { color: var(--fg-subtle); }
+
+/* Progress bar */
+.app-dashboard-root .main-settings .team-seats-bar-wrap {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.app-dashboard-root .main-settings .team-seats-bar {
+  width: 100%; height: 8px;
+  background: var(--bg-muted);
+  border-radius: 99px; overflow: hidden;
+  position: relative;
+}
+.app-dashboard-root .main-settings .team-seats-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+  border-radius: 99px;
+  transition: width .35s ease;
+}
+.app-dashboard-root .main-settings .team-seats-bar-fill.is-near-cap {
+  background: linear-gradient(90deg, var(--brand-warm), #FBBF24);
+}
+.app-dashboard-root .main-settings .team-seats-bar-fill.is-at-cap {
+  background: linear-gradient(90deg, var(--danger), #F87171);
+}
+.app-dashboard-root .main-settings .team-seats-bar-meta {
+  display: flex; justify-content: space-between; font-size: 11px; color: var(--fg-muted);
+}
+.app-dashboard-root .main-settings .team-seats-bar-meta b { color: var(--fg); font-weight: 600; }
+
+/* ── Filter tabs ── */
+.app-dashboard-root .main-settings .team-filter-tabs {
+  display: inline-flex; align-items: center;
+  background: var(--bg-muted); border-radius: 99px; padding: 3px;
+  gap: 2px;
+}
+.app-dashboard-root .main-settings .team-filter-tabs button {
+  border: 0; background: transparent;
+  font-size: 12px; font-weight: 600; padding: 5px 12px;
+  border-radius: 99px; color: var(--fg-muted); cursor: pointer;
+}
+.app-dashboard-root .main-settings .team-filter-tabs button.active {
+  background: var(--bg-elevated); color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+.app-dashboard-root .main-settings .team-filter-tabs .ft-count {
+  margin-left: 4px; padding: 1px 5px;
+  border-radius: 99px; background: var(--bg-sunken);
+  font-size: 10px; color: var(--fg-muted);
+}
+.app-dashboard-root .main-settings .team-filter-tabs button.active .ft-count {
+  background: rgba(99,102,241,0.12); color: var(--brand-primary);
+}
+
+/* ── Search input ── */
+.app-dashboard-root .main-settings .team-search-input {
+  flex: 1; min-width: 180px; max-width: 320px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+.app-dashboard-root .main-settings .team-search-input svg {
+  width: 14px; height: 14px; color: var(--fg-subtle); flex-shrink: 0;
+}
+.app-dashboard-root .main-settings .team-search-input input {
+  flex: 1; min-width: 0; border: 0; outline: none;
+  background: transparent; color: inherit; font-size: 13px;
+}
+.app-dashboard-root .main-settings .team-search-input input::placeholder { color: var(--fg-subtle); }
+
+/* ── Members table ── */
+.app-dashboard-root .main-settings .team-members-table { width: 100%; border-collapse: collapse; }
+.app-dashboard-root .main-settings .team-members-table th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.app-dashboard-root .main-settings .team-members-table td {
+  padding: 12px; border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--fg); vertical-align: middle;
+}
+.app-dashboard-root .main-settings .team-members-table tr:last-child td { border-bottom: 0; }
+.app-dashboard-root .main-settings .team-members-table .col-actions { width: 40px; text-align: right; }
+
+/* ── Member identity cell ── */
+.app-dashboard-root .main-settings .team-member-id {
+  display: flex; align-items: center; gap: 10px;
+}
+.app-dashboard-root .main-settings .team-member-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  color: #fff; font-weight: 600; font-size: 13.5px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+}
+.app-dashboard-root .main-settings .team-member-avatar.bg-1 { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.app-dashboard-root .main-settings .team-member-avatar.bg-2 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+.app-dashboard-root .main-settings .team-member-avatar.bg-3 { background: linear-gradient(135deg, #10B981, #34D399); }
+.app-dashboard-root .main-settings .team-member-avatar.bg-4 { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+.app-dashboard-root .main-settings .team-member-avatar.bg-5 { background: linear-gradient(135deg, #EC4899, #F472B6); }
+.app-dashboard-root .main-settings .team-member-avatar.is-pending {
+  background: var(--bg-muted); color: var(--fg-subtle);
+  border: 1.5px dashed var(--border-strong);
+}
+.app-dashboard-root .main-settings .team-member-id .mi-meta { min-width: 0; }
+.app-dashboard-root .main-settings .team-member-id .mi-name { font-weight: 600; color: var(--fg); }
+.app-dashboard-root .main-settings .team-member-id .mi-name.is-you {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.app-dashboard-root .main-settings .team-member-id .you-pill {
+  font-size: 9.5px; font-weight: 700; padding: 1px 6px;
+  background: rgba(99,102,241,0.12); color: var(--brand-primary);
+  border-radius: 99px; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.app-dashboard-root .main-settings .team-member-id .mi-email {
+  font-size: 12px; color: var(--fg-muted); margin-top: 1px;
+}
+
+/* ── Role pills ── */
+.app-dashboard-root .main-settings .role-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 99px;
+  font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap;
+}
+.app-dashboard-root .main-settings .role-pill.role-owner {
+  background: rgba(245,158,11,0.14); color: var(--brand-warm-dark);
+  border: 1px solid rgba(245,158,11,0.32);
+}
+.app-dashboard-root .main-settings .role-pill.role-admin {
+  background: rgba(99,102,241,0.14); color: var(--brand-primary);
+  border: 1px solid rgba(99,102,241,0.30);
+}
+.app-dashboard-root .main-settings .role-pill.role-editor {
+  background: rgba(16,185,129,0.13); color: #047857;
+  border: 1px solid rgba(16,185,129,0.30);
+}
+.app-dashboard-root .main-settings .role-pill.role-viewer {
+  background: var(--bg-muted); color: var(--fg-muted); border: 1px solid var(--border);
+}
+
+/* ── Last-active cell ── */
+.app-dashboard-root .main-settings .team-last-active { font-size: 12px; color: var(--fg-muted); }
+.app-dashboard-root .main-settings .team-last-active.is-now { color: var(--success); font-weight: 600; }
+
+/* ── Status cell chip ── */
+.app-dashboard-root .main-settings .team-status-cell .chip { font-size: 10.5px; }
+.app-dashboard-root .main-settings .team-status-cell .chip.pending { background: var(--info-bg); color: #1E40AF; }
+
+/* ── Kebab menu ── */
+.app-dashboard-root .main-settings .team-kebab-wrap { position: relative; display: inline-block; }
+.app-dashboard-root .main-settings .team-kebab-menu {
+  position: absolute; top: 100%; right: 0; margin-top: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  min-width: 180px;
+  display: none;
+  z-index: 20;
+}
+.app-dashboard-root .main-settings .team-kebab-menu.open { display: block; }
+.app-dashboard-root .main-settings .team-kebab-menu button {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 8px 10px;
+  background: transparent; border: 0; border-radius: 6px;
+  font-size: 13px; color: var(--fg);
+  text-align: left; cursor: pointer;
+  font-family: inherit;
+}
+.app-dashboard-root .main-settings .team-kebab-menu button:hover { background: var(--bg-muted); }
+.app-dashboard-root .main-settings .team-kebab-menu button.is-danger { color: var(--danger); }
+.app-dashboard-root .main-settings .team-kebab-menu button.is-danger:hover { background: var(--danger-bg); }
+.app-dashboard-root .main-settings .team-kebab-menu .km-divider { border-top: 1px solid var(--border); margin: 4px 2px; }
+.app-dashboard-root .main-settings .team-kebab-menu svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--fg-muted); }
+.app-dashboard-root .main-settings .team-kebab-menu button.is-danger svg { color: var(--danger); }
+
+/* ── Empty state (no team yet) ── */
+.app-dashboard-root .main-settings .team-empty-state {
+  padding: 40px 24px; text-align: center;
+  background: var(--bg);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 14px;
+}
+.app-dashboard-root .main-settings .team-empty-state .es-emoji {
+  font-size: 48px; line-height: 1; margin-bottom: 14px;
+}
+.app-dashboard-root .main-settings .team-empty-state .es-title {
+  font-family: var(--font-display); font-size: 22px; font-weight: 600;
+  margin-bottom: 8px; color: var(--fg);
+}
+.app-dashboard-root .main-settings .team-empty-state .es-sub {
+  font-size: 14px; color: var(--fg-muted);
+  max-width: 460px; margin: 0 auto 16px; line-height: 1.55;
+}
+.app-dashboard-root .main-settings .team-empty-state .es-cta { margin-bottom: 18px; }
+.app-dashboard-root .main-settings .team-use-cases-details {
+  max-width: 580px; margin: 0 auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  text-align: left;
+}
+.app-dashboard-root .main-settings .team-use-cases-details summary {
+  cursor: pointer; font-weight: 600; font-size: 13.5px;
+  color: var(--brand-primary); list-style: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.app-dashboard-root .main-settings .team-use-cases-details summary::-webkit-details-marker { display: none; }
+.app-dashboard-root .main-settings .team-use-cases-details summary::before {
+  content: "›"; transition: transform .15s ease; display: inline-block;
+}
+.app-dashboard-root .main-settings .team-use-cases-details[open] summary::before {
+  transform: rotate(90deg);
+}
+.app-dashboard-root .main-settings .team-use-case-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  margin-top: 14px;
+}
+@media (max-width: 540px) {
+  .app-dashboard-root .main-settings .team-use-case-grid { grid-template-columns: 1fr; }
+}
+.app-dashboard-root .main-settings .team-use-case {
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12.5px; color: var(--fg-muted); line-height: 1.5;
+}
+.app-dashboard-root .main-settings .team-use-case b { color: var(--fg); }
+
+/* ── Pending invites mini-section ── */
+.app-dashboard-root .main-settings .team-pending-list { display: flex; flex-direction: column; gap: 8px; }
+.app-dashboard-root .main-settings .team-pending-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.app-dashboard-root .main-settings .team-pending-row .pr-ico {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--info-bg); color: #1E40AF;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 14px;
+}
+.app-dashboard-root .main-settings .team-pending-row .pr-meta { flex: 1; min-width: 0; }
+.app-dashboard-root .main-settings .team-pending-row .pr-email {
+  font-weight: 600; font-size: 13.5px; color: var(--fg); word-break: break-all;
+}
+.app-dashboard-root .main-settings .team-pending-row .pr-detail {
+  font-size: 11.5px; color: var(--fg-muted); margin-top: 2px;
+}
+.app-dashboard-root .main-settings .team-pending-row .pr-expires {
+  color: var(--brand-warm-dark); font-weight: 600;
+}
+.app-dashboard-root .main-settings .team-pending-row .pr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.app-dashboard-root .main-settings .team-pending-empty {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.app-dashboard-root .main-settings .team-pending-empty .es-sub { color: var(--fg-muted); font-size: 14px; }
+
+/* ── Permissions matrix ── */
+.app-dashboard-root .main-settings .team-matrix-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 0; padding: 0;
+  color: var(--brand-primary); font-size: 13px; font-weight: 500;
+  cursor: pointer;
+}
+.app-dashboard-root .main-settings .team-matrix-toggle .mt-caret {
+  transition: transform .15s ease; display: inline-block;
+}
+.app-dashboard-root .main-settings .team-matrix-toggle.open .mt-caret { transform: rotate(90deg); }
+.app-dashboard-root .main-settings .team-matrix-wrap {
+  display: none; margin-top: 14px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.app-dashboard-root .main-settings .team-matrix-wrap.open { display: block; }
+.app-dashboard-root .main-settings .team-matrix-table {
+  width: 100%; border-collapse: collapse; min-width: 540px;
+}
+.app-dashboard-root .main-settings .team-matrix-table th,
+.app-dashboard-root .main-settings .team-matrix-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; text-align: center; color: var(--fg);
+}
+.app-dashboard-root .main-settings .team-matrix-table th {
+  background: var(--bg); font-weight: 600;
+  color: var(--fg-muted); text-transform: uppercase;
+  letter-spacing: 0.04em; font-size: 10.5px;
+  position: sticky; top: 0;
+}
+.app-dashboard-root .main-settings .team-matrix-table tbody tr:last-child td { border-bottom: 0; }
+.app-dashboard-root .main-settings .team-matrix-table th:first-child,
+.app-dashboard-root .main-settings .team-matrix-table td:first-child {
+  text-align: left; font-weight: 500; color: var(--fg);
+}
+.app-dashboard-root .main-settings .team-matrix-table .yes { color: var(--success); font-weight: 700; font-size: 14px; }
+.app-dashboard-root .main-settings .team-matrix-table .no  { color: var(--fg-subtle); font-weight: 700; font-size: 14px; }
+.app-dashboard-root .main-settings .team-matrix-table .partial { color: var(--brand-warm-dark); font-weight: 700; font-size: 14px; }
+
+/* ── Audit log ── */
+.app-dashboard-root .main-settings .team-audit-toolbar {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.app-dashboard-root .main-settings .team-audit-filter-group {
+  display: inline-flex; gap: 6px; align-items: center;
+  font-size: 12px; color: var(--fg-muted);
+}
+.app-dashboard-root .main-settings .team-audit-filter-group select {
+  font: inherit; font-size: 12px; padding: 5px 22px 5px 10px;
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--bg-elevated); color: var(--fg);
+}
+.app-dashboard-root .main-settings .team-audit-spacer { flex: 1; }
+.app-dashboard-root .main-settings .team-audit-table { width: 100%; border-collapse: collapse; }
+.app-dashboard-root .main-settings .team-audit-table th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 9px 12px; border-bottom: 1px solid var(--border);
+}
+.app-dashboard-root .main-settings .team-audit-table td {
+  padding: 11px 12px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; color: var(--fg); vertical-align: middle;
+}
+.app-dashboard-root .main-settings .team-audit-table tr:last-child td { border-bottom: 0; }
+.app-dashboard-root .main-settings .audit-when {
+  color: var(--fg-muted); white-space: nowrap;
+  font-family: var(--font-mono); font-size: 11.5px;
+}
+.app-dashboard-root .main-settings .audit-actor { display: flex; align-items: center; gap: 8px; }
+.app-dashboard-root .main-settings .audit-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 600;
+  padding: 2px 8px; border-radius: 99px; white-space: nowrap;
+}
+.app-dashboard-root .main-settings .audit-action.act-edit    { background: var(--info-bg); color: #1E40AF; }
+.app-dashboard-root .main-settings .audit-action.act-publish { background: var(--success-bg); color: #065F46; }
+.app-dashboard-root .main-settings .audit-action.act-invite  { background: rgba(99,102,241,0.13); color: var(--brand-primary); }
+.app-dashboard-root .main-settings .audit-action.act-role    { background: var(--warning-bg); color: #92400E; }
+.app-dashboard-root .main-settings .audit-action.act-remove  { background: var(--danger-bg); color: #991B1B; }
+.app-dashboard-root .main-settings .audit-action.act-signin  { background: var(--bg-muted); color: var(--fg-muted); }
+.app-dashboard-root .main-settings .audit-action.act-billing { background: rgba(245,158,11,0.13); color: var(--brand-warm-dark); }
+.app-dashboard-root .main-settings .audit-target {
+  font-size: 12px; color: var(--fg-muted);
+  max-width: 280px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app-dashboard-root .main-settings .audit-target b { color: var(--fg); font-weight: 600; }
+.app-dashboard-root .main-settings .audit-ip {
+  font-family: var(--font-mono); font-size: 11px; color: var(--fg-subtle);
+}
+.app-dashboard-root .main-settings .team-audit-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; margin-top: 12px;
+}
+.app-dashboard-root .main-settings .af-count { font-size: 12px; color: var(--fg-muted); }
+
+/* ── SAML SSO card ── */
+.app-dashboard-root .main-settings .team-sso-card {
+  display: flex; gap: 16px; align-items: center;
+  padding: 16px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.app-dashboard-root .main-settings .team-sso-card .sso-ico {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(99,102,241,0.12); color: var(--brand-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.app-dashboard-root .main-settings .team-sso-card .sso-meta { flex: 1; min-width: 0; }
+.app-dashboard-root .main-settings .team-sso-card .sm-title {
+  font-weight: 600; font-size: 14px; color: var(--fg);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.app-dashboard-root .main-settings .team-sso-card .sm-sub {
+  font-size: 12.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.5;
+}
+.app-dashboard-root .main-settings .team-sso-card .sso-actions { flex-shrink: 0; }
+
+/* ── Invite modal — per-page section ── */
+.app-dashboard-root .main-settings .team-pro-section {
+  padding: 14px; border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 16px; background: var(--bg);
+}
+.app-dashboard-root .main-settings .team-pro-section .pro-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 10px;
+}
+.app-dashboard-root .main-settings .team-pro-section .pro-section-title {
+  font-size: 13px; font-weight: 600; color: var(--fg);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.app-dashboard-root .main-settings .team-per-page-list {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 200px; overflow-y: auto;
+  padding: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.app-dashboard-root .main-settings .team-per-page-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 6px; font-size: 13px;
+}
+.app-dashboard-root .main-settings .team-per-page-row:hover { background: var(--bg-muted); }
+.app-dashboard-root .main-settings .team-per-page-row input[type="checkbox"] {
+  accent-color: var(--brand-primary); flex-shrink: 0;
+}
+.app-dashboard-root .main-settings .team-per-page-row .pp-name { flex: 1; }
+.app-dashboard-root .main-settings .team-per-page-row .pp-meta { font-size: 11px; color: var(--fg-subtle); }
+
+/* ── Invite success state ── */
+.app-dashboard-root .main-settings .team-invite-success {
+  text-align: center; padding: 14px 0;
+}
+.app-dashboard-root .main-settings .team-invite-success .is-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--success-bg); color: #065F46;
+  font-size: 32px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.app-dashboard-root .main-settings .team-invite-success .is-title {
+  font-family: var(--font-display); font-size: 22px; font-weight: 600; margin-bottom: 6px;
+}
+.app-dashboard-root .main-settings .team-invite-success .is-sub {
+  color: var(--fg-muted); font-size: 13.5px; line-height: 1.55; margin-bottom: 12px;
+}
+.app-dashboard-root .main-settings .team-invite-success .is-list {
+  list-style: none; padding: 0; margin: 0 0 16px;
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 200px; overflow-y: auto; text-align: left;
+}
+.app-dashboard-root .main-settings .team-invite-success .is-list li {
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12.5px; color: var(--fg);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Remove-member warning box ── */
+.app-dashboard-root .main-settings .team-remove-warning {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.30);
+  border-radius: 10px; padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 12.5px; color: #991B1B; line-height: 1.55;
+}
+
+/* ── Inline chip for role-radio disabled label ── */
+.app-dashboard-root .main-settings .team-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; line-height: 1;
+  background: var(--bg-muted); color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+/* ── Role radio list (shared by invite + change-role modals) ── */
+.app-dashboard-root .main-settings .role-radio-list {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+@media (max-width: 520px) {
+  .app-dashboard-root .main-settings .role-radio-list { grid-template-columns: 1fr; }
+}
+.app-dashboard-root .main-settings .role-radio {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px; cursor: pointer;
+  transition: all .12s ease;
+}
+.app-dashboard-root .main-settings .role-radio:hover {
+  border-color: var(--brand-primary); background: var(--bg-muted);
+}
+.app-dashboard-root .main-settings .role-radio input[type="radio"] {
+  margin-top: 2px; accent-color: var(--brand-primary); flex-shrink: 0;
+}
+.app-dashboard-root .main-settings .role-radio.is-selected {
+  border-color: var(--brand-primary);
+  background: rgba(99,102,241,0.05);
+}
+.app-dashboard-root .main-settings .role-radio .rr-body { flex: 1; min-width: 0; }
+.app-dashboard-root .main-settings .role-radio .rr-name { font-weight: 600; font-size: 13.5px; color: var(--fg); }
+.app-dashboard-root .main-settings .role-radio .rr-sub { font-size: 11.5px; color: var(--fg-muted); margin-top: 2px; line-height: 1.5; }
+
+/* ── @keyframes (prefixed with team-) ── */
+@keyframes team-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Dark-mode overrides ── */
+body.dark-mode .app-dashboard-root .main-settings .team-seats-card {
+  background: linear-gradient(135deg, rgba(99,102,241,0.10), rgba(245,158,11,0.05));
+  border-color: #1F2937;
+}
+body.dark-mode .app-dashboard-root .main-settings .team-seats-bar { background: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-members-table th,
+body.dark-mode .app-dashboard-root .main-settings .team-audit-table th {
+  color: #6B7280; border-bottom-color: #1F2937; background: transparent;
+}
+body.dark-mode .app-dashboard-root .main-settings .team-members-table td,
+body.dark-mode .app-dashboard-root .main-settings .team-audit-table td {
+  border-bottom-color: #1F2937; color: #F3F4F6;
+}
+body.dark-mode .app-dashboard-root .main-settings .team-member-id .mi-name { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-member-id .mi-email { color: #9CA3AF; }
+body.dark-mode .app-dashboard-root .main-settings .team-last-active { color: #9CA3AF; }
+body.dark-mode .app-dashboard-root .main-settings .team-filter-tabs { background: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-filter-tabs button { color: #9CA3AF; }
+body.dark-mode .app-dashboard-root .main-settings .team-filter-tabs button.active { background: #0B0F1E; color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-search-input { background: #0B0F1E; border-color: #374151; }
+body.dark-mode .app-dashboard-root .main-settings .team-search-input input { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-pending-row,
+body.dark-mode .app-dashboard-root .main-settings .team-sso-card,
+body.dark-mode .app-dashboard-root .main-settings .team-empty-state { background: #0B0F1E; border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-empty-state .es-title { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-use-cases-details,
+body.dark-mode .app-dashboard-root .main-settings .team-use-case { background: #141A2D; border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-use-case b { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-matrix-wrap { border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-matrix-table th {
+  background: #0B0F1E; color: #6B7280; border-bottom-color: #1F2937;
+}
+body.dark-mode .app-dashboard-root .main-settings .team-matrix-table td { border-bottom-color: #1F2937; color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-matrix-table th:first-child,
+body.dark-mode .app-dashboard-root .main-settings .team-matrix-table td:first-child { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-audit-filter-group select { background: #0B0F1E; border-color: #374151; color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-kebab-menu { background: #141A2D; border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-kebab-menu button { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-kebab-menu button:hover { background: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-kebab-menu .km-divider { border-top-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .role-radio { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .role-radio .rr-name { color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .role-radio.is-selected { background: rgba(99,102,241,0.12); border-color: var(--brand-primary); }
+body.dark-mode .app-dashboard-root .main-settings .team-per-page-list { background: #0B0F1E; border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-per-page-row:hover { background: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-pro-section { background: #0B0F1E; border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .main-settings .team-invite-success .is-list li { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+body.dark-mode .app-dashboard-root .main-settings .team-pending-empty { background: #0B0F1E; border-color: #1F2937; }
