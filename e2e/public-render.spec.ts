@@ -4,14 +4,15 @@
  * Covers: S1–S8 per issue #202 body.
  *
  * Seed contract (supabase/seed.sql, "F-BLOCK-INFRA-PUBLIC-RENDER-001 seeds"):
- *   - test-render-s1  → published page, 3 visible blocks at positions 0/1/2
- *   - test-render-s5  → published page, 3 blocks, position 1 hidden (is_visible=false)
- *   - test-render-s8  → published page, 0 blocks
+ *   - test_render_s1  → published page, 3 visible blocks at positions 0/1/2
+ *   - test_render_s5  → published page, 3 blocks, position 1 hidden (is_visible=false)
+ *   - test_render_s8  → published page, 0 blocks
  *
- * S3 and S4 (cf-cache-status assertions) are intentionally skipped via
- * `test.fixme()` — local Playwright has no Cloudflare edge in front of the
- * Worker dev server, so cf-cache-status is never emitted. Those scenarios
- * are verified on PROD after the CF zone is wired (TR-tadaify-009).
+ * S3 and S4 verify the `Cache-Control` HTTP header that the route module
+ * emits via its `headers` export. The cf-cache-status header (separately
+ * emitted by Cloudflare's edge after deploy) is NOT asserted here — it
+ * cannot exist locally without a CF zone. The Cache-Control header itself
+ * IS testable locally because it is set by the route, not by CF.
  *
  * Run: npx playwright test e2e/public-render.spec.ts
  */
@@ -20,9 +21,9 @@ import { test, expect } from "@playwright/test";
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:5173";
 
-const HANDLE_S1 = "test-render-s1";
-const HANDLE_S5 = "test-render-s5";
-const HANDLE_S8 = "test-render-s8";
+const HANDLE_S1 = "test_render_s1";
+const HANDLE_S5 = "test_render_s5";
+const HANDLE_S8 = "test_render_s8";
 
 // ---------------------------------------------------------------------------
 // S1: Visitor visits handle → renders all visible blocks in order
@@ -53,15 +54,24 @@ test("S2: unknown handle returns 404 with branded copy", async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
-// S3 / S4: cf-cache-status assertions — PROD-only
+// S3 / S4: Cache-Control header — emitted locally by route module's `headers`
+// export. The CF-only `cf-cache-status` header is NOT asserted here (PROD).
 // ---------------------------------------------------------------------------
 
-test.fixme("S3: 200 response includes Cache-Control max-age=3600", async () => {
-  // verified on PROD when CF zone exists
+test("S3: 200 response includes Cache-Control max-age=3600, s-maxage=3600", async ({ request }) => {
+  const response = await request.get(`${BASE_URL}/${HANDLE_S1}`);
+  expect(response.status()).toBe(200);
+  const cc = response.headers()["cache-control"] ?? "";
+  expect(cc).toContain("max-age=3600");
+  expect(cc).toContain("s-maxage=3600");
 });
 
-test.fixme("S4: 404 response includes Cache-Control max-age=300", async () => {
-  // verified on PROD when CF zone exists
+test("S4: 404 response includes Cache-Control max-age=300, s-maxage=300", async ({ request }) => {
+  const response = await request.get(`${BASE_URL}/this-handle-does-not-exist-s4`);
+  expect(response.status()).toBe(404);
+  const cc = response.headers()["cache-control"] ?? "";
+  expect(cc).toContain("max-age=300");
+  expect(cc).toContain("s-maxage=300");
 });
 
 // ---------------------------------------------------------------------------

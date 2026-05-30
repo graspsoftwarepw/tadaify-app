@@ -127,6 +127,25 @@ export async function loader({
   });
 }
 
+// ── Headers (propagate loader Response headers to SSR HTML response) ─────────
+//
+// In React Router 7, headers set on the loader's returned `Response` propagate
+// to the data-route response (used by client-side navigation) but NOT to the
+// initial SSR HTML response that the framework constructs. To make the
+// `Cache-Control` header reach the browser (and thereby Cloudflare's edge
+// cache key — TR-tadaify-009) we MUST re-emit it from this exported `headers`
+// function. Without this export the visitor's HTML response carries the
+// framework's defaults and Cloudflare cannot honour `s-maxage=3600`.
+//
+// `errorHeaders` is set when the loader throws a Response (our 404 / 500
+// paths) — prefer those so 404 gets `max-age=300` and 500 gets `no-store`.
+export function headers({
+  loaderHeaders,
+  errorHeaders,
+}: Route.HeadersArgs) {
+  return errorHeaders ?? loaderHeaders;
+}
+
 // ── Meta (Open Graph + Twitter Card) ──────────────────────────────────────────
 
 export function meta({ data }: Route.MetaArgs) {

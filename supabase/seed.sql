@@ -77,18 +77,18 @@ INSERT INTO auth.identities (
 --   - have a profiles row with handle
 --   - have a published homepage (pages.is_homepage=true AND published_at NOT NULL)
 -- Variation:
---   - test-render-s1 → 3 visible blocks at positions 0/1/2
---   - test-render-s5 → 3 blocks at positions 0/1/2, middle one is_visible=false
---   - test-render-s8 → 0 blocks (published page with empty block list)
+--   - test_render_s1 → 3 visible blocks at positions 0/1/2
+--   - test_render_s5 → 3 blocks at positions 0/1/2, middle one is_visible=false
+--   - test_render_s8 → 0 blocks (published page with empty block list)
 
--- ---- creator 1: test-render-s1 (3 visible blocks) ----
+-- ---- creator 1: test_render_s1 (3 visible blocks) ----
 
 INSERT INTO auth.users (
   id, email, encrypted_password, email_confirmed_at, created_at, updated_at,
   raw_app_meta_data, raw_user_meta_data, aud, role
 ) VALUES (
   '00000000-0000-0000-0000-000000000a01',
-  'test-render-s1@local.test',
+  'test_render_s1@local.test',
   crypt('TestPass123!', gen_salt('bf')),
   now(), now(), now(),
   '{"provider":"email","providers":["email"]}',
@@ -101,10 +101,10 @@ INSERT INTO auth.identities (
 ) VALUES (
   '00000000-0000-0000-0000-000000000a01',
   '00000000-0000-0000-0000-000000000a01',
-  'test-render-s1@local.test', 'email',
+  'test_render_s1@local.test', 'email',
   jsonb_build_object(
     'sub', '00000000-0000-0000-0000-000000000a01',
-    'email', 'test-render-s1@local.test',
+    'email', 'test_render_s1@local.test',
     'email_verified', true
   ),
   now(), now(), now()
@@ -113,8 +113,8 @@ INSERT INTO auth.identities (
 INSERT INTO profiles (id, handle, email, display_name, bio, created_at, updated_at)
 VALUES (
   '00000000-0000-0000-0000-000000000a01',
-  'test-render-s1',
-  'test-render-s1@local.test',
+  'test_render_s1',
+  'test_render_s1@local.test',
   'S1 Test Creator',
   'Seeded by F-BLOCK-INFRA-PUBLIC-RENDER-001 (#202).',
   now(), now()
@@ -143,14 +143,14 @@ VALUES
    'link', 'S1 block 3', 'https://example.com/3', true, 2, now(), now())
 ON CONFLICT (id) DO NOTHING;
 
--- ---- creator 5: test-render-s5 (3 blocks, middle one hidden) ----
+-- ---- creator 5: test_render_s5 (3 blocks, middle one hidden) ----
 
 INSERT INTO auth.users (
   id, email, encrypted_password, email_confirmed_at, created_at, updated_at,
   raw_app_meta_data, raw_user_meta_data, aud, role
 ) VALUES (
   '00000000-0000-0000-0000-000000000a05',
-  'test-render-s5@local.test',
+  'test_render_s5@local.test',
   crypt('TestPass123!', gen_salt('bf')),
   now(), now(), now(),
   '{"provider":"email","providers":["email"]}',
@@ -163,10 +163,10 @@ INSERT INTO auth.identities (
 ) VALUES (
   '00000000-0000-0000-0000-000000000a05',
   '00000000-0000-0000-0000-000000000a05',
-  'test-render-s5@local.test', 'email',
+  'test_render_s5@local.test', 'email',
   jsonb_build_object(
     'sub', '00000000-0000-0000-0000-000000000a05',
-    'email', 'test-render-s5@local.test',
+    'email', 'test_render_s5@local.test',
     'email_verified', true
   ),
   now(), now(), now()
@@ -175,8 +175,8 @@ INSERT INTO auth.identities (
 INSERT INTO profiles (id, handle, email, display_name, bio, created_at, updated_at)
 VALUES (
   '00000000-0000-0000-0000-000000000a05',
-  'test-render-s5',
-  'test-render-s5@local.test',
+  'test_render_s5',
+  'test_render_s5@local.test',
   'S5 Test Creator',
   'Seeded by F-BLOCK-INFRA-PUBLIC-RENDER-001 (#202).',
   now(), now()
@@ -205,14 +205,14 @@ VALUES
    'link', 'S5 block 3 (visible)', 'https://example.com/s5-3', true, 2, now(), now())
 ON CONFLICT (id) DO NOTHING;
 
--- ---- creator 8: test-render-s8 (published page, ZERO blocks) ----
+-- ---- creator 8: test_render_s8 (published page, ZERO blocks) ----
 
 INSERT INTO auth.users (
   id, email, encrypted_password, email_confirmed_at, created_at, updated_at,
   raw_app_meta_data, raw_user_meta_data, aud, role
 ) VALUES (
   '00000000-0000-0000-0000-000000000a08',
-  'test-render-s8@local.test',
+  'test_render_s8@local.test',
   crypt('TestPass123!', gen_salt('bf')),
   now(), now(), now(),
   '{"provider":"email","providers":["email"]}',
@@ -225,10 +225,10 @@ INSERT INTO auth.identities (
 ) VALUES (
   '00000000-0000-0000-0000-000000000a08',
   '00000000-0000-0000-0000-000000000a08',
-  'test-render-s8@local.test', 'email',
+  'test_render_s8@local.test', 'email',
   jsonb_build_object(
     'sub', '00000000-0000-0000-0000-000000000a08',
-    'email', 'test-render-s8@local.test',
+    'email', 'test_render_s8@local.test',
     'email_verified', true
   ),
   now(), now(), now()
@@ -237,8 +237,8 @@ INSERT INTO auth.identities (
 INSERT INTO profiles (id, handle, email, display_name, bio, created_at, updated_at)
 VALUES (
   '00000000-0000-0000-0000-000000000a08',
-  'test-render-s8',
-  'test-render-s8@local.test',
+  'test_render_s8',
+  'test_render_s8@local.test',
   'S8 Test Creator',
   'Seeded by F-BLOCK-INFRA-PUBLIC-RENDER-001 (#202).',
   now(), now()
