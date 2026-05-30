@@ -84,3 +84,50 @@ export async function purgeCacheForHandle(
     return { ok: false, reason: "fetch_threw" };
   }
 }
+
+/**
+ * Cloudflare ExecutionContext-like shape, narrowed to the only method we need.
+ * Lives here so callers don't import the global ExecutionContext type in test
+ * harnesses (vitest unit tests run outside the Worker runtime).
+ */
+export interface CachePurgeWaitable {
+  waitUntil?: (promise: Promise<unknown>) => void;
+}
+
+/**
+ * Fire the cache purge AND register it with Cloudflare's `ctx.waitUntil(...)`
+ * so the Worker keeps the runtime alive until the purge completes — without
+ * blocking the CRUD response to the creator. Returns the purge promise so
+ * tests (and any caller that wants synchronous completion) can await it.
+ *
+ * Background: `void purgeCacheForHandle(...).catch(...)` is unsafe in a
+ * Cloudflare Worker — once the action returns, the runtime can be torn down
+ * before the in-flight `fetch()` to Cloudflare's purge API resolves, which
+ * silently drops the purge. `ctx.waitUntil()` is the documented contract for
+ * "do this after the response, but keep the worker alive for it". See
+ * `workers/app.ts:19-22` for where `cloudflare.ctx` is exposed.
+ *
+ * If `ctx` (or its `waitUntil`) is undefined — e.g. in vitest or local dev
+ * before the framework wires the context — we still kick off the purge but
+ * fall back to the unawaited path. That's the same risk profile as today,
+ * but only in environments where there is no real CF purge to lose.
+ *
+ * TR-tadaify-010, ECN-RENDER cache-purge hook (#202, Codex round-1 finding).
+ */
+export function purgeCacheForHandleAndAwait(
+  ctx: CachePurgeWaitable | undefined,
+  handle: string,
+  customDomain: string | undefined,
+  env: CachePurgeEnv | undefined,
+): Promise<CachePurgeResult> {
+  const promise = purgeCacheForHandle(handle, customDomain, env).catch(
+    (err): CachePurgeResult => {
+      console.error("[cache-purge] threw unexpectedly", err);
+      return { ok: false, reason: "threw" };
+    },
+  );
+  if (ctx?.waitUntil) {
+    ctx.waitUntil(promise);
+  }
+  return promise;
+}

@@ -208,6 +208,48 @@ describe("U2 — GET /:handle loader (cache + headers + visibility + order)", ()
     expect(flat).toContain("/api/avatar/abc123");
   });
 
+  // Codex round-1 finding #3: og:image must be an absolute URL or social
+  // crawlers reject it. The loader stores the path; meta() prepends the
+  // canonical origin.
+  it("meta() emits og:image / twitter:image as absolute https://tadaify.com URLs", async () => {
+    const data: LoaderData = {
+      handle: "alex",
+      displayName: "Alex Test",
+      bio: "Tester bio",
+      avatarUrl: "/api/avatar/abc123",
+      pageTitle: "Home",
+      blocks: [],
+    };
+    const tags = meta({ data } as unknown as Parameters<typeof meta>[0]);
+
+    const ogImage = (tags as Array<Record<string, string>>).find(
+      (t) => t.property === "og:image",
+    );
+    const twImage = (tags as Array<Record<string, string>>).find(
+      (t) => t.name === "twitter:image",
+    );
+
+    expect(ogImage?.content).toBe("https://tadaify.com/api/avatar/abc123");
+    expect(twImage?.content).toBe("https://tadaify.com/api/avatar/abc123");
+    expect(ogImage?.content?.startsWith("https://tadaify.com/")).toBe(true);
+  });
+
+  it("meta() leaves an already-absolute avatar URL unchanged (idempotent)", async () => {
+    const data: LoaderData = {
+      handle: "alex",
+      displayName: "Alex Test",
+      bio: "",
+      avatarUrl: "https://cdn.example.com/u/abc.jpg",
+      pageTitle: "Home",
+      blocks: [],
+    };
+    const tags = meta({ data } as unknown as Parameters<typeof meta>[0]);
+    const ogImage = (tags as Array<Record<string, string>>).find(
+      (t) => t.property === "og:image",
+    );
+    expect(ogImage?.content).toBe("https://cdn.example.com/u/abc.jpg");
+  });
+
   it("orders blocks by position ASC", async () => {
     // Returned out of order — loader must sort.
     globalThis.fetch = mockSupabaseStack({

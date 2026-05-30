@@ -21,7 +21,10 @@
 
 import type { Route } from "./+types/api.blocks.$id";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
-import { purgeCacheForHandle } from "~/lib/cache-purge";
+import {
+  purgeCacheForHandleAndAwait,
+  type CachePurgeWaitable,
+} from "~/lib/cache-purge";
 import { resolveHandleForUser } from "~/lib/resolve-handle-for-purge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -34,13 +37,16 @@ interface WorkerEnv {
 }
 
 /**
- * Fire-and-forget cache purge for the authenticated creator's public page.
- * Lookup + purge errors are absorbed — purge must never break the CRUD path.
- * TR-tadaify-010 (#202).
+ * Cache purge for the authenticated creator's public page, attached to the
+ * Worker's ExecutionContext via `ctx.waitUntil()` so the runtime stays alive
+ * until the CF purge fetch completes. Lookup + purge errors are absorbed —
+ * purge must never break the CRUD path.
+ * TR-tadaify-010 (#202), Codex round-1 finding (waitUntil).
  */
 async function firePurgeForUser(
   userId: string,
   env: WorkerEnv,
+  ctx: CachePurgeWaitable | undefined,
 ): Promise<void> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return;
   const handle = await resolveHandleForUser(
@@ -49,10 +55,10 @@ async function firePurgeForUser(
     env.SUPABASE_SERVICE_ROLE_KEY,
   );
   if (!handle) return;
-  void purgeCacheForHandle(handle, undefined, {
+  purgeCacheForHandleAndAwait(ctx, handle, undefined, {
     CF_ZONE_ID: env.CF_ZONE_ID,
     CF_API_TOKEN: env.CF_API_TOKEN,
-  }).catch((e) => console.error("[cache-purge] threw unexpectedly", e));
+  });
 }
 
 export interface Block {
@@ -142,6 +148,11 @@ function getEnv(context: unknown): WorkerEnv {
   );
 }
 
+function getCtx(context: unknown): CachePurgeWaitable | undefined {
+  return (context as { cloudflare?: { ctx?: CachePurgeWaitable } }).cloudflare
+    ?.ctx;
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function action({ request, context, params }: Route.ActionArgs) {
@@ -209,7 +220,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     }
 
     // TR-tadaify-010 — purge edge cache after successful DELETE.
-    await firePurgeForUser(userId, env);
+    await firePurgeForUser(userId, env, getCtx(context));
 
     return new Response(null, { status: 204 });
   }
@@ -257,7 +268,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   // TR-tadaify-010 — purge edge cache after successful PATCH.
-  await firePurgeForUser(userId, env);
+  await firePurgeForUser(userId, env, getCtx(context));
 
   return Response.json({ block: blocks[0] }, { status: 200 });
 }

@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { purgeCacheForHandle } from "./cache-purge";
+import {
+  purgeCacheForHandle,
+  purgeCacheForHandleAndAwait,
+} from "./cache-purge";
 
 const ZONE = "zone-deadbeef";
 const TOKEN = "real-token";
@@ -98,5 +101,53 @@ describe("U1 — purgeCacheForHandle", () => {
 
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("cf_403");
+  });
+});
+
+describe("U1b — purgeCacheForHandleAndAwait (Codex round-1 waitUntil fix)", () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("registers the in-flight purge promise with ctx.waitUntil()", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ success: true }), { status: 200 }),
+    );
+    const waitUntilSpy = vi.fn();
+
+    const result = await purgeCacheForHandleAndAwait(
+      { waitUntil: waitUntilSpy },
+      "alex",
+      undefined,
+      { CF_ZONE_ID: ZONE, CF_API_TOKEN: TOKEN },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(waitUntilSpy).toHaveBeenCalledTimes(1);
+    expect(waitUntilSpy.mock.calls[0][0]).toBeInstanceOf(Promise);
+  });
+
+  it("still completes the purge when ctx is undefined (graceful fallback)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ success: true }), { status: 200 }),
+    );
+
+    const result = await purgeCacheForHandleAndAwait(
+      undefined,
+      "alex",
+      undefined,
+      { CF_ZONE_ID: ZONE, CF_API_TOKEN: TOKEN },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });

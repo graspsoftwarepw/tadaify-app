@@ -144,9 +144,10 @@ describe("U5 — POST /api/blocks/reorder", () => {
   });
 
   // U4 — TR-tadaify-010 cache-purge hook (#202)
-  it("calls purgeCacheForHandle after successful reorder", async () => {
+  // Codex round-1 fix: spy on the waitUntil-aware wrapper used by the route.
+  it("calls purgeCacheForHandle (via purgeCacheForHandleAndAwait) after successful reorder", async () => {
     const purgeSpy = vi
-      .spyOn(cachePurge, "purgeCacheForHandle")
+      .spyOn(cachePurge, "purgeCacheForHandleAndAwait")
       .mockResolvedValue({ ok: true });
 
     mockFetch.mockResolvedValueOnce(
@@ -170,7 +171,39 @@ describe("U5 — POST /api/blocks/reorder", () => {
     } as any);
 
     expect(purgeSpy).toHaveBeenCalledTimes(1);
-    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    expect(purgeSpy.mock.calls[0][1]).toBe("alex");
     purgeSpy.mockRestore();
+  });
+
+  // U4b — Codex round-1 finding: purge must be registered with ctx.waitUntil()
+  it("registers the purge promise with cloudflare.ctx.waitUntil() on reorder", async () => {
+    const waitUntilSpy = vi.fn();
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify(null), { status: 200 }),
+    );
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({
+        body: { page_id: PAGE_ID, ordered_ids: IDS },
+        bearer: "tok",
+      }),
+      context: {
+        cloudflare: {
+          env: { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY },
+          ctx: { waitUntil: waitUntilSpy },
+        },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(waitUntilSpy).toHaveBeenCalledTimes(1);
+    expect(waitUntilSpy.mock.calls[0][0]).toBeInstanceOf(Promise);
   });
 });

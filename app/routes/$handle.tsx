@@ -40,6 +40,25 @@ import type { Route } from "./+types/$handle";
 import { fetchPublishedPage, type PublishedPageBundle } from "~/lib/public-page-query";
 import { getBlockRenderer } from "~/lib/block-render-registry";
 import { buildAvatarPreviewUrl } from "~/routes/api.avatar.$key";
+import { PublicChrome } from "~/components/PublicChrome";
+import publicCreatorStyles from "~/styles/public-creator.css?url";
+
+// ── Public canonical origin (TR-tadaify-009; share cards require absolute URLs)
+//
+// Used to turn `buildAvatarPreviewUrl()`'s relative path into an absolute URL
+// for the `og:image` / `twitter:image` meta tags. Social crawlers reject
+// relative URLs (Codex round-1 finding #3).
+export const SHARE_CARD_ORIGIN = "https://tadaify.com";
+
+// ── Stylesheet registration ─────────────────────────────────────────────────
+//
+// `public-creator.css` ships `.creator-shell`, `.identity`, `.avatar`,
+// `.name`, `.bio`, `.handle-pill`, `.blocks`, `.not-found`, `.render-error`,
+// and the `.public-chrome-*` chrome selectors. Without this `links` export
+// the visitor sees browser-default markup — Codex round-1 finding #2.
+export const links: Route.LinksFunction = () => [
+  { rel: "stylesheet", href: publicCreatorStyles },
+];
 
 // ── Cache headers ─────────────────────────────────────────────────────────────
 
@@ -153,7 +172,7 @@ export function meta({ data }: Route.MetaArgs) {
     return [{ title: "Page not found · tadaify" }];
   }
   const { handle, displayName, bio, avatarUrl } = data as LoaderData;
-  const url = `https://tadaify.com/${handle}`;
+  const url = `${SHARE_CARD_ORIGIN}/${handle}`;
   const title = `${displayName} · tadaify.com/${handle}`;
   const description = bio || `${displayName} on tadaify.`;
 
@@ -169,8 +188,15 @@ export function meta({ data }: Route.MetaArgs) {
     { name: "twitter:description", content: description },
   ];
   if (avatarUrl) {
-    tags.push({ property: "og:image", content: avatarUrl });
-    tags.push({ name: "twitter:image", content: avatarUrl });
+    // Codex round-1 finding #3: og:image MUST be absolute. `buildAvatarPreviewUrl()`
+    // returns `/api/avatar/<key>`; share-card crawlers (Facebook, X/Twitter,
+    // LinkedIn, iMessage…) reject relative URLs. Anchor against the canonical
+    // tadaify.com origin — the share card lives at the public canonical URL.
+    const absoluteAvatarUrl = avatarUrl.startsWith("http")
+      ? avatarUrl
+      : `${SHARE_CARD_ORIGIN}${avatarUrl}`;
+    tags.push({ property: "og:image", content: absoluteAvatarUrl });
+    tags.push({ name: "twitter:image", content: absoluteAvatarUrl });
   }
   return tags;
 }
@@ -218,26 +244,28 @@ export default function PublicCreatorPage({
   const { handle, displayName, bio, avatarUrl, blocks } = loaderData as LoaderData;
 
   return (
-    <div className="creator-shell">
-      <aside className="identity">
-        <Avatar
-          src={avatarUrl}
-          alt={displayName}
-          fallbackInitials={computeInitials(displayName)}
-        />
-        <h1 className="name">{displayName}</h1>
-        {bio ? <p className="bio">{bio}</p> : null}
-        <p className="handle-pill" aria-label="creator handle">
-          tadaify.com/{handle}
-        </p>
-      </aside>
-      <section className="blocks" aria-label="creator blocks">
-        {blocks.map((block) => {
-          const renderer = getBlockRenderer(block.block_type);
-          return <PublicBlockSlot key={block.id} block={block} renderer={renderer} />;
-        })}
-      </section>
-    </div>
+    <PublicChrome>
+      <div className="creator-shell">
+        <aside className="identity">
+          <Avatar
+            src={avatarUrl}
+            alt={displayName}
+            fallbackInitials={computeInitials(displayName)}
+          />
+          <h1 className="name">{displayName}</h1>
+          {bio ? <p className="bio">{bio}</p> : null}
+          <p className="handle-pill" aria-label="creator handle">
+            tadaify.com/{handle}
+          </p>
+        </aside>
+        <section className="blocks" aria-label="creator blocks">
+          {blocks.map((block) => {
+            const renderer = getBlockRenderer(block.block_type);
+            return <PublicBlockSlot key={block.id} block={block} renderer={renderer} />;
+          })}
+        </section>
+      </div>
+    </PublicChrome>
   );
 }
 
@@ -257,25 +285,29 @@ export function ErrorBoundary(): ReactNode {
   const error = useRouteError();
   if (isRouteErrorResponse(error) && error.status === 404) {
     return (
-      <main className="not-found" role="main">
-        <h1>Page not found</h1>
-        <p>
-          We couldn&apos;t find a tadaify creator at this address. The handle may
-          not exist yet, or the creator hasn&apos;t published their page.
-        </p>
+      <PublicChrome>
+        <main className="not-found" role="main">
+          <h1>Page not found</h1>
+          <p>
+            We couldn&apos;t find a tadaify creator at this address. The handle
+            may not exist yet, or the creator hasn&apos;t published their page.
+          </p>
+          <p>
+            <a href="/">Back to tadaify</a>
+          </p>
+        </main>
+      </PublicChrome>
+    );
+  }
+  return (
+    <PublicChrome>
+      <main className="render-error" role="main">
+        <h1>Something went wrong</h1>
+        <p>We hit an unexpected error rendering this page. Please try again.</p>
         <p>
           <a href="/">Back to tadaify</a>
         </p>
       </main>
-    );
-  }
-  return (
-    <main className="render-error" role="main">
-      <h1>Something went wrong</h1>
-      <p>We hit an unexpected error rendering this page. Please try again.</p>
-      <p>
-        <a href="/">Back to tadaify</a>
-      </p>
-    </main>
+    </PublicChrome>
   );
 }

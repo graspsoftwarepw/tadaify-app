@@ -18,7 +18,10 @@
 
 import type { Route } from "./+types/api.blocks.$id.duplicate";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
-import { purgeCacheForHandle } from "~/lib/cache-purge";
+import {
+  purgeCacheForHandleAndAwait,
+  type CachePurgeWaitable,
+} from "~/lib/cache-purge";
 import { resolveHandleForUser } from "~/lib/resolve-handle-for-purge";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -36,6 +39,11 @@ function getEnv(context: unknown): WorkerEnv {
   return (
     (context as { cloudflare?: { env?: WorkerEnv } }).cloudflare?.env ?? {}
   );
+}
+
+function getCtx(context: unknown): CachePurgeWaitable | undefined {
+  return (context as { cloudflare?: { ctx?: CachePurgeWaitable } }).cloudflare
+    ?.ctx;
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -101,6 +109,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const newBlockId = (await rpcRes.json()) as string;
 
   // TR-tadaify-010 — purge edge cache after successful duplicate.
+  // Registered with ctx.waitUntil() so the runtime keeps the purge alive
+  // past the response.
   if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     const handle = await resolveHandleForUser(
       userId,
@@ -108,10 +118,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       SUPABASE_SERVICE_ROLE_KEY,
     );
     if (handle) {
-      void purgeCacheForHandle(handle, undefined, {
+      purgeCacheForHandleAndAwait(getCtx(context), handle, undefined, {
         CF_ZONE_ID: env.CF_ZONE_ID,
         CF_API_TOKEN: env.CF_API_TOKEN,
-      }).catch((e) => console.error("[cache-purge] threw unexpectedly", e));
+      });
     }
   }
 

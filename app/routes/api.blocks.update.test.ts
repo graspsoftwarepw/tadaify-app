@@ -130,9 +130,10 @@ describe("U3 — PATCH /api/blocks/:id update", () => {
   });
 
   // U4 — TR-tadaify-010 cache-purge hook (#202)
-  it("calls purgeCacheForHandle after successful PATCH", async () => {
+  // Codex round-1 fix: spy on the waitUntil-aware wrapper used by the route.
+  it("calls purgeCacheForHandle (via purgeCacheForHandleAndAwait) after successful PATCH", async () => {
     const purgeSpy = vi
-      .spyOn(cachePurge, "purgeCacheForHandle")
+      .spyOn(cachePurge, "purgeCacheForHandleAndAwait")
       .mockResolvedValue({ ok: true });
 
     mockFetch.mockResolvedValueOnce(
@@ -155,7 +156,39 @@ describe("U3 — PATCH /api/blocks/:id update", () => {
     } as any);
 
     expect(purgeSpy).toHaveBeenCalledTimes(1);
-    expect(purgeSpy.mock.calls[0][0]).toBe("alex");
+    // signature: (ctx, handle, customDomain, env) — handle is arg[1]
+    expect(purgeSpy.mock.calls[0][1]).toBe("alex");
     purgeSpy.mockRestore();
+  });
+
+  // U4b — Codex round-1 finding: purge must be registered with ctx.waitUntil()
+  it("registers the purge promise with cloudflare.ctx.waitUntil() on PATCH", async () => {
+    const waitUntilSpy = vi.fn();
+
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: USER_ID }), { status: 200 }),
+    );
+    const headers = new Headers({ "Content-Range": "0-0/1" });
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([MOCK_UPDATED_BLOCK]), { status: 200, headers }),
+    );
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ handle: "alex" }]), { status: 200 }),
+    );
+
+    await action({
+      request: makeRequest({ body: { title: "x" }, bearer: "tok" }),
+      context: {
+        cloudflare: {
+          env: { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY },
+          ctx: { waitUntil: waitUntilSpy },
+        },
+      },
+      params: makeParams(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    expect(waitUntilSpy).toHaveBeenCalledTimes(1);
+    expect(waitUntilSpy.mock.calls[0][0]).toBeInstanceOf(Promise);
   });
 });
