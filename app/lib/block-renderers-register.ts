@@ -23,6 +23,7 @@ import { AccordionBlockRenderer } from "~/components/blocks/public/AccordionBloc
 import { SocialBlockRenderer } from "~/components/blocks/public/SocialBlockRenderer";
 import { EmbedBlockRenderer } from "~/components/blocks/public/EmbedBlockRenderer";
 import { CustomHtmlBlockRenderer } from "~/components/blocks/public/CustomHtmlBlockRenderer";
+import { NewsletterBlockRenderer } from "~/components/blocks/public/NewsletterBlockRenderer";
 
 registerBlockRenderer("link", LinkBlockRenderer);
 registerBlockRenderer("product", ProductBlockRenderer);
@@ -34,3 +35,4 @@ registerBlockRenderer("accordion", AccordionBlockRenderer);
 registerBlockRenderer("social", SocialBlockRenderer);
 registerBlockRenderer("embed", EmbedBlockRenderer);
 registerBlockRenderer("custom-html", CustomHtmlBlockRenderer);
+registerBlockRenderer("newsletter", NewsletterBlockRenderer);
