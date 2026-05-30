@@ -42,6 +42,7 @@ import { InsightsPanel } from "~/components/InsightsPanel";
 import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
 import { AffiliatePanel } from "~/components/AffiliatePanel";
 import { SettingsPanel } from "~/components/SettingsPanel";
+import { AdminPanel } from "~/components/AdminPanel";
 import type { SubTabId } from "~/components/DesignBreadcrumbStepper";
 import { deriveOnboardingState } from "~/lib/onboarding-state";
 import type { OnboardingState } from "~/lib/onboarding-state";
@@ -87,7 +88,7 @@ export interface DashboardViewModel {
 
 // ─── Helpers — URL param parsing ────────────────────────────────────────────
 
-const VALID_TABS = ["page", "design", "insights", "shop", "settings", "affiliate"] as const;
+const VALID_TABS = ["page", "design", "insights", "shop", "settings", "affiliate", "admin"] as const;
 const VALID_DEVICES = ["mobile", "tablet", "desktop"] as const;
 
 /**
@@ -417,6 +418,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           displayName={profile.display_name}
           tier={profile.tier}
           activeTab={activeTab}
+          activeSubTab={rawSubTab}
           onTabChange={handleTabChange}
           designAccordion={
             <AppSidebarDesignAccordion
@@ -470,11 +472,18 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
               email={profile.email_for_settings ?? ""}
             />
           )}
+          {activeTab === "admin" && (
+            <AdminPanel
+              activeSubTab={rawSubTab}
+              handle={profile.handle}
+            />
+          )}
           {activeTab !== "page" &&
             activeTab !== "design" &&
             activeTab !== "insights" &&
             activeTab !== "affiliate" &&
-            activeTab !== "settings" && (
+            activeTab !== "settings" &&
+            activeTab !== "admin" && (
             /* Placeholder panel for other tabs */
             <div
               style={{
