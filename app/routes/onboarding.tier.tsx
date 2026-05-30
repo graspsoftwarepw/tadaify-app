@@ -170,75 +170,6 @@ export async function persistAvatarR2Key(
   }
 }
 
-// ─── Tier data ─────────────────────────────────────────────────────────────────
-
-const TIERS = [
-  {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    period: "",
-    highlight: true,
-    ribbon: "Your starting plan",
-    features: [
-      "1 page",
-      "5 AI credits / day",
-      "All core link blocks",
-      "Custom handle",
-      "Basic analytics",
-      "tadaify.com/<handle>",
-    ],
-  },
-  {
-    id: "creator",
-    name: "Creator",
-    price: CREATOR_PRICE_MONTHLY,
-    period: "/mo",
-    highlight: false,
-    ribbon: null,
-    features: [
-      "5 pages",
-      "50 AI credits / day",
-      "Priority blocks (booking, newsletter)",
-      "Custom domain",
-      "Advanced analytics",
-      "Remove tadaify badge",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: PRO_PRICE_MONTHLY,
-    period: "/mo",
-    highlight: false,
-    ribbon: null,
-    features: [
-      "Unlimited pages",
-      "200 AI credits / day",
-      "Affiliate program access",
-      "Pro integrations",
-      "Team collaboration (2 seats)",
-      "Priority support",
-    ],
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: BUSINESS_PRICE_MONTHLY,
-    period: "/mo",
-    highlight: false,
-    ribbon: null,
-    features: [
-      "Everything in Pro",
-      "Unlimited AI credits",
-      "White-label option",
-      "10 team seats",
-      "Custom integrations",
-      "Dedicated support",
-    ],
-  },
-] as const;
-
 // ─── Loader ────────────────────────────────────────────────────────────────────
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -320,219 +251,151 @@ export async function action({ request, context }: Route.ActionArgs) {
 export default function TierPage({ loaderData }: Route.ComponentProps) {
   const { handle, platforms, socials, name, bio, av, tpl } = loaderData;
 
-  // Back URL preserves accumulated state
+  // Back URL preserves accumulated state (Slice C: back to template, step 4/5)
   const backParams = new URLSearchParams();
   if (handle) backParams.set("handle", handle);
+  if (tpl) backParams.set("tpl", tpl);
   if (platforms) backParams.set("platforms", platforms);
   if (socials) backParams.set("socials", socials);
   if (name) backParams.set("name", name);
   if (bio) backParams.set("bio", bio);
   if (av) backParams.set("av", av);
-  if (tpl) backParams.set("tpl", tpl);
   const backUrl = `/onboarding/template?${backParams.toString()}`;
 
   return (
-    <div style={{ maxWidth: 900 }}>
-      <p
-        style={{
-          fontSize: 15,
-          color: "var(--fg-muted)",
-          lineHeight: 1.6,
-          marginBottom: 28,
-          marginTop: -16,
-        }}
-      >
-        Most features are <strong>free to try</strong>. Take tada!ify for a spin, build your
-        page, see if it fits — then upgrade whenever you want from Settings → Billing.
-      </p>
+    <>
+      {/* Progress bar: step 5 of 5 (Slice C revision: 4 → 5 steps) */}
+      <div className="progress-bar">
+        <div className="progress-step done"><span className="progress-dot"></span></div>
+        <div className="progress-line done"></div>
+        <div className="progress-step done"><span className="progress-dot"></span></div>
+        <div className="progress-line done"></div>
+        <div className="progress-step done"><span className="progress-dot"></span></div>
+        <div className="progress-line done"></div>
+        <div className="progress-step done"><span className="progress-dot"></span></div>
+        <div className="progress-line done"></div>
+        <div className="progress-step active"><span className="progress-dot"></span></div>
+      </div>
+      <p className="progress-label">Step 5 of 5 · Compare plans</p>
 
-      {/* Tier comparison grid (read-only, DEC-311=A) */}
-      <div
-        aria-label="Plan comparison"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-          gap: 12,
-          marginBottom: 28,
-        }}
-        className="tier-grid-responsive"
-      >
-        {TIERS.map((tier) => (
-          <div
-            key={tier.id}
-            aria-label={`${tier.name} plan${tier.ribbon ? ` — ${tier.ribbon}` : ""}`}
-            style={{
-              border: tier.highlight
-                ? "2px solid var(--brand-primary)"
-                : "1px solid var(--border-strong)",
-              borderRadius: "var(--radius-md)",
-              padding: "20px 16px",
-              background: tier.highlight ? "rgba(99, 102, 241, 0.04)" : "var(--bg-elevated)",
-              position: "relative",
-            }}
-          >
-            {tier.ribbon && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: -1,
-                  left: 16,
-                  right: 16,
-                  textAlign: "center",
-                  background: "var(--brand-primary)",
-                  color: "#FFF",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: "3px 8px",
-                  borderRadius: "0 0 6px 6px",
-                  letterSpacing: "0.05em",
-                }}
-                aria-label={tier.ribbon}
-              >
-                {tier.ribbon}
-              </div>
-            )}
-
-            <div
-              style={{
-                marginTop: tier.ribbon ? 20 : 0,
-                marginBottom: 4,
-                fontSize: 16,
-                fontWeight: 700,
-                color: tier.highlight ? "var(--brand-primary)" : "var(--fg)",
-              }}
-            >
-              {tier.name}
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <span
-                style={{
-                  fontSize: 26,
-                  fontWeight: 700,
-                  color: "var(--fg)",
-                  lineHeight: 1,
-                }}
-              >
-                {tier.price}
-              </span>
-              {tier.period && (
-                <span style={{ fontSize: 13, color: "var(--fg-muted)" }}>{tier.period}</span>
-              )}
-            </div>
-
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              {tier.features.map((f) => (
-                <li
-                  key={f}
-                  style={{
-                    fontSize: 13,
-                    color: "var(--fg-muted)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 6,
-                  }}
-                >
-                  <span
-                    style={{ color: "var(--success)", fontWeight: 700, flexShrink: 0 }}
-                    aria-hidden
-                  >
-                    ✓
-                  </span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div style={{ textAlign: "center", marginTop: 40 }}>
+        <h1>You're all set — starting on Free.</h1>
+        <p className="lead text-muted" style={{ marginTop: 12, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+          Most features are <strong>free to try</strong>. Take tadaify for a spin, build your page, see if it fits — then
+          upgrade anytime from <strong>Settings → Billing</strong> if you want more pages, custom domains, or extra AI credits.
+        </p>
       </div>
 
-      {/* Plan-lock confidence chip — DEC-311=A / issue requirement: "🔒 Price locked for life" */}
-      <div
-        aria-label="Price locked for life guarantee"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          background: "rgba(245,158,11,0.08)",
-          border: "1px solid rgba(245,158,11,0.25)",
-          borderRadius: "var(--radius-full, 9999px)",
-          padding: "6px 14px",
-          fontSize: 13,
-          fontWeight: 600,
-          color: "var(--warning, #B45309)",
-          marginBottom: 16,
-        }}
-      >
-        <span aria-hidden>🔒</span>
-        When you do upgrade — your price is locked for life
+      <div className="onb-tier-recommendation">
+        ✨ No credit card needed today. Here's what each plan includes so you know what's available when you're ready.
       </div>
 
-      <p style={{ fontSize: 13, color: "var(--fg-muted)", marginBottom: 24, lineHeight: 1.5 }}>
-        Upgrade whenever you want from <strong>Settings → Billing</strong>. 30-day money-back on
-        any paid tier.
-      </p>
+      {/* Price-lock-for-life guarantee — info only, applies once user upgrades */}
+      <div className="onb-tier-pricelock">
+        <div className="onb-tier-pricelock-icon" aria-hidden="true">🔒</div>
+        <div className="onb-tier-pricelock-body">
+          <h4 className="onb-tier-pricelock-title">When you do upgrade, your price is locked for life.</h4>
+          <p className="onb-tier-pricelock-text">
+            Subscribe at <strong>$7.99/mo</strong> later → pay <strong>$7.99/mo</strong> in year 3, year 5, year 10.
+            As long as your subscription stays active, we <strong>never</strong> raise your price. Ever.
+            Only if you cancel and re-subscribe do you pay the then-current price.
+          </p>
+        </div>
+      </div>
 
-      {/* DEC-366=A: action redirects to /app directly — no form data needed */}
-      <form method="post">
+      {/* Tier cards: read-only comparison (DEC-311=A refined) */}
+      <div className="onb-tier-grid">
+        <div className="onb-tier-card onb-tier-starting" data-tier="free">
+          <div className="onb-tier-ribbon">✓ Your starting plan</div>
+          <h3>Free</h3>
+          <div className="onb-tier-price">$0</div>
+          <div className="text-sm text-muted">Forever · no credit card</div>
+          <ul>
+            <li>1 page (homepage) <span className="onb-tier-soon">coming soon</span></li>
+            <li>All core features</li>
+            <li>Unlimited blocks</li>
+            <li>30d analytics</li>
+            <li>5 AI credits/mo</li>
+            <li>tadaify.com/you subdomain</li>
+          </ul>
+        </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <Link
-            to={backUrl}
-            style={{
-              padding: "10px 18px",
-              background: "transparent",
-              border: "1px solid var(--border-strong)",
-              borderRadius: "var(--radius)",
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--fg-muted)",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-            aria-label="Back to template selection"
-          >
-            ← Back
-          </Link>
+        <div className="onb-tier-card" data-tier="creator">
+          <h3>Creator</h3>
+          <div className="onb-tier-price">{CREATOR_PRICE_MONTHLY} <span className="onb-tier-per">/mo</span></div>
+          <div className="text-sm text-muted">Billed annually · $95.88/yr</div>
+          <span className="onb-tier-lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
+          <ul>
+            <li>5 pages — privacy, about, portfolio… <span className="onb-tier-soon">coming soon</span></li>
+            <li>Everything in Free</li>
+            <li>1 custom domain included</li>
+            <li>180d analytics</li>
+            <li>20 AI credits/mo</li>
+            <li>Sell products + communities</li>
+            <li>Priority support</li>
+          </ul>
+        </div>
 
-          <button
-            type="submit"
-            style={{
-              flex: 1,
-              minHeight: 44,
-              padding: "10px 24px",
-              background: "var(--brand-primary)",
-              color: "#FFF",
-              border: "none",
-              borderRadius: "var(--radius)",
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
+        <div className="onb-tier-card" data-tier="pro">
+          <h3>Pro</h3>
+          <div className="onb-tier-price">{PRO_PRICE_MONTHLY} <span className="onb-tier-per">/mo</span></div>
+          <div className="text-sm text-muted">Billed annually · $239.88/yr</div>
+          <span className="onb-tier-lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
+          <ul>
+            <li>20 pages <span className="onb-tier-soon">coming soon</span></li>
+            <li>Everything in Creator</li>
+            <li>1 custom domain included</li>
+            <li>Unlimited analytics</li>
+            <li>100 AI credits/mo</li>
+            <li>Creator API + MCP server (Claude/ChatGPT)</li>
+            <li>A/B testing</li>
+            <li>Advanced integrations</li>
+          </ul>
+        </div>
+
+        <div className="onb-tier-card" data-tier="business">
+          <h3>Business</h3>
+          <div className="onb-tier-price">{BUSINESS_PRICE_MONTHLY} <span className="onb-tier-per">/mo</span></div>
+          <div className="text-sm text-muted">Billed annually · $599.88/yr</div>
+          <span className="onb-tier-lock-badge" title="Price locked as long as your subscription stays active">🔒 Locked for life</span>
+          <ul>
+            <li>Unlimited pages <span className="onb-tier-soon">coming soon</span></li>
+            <li>Everything in Pro</li>
+            <li>10 custom domains (agency)</li>
+            <li>Agency multi-client</li>
+            <li>Unlimited AI credits</li>
+            <li>White-label exports</li>
+            <li>Dedicated success manager</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Universal add-on: applies to every plan, not just Free */}
+      <div className="onb-tier-addon">
+        <span className="onb-tier-addon-plus">+</span>
+        <p>
+          Need extra domains later? Add <strong>$1.99/mo per custom domain</strong> to any plan — Free included. No upgrade needed.
+        </p>
+      </div>
+
+      {/* DEC-366=A: action redirects to /app directly — no form data needed.
+          DEC-311=A: single CTA, every user starts Free; upgrade lives in Settings → Billing. */}
+      <div style={{ display: "flex", gap: 12, marginTop: 40, flexWrap: "wrap", justifyContent: "center" }}>
+        <form method="post">
+          <button type="submit" className="btn btn-primary btn-lg">
             Take me to my dashboard →
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
 
-      <style>{`
-        @media (max-width: 700px) {
-          .tier-grid-responsive { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 400px) {
-          .tier-grid-responsive { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </div>
+      <p className="text-sm text-muted" style={{ textAlign: "center", marginTop: 20 }}>
+        Upgrade whenever you want from <strong>Settings → Billing</strong>. 30-day money-back on any paid tier.<br />
+        🔒 <strong>Price locked for life</strong> — we never raise the price on active subscribers.
+      </p>
+
+      <p style={{ textAlign: "center", marginTop: 24 }}>
+        <Link to={backUrl} className="text-sm text-muted">← back</Link>
+      </p>
+    </>
   );
 }
