@@ -502,9 +502,10 @@ export function AppSidebar({
         </button>
         <button
           type="button"
-          className="nav-item"
+          className={`nav-item${activeTab === "feedback" ? " active" : ""}`}
           data-nav="feedback"
           data-tip="Send feedback to tadaify"
+          onClick={() => onTabChange("feedback")}
         >
           <svg
             viewBox="0 0 24 24"

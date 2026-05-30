@@ -42,6 +42,7 @@ import { InsightsPanel } from "~/components/InsightsPanel";
 import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
 import { AffiliatePanel } from "~/components/AffiliatePanel";
 import { DomainPanel } from "~/components/DomainPanel";
+import { FeedbackPanel } from "~/components/FeedbackPanel";
 import { SettingsPanel } from "~/components/SettingsPanel";
 import { AdminPanel } from "~/components/AdminPanel";
 import type { SubTabId } from "~/components/DesignBreadcrumbStepper";
@@ -89,7 +90,7 @@ export interface DashboardViewModel {
 
 // ─── Helpers — URL param parsing ────────────────────────────────────────────
 
-const VALID_TABS = ["page", "design", "insights", "shop", "settings", "affiliate", "admin", "domain"] as const;
+const VALID_TABS = ["page", "design", "insights", "shop", "settings", "affiliate", "admin", "domain", "feedback"] as const;
 const VALID_DEVICES = ["mobile", "tablet", "desktop"] as const;
 
 /**
@@ -469,6 +470,9 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           {activeTab === "domain" && (
             <DomainPanel handle={profile.handle} tier={profile.tier} />
           )}
+          {activeTab === "feedback" && (
+            <FeedbackPanel />
+          )}
           {activeTab === "settings" && (
             <SettingsPanel
               activeSubTab={rawSubTab}
@@ -487,6 +491,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
             activeTab !== "insights" &&
             activeTab !== "affiliate" &&
             activeTab !== "domain" &&
+            activeTab !== "feedback" &&
             activeTab !== "settings" &&
             activeTab !== "admin" && (
             /* Placeholder panel for other tabs */
