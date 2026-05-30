@@ -127,20 +127,28 @@ VALUES (
   'Home', true, now(), now(), now()
 ) ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO blocks (id, page_id, user_id, block_type, title, url, is_visible, position, created_at, updated_at)
+-- F-BLOCK-LINK-001 slice A (#56): seed real Link button content + meta so
+-- visiting /test_render_s1 shows three styled buttons instead of empty cards.
+INSERT INTO blocks (id, page_id, user_id, block_type, title, url, is_visible, position, meta, created_at, updated_at)
 VALUES
   ('00000000-0000-0000-0000-0000000b1001',
    '00000000-0000-0000-0000-0000000a0001',
    '00000000-0000-0000-0000-000000000a01',
-   'link', 'S1 block 1', 'https://example.com/1', true, 0, now(), now()),
+   'link', 'Listen on Spotify', 'https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF', true, 0,
+   '{"icon":"simple-icons:spotify","newtab":true}'::jsonb,
+   now(), now()),
   ('00000000-0000-0000-0000-0000000b1002',
    '00000000-0000-0000-0000-0000000a0001',
    '00000000-0000-0000-0000-000000000a01',
-   'link', 'S1 block 2', 'https://example.com/2', true, 1, now(), now()),
+   'link', 'Watch on YouTube', 'https://youtube.com/@example', true, 1,
+   '{"icon":"simple-icons:youtube","newtab":true}'::jsonb,
+   now(), now()),
   ('00000000-0000-0000-0000-0000000b1003',
    '00000000-0000-0000-0000-0000000a0001',
    '00000000-0000-0000-0000-000000000a01',
-   'link', 'S1 block 3', 'https://example.com/3', true, 2, now(), now())
+   'link', 'Buy my newsletter', 'https://example.com/newsletter', true, 2,
+   '{"icon":"lucide:mail","newtab":true}'::jsonb,
+   now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 -- ---- creator 5: test_render_s5 (3 blocks, middle one hidden) ----

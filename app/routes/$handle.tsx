@@ -39,6 +39,10 @@ import { redirect, isRouteErrorResponse, useRouteError } from "react-router";
 import type { Route } from "./+types/$handle";
 import { fetchPublishedPage, type PublishedPageBundle } from "~/lib/public-page-query";
 import { getBlockRenderer } from "~/lib/block-render-registry";
+// Side-effect import: registers per-block-type renderers (link, …) into the
+// shared block-render-registry. Must run BEFORE the loader/component executes,
+// so it lives at module top level alongside the registry import itself.
+import "~/lib/block-renderers-register";
 import { buildAvatarPreviewUrl } from "~/routes/api.avatar.$key";
 import { PublicChrome } from "~/components/PublicChrome";
 import publicCreatorStyles from "~/styles/public-creator.css?url";

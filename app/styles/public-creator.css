@@ -201,6 +201,86 @@ body:has(.creator-shell) {
   color: var(--fg);
 }
 
+/* ── Link block (F-BLOCK-LINK-001 slice A) ───────────────────────────────
+ *
+ * The Link button is rendered as `<article class="block-link-wrap"><a class="block-link">…</a></article>`.
+ * The wrapper inherits the default `.blocks article` background/border/padding,
+ * but the inner anchor is what carries the hover-lift and click affordance.
+ *
+ * Visual contract: mockup creator-public.html `.cb` selector (rounded card,
+ * hover-lift, brand-bordered focus). Extracted with class names scoped to
+ * the link type so other types can layer their own visuals later. */
+.blocks article.block-link-wrap {
+  /* Drop the default chrome — the inner <a> becomes the visible card so
+     the entire surface is clickable instead of a small text link. */
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 20px 22px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.block-link:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--brand-primary);
+}
+
+.block-link:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+.block-link[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--fg-muted);
+  opacity: 0.7;
+}
+
+.block-link[aria-disabled="true"]:hover {
+  /* Disabled blocks don't lift — keeps the "no fake margin" rule honest. */
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+}
+
+.block-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.block-link-label {
+  display: inline-block;
+}
+
 /* ── Error states (404 + 500) ─────────────────────────────────────────── */
 
 .not-found,

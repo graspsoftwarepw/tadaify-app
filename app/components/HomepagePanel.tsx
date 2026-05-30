@@ -23,8 +23,9 @@
  * Covers: AC#7-#12, dashboard mockup-fidelity Pass 2
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import type { OnboardingState } from "~/lib/onboarding-state";
+import { LinkBlockEditor } from "~/components/blocks/LinkBlockEditor";
 
 export interface Block {
   id: string;
@@ -40,6 +41,12 @@ interface HomepagePanelProps {
   displayName: string | null;
   bio: string | null;
   blocks: Block[];
+  /**
+   * Homepage page id — required for creating new blocks. When null, the
+   * Add-link CTA is disabled (the user is still in the interrupted
+   * onboarding state and has not provisioned a homepage yet).
+   */
+  pageId?: string | null;
   onboardingState: OnboardingState;
   welcomeDismissed: boolean;
   onWelcomeDismiss: () => void;
@@ -244,7 +251,7 @@ function IconLinkSmall() {
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Map a block_type to its mockup brand class + inline icon. */
-function getBlockBrand(blockType: string): { className: string; Icon: () => JSX.Element } {
+function getBlockBrand(blockType: string): { className: string; Icon: () => ReactElement } {
   const t = blockType.toLowerCase();
   if (t.includes("instagram") || t === "ig") return { className: "social-ig", Icon: IconInstagram };
   if (t.includes("tiktok") || t === "tt") return { className: "social-tt", Icon: IconTikTok };
@@ -268,6 +275,7 @@ export function HomepagePanel({
   displayName,
   bio,
   blocks,
+  pageId = null,
   // onboardingState + welcomeDismissed/onDismiss kept on the contract so the
   // parent route doesn't need to change, even though Pass 2 renders the
   // mockup's inline welcome banner (only-ready) instead of WelcomeBanner.
@@ -281,6 +289,7 @@ export function HomepagePanel({
   // TODO: wire to account_settings.pinned_message
   const [pinnedEnabled, setPinnedEnabled] = useState(false);
   const [pinnedMsg, setPinnedMsg] = useState("");
+  const [linkEditorOpen, setLinkEditorOpen] = useState(false);
 
   // Profile editor — toggled by the pencil button. TODO: wire to profile
   // update endpoint (#171 follow-up).
@@ -861,7 +870,9 @@ export function HomepagePanel({
               type="button"
               className="add-block"
               data-testid="add-block-cta"
-              onClick={openAddBlockModal}
+              onClick={() => pageId && setLinkEditorOpen(true)}
+              disabled={!pageId}
+              aria-label={pageId ? "Add a block" : "Add a block (finish onboarding first)"}
             >
               <IconPlus />
               Add a block
@@ -879,7 +890,8 @@ export function HomepagePanel({
               type="button"
               className="empty-card"
               data-testid="empty-state-add-link"
-              onClick={openAddBlockModal}
+              onClick={() => pageId && setLinkEditorOpen(true)}
+              disabled={!pageId}
             >
               <span className="ec-ic">
                 <IconLinkSmall />
@@ -920,6 +932,25 @@ export function HomepagePanel({
           </div>
         </div>
       )}
+
+      {/* Link block editor — opens from "Add a link" empty-state card or the
+          "Add a block" CTA. Only mounted when we have a pageId; the editor
+          POSTs to /api/blocks which requires a page_id UUID. */}
+      {pageId ? (
+        <LinkBlockEditor
+          open={linkEditorOpen}
+          onOpenChange={setLinkEditorOpen}
+          pageId={pageId}
+          onSaved={() => {
+            // Slice A doesn't optimistically merge the new block into the
+            // local list — the dashboard reloads from SSR on next nav. A
+            // future slice (live-preview parity) will hot-swap without reload.
+            if (typeof window !== "undefined") {
+              window.location.reload();
+            }
+          }}
+        />
+      ) : null}
     </section>
   );
 }
