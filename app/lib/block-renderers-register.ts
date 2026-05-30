@@ -22,6 +22,7 @@ import { VideoBlockRenderer } from "~/components/blocks/public/VideoBlockRendere
 import { AccordionBlockRenderer } from "~/components/blocks/public/AccordionBlockRenderer";
 import { SocialBlockRenderer } from "~/components/blocks/public/SocialBlockRenderer";
 import { EmbedBlockRenderer } from "~/components/blocks/public/EmbedBlockRenderer";
+import { CustomHtmlBlockRenderer } from "~/components/blocks/public/CustomHtmlBlockRenderer";
 
 registerBlockRenderer("link", LinkBlockRenderer);
 registerBlockRenderer("product", ProductBlockRenderer);
@@ -32,3 +33,4 @@ registerBlockRenderer("video", VideoBlockRenderer);
 registerBlockRenderer("accordion", AccordionBlockRenderer);
 registerBlockRenderer("social", SocialBlockRenderer);
 registerBlockRenderer("embed", EmbedBlockRenderer);
+registerBlockRenderer("custom-html", CustomHtmlBlockRenderer);

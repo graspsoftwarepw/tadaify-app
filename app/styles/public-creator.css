@@ -1398,3 +1398,40 @@ body:has(.creator-shell) {
   text-align: center;
   line-height: 1.5;
 }
+
+/* ── Custom HTML block (F-BLOCK-CUSTOMHTML-001) ───────────────────────────
+ *
+ * Rendered as `<article class="block-custom-html-wrap"><iframe class="block-custom-html-frame"
+ * sandbox="allow-scripts" srcdoc="…"></iframe></article>`. The sandboxed frame
+ * isolates creator code from the public page (opaque origin). Fixed default
+ * height with internal scroll — see the renderer's "Known limitation" note.
+ *
+ * Visual contract: app-block-editor.html BLOCK_TYPES.custom-html (Pro+). */
+.blocks article.block-custom-html-wrap {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.block-custom-html-frame {
+  display: block;
+  width: 100%;
+  height: 240px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-elevated);
+}
+
+.block-custom-html-empty {
+  margin: 0;
+  padding: 16px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  background: var(--bg-muted);
+  color: var(--fg-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  text-align: center;
+}
