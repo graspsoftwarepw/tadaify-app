@@ -21,6 +21,7 @@
 import { SettingsAccount } from "./app-settings/SettingsAccount";
 import { SettingsApiKeys } from "./app-settings/SettingsApiKeys";
 import { SettingsBilling } from "./app-settings/SettingsBilling";
+import { SettingsDanger } from "./app-settings/SettingsDanger";
 
 // ─── Valid settings sub-tabs ─────────────────────────────────────────────────
 
@@ -218,6 +219,8 @@ export function SettingsPanel({ activeSubTab, handle, email = "" }: SettingsPane
           <SettingsApiKeys />
         ) : validSubTab === "team" ? (
           <div className="settings-content"><SubpagePlaceholder label="Team" /></div>
+        ) : validSubTab === "danger" ? (
+          <SettingsDanger />
         ) : (
           <div className="settings-content"><SubpagePlaceholder label="Danger zone" /></div>
         )}
