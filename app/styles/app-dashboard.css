@@ -3048,3 +3048,222 @@ body.dark-mode .app-dashboard-root .welcome-banner {
     body.dark-mode .app-dashboard-root .compare-toggle { background: #141A2D; border-color: #374151; }
     body.dark-mode .app-dashboard-root .updated-chip { color: #9CA3AF; }
     body.dark-mode .app-dashboard-root .sources-method { background: rgba(99,102,241,0.10); border-color: rgba(99,102,241,0.25); }
+    /* ===================================================================
+       AFFILIATE PANEL — mockups/tadaify-mvp/app-affiliate.html (#234)
+       All selectors are scoped under `.main-affiliate` to avoid colliding
+       with the dashboard's existing `.page-head`, `.section`, `.btn-sm`,
+       `.pill`, etc. Rules ported verbatim from the mockup's <style>
+       block; the only edits are (a) the `.app-dashboard-root .main-affiliate`
+       prefix and (b) `body.dark-mode` retained as-is (matches existing
+       pattern in this stylesheet, e.g. lines ~2048-2052).
+       =================================================================== */
+
+    /* page-head — affiliate variant (column header with badge + h1 + sub).
+       The mockup overrides the global .page-head with a different layout
+       (no flex / no actions row), so we re-declare under `.main-affiliate`. */
+    .app-dashboard-root .main-affiliate .page-head { display: block; padding-bottom: 0; border-bottom: 0; }
+    .app-dashboard-root .main-affiliate .page-head h1 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.6vw, 40px);
+      letter-spacing: -0.02em;
+      margin: 0 0 6px;
+    }
+    .app-dashboard-root .main-affiliate .page-head .sub { color: var(--fg-muted); font-size: 14.5px; max-width: 60ch; display: block; margin-top: 0; }
+    .app-dashboard-root .main-affiliate .page-head .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 99px;
+      background: rgba(245,158,11,0.16); color: #92400E;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+      margin-bottom: 8px;
+    }
+    body.dark-mode .app-dashboard-root .main-affiliate .page-head .badge { background: rgba(245,158,11,0.28); color: #FCD34D; }
+
+    /* HERO — referral link */
+    .app-dashboard-root .main-affiliate .ref-card {
+      margin-top: 28px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(245,158,11,0.08));
+      border: 1px dashed rgba(99,102,241,0.3);
+      border-radius: 16px; padding: 20px 22px;
+    }
+    .app-dashboard-root .main-affiliate .ref-card .ttl { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+    .app-dashboard-root .main-affiliate .ref-card .lead { color: var(--fg-muted); font-size: 13.5px; margin: 0 0 16px; }
+    .app-dashboard-root .main-affiliate .ref-link-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .app-dashboard-root .main-affiliate .ref-link {
+      flex: 1; min-width: 240px;
+      padding: 12px 16px; border-radius: 10px;
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--brand-primary);
+      font-family: var(--font-mono, "JetBrains Mono", monospace);
+      font-size: 14px; font-weight: 500; color: var(--brand-primary);
+      letter-spacing: 0.01em;
+      overflow-wrap: anywhere;
+    }
+    .app-dashboard-root .main-affiliate .copy-btn {
+      background: var(--brand-primary); color: #fff;
+      border: 0; border-radius: 10px;
+      padding: 12px 18px; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: background .12s;
+    }
+    .app-dashboard-root .main-affiliate .copy-btn:hover { filter: brightness(0.95); }
+    .app-dashboard-root .main-affiliate .copy-btn.copied { background: var(--success, #10B981); }
+
+    /* STATS */
+    .app-dashboard-root .main-affiliate .stats-grid {
+      margin-top: 28px;
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 760px) { .app-dashboard-root .main-affiliate .stats-grid { grid-template-columns: 1fr; } }
+    .app-dashboard-root .main-affiliate .stat-card {
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .app-dashboard-root .main-affiliate .stat-card .lbl {
+      font-size: 11.5px; font-weight: 700; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .app-dashboard-root .main-affiliate .stat-card .val { font-family: var(--font-display); font-size: 30px; font-weight: 600; letter-spacing: -0.02em; }
+    .app-dashboard-root .main-affiliate .stat-card .val .currency { color: var(--fg-muted); font-size: 18px; margin-right: 4px; }
+    .app-dashboard-root .main-affiliate .stat-card .delta { font-size: 12px; color: var(--success, #10B981); margin-top: 6px; font-weight: 600; }
+    .app-dashboard-root .main-affiliate .stat-card .delta.muted { color: var(--fg-muted); }
+
+    /* SHARE KIT */
+    .app-dashboard-root .main-affiliate .section { margin-top: 36px; }
+    .app-dashboard-root .main-affiliate .section h2 {
+      font-family: var(--font-display); font-size: 22px; font-weight: 600;
+      letter-spacing: -0.02em; margin: 0 0 4px;
+    }
+    .app-dashboard-root .main-affiliate .section .section-sub { color: var(--fg-muted); font-size: 13.5px; margin-bottom: 16px; }
+
+    .app-dashboard-root .main-affiliate .share-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 760px) { .app-dashboard-root .main-affiliate .share-grid { grid-template-columns: 1fr; } }
+    .app-dashboard-root .main-affiliate .share-card {
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 18px;
+    }
+    .app-dashboard-root .main-affiliate .share-card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .app-dashboard-root .main-affiliate .share-card .head .ic { font-size: 22px; }
+    .app-dashboard-root .main-affiliate .share-card .head .ttl { font-weight: 600; font-size: 15px; }
+    .app-dashboard-root .main-affiliate .share-card pre {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px; line-height: 1.55;
+      white-space: pre-wrap; word-wrap: break-word;
+      margin: 0 0 10px;
+      color: var(--fg);
+    }
+    .app-dashboard-root .main-affiliate .share-card .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .app-dashboard-root .main-affiliate .btn-sm {
+      padding: 7px 12px; border-radius: 8px;
+      font-size: 12.5px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border-strong); background: var(--bg-elevated);
+      color: var(--fg); font-family: inherit;
+    }
+    .app-dashboard-root .main-affiliate .btn-sm:hover { background: var(--bg-muted); }
+    .app-dashboard-root .main-affiliate .btn-sm.primary { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+    .app-dashboard-root .main-affiliate .btn-sm.primary:hover { filter: brightness(0.95); }
+
+    .app-dashboard-root .main-affiliate .graphics-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 14px;
+    }
+    @media (max-width: 760px) { .app-dashboard-root .main-affiliate .graphics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 460px) { .app-dashboard-root .main-affiliate .graphics-grid { grid-template-columns: 1fr; } }
+    .app-dashboard-root .main-affiliate .gfx {
+      aspect-ratio: 1.91 / 1;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: var(--font-display); font-size: 18px;
+      text-align: center; padding: 16px; position: relative;
+      cursor: pointer;
+      transition: transform .14s, box-shadow .14s;
+    }
+    .app-dashboard-root .main-affiliate .gfx:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.25); }
+    .app-dashboard-root .main-affiliate .gfx.warm { background: linear-gradient(135deg, #F59E0B, #EF4444); }
+    .app-dashboard-root .main-affiliate .gfx.green { background: linear-gradient(135deg, #10B981, #059669); }
+    .app-dashboard-root .main-affiliate .gfx .dl-ic {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+
+    /* REFERRALS TABLE */
+    .app-dashboard-root .main-affiliate .ref-table-wrap {
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .app-dashboard-root .main-affiliate .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .app-dashboard-root .main-affiliate .ref-table th,
+    .app-dashboard-root .main-affiliate .ref-table td {
+      padding: 14px 16px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .app-dashboard-root .main-affiliate .ref-table th {
+      font-size: 11.5px; font-weight: 700; color: var(--fg-subtle);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      background: var(--bg);
+    }
+    .app-dashboard-root .main-affiliate .ref-table tr:last-child td { border-bottom: 0; }
+    .app-dashboard-root .main-affiliate .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 99px;
+      font-size: 11.5px; font-weight: 600;
+    }
+    .app-dashboard-root .main-affiliate .pill.tier-creator  { background: rgba(99,102,241,0.14); color: var(--brand-primary); }
+    .app-dashboard-root .main-affiliate .pill.tier-pro      { background: rgba(139,92,246,0.16); color: #6D28D9; }
+    .app-dashboard-root .main-affiliate .pill.tier-business { background: rgba(245,158,11,0.18); color: #92400E; }
+    .app-dashboard-root .main-affiliate .pill.status-active { background: rgba(16,185,129,0.16); color: #065F46; }
+    .app-dashboard-root .main-affiliate .pill.status-pending{ background: rgba(245,158,11,0.16); color: #92400E; }
+    .app-dashboard-root .main-affiliate .pill.status-churned{ background: rgba(107,114,128,0.18); color: var(--fg-muted); }
+
+    /* PAYOUT NOTICE */
+    .app-dashboard-root .main-affiliate .payout-notice {
+      margin-top: 28px;
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 18px 20px;
+      display: flex; gap: 16px; align-items: center;
+      flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-affiliate .payout-notice .ic {
+      width: 44px; height: 44px; border-radius: 11px;
+      background: rgba(99,102,241,0.14);
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+      flex-shrink: 0;
+    }
+    .app-dashboard-root .main-affiliate .payout-notice .body { flex: 1; min-width: 220px; }
+    .app-dashboard-root .main-affiliate .payout-notice .body b { font-weight: 600; }
+    .app-dashboard-root .main-affiliate .payout-notice .body .muted { color: var(--fg-muted); font-size: 13px; margin-top: 4px; }
+    .app-dashboard-root .main-affiliate .payout-notice .actions { display: flex; gap: 8px; }
+
+    .app-dashboard-root .main-affiliate .tos-row {
+      margin-top: 20px; font-size: 12.5px; color: var(--fg-muted);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .app-dashboard-root .main-affiliate .tos-row a { color: var(--brand-primary); text-decoration: none; font-weight: 600; }
+    .app-dashboard-root .main-affiliate .tos-row a:hover { text-decoration: underline; }
+
+    /* DARK MODE — affiliate */
+    body.dark-mode .app-dashboard-root .main-affiliate .stat-card,
+    body.dark-mode .app-dashboard-root .main-affiliate .share-card,
+    body.dark-mode .app-dashboard-root .main-affiliate .ref-table-wrap,
+    body.dark-mode .app-dashboard-root .main-affiliate .payout-notice { background: #141A2D; border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-affiliate .ref-table th { background: #0B0F1E; color: #9CA3AF; }
+    body.dark-mode .app-dashboard-root .main-affiliate .ref-table th,
+    body.dark-mode .app-dashboard-root .main-affiliate .ref-table td { border-color: #1F2937; }
+    body.dark-mode .app-dashboard-root .main-affiliate .share-card pre { background: #0B0F1E; border-color: #1F2937; color: #F3F4F6; }
+    body.dark-mode .app-dashboard-root .main-affiliate .ref-link { background: #0B0F1E; color: #A5B4FC; }
+    body.dark-mode .app-dashboard-root .main-affiliate .btn-sm { background: #0B0F1E; color: #F3F4F6; border-color: #374151; }

@@ -40,6 +40,7 @@ import { AppMobileTabs } from "~/components/AppMobileTabs";
 import { DesignPanel, DEFAULT_DESIGN_SUBTAB, normalizeSubTab } from "~/components/DesignPanel";
 import { InsightsPanel } from "~/components/InsightsPanel";
 import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
+import { AffiliatePanel } from "~/components/AffiliatePanel";
 import type { SubTabId } from "~/components/DesignBreadcrumbStepper";
 import { deriveOnboardingState } from "~/lib/onboarding-state";
 import type { OnboardingState } from "~/lib/onboarding-state";
@@ -455,7 +456,13 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           {activeTab === "insights" && (
             <InsightsPanel handle={profile.handle} tier={profile.tier} />
           )}
-          {activeTab !== "page" && activeTab !== "design" && activeTab !== "insights" && (
+          {activeTab === "affiliate" && (
+            <AffiliatePanel handle={profile.handle} />
+          )}
+          {activeTab !== "page" &&
+            activeTab !== "design" &&
+            activeTab !== "insights" &&
+            activeTab !== "affiliate" && (
             /* Placeholder panel for other tabs */
             <div
               style={{
