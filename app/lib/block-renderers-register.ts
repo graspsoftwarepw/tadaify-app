@@ -14,5 +14,7 @@
 
 import { registerBlockRenderer } from "~/lib/block-render-registry";
 import { LinkBlockRenderer } from "~/components/blocks/public/LinkBlockRenderer";
+import { ProductBlockRenderer } from "~/components/blocks/public/ProductBlockRenderer";
 
 registerBlockRenderer("link", LinkBlockRenderer);
+registerBlockRenderer("product", ProductBlockRenderer);
