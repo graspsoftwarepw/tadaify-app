@@ -36,6 +36,8 @@ interface AppSidebarProps {
   onTabChange: (tab: string) => void;
   /** Design accordion slot — rendered between Pages and Insights groups. */
   designAccordion?: React.ReactNode;
+  /** Active admin sub-tab (blog | store | schedule | portfolio | paid-articles) */
+  activeSubTab?: string;
 }
 
 export function AppSidebar({
@@ -45,6 +47,7 @@ export function AppSidebar({
   activeTab,
   onTabChange,
   designAccordion,
+  activeSubTab = "",
 }: AppSidebarProps) {
   // Pages accordion is open by default in the mockup (data-expanded="true").
   const [pagesExpanded, setPagesExpanded] = useState(true);
@@ -301,11 +304,13 @@ export function AppSidebar({
           role="group"
           aria-label="Administration sub-sections"
         >
-          <button
-            type="button"
-            className="nav-sub-item"
+          {/* Blog — navigates to /app?tab=admin&subtab=blog */}
+          <a
+            href="/app?tab=admin&subtab=blog"
+            className={`nav-sub-item${activeTab === "admin" && activeSubTab === "blog" ? " active" : ""}`}
             data-nav-sub="admin-blog"
             data-tip="Blog publishing"
+            aria-current={activeTab === "admin" && activeSubTab === "blog" ? "page" : undefined}
           >
             <svg
               viewBox="0 0 24 24"
@@ -322,12 +327,14 @@ export function AppSidebar({
               <line x1="9" y1="17" x2="13" y2="17" />
             </svg>
             <span>Blog</span>
-          </button>
-          <button
-            type="button"
-            className="nav-sub-item"
+          </a>
+          {/* Store — navigates to /app?tab=admin&subtab=store */}
+          <a
+            href="/app?tab=admin&subtab=store"
+            className={`nav-sub-item${activeTab === "admin" && activeSubTab === "store" ? " active" : ""}`}
             data-nav-sub="admin-store"
             data-tip="Store — coming v2"
+            aria-current={activeTab === "admin" && activeSubTab === "store" ? "page" : undefined}
           >
             <svg
               viewBox="0 0 24 24"
@@ -349,12 +356,14 @@ export function AppSidebar({
             >
               v2
             </span>
-          </button>
-          <button
-            type="button"
-            className="nav-sub-item"
+          </a>
+          {/* Schedule — navigates to /app?tab=admin&subtab=schedule */}
+          <a
+            href="/app?tab=admin&subtab=schedule"
+            className={`nav-sub-item${activeTab === "admin" && activeSubTab === "schedule" ? " active" : ""}`}
             data-nav-sub="admin-schedule"
             data-tip="Bookings"
+            aria-current={activeTab === "admin" && activeSubTab === "schedule" ? "page" : undefined}
           >
             <svg
               viewBox="0 0 24 24"
@@ -371,12 +380,14 @@ export function AppSidebar({
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             <span>Schedule</span>
-          </button>
-          <button
-            type="button"
-            className="nav-sub-item"
+          </a>
+          {/* Portfolio — navigates to /app?tab=admin&subtab=portfolio */}
+          <a
+            href="/app?tab=admin&subtab=portfolio"
+            className={`nav-sub-item${activeTab === "admin" && activeSubTab === "portfolio" ? " active" : ""}`}
             data-nav-sub="admin-portfolio"
             data-tip="Projects"
+            aria-current={activeTab === "admin" && activeSubTab === "portfolio" ? "page" : undefined}
           >
             <svg
               viewBox="0 0 24 24"
@@ -393,12 +404,14 @@ export function AppSidebar({
               <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
             </svg>
             <span>Portfolio</span>
-          </button>
-          <button
-            type="button"
-            className="nav-sub-item"
+          </a>
+          {/* Paid articles — navigates to /app?tab=admin&subtab=paid-articles */}
+          <a
+            href="/app?tab=admin&subtab=paid-articles"
+            className={`nav-sub-item${activeTab === "admin" && activeSubTab === "paid-articles" ? " active" : ""}`}
             data-nav-sub="admin-paid-articles"
             data-tip="Paid articles"
+            aria-current={activeTab === "admin" && activeSubTab === "paid-articles" ? "page" : undefined}
           >
             <svg
               viewBox="0 0 24 24"
@@ -413,7 +426,7 @@ export function AppSidebar({
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
             <span>Paid articles</span>
-          </button>
+          </a>
         </div>
       </div>
 
