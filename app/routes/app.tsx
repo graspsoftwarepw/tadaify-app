@@ -41,6 +41,7 @@ import { DesignPanel, DEFAULT_DESIGN_SUBTAB, normalizeSubTab } from "~/component
 import { InsightsPanel } from "~/components/InsightsPanel";
 import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
 import { AffiliatePanel } from "~/components/AffiliatePanel";
+import { SettingsPanel } from "~/components/SettingsPanel";
 import type { SubTabId } from "~/components/DesignBreadcrumbStepper";
 import { deriveOnboardingState } from "~/lib/onboarding-state";
 import type { OnboardingState } from "~/lib/onboarding-state";
@@ -55,6 +56,8 @@ export interface DashboardProfile {
   template_id: string | null;
   onboarding_completed_at: string | null;
   social_platforms?: string | null;
+  /** Primary email surfaced in the Settings Account sub-page. TODO: wire to settings API */
+  email_for_settings?: string | null;
 }
 
 export interface DashboardPage {
@@ -326,9 +329,10 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
 
   // Derive active tab/subtab from URL search params (SSR initial values as fallback)
   const activeTab = parseTab(searchParams) || initialTab;
-  const activeSubTab = normalizeSubTab(
-    searchParams.get("subtab") ?? initialSubTab
-  );
+  // Raw subtab value — each panel normalizes it for its own valid set.
+  const rawSubTab = searchParams.get("subtab") ?? initialSubTab;
+  // Design panel normalization (falls back to "background" for non-design subtabs)
+  const activeSubTab = normalizeSubTab(rawSubTab);
 
   const [welcomeDismissed, setWelcomeDismissed] = useState(
     accountSettings.welcome_dismissed
@@ -459,10 +463,18 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
           {activeTab === "affiliate" && (
             <AffiliatePanel handle={profile.handle} />
           )}
+          {activeTab === "settings" && (
+            <SettingsPanel
+              activeSubTab={rawSubTab}
+              handle={profile.handle}
+              email={profile.email_for_settings ?? ""}
+            />
+          )}
           {activeTab !== "page" &&
             activeTab !== "design" &&
             activeTab !== "insights" &&
-            activeTab !== "affiliate" && (
+            activeTab !== "affiliate" &&
+            activeTab !== "settings" && (
             /* Placeholder panel for other tabs */
             <div
               style={{
