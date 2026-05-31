@@ -22,6 +22,7 @@
 import type { Route } from "./+types/api.blocks.$id";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
 import { validateLinkUrl } from "~/lib/validate-link-url";
+import { validateProductMeta } from "~/lib/validate-product";
 import {
   purgeCacheForHandleAndAwait,
   type CachePurgeWaitable,
@@ -118,6 +119,9 @@ function validateUpdateBlock(
     if (typeof b.title !== "string") {
       return { ok: false, error: "Validation failed: title must be a string" };
     }
+    if (b.block_type === "product" && !b.title.trim()) {
+      return { ok: false, error: "Validation failed: product title is required" };
+    }
     data.title = b.title;
   }
   if ("url" in b) {
@@ -127,8 +131,9 @@ function validateUpdateBlock(
         : typeof b.url === "string"
         ? b.url
         : null;
-    // Link blocks: validate + canonicalise the destination (defence in depth).
-    if (b.block_type === "link") {
+    // Link / product blocks: validate + canonicalise the external destination
+    // (defence in depth — rejects javascript:/data: and non-http(s) schemes).
+    if (b.block_type === "link" || b.block_type === "product") {
       const r = validateLinkUrl(data.url ?? "");
       if (!r.ok) return { ok: false, error: `Validation failed: ${r.error}` };
       data.url = r.url;
@@ -141,6 +146,8 @@ function validateUpdateBlock(
     data.is_visible = b.is_visible;
   }
   if ("meta" in b) {
+    const pv = validateProductMeta(b.block_type, b.meta);
+    if (!pv.ok) return { ok: false, error: `Validation failed: ${pv.error}` };
     data.meta = b.meta;
   }
 

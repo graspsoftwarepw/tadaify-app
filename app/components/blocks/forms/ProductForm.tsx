@@ -10,8 +10,9 @@
  * Story: tadaify-app#52 block-editor-mockup
  */
 
-import { type ReactElement } from "react";
+import { type ReactElement, useRef, useState } from "react";
 import { IconPicker } from "~/components/blocks/IconPicker";
+import { buildBlockThumbUrl } from "~/routes/api.block-thumb.$key";
 
 export interface ProductFormValue {
   title: string;
@@ -29,16 +30,51 @@ export const PRODUCT_FORM_DEFAULTS: ProductFormValue = {
   image: null,
   url: "https://shop.example.com/spring-drop",
   cta: "Buy on Shopify",
-  ctaIcon: "shopping-cart",
+  ctaIcon: "lucide:shoppingCart",
   showPrice: true,
 };
 
 export interface ProductFormProps {
   value: ProductFormValue;
   onChange: (next: ProductFormValue) => void;
+  titleError?: string | null;
+  urlError?: string | null;
 }
 
-export function ProductForm({ value, onChange }: ProductFormProps): ReactElement {
+export function ProductForm({ value, onChange, titleError, urlError }: ProductFormProps): ReactElement {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Backend-proxy R2 upload — reuses the link-thumb pipeline (#289): same
+  // /api/upload/block-thumb route + AVATARS_R2 `block-thumbs/` prefix. No new
+  // route or bucket. Worker is the authoritative validator (size + magic bytes).
+  async function handleImageFile(file: File): Promise<void> {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/upload/block-thumb", {
+        method: "POST",
+        credentials: "include",
+        body,
+      });
+      const json = (await res.json().catch(() => null)) as
+        | { r2_key?: string; message?: string; error?: string }
+        | null;
+      if (!res.ok || !json?.r2_key) {
+        setUploadError(json?.message ?? json?.error ?? "Upload failed — please retry.");
+        return;
+      }
+      onChange({ ...value, image: json.r2_key });
+    } catch {
+      setUploadError("Upload failed — please retry.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="section-body" data-testid="product-form">
       {/* Product title */}
@@ -53,7 +89,13 @@ export function ProductForm({ value, onChange }: ProductFormProps): ReactElement
           value={value.title}
           placeholder="Spring drop merch"
           onChange={(e) => onChange({ ...value, title: e.target.value })}
+          aria-invalid={titleError ? true : undefined}
         />
+        {titleError && (
+          <div role="alert" style={{ fontSize: "12px", color: "var(--danger, #dc2626)", fontWeight: 500 }}>
+            {titleError}
+          </div>
+        )}
       </div>
 
       {/* Price */}
@@ -69,9 +111,22 @@ export function ProductForm({ value, onChange }: ProductFormProps): ReactElement
         <div className="help">Type the price exactly as you want it shown, e.g. &ldquo;$24&rdquo;, &ldquo;€19.99&rdquo;, &ldquo;PLN 79&rdquo;.</div>
       </div>
 
-      {/* Product image */}
+      {/* Product image — backend-proxy R2 upload (reuses link-thumb pipeline, #289) */}
       <div className="field">
         <label>Product image (jpg / png / webp · max 5MB)</label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          data-testid="product-image-input"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            // Reset so re-selecting the same file still fires onChange.
+            e.target.value = "";
+            if (file) void handleImageFile(file);
+          }}
+        />
         <div
           style={{
             padding: "14px",
@@ -84,26 +139,41 @@ export function ProductForm({ value, onChange }: ProductFormProps): ReactElement
           }}
         >
           {value.image ? (
-            <span>
-              Image uploaded —{" "}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
+              <img
+                src={buildBlockThumbUrl(value.image)}
+                alt="Product image preview"
+                data-testid="product-image-preview"
+                style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }}
+              />
               <button
                 type="button"
-                style={{ background: "none", border: "none", padding: 0, color: "var(--danger, #dc2626)", cursor: "pointer", fontSize: "inherit" }}
+                data-testid="product-image-remove"
+                style={{ background: "none", border: "none", padding: 0, color: "var(--brand-primary)", cursor: "pointer", fontSize: "inherit" }}
                 onClick={() => onChange({ ...value, image: null })}
               >
                 Remove
               </button>
             </span>
           ) : (
-            <button
-              type="button"
-              style={{ background: "var(--brand-primary)", color: "#fff", border: 0, borderRadius: "8px", padding: "8px 14px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: "12px" }}
-            >
-              {/* TODO: wire to R2 upload API */}
-              Upload image
-            </button>
+            <span>
+              <button
+                type="button"
+                disabled={uploading}
+                data-testid="product-image-upload"
+                style={{ background: "var(--brand-primary)", color: "#fff", border: 0, borderRadius: "8px", padding: "8px 14px", fontWeight: 600, cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.6 : 1, fontFamily: "var(--font-sans)", fontSize: "12px" }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? "Uploading…" : "Upload image"}
+              </button>
+            </span>
           )}
         </div>
+        {uploadError && (
+          <div role="alert" data-testid="product-image-error" style={{ fontSize: "12px", color: "var(--danger, #dc2626)", fontWeight: 500, marginTop: "6px" }}>
+            {uploadError}
+          </div>
+        )}
       </div>
 
       {/* External product URL */}
@@ -115,9 +185,15 @@ export function ProductForm({ value, onChange }: ProductFormProps): ReactElement
           value={value.url}
           placeholder="https://shop.example.com/spring-drop"
           onChange={(e) => onChange({ ...value, url: e.target.value })}
+          aria-invalid={urlError ? true : undefined}
         />
         {/* TODO: link-target picker (FIX-6B) — default to External URL tab */}
         <div className="help">Where shoppers land when they click &ldquo;Buy&rdquo;. Shopify / Stripe / Etsy / Gumroad / your own store — any URL.</div>
+        {urlError && (
+          <div role="alert" style={{ fontSize: "12px", color: "var(--danger, #dc2626)", fontWeight: 500 }}>
+            {urlError}
+          </div>
+        )}
       </div>
 
       {/* Buy button label */}
