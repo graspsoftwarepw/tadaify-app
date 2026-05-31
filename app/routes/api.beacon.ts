@@ -25,8 +25,12 @@ import {
   validateBeacon,
   type BeaconServerContext,
 } from "~/lib/insights/beacon-event";
+import { RAW_EVENTS_INSERT_SQL, buildEventBindings } from "~/lib/insights/d1-events";
 
 interface BeaconEnv {
+  /** PRIMARY raw store (local-first). */
+  INSIGHTS_DB?: D1Database;
+  /** Future-scale secondary sink — no-op locally. */
   PAGE_EVENTS?: AnalyticsEngineDataset;
   INSIGHTS_KV?: KVNamespace;
   DAILY_SALT_SECRET?: string;
@@ -102,7 +106,19 @@ export async function action({ request, context }: Route.ActionArgs) {
     selfHost,
   };
 
-  // Raw event → WAE (bots included, flagged, for forensics per the SPIKE).
+  // Raw event → D1, the PRIMARY queryable store (bots included, flagged).
+  if (env.INSIGHTS_DB) {
+    try {
+      await env.INSIGHTS_DB.prepare(RAW_EVENTS_INSERT_SQL)
+        .bind(...buildEventBindings(beacon, serverCtx, now, dateKey))
+        .run();
+    } catch {
+      // Best-effort — a single dropped event must never 5xx a visitor.
+    }
+  }
+
+  // Same event → WAE (future-scale sink). No-op locally; flip reads here when
+  // D1 economics no longer fit. Bots flagged for forensics.
   if (env.PAGE_EVENTS) {
     env.PAGE_EVENTS.writeDataPoint(buildDataPoint(beacon, serverCtx));
   }
