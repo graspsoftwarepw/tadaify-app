@@ -45,6 +45,7 @@ import { getBlockRenderer } from "~/lib/block-render-registry";
 import "~/lib/block-renderers-register";
 import { buildAvatarPreviewUrl } from "~/routes/api.avatar.$key";
 import { PublicChrome } from "~/components/PublicChrome";
+import { PublicBeacon } from "~/components/PublicBeacon";
 import publicCreatorStyles from "~/styles/public-creator.css?url";
 
 // ── Public canonical origin (TR-tadaify-009; share cards require absolute URLs)
@@ -283,6 +284,7 @@ export default function PublicCreatorPage({
           })}
         </section>
       </div>
+      <PublicBeacon handle={handle} />
     </PublicChrome>
   );
 }
