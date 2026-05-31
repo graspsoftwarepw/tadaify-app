@@ -49,11 +49,13 @@ function makeArgs(handle: string) {
 //   1. profiles ?handle=eq.<h>
 //   2. pages    ?user_id=eq.<id>&is_homepage=eq.true&published_at=not.is.null
 //   3. profile_extras ?user_id=eq.<id>
+//   3b. account_settings ?id=eq.<id> (pinned_message + pinned_enabled)
 //   4. blocks   ?page_id=eq.<id>
 function mockSupabaseStack(opts: {
   profile: Array<Record<string, unknown>>;
   page?: Array<Record<string, unknown>>;
   extras?: Array<Record<string, unknown>>;
+  pinned?: Array<Record<string, unknown>>;
   blocks?: Array<Record<string, unknown>>;
 }) {
   const fetchMock = vi.fn();
@@ -71,6 +73,9 @@ function mockSupabaseStack(opts: {
   }
   fetchMock.mockResolvedValueOnce(
     new Response(JSON.stringify(opts.extras ?? []), { status: 200 }),
+  );
+  fetchMock.mockResolvedValueOnce(
+    new Response(JSON.stringify(opts.pinned ?? []), { status: 200 }),
   );
   fetchMock.mockResolvedValueOnce(
     new Response(JSON.stringify(opts.blocks ?? []), { status: 200 }),
@@ -119,6 +124,31 @@ describe("U2 — GET /:handle loader (cache + headers + visibility + order)", ()
     expect(body.handle).toBe("alex");
     expect(body.displayName).toBe("Alex Test");
     expect(body.blocks).toHaveLength(1);
+    expect(body.pinnedMessage).toBeNull();
+  });
+
+  it("surfaces the pinned message when pinned_enabled is true", async () => {
+    globalThis.fetch = mockSupabaseStack({
+      profile: [PROFILE_ROW],
+      page: [PAGE_ROW],
+      pinned: [{ pinned_message: "New drop Friday 📣", pinned_enabled: true }],
+      blocks: [],
+    }) as unknown as typeof fetch;
+
+    const body = (await (await loader(makeArgs("alex"))).json()) as LoaderData;
+    expect(body.pinnedMessage).toBe("New drop Friday 📣");
+  });
+
+  it("omits the pinned message when pinned_enabled is false", async () => {
+    globalThis.fetch = mockSupabaseStack({
+      profile: [PROFILE_ROW],
+      page: [PAGE_ROW],
+      pinned: [{ pinned_message: "Hidden", pinned_enabled: false }],
+      blocks: [],
+    }) as unknown as typeof fetch;
+
+    const body = (await (await loader(makeArgs("alex"))).json()) as LoaderData;
+    expect(body.pinnedMessage).toBeNull();
   });
 
   it("returns 404 for an unknown handle", async () => {

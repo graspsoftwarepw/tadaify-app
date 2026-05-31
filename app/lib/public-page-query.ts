@@ -47,6 +47,11 @@ export interface PublishedPageBundle {
   profile: PublishedProfile;
   page: PublishedPage;
   blocks: PublishedBlock[];
+  /**
+   * Creator's pinned announcement, or null when disabled / empty. Already
+   * gated on `pinned_enabled` so the renderer only checks truthiness.
+   */
+  pinnedMessage: string | null;
 }
 
 export interface PublicPageQueryEnv {
@@ -138,6 +143,23 @@ export async function fetchPublishedPage(
   }
   // Don't fail render on extras lookup error — avatar is decorative.
 
+  // 3b. Pinned message — optional; gated on pinned_enabled. Non-fatal.
+  let pinnedMessage: string | null = null;
+  const pinnedRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/account_settings?id=eq.${encodeURIComponent(profileRow.id)}&select=pinned_message,pinned_enabled&limit=1`,
+    { headers },
+  );
+  if (pinnedRes.ok) {
+    const pinnedRows = (await pinnedRes.json()) as Array<{
+      pinned_message: string | null;
+      pinned_enabled: boolean | null;
+    }>;
+    if (pinnedRows.length > 0 && pinnedRows[0].pinned_enabled === true) {
+      const msg = (pinnedRows[0].pinned_message ?? "").trim();
+      pinnedMessage = msg.length > 0 ? msg : null;
+    }
+  }
+
   // 4. Blocks for the page.
   const blocksRes = await fetch(
     `${SUPABASE_URL}/rest/v1/blocks?page_id=eq.${encodeURIComponent(pageRow.id)}&select=id,block_type,title,url,position,is_visible,meta&order=position.asc`,
@@ -170,5 +192,6 @@ export async function fetchPublishedPage(
       title: pageRow.title,
     },
     blocks: visibleBlocks,
+    pinnedMessage,
   };
 }

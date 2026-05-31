@@ -36,6 +36,7 @@ export default [
 
   // Account API (F-APP-DASHBOARD-001a, #171)
   route("/api/account/dismiss-welcome", "routes/api.account.dismiss-welcome.ts"),
+  route("/api/account/pinned-message", "routes/api.account.pinned-message.ts"),
 
   // Profile update API (F-PROFILE-SAVE-001)
   route("/api/profile", "routes/api.profile.ts"),

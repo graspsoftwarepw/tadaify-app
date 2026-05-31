@@ -53,6 +53,10 @@ interface HomepagePanelProps {
   onWelcomeDismiss: () => void;
   /** Optional analytics — visits this week, shown in the welcome banner. */
   visitsThisWeek?: number;
+  /** Persisted pinned-message text (account_settings.pinned_message). */
+  pinnedMessage?: string | null;
+  /** Persisted pinned-message on/off (account_settings.pinned_enabled). */
+  pinnedEnabled?: boolean;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -285,11 +289,15 @@ export function HomepagePanel({
   welcomeDismissed,
   onWelcomeDismiss,
   visitsThisWeek = 0,
+  pinnedMessage = null,
+  pinnedEnabled: pinnedEnabledInitial = false,
 }: HomepagePanelProps) {
   // ─── Local UI state ───────────────────────────────────────────────────
-  // TODO: wire to account_settings.pinned_message
-  const [pinnedEnabled, setPinnedEnabled] = useState(false);
-  const [pinnedMsg, setPinnedMsg] = useState("");
+  // Pinned message — persisted via POST /api/account/pinned-message on toggle
+  // change and on input blur (F-PINNED-001).
+  const [pinnedEnabled, setPinnedEnabled] = useState(pinnedEnabledInitial);
+  const [pinnedMsg, setPinnedMsg] = useState(pinnedMessage ?? "");
+  const [pinnedError, setPinnedError] = useState<string | null>(null);
   const [linkEditorOpen, setLinkEditorOpen] = useState(false);
   // Canonical block editor — opens for all 12 block types.
   // The "Add a link" CTA opens this with initialType="link".
@@ -339,6 +347,33 @@ export function HomepagePanel({
   // TODO: wire to add-block modal (#56 / #200 follow-up).
   const openAddBlockModal = () => {
     // Placeholder — left as a no-op so callers from buttons compile/render.
+  };
+
+  // Persist the pinned message + enabled state. Called on toggle change and on
+  // input blur so the creator never loses an edit (no explicit Save button in
+  // this row). Fire-and-forget with an inline error on failure.
+  const persistPinned = async (enabled: boolean, message: string) => {
+    setPinnedError(null);
+    try {
+      const res = await fetch("/api/account/pinned-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ pinned_enabled: enabled, pinned_message: message }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        setPinnedError(data?.error ?? "Couldn't save the pinned message.");
+      }
+    } catch {
+      setPinnedError("Couldn't save the pinned message.");
+    }
+  };
+
+  const togglePinned = () => {
+    const next = !pinnedEnabled;
+    setPinnedEnabled(next);
+    void persistPinned(next, pinnedMsg);
   };
 
   const cancelProfileEdit = () => {
@@ -487,11 +522,11 @@ export function HomepagePanel({
             role="switch"
             aria-checked={pinnedEnabled}
             tabIndex={0}
-            onClick={() => setPinnedEnabled((v) => !v)}
+            onClick={togglePinned}
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Enter") {
                 e.preventDefault();
-                setPinnedEnabled((v) => !v);
+                togglePinned();
               }
             }}
             data-testid="pinned-toggle"
@@ -512,6 +547,7 @@ export function HomepagePanel({
             placeholder="e.g. New course Friday — set a reminder? 📣"
             value={pinnedMsg}
             onChange={(e) => setPinnedMsg(e.target.value)}
+            onBlur={() => void persistPinned(pinnedEnabled, pinnedMsg)}
             data-testid="pinned-msg-input"
             style={{
               flex: 1,
@@ -535,6 +571,15 @@ export function HomepagePanel({
         <span style={{ fontSize: 11, color: "var(--fg-subtle)", flexShrink: 0 }}>
           Dismissible by visitor
         </span>
+        {pinnedError ? (
+          <span
+            role="alert"
+            data-testid="pinned-msg-error"
+            style={{ fontSize: 11, color: "var(--danger, #ef4444)", flexShrink: 0 }}
+          >
+            {pinnedError}
+          </span>
+        ) : null}
       </div>
 
       {/* ── 4. Profile card ──────────────────────────────────────────── */}
