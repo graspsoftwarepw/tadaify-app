@@ -29,7 +29,7 @@ export interface CountdownFormValue {
 
 export const COUNTDOWN_FORM_DEFAULTS: CountdownFormValue = {
   label: "Next live in",
-  icon: "flame",
+  icon: "lucide:zap",
   targetAt: "2026-05-15T19:00",
   style: "boxed",
   linkLabel: "",

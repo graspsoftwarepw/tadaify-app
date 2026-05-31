@@ -22,7 +22,7 @@ export interface LinkFormValue {
 export const LINK_FORM_DEFAULTS: LinkFormValue = {
   label: "Listen on Spotify",
   url: "https://open.spotify.com/artist/0OdUWJ0sBjDrqHygGUXeCF",
-  icon: "spotify",
+  icon: "simple-icons:spotify",
   newtab: true,
   thumb: null,
 };
