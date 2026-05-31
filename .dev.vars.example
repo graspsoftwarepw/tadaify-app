@@ -29,3 +29,10 @@ HANDLE_RESERVATION_TTL_SECONDS=600
 # Local dev: leave as the placeholder below — the helper detects it and
 # gracefully no-ops, so block CRUD still works without a real CF zone.
 CF_API_TOKEN=CHANGE_ME_VIA_WRANGLER_SECRET
+
+# Daily-rotating salt secret for cookieless unique-visitor hashing
+# (F-INSIGHTS-CAPTURE-001 / DEC-075). The visitor token is sha256(salt|ip|ua|handle)
+# where salt = sha256(secret|UTC-date), so the secret never leaves the server and
+# the token cannot be correlated across days. Production: set a long random value
+# via `wrangler secret put DAILY_SALT_SECRET`. Local dev: any non-empty string.
+DAILY_SALT_SECRET=dev-local-insights-salt-secret

@@ -44,6 +44,9 @@ export default [
   // Feedback API (F-FEEDBACK-001)
   route("/api/feedback", "routes/api.feedback.ts"),
 
+  // Insights ingestion beacon (F-INSIGHTS-CAPTURE-001)
+  route("/api/beacon", "routes/api.beacon.ts"),
+
   // Avatar upload + serve API (F-ONBOARDING-001c, tadaify-app#138 / TR-tadaify-003)
   route("/api/upload/avatar", "routes/api.upload.avatar.ts"),
   route("/api/avatar/:key", "routes/api.avatar.$key.ts"),
