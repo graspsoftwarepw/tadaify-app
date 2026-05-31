@@ -26,7 +26,11 @@
 import { useMemo, useState, type ReactElement } from "react";
 import type { OnboardingState } from "~/lib/onboarding-state";
 import { LinkBlockEditor } from "~/components/blocks/LinkBlockEditor";
-import { BlockEditorCanonical, type BlockType } from "~/components/blocks/BlockEditorCanonical";
+import {
+  BlockEditorCanonical,
+  blockToContentState,
+  type BlockType,
+} from "~/components/blocks/BlockEditorCanonical";
 import { BlockPickerModal } from "~/components/blocks/BlockPickerModal";
 import type { TierLevel } from "~/components/TierGateModal";
 
@@ -37,6 +41,8 @@ export interface Block {
   url: string | null;
   is_visible: boolean;
   position: number;
+  /** Serialized form value (see block-save). Needed to seed the edit form. */
+  meta?: unknown;
 }
 
 interface HomepagePanelProps {
@@ -310,6 +316,9 @@ export function HomepagePanel({
   const [pickedType, setPickedType] = useState<BlockType>("link");
   // Canonical block editor — opens for all 12 block types.
   const [canonicalEditorOpen, setCanonicalEditorOpen] = useState(false);
+  // Block being edited (pencil on a block row). Null → the editor is in
+  // "add new" mode and is seeded by `pickedType` instead.
+  const [editingBlock, setEditingBlock] = useState<Block | null>(null);
 
   // Profile editor — toggled by the pencil button. Saves display_name + bio
   // via POST /api/profile (F-PROFILE-SAVE-001). Pronouns has no column yet.
@@ -364,8 +373,18 @@ export function HomepagePanel({
   // "outside click", instantly dismissing it. Deferring lets the click settle
   // and the picker finish closing first.
   const handlePickBlockType = (blockType: string) => {
+    setEditingBlock(null);
     setPickedType(blockType as BlockType);
     setTimeout(() => setCanonicalEditorOpen(true), 80);
+  };
+
+  // Pencil on a block row → open the canonical editor seeded with that block's
+  // saved content (edit mode). Unlike the picker flow no overlay is closing, so
+  // the editor can open synchronously.
+  const handleEditBlock = (block: Block) => {
+    setEditingBlock(block);
+    setPickedType(block.block_type as BlockType);
+    setCanonicalEditorOpen(true);
   };
 
   // Persist the pinned message + enabled state. Called on toggle change and on
@@ -960,7 +979,14 @@ export function HomepagePanel({
                       aria-checked={block.is_visible}
                       aria-label="Toggle block visibility"
                     />
-                    <button type="button" className="iconbtn" data-tip="Edit block" aria-label="Edit block">
+                    <button
+                      type="button"
+                      className="iconbtn"
+                      data-tip="Edit block"
+                      aria-label="Edit block"
+                      data-testid={`edit-block-${block.id}`}
+                      onClick={() => handleEditBlock(block)}
+                    >
                       <IconPencil />
                     </button>
                     <button type="button" className="iconbtn" data-tip="More" aria-label="More options">
@@ -1068,11 +1094,22 @@ export function HomepagePanel({
       />
       {pageId ? (
         <BlockEditorCanonical
-          // Remount per chosen type so the editor opens seeded with it.
-          key={pickedType}
+          // Remount per chosen type (add) or per edited block (edit) so the
+          // editor opens freshly seeded with the right content.
+          key={editingBlock ? `edit-${editingBlock.id}` : `new-${pickedType}`}
           open={canonicalEditorOpen}
-          onOpenChange={setCanonicalEditorOpen}
-          initialType={pickedType}
+          onOpenChange={(next) => {
+            setCanonicalEditorOpen(next);
+            if (!next) setEditingBlock(null);
+          }}
+          initialType={editingBlock ? (editingBlock.block_type as BlockType) : pickedType}
+          blockId={editingBlock?.id ?? null}
+          initialContent={
+            editingBlock
+              ? blockToContentState(editingBlock.block_type as BlockType, editingBlock.meta)
+              : null
+          }
+          initialVisible={editingBlock ? editingBlock.is_visible : true}
           tier={tier as TierLevel}
           pageId={pageId}
           onSaved={() => {

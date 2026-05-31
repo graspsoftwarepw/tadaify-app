@@ -21,6 +21,7 @@
 
 import type { Route } from "./+types/api.blocks.$id";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
+import { validateLinkUrl } from "~/lib/validate-link-url";
 import {
   purgeCacheForHandleAndAwait,
   type CachePurgeWaitable,
@@ -126,6 +127,12 @@ function validateUpdateBlock(
         : typeof b.url === "string"
         ? b.url
         : null;
+    // Link blocks: validate + canonicalise the destination (defence in depth).
+    if (b.block_type === "link") {
+      const r = validateLinkUrl(data.url ?? "");
+      if (!r.ok) return { ok: false, error: `Validation failed: ${r.error}` };
+      data.url = r.url;
+    }
   }
   if ("is_visible" in b) {
     if (typeof b.is_visible !== "boolean") {

@@ -7,8 +7,9 @@
  * Story: tadaify-app#52 block-editor-mockup
  */
 
-import { type ReactElement } from "react";
+import { type ReactElement, useRef, useState } from "react";
 import { IconPicker } from "~/components/blocks/IconPicker";
+import { buildBlockThumbUrl } from "~/routes/api.block-thumb.$key";
 
 export interface LinkFormValue {
   label: string;
@@ -34,6 +35,36 @@ export interface LinkFormProps {
 }
 
 export function LinkForm({ value, onChange, labelError, urlError }: LinkFormProps): ReactElement {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleThumbFile(file: File): Promise<void> {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/upload/block-thumb", {
+        method: "POST",
+        credentials: "include",
+        body,
+      });
+      const json = (await res.json().catch(() => null)) as
+        | { r2_key?: string; message?: string; error?: string }
+        | null;
+      if (!res.ok || !json?.r2_key) {
+        setUploadError(json?.message ?? json?.error ?? "Upload failed — please retry.");
+        return;
+      }
+      onChange({ ...value, thumb: json.r2_key });
+    } catch {
+      setUploadError("Upload failed — please retry.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="section-body" data-testid="link-form">
       {/* Button label */}
@@ -115,9 +146,22 @@ export function LinkForm({ value, onChange, labelError, urlError }: LinkFormProp
         />
       </div>
 
-      {/* Custom thumbnail — TODO: wire to R2 upload API */}
+      {/* Custom thumbnail — backend-proxy R2 upload (#289) */}
       <div className="field">
         <label>Custom thumbnail</label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          data-testid="link-thumb-input"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            // Reset so re-selecting the same file still fires onChange.
+            e.target.value = "";
+            if (file) void handleThumbFile(file);
+          }}
+        />
         <div
           style={{
             padding: "14px",
@@ -130,17 +174,42 @@ export function LinkForm({ value, onChange, labelError, urlError }: LinkFormProp
           }}
         >
           {value.thumb ? (
-            <span>Thumbnail set — <button type="button" style={{ background: "none", border: "none", padding: 0, color: "var(--brand-primary)", cursor: "pointer", fontSize: "inherit" }} onClick={() => onChange({ ...value, thumb: null })}>Remove</button></span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
+              <img
+                src={buildBlockThumbUrl(value.thumb)}
+                alt="Thumbnail preview"
+                data-testid="link-thumb-preview"
+                style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }}
+              />
+              <button
+                type="button"
+                data-testid="link-thumb-remove"
+                style={{ background: "none", border: "none", padding: 0, color: "var(--brand-primary)", cursor: "pointer", fontSize: "inherit" }}
+                onClick={() => onChange({ ...value, thumb: null })}
+              >
+                Remove
+              </button>
+            </span>
           ) : (
             <span>
-              <button type="button" style={{ background: "var(--brand-primary)", color: "#fff", border: 0, borderRadius: "8px", padding: "8px 14px", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: "12px" }}>
-                {/* TODO: wire to R2 upload API */}
-                Upload image
+              <button
+                type="button"
+                disabled={uploading}
+                data-testid="link-thumb-upload"
+                style={{ background: "var(--brand-primary)", color: "#fff", border: 0, borderRadius: "8px", padding: "8px 14px", fontWeight: 600, cursor: uploading ? "default" : "pointer", opacity: uploading ? 0.6 : 1, fontFamily: "var(--font-sans)", fontSize: "12px" }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? "Uploading…" : "Upload image"}
               </button>
               <div style={{ marginTop: "6px", fontSize: "11px", color: "var(--fg-subtle)" }}>jpg / png / webp · max 5MB</div>
             </span>
           )}
         </div>
+        {uploadError && (
+          <div role="alert" data-testid="link-thumb-error" style={{ fontSize: "12px", color: "var(--danger, #dc2626)", fontWeight: 500, marginTop: "6px" }}>
+            {uploadError}
+          </div>
+        )}
       </div>
     </div>
   );
