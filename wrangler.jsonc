@@ -27,9 +27,25 @@
     { "binding": "AVATARS_R2", "bucket_name": "tadaify-avatars" }
   ],
 
-  // Insights raw event store — Workers Analytics Engine (DEC-075/077/078).
-  // Local dev: writeDataPoint is accepted (no local query backend). Prod query
-  // is via the account-level Analytics Engine SQL API (rollup cron, future PR).
+  // Insights PRIMARY raw event store — D1 (SQLite at the edge).
+  // Fully emulated locally by miniflare (local SQLite), so the whole analytics
+  // pipeline is developable + queryable WITHOUT any paid Cloudflare resource.
+  // Local dev: apply the schema once with
+  //   wrangler d1 execute INSIGHTS_DB --local --file=workers/insights/d1/0001_raw_events.sql
+  // Prod: `wrangler d1 create tadaify_insights` then set database_id here.
+  "d1_databases": [
+    {
+      "binding": "INSIGHTS_DB",
+      "database_name": "tadaify_insights",
+      "database_id": "REPLACE_WITH_PROD_DATABASE_ID"
+    }
+  ],
+
+  // Insights FUTURE-SCALE raw event store — Workers Analytics Engine.
+  // NOT used locally (writeDataPoint is a no-op + WAE has no local query
+  // backend). Kept as an optional, forward-compatible secondary sink: when the
+  // creator base outgrows D1 economics, flip event reads to WAE without
+  // touching the dashboard (which always reads D1 aggregates).
   "analytics_engine_datasets": [
     { "binding": "PAGE_EVENTS", "dataset": "tadaify_page_events" }
   ],
