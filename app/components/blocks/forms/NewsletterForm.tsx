@@ -56,7 +56,7 @@ export const NEWSLETTER_FORM_DEFAULTS: NewsletterFormValue = {
   heading: "Join my list",
   subhead: "No spam — one email a week.",
   cta: "Subscribe",
-  ctaIcon: "send",
+  ctaIcon: "lucide:send",
   placeholder: "you@email.com",
   success: "Thanks! Check your inbox to confirm.",
   apiKey_kit: "",
