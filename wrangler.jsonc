@@ -27,6 +27,21 @@
     { "binding": "AVATARS_R2", "bucket_name": "tadaify-avatars" }
   ],
 
+  // Insights raw event store — Workers Analytics Engine (DEC-075/077/078).
+  // Local dev: writeDataPoint is accepted (no local query backend). Prod query
+  // is via the account-level Analytics Engine SQL API (rollup cron, future PR).
+  "analytics_engine_datasets": [
+    { "binding": "PAGE_EVENTS", "dataset": "tadaify_page_events" }
+  ],
+
+  // Insights "today" counters — Workers KV (DEC-082 polling tile).
+  // Local dev: @cloudflare/vite-plugin emulates KV via miniflare. Prod: create
+  // the namespace once and set its id here / per-environment:
+  //   wrangler kv namespace create INSIGHTS_KV
+  "kv_namespaces": [
+    { "binding": "INSIGHTS_KV", "id": "REPLACE_WITH_PROD_NAMESPACE_ID" }
+  ],
+
   // Cron trigger: avatar orphan cleanup + GDPR pending_r2_deletes consumer
   // Daily at 03:00 UTC (TR-tadaify-003, ECN-138-06, ECN-138-12)
   "triggers": {
