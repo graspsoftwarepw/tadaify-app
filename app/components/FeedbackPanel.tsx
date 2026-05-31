@@ -8,17 +8,21 @@
  * "FEEDBACK PANEL"). Mount must occur inside an ancestor carrying
  * `.app-dashboard-root` — the route component wraps `<main>` accordingly.
  *
- * Out of scope this pass (matches the mockup's stub behaviour):
- *   - Real feedback submission — form submit is stubbed with window.alert.
+ * Submission: POST /api/feedback (F-FEEDBACK-001). On success the form is
+ * replaced with a thank-you confirmation.
  *
- * Story: app-feedback mockup-fidelity pass (TADA-BUG-005).
+ * Story: app-feedback mockup-fidelity pass (TADA-BUG-005) + F-FEEDBACK-001.
  * Covers: 1:1 match with `mockups/tadaify-mvp/app-feedback.html`.
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+
+type SubmitStatus = "idle" | "sending" | "sent" | "error";
 
 export function FeedbackPanel() {
   const formRef = useRef<HTMLFormElement>(null);
+  const [status, setStatus] = useState<SubmitStatus>("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Smooth scroll to the form when a topic card is clicked.
   const scrollToForm = useCallback(() => {
@@ -39,14 +43,37 @@ export function FeedbackPanel() {
     [scrollToForm]
   );
 
-  // Form submit handler — stub alert per mockup.
-  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+  // Submit feedback to POST /api/feedback. Reads the (uncontrolled) form via
+  // FormData so the mockup markup stays intact.
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: wire to feedback API
-    if (typeof window !== "undefined") {
-      window.alert(
-        "Mockup — feedback would go to product@tadaify.com."
-      );
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    setStatus("sending");
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          topic: String(fd.get("topic") ?? "other"),
+          title: String(fd.get("title") ?? ""),
+          body: String(fd.get("body") ?? ""),
+          contact_ok: fd.get("contact") != null,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        setErrorMsg(data?.error ?? "Couldn't send — please try again.");
+        setStatus("error");
+        return;
+      }
+      form.reset();
+      setStatus("sent");
+    } catch {
+      setErrorMsg("Couldn't send — please try again.");
+      setStatus("error");
     }
   }, []);
 
@@ -106,6 +133,23 @@ export function FeedbackPanel() {
       </div>
 
       {/* ── Feedback form ───────────────────────────────────────────────── */}
+      {status === "sent" ? (
+        <div className="form-card" data-testid="feedback-sent" role="status">
+          <h3>Thanks — we got it ✅</h3>
+          <p className="form-sub">
+            Your feedback is in. We aim to reply within 1 business day.
+          </p>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setStatus("idle")}
+            >
+              Send more feedback
+            </button>
+          </div>
+        </div>
+      ) : (
       <form
         ref={formRef}
         className="form-card"
@@ -166,14 +210,29 @@ export function FeedbackPanel() {
 
         {/* Form actions */}
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Send feedback
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={status === "sending"}
+          >
+            {status === "sending" ? "Sending…" : "Send feedback"}
           </button>
           <a href="/app" className="btn btn-ghost">
             Cancel
           </a>
         </div>
+        {errorMsg ? (
+          <p
+            className="fb-error"
+            role="alert"
+            data-testid="feedback-error"
+            style={{ marginTop: 10, fontSize: 13, color: "var(--danger, #ef4444)" }}
+          >
+            {errorMsg}
+          </p>
+        ) : null}
       </form>
+      )}
     </section>
   );
 }
