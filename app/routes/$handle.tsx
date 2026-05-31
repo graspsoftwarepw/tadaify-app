@@ -90,6 +90,7 @@ export interface LoaderData {
   avatarUrl: string | null;
   pageTitle: string;
   blocks: PublishedPageBundle["blocks"];
+  pinnedMessage: string | null;
 }
 
 export async function loader({
@@ -139,6 +140,7 @@ export async function loader({
       : null,
     pageTitle: bundle.page.title,
     blocks: bundle.blocks,
+    pinnedMessage: bundle.pinnedMessage,
   };
 
   return Response.json(data, {
@@ -245,7 +247,8 @@ function computeInitials(name: string): string {
 export default function PublicCreatorPage({
   loaderData,
 }: Route.ComponentProps): ReactNode {
-  const { handle, displayName, bio, avatarUrl, blocks } = loaderData as LoaderData;
+  const { handle, displayName, bio, avatarUrl, blocks, pinnedMessage } =
+    loaderData as LoaderData;
 
   return (
     <PublicChrome>
@@ -263,6 +266,17 @@ export default function PublicCreatorPage({
           </p>
         </aside>
         <section className="blocks" aria-label="creator blocks">
+          {pinnedMessage ? (
+            <div
+              className="pinned-banner"
+              role="note"
+              aria-label="pinned message"
+              data-testid="pinned-banner"
+            >
+              <span className="pinned-banner-icon" aria-hidden="true">📌</span>
+              <span className="pinned-banner-text">{pinnedMessage}</span>
+            </div>
+          ) : null}
           {blocks.map((block) => {
             const renderer = getBlockRenderer(block.block_type);
             return <PublicBlockSlot key={block.id} block={block} renderer={renderer} />;

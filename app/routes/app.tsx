@@ -74,6 +74,8 @@ export interface DashboardPage {
 export interface DashboardAccountSettings {
   theme_pref: "light" | "dark";
   welcome_dismissed: boolean;
+  pinned_message: string | null;
+  pinned_enabled: boolean;
 }
 
 export interface DashboardViewModel {
@@ -251,8 +253,15 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
     ? {
         theme_pref: rawSettings.theme_pref ?? "light",
         welcome_dismissed: rawSettings.welcome_dismissed ?? false,
+        pinned_message: (rawSettings.pinned_message as string | null) ?? null,
+        pinned_enabled: (rawSettings.pinned_enabled as boolean | null) ?? false,
       }
-    : { theme_pref: "light", welcome_dismissed: false };
+    : {
+        theme_pref: "light",
+        welcome_dismissed: false,
+        pinned_message: null,
+        pinned_enabled: false,
+      };
 
   const page: DashboardPage | null = pageRows[0] ?? null;
 
@@ -304,7 +313,12 @@ function buildStubViewModel(
     },
     page: null,
     blocks: [],
-    accountSettings: { theme_pref: "light", welcome_dismissed: false },
+    accountSettings: {
+      theme_pref: "light",
+      welcome_dismissed: false,
+      pinned_message: null,
+      pinned_enabled: false,
+    },
     onboardingState: "interrupted-welcome",
     activeTab,
     activeDevice,
@@ -452,6 +466,8 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
               onboardingState={onboardingState}
               welcomeDismissed={welcomeDismissed}
               onWelcomeDismiss={handleWelcomeDismiss}
+              pinnedMessage={accountSettings.pinned_message}
+              pinnedEnabled={accountSettings.pinned_enabled}
             />
           )}
           {activeTab === "design" && (
