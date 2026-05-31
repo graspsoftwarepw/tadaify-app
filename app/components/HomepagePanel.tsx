@@ -26,7 +26,9 @@
 import { useMemo, useState, type ReactElement } from "react";
 import type { OnboardingState } from "~/lib/onboarding-state";
 import { LinkBlockEditor } from "~/components/blocks/LinkBlockEditor";
-import { BlockEditorCanonical } from "~/components/blocks/BlockEditorCanonical";
+import { BlockEditorCanonical, type BlockType } from "~/components/blocks/BlockEditorCanonical";
+import { BlockPickerModal } from "~/components/blocks/BlockPickerModal";
+import type { TierLevel } from "~/components/TierGateModal";
 
 export interface Block {
   id: string;
@@ -48,6 +50,8 @@ interface HomepagePanelProps {
    * onboarding state and has not provisioned a homepage yet).
    */
   pageId?: string | null;
+  /** Creator tier — gates locked block types in the picker + the editor. */
+  tier?: string;
   onboardingState: OnboardingState;
   welcomeDismissed: boolean;
   onWelcomeDismiss: () => void;
@@ -281,6 +285,7 @@ export function HomepagePanel({
   bio,
   blocks,
   pageId = null,
+  tier = "free",
   // onboardingState + welcomeDismissed/onDismiss kept on the contract so the
   // parent route doesn't need to change, even though Pass 2 renders the
   // mockup's inline welcome banner (only-ready) instead of WelcomeBanner.
@@ -299,8 +304,11 @@ export function HomepagePanel({
   const [pinnedMsg, setPinnedMsg] = useState(pinnedMessage ?? "");
   const [pinnedError, setPinnedError] = useState<string | null>(null);
   const [linkEditorOpen, setLinkEditorOpen] = useState(false);
+  // Block picker (gallery of all 12 types) → canonical editor flow.
+  // "Add block" opens the picker; choosing a type opens the editor for it.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickedType, setPickedType] = useState<BlockType>("link");
   // Canonical block editor — opens for all 12 block types.
-  // The "Add a link" CTA opens this with initialType="link".
   const [canonicalEditorOpen, setCanonicalEditorOpen] = useState(false);
 
   // Profile editor — toggled by the pencil button. Saves display_name + bio
@@ -344,9 +352,16 @@ export function HomepagePanel({
     }
   };
 
-  // TODO: wire to add-block modal (#56 / #200 follow-up).
+  // "Add block" → open the block picker (gallery of all 12 types).
   const openAddBlockModal = () => {
-    // Placeholder — left as a no-op so callers from buttons compile/render.
+    setPickerOpen(true);
+  };
+
+  // Picker → editor: a chosen type opens the canonical editor seeded with it.
+  // The picker closes itself via onOpenChange after this callback.
+  const handlePickBlockType = (blockType: string) => {
+    setPickedType(blockType as BlockType);
+    setCanonicalEditorOpen(true);
   };
 
   // Persist the pinned message + enabled state. Called on toggle change and on
@@ -1039,11 +1054,22 @@ export function HomepagePanel({
       {/* Canonical block editor — full 12-type editor per tadaify-app#52.
           Wired from "Add a link" CTA and other entry points via initialType="link".
           Save is currently stubbed (TODO: wire to POST/PATCH /api/blocks). */}
+      {/* Block picker — gallery of all 12 block types. "Add block" opens it;
+          choosing a type opens the canonical editor seeded with that type. */}
+      <BlockPickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handlePickBlockType}
+        currentTier={tier as TierLevel}
+      />
       {pageId ? (
         <BlockEditorCanonical
+          // Remount per chosen type so the editor opens seeded with it.
+          key={pickedType}
           open={canonicalEditorOpen}
           onOpenChange={setCanonicalEditorOpen}
-          initialType="link"
+          initialType={pickedType}
+          tier={tier as TierLevel}
           pageId={pageId}
           onSaved={() => {
             if (typeof window !== "undefined") {
