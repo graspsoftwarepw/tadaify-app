@@ -974,7 +974,7 @@ export function HomepagePanel({
               type="button"
               className="add-block"
               data-testid="add-block-cta"
-              onClick={() => pageId && setLinkEditorOpen(true)}
+              onClick={() => pageId && openAddBlockModal()}
               disabled={!pageId}
               aria-label={pageId ? "Add a block" : "Add a block (finish onboarding first)"}
             >
@@ -994,7 +994,7 @@ export function HomepagePanel({
               type="button"
               className="empty-card"
               data-testid="empty-state-add-link"
-              onClick={() => pageId && setLinkEditorOpen(true)}
+              onClick={() => pageId && openAddBlockModal()}
               disabled={!pageId}
             >
               <span className="ec-ic">
