@@ -33,6 +33,17 @@ export default defineConfig({
   ],
   resolve: {
     tsconfigPaths: true,
+    // Ensure a single React copy in the dev server. The Cloudflare SSR
+    // environment + Vite dep optimization otherwise gave `lucide-react` its
+    // own React instance, crashing every lucide icon with "Cannot read
+    // properties of null (reading 'useContext')" — which blanked any component
+    // that renders lucide icons (e.g. the block picker modal). Deduping React
+    // and pre-bundling lucide-react against it fixes the dev crash. (Prod
+    // builds bundle a single React already, so this was dev-only.)
+    dedupe: ["react", "react-dom"],
+  },
+  optimizeDeps: {
+    include: ["lucide-react", "react", "react-dom"],
   },
   server: NODE_MODULES_REAL
     ? {

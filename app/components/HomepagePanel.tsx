@@ -358,10 +358,14 @@ export function HomepagePanel({
   };
 
   // Picker → editor: a chosen type opens the canonical editor seeded with it.
-  // The picker closes itself via onOpenChange after this callback.
+  // The editor open is deferred to the next tick: the picker closes itself on
+  // select, and opening the editor synchronously would let the SAME card-click's
+  // pointer events reach the editor's freshly-mounted overlay as an
+  // "outside click", instantly dismissing it. Deferring lets the click settle
+  // and the picker finish closing first.
   const handlePickBlockType = (blockType: string) => {
     setPickedType(blockType as BlockType);
-    setCanonicalEditorOpen(true);
+    setTimeout(() => setCanonicalEditorOpen(true), 80);
   };
 
   // Persist the pinned message + enabled state. Called on toggle change and on
