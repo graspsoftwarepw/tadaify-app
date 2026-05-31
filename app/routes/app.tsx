@@ -39,6 +39,11 @@ import type { DeviceSize } from "~/components/LivePreviewPane";
 import { AppMobileTabs } from "~/components/AppMobileTabs";
 import { DesignPanel, DEFAULT_DESIGN_SUBTAB, normalizeSubTab } from "~/components/DesignPanel";
 import { InsightsPanel } from "~/components/InsightsPanel";
+import {
+  loadInsightsSummary,
+  type InsightsSummary,
+  type D1Like,
+} from "~/lib/insights/queries";
 import { AppSidebarDesignAccordion } from "~/components/AppSidebarDesignAccordion";
 import { AffiliatePanel } from "~/components/AffiliatePanel";
 import { DomainPanel } from "~/components/DomainPanel";
@@ -88,6 +93,8 @@ export interface DashboardViewModel {
   activeSubTab: string;
   activeDevice: DeviceSize;
   navExpanded: boolean;
+  /** Real Insights summary (D1) — only computed on the insights tab. */
+  insights: InsightsSummary | null;
 }
 
 // ─── Helpers — URL param parsing ────────────────────────────────────────────
@@ -280,6 +287,21 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
   const onboardingResult = deriveOnboardingState(profile);
   const onboardingState = onboardingResult.state;
 
+  // Insights summary — only on the insights tab, read from the local-first D1
+  // event store. Best-effort: a missing binding / query error → null (panel
+  // falls back to its placeholder visuals).
+  let insights: InsightsSummary | null = null;
+  if (activeTab === "insights") {
+    const insightsDb = (context?.cloudflare?.env as { INSIGHTS_DB?: D1Like } | undefined)
+      ?.INSIGHTS_DB;
+    if (insightsDb) {
+      insights = await loadInsightsSummary(insightsDb, profile.handle, {
+        tier: profile.tier,
+        nowMs: Date.now(),
+      });
+    }
+  }
+
   return {
     profile,
     page,
@@ -290,6 +312,7 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<Da
     activeDevice,
     activeSubTab,
     navExpanded,
+    insights,
   };
 }
 
@@ -324,6 +347,7 @@ function buildStubViewModel(
     activeDevice,
     activeSubTab,
     navExpanded,
+    insights: null,
   };
 }
 
@@ -340,6 +364,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
     activeDevice: initialDevice,
     activeSubTab: initialSubTab,
     navExpanded: initialNavExpanded,
+    insights,
   } = loaderData;
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -478,7 +503,7 @@ export default function AppDashboard({ loaderData }: Route.ComponentProps) {
             />
           )}
           {activeTab === "insights" && (
-            <InsightsPanel handle={profile.handle} tier={profile.tier} />
+            <InsightsPanel handle={profile.handle} tier={profile.tier} insights={insights} />
           )}
           {activeTab === "affiliate" && (
             <AffiliatePanel handle={profile.handle} />

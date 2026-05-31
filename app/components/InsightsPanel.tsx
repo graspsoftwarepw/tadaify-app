@@ -30,6 +30,36 @@ interface InsightsPanelProps {
   handle: string;
   /** Creator tier — drives the `data-tier` attribute and conditional UI. */
   tier: string;
+  /**
+   * Real Insights summary from the D1 event store, or null when unavailable
+   * (no binding / not the insights tab) — in which case the panel keeps its
+   * placeholder mockup visuals. When present, KPI tiles show real numbers and
+   * the fabricated delta/sparkline/“vs previous period” chrome is suppressed
+   * (no fake margin — we don't yet compute a trend).
+   */
+  insights?: InsightsSummaryView | null;
+}
+
+/** Mirror of `~/lib/insights/queries` InsightsSummary (kept local to avoid a type cycle). */
+export interface InsightsSummaryView {
+  windowDays: number | null;
+  pageviews: number;
+  clicks: number;
+  todayUniques: number;
+  topBlocks: Array<{ blockId: string; clicks: number }>;
+}
+
+/** Thousands-separated integer, deterministic across SSR/CSR. */
+function fmtInt(n: number): string {
+  return Math.max(0, Math.round(n)).toLocaleString("en-US");
+}
+
+function windowLabel(windowDays: number | null): string {
+  if (windowDays == null) return "all time";
+  if (windowDays === 7) return "last 7 days";
+  if (windowDays === 90) return "last 90 days";
+  if (windowDays === 365) return "last 12 months";
+  return `last ${windowDays} days`;
 }
 
 type Tier = "free" | "creator" | "pro" | "business";
@@ -221,7 +251,7 @@ function normalizeTier(t: string): Tier {
   return "free";
 }
 
-export function InsightsPanel({ handle, tier }: InsightsPanelProps) {
+export function InsightsPanel({ handle, tier, insights = null }: InsightsPanelProps) {
   const normTier = normalizeTier(tier);
   const tierLabel = TIER_LABEL[normTier];
   const ranges = TIME_RANGES[normTier];
@@ -594,36 +624,43 @@ export function InsightsPanel({ handle, tier }: InsightsPanelProps) {
               </span>
             </span>
           </div>
-          <div className="kpi-num">
-            2,007 <span className="kpi-suffix"></span>
+          <div className="kpi-num" data-testid="kpi-pageviews">
+            {insights ? fmtInt(insights.pageviews) : "2,007"}{" "}
+            <span className="kpi-suffix"></span>
           </div>
-          <span className="kpi-delta up">▲ 12.4%</span>
-          <svg
-            className="kpi-spark"
-            viewBox="0 0 200 36"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="spark-grad-pv" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#6366F1" stopOpacity="0.30" />
-                <stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0,28 L20,24 L40,22 L60,18 L80,20 L100,14 L120,11 L140,16 L160,9 L180,12 L200,5 L200,36 L0,36 Z"
-              fill="url(#spark-grad-pv)"
-            />
-            <path
-              d="M0,28 L20,24 L40,22 L60,18 L80,20 L100,14 L120,11 L140,16 L160,9 L180,12 L200,5"
-              fill="none"
-              stroke="#6366F1"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div className="kpi-foot tier-pro">vs 1,786 previous 7 days</div>
+          {insights ? (
+            <div className="kpi-foot">{windowLabel(insights.windowDays)}</div>
+          ) : (
+            <>
+              <span className="kpi-delta up">▲ 12.4%</span>
+              <svg
+                className="kpi-spark"
+                viewBox="0 0 200 36"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="spark-grad-pv" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#6366F1" stopOpacity="0.30" />
+                    <stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M0,28 L20,24 L40,22 L60,18 L80,20 L100,14 L120,11 L140,16 L160,9 L180,12 L200,5 L200,36 L0,36 Z"
+                  fill="url(#spark-grad-pv)"
+                />
+                <path
+                  d="M0,28 L20,24 L40,22 L60,18 L80,20 L100,14 L120,11 L140,16 L160,9 L180,12 L200,5"
+                  fill="none"
+                  stroke="#6366F1"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className="kpi-foot tier-pro">vs 1,786 previous 7 days</div>
+            </>
+          )}
         </div>
 
         {/* Unique visitors today */}
@@ -661,36 +698,42 @@ export function InsightsPanel({ handle, tier }: InsightsPanelProps) {
               </span>
             </span>
           </div>
-          <div className="kpi-num">
-            <span id="uv-num">412</span>
+          <div className="kpi-num" data-testid="kpi-uniques-today">
+            <span id="uv-num">{insights ? fmtInt(insights.todayUniques) : "412"}</span>
           </div>
-          <span className="kpi-delta up">▲ 8.1%</span>
-          <svg
-            className="kpi-spark"
-            viewBox="0 0 200 36"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="spark-grad-uv" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.30" />
-                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0,30 L20,26 L40,24 L60,21 L80,17 L100,20 L120,14 L140,10 L160,12 L180,8 L200,11 L200,36 L0,36 Z"
-              fill="url(#spark-grad-uv)"
-            />
-            <path
-              d="M0,30 L20,26 L40,24 L60,21 L80,17 L100,20 L120,14 L140,10 L160,12 L180,8 L200,11"
-              fill="none"
-              stroke="#8B5CF6"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div className="kpi-foot tier-pro">vs 381 previous 7 days</div>
+          {insights ? (
+            <div className="kpi-foot">today</div>
+          ) : (
+            <>
+              <span className="kpi-delta up">▲ 8.1%</span>
+              <svg
+                className="kpi-spark"
+                viewBox="0 0 200 36"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="spark-grad-uv" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.30" />
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M0,30 L20,26 L40,24 L60,21 L80,17 L100,20 L120,14 L140,10 L160,12 L180,8 L200,11 L200,36 L0,36 Z"
+                  fill="url(#spark-grad-uv)"
+                />
+                <path
+                  d="M0,30 L20,26 L40,24 L60,21 L80,17 L100,20 L120,14 L140,10 L160,12 L180,8 L200,11"
+                  fill="none"
+                  stroke="#8B5CF6"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className="kpi-foot tier-pro">vs 381 previous 7 days</div>
+            </>
+          )}
         </div>
 
         {/* Total clicks */}
@@ -712,24 +755,32 @@ export function InsightsPanel({ handle, tier }: InsightsPanelProps) {
               </span>
             </span>
           </div>
-          <div className="kpi-num">847</div>
-          <span className="kpi-delta up">▲ 19.2%</span>
-          <svg
-            className="kpi-spark"
-            viewBox="0 0 200 36"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M0,30 L20,28 L40,22 L60,18 L80,16 L100,12 L120,18 L140,8 L160,14 L180,6 L200,10"
-              fill="none"
-              stroke="#F59E0B"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div className="kpi-foot tier-pro">vs 711 previous 7 days</div>
+          <div className="kpi-num" data-testid="kpi-clicks">
+            {insights ? fmtInt(insights.clicks) : "847"}
+          </div>
+          {insights ? (
+            <div className="kpi-foot">{windowLabel(insights.windowDays)}</div>
+          ) : (
+            <>
+              <span className="kpi-delta up">▲ 19.2%</span>
+              <svg
+                className="kpi-spark"
+                viewBox="0 0 200 36"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0,30 L20,28 L40,22 L60,18 L80,16 L100,12 L120,18 L140,8 L160,14 L180,6 L200,10"
+                  fill="none"
+                  stroke="#F59E0B"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className="kpi-foot tier-pro">vs 711 previous 7 days</div>
+            </>
+          )}
         </div>
 
         {/* Conversion rate */}
