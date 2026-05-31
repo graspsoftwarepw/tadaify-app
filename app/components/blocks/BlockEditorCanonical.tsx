@@ -62,17 +62,29 @@ import { validateLinkUrl } from "~/lib/validate-link-url";
 /** Per-type, save-time field validation. Returns field errors, or {} if valid. */
 interface ContentErrors {
   label?: string;
+  title?: string;
   url?: string;
 }
 function validateContent(type: BlockType, data: unknown): ContentErrors {
-  if (type !== "link") return {};
-  const d = (data ?? {}) as { label?: unknown; url?: unknown };
   const errors: ContentErrors = {};
-  if (typeof d.label !== "string" || !d.label.trim()) {
-    errors.label = "Label is required.";
+  if (type === "link") {
+    const d = (data ?? {}) as { label?: unknown; url?: unknown };
+    if (typeof d.label !== "string" || !d.label.trim()) {
+      errors.label = "Label is required.";
+    }
+    const urlResult = validateLinkUrl(d.url);
+    if (!urlResult.ok) errors.url = urlResult.error;
+    return errors;
   }
-  const urlResult = validateLinkUrl(d.url);
-  if (!urlResult.ok) errors.url = urlResult.error;
+  if (type === "product") {
+    const d = (data ?? {}) as { title?: unknown; url?: unknown };
+    if (typeof d.title !== "string" || !d.title.trim()) {
+      errors.title = "Product title is required.";
+    }
+    const urlResult = validateLinkUrl(d.url);
+    if (!urlResult.ok) errors.url = urlResult.error;
+    return errors;
+  }
   return errors;
 }
 
@@ -804,6 +816,8 @@ function FormBody({ content, onChange, blockType, errors }: FormBodyProps): Reac
         <ProductForm
           value={(content as { type: "product"; data: ProductFormValue }).data}
           onChange={(data) => onChange({ type: "product", data })}
+          titleError={errors?.title ?? null}
+          urlError={errors?.url ?? null}
         />
       );
     case "video":

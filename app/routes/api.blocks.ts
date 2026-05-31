@@ -23,6 +23,7 @@
 import type { Route } from "./+types/api.blocks";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
 import { validateLinkUrl } from "~/lib/validate-link-url";
+import { validateProductMeta } from "~/lib/validate-product";
 import {
   purgeCacheForHandleAndAwait,
   type CachePurgeWaitable,
@@ -91,13 +92,22 @@ function validateCreateBlock(
       ? b.url
       : null;
 
-  // Link blocks: validate + canonicalise the destination URL server-side
-  // (defence in depth — the editor validates too). Rejects javascript:/data:
-  // and other non-http(s) schemes.
-  if (b.block_type === "link") {
+  // Link / product blocks: validate + canonicalise the external destination URL
+  // server-side (defence in depth — the editor validates too). Rejects
+  // javascript:/data: and other non-http(s) schemes.
+  if (b.block_type === "link" || b.block_type === "product") {
     const r = validateLinkUrl(url ?? "");
     if (!r.ok) return { ok: false, error: `Validation failed: ${r.error}` };
     url = r.url;
+  }
+
+  // Product blocks additionally require a title and a bounded price string.
+  if (b.block_type === "product") {
+    if (typeof b.title !== "string" || !b.title.trim()) {
+      return { ok: false, error: "Validation failed: product title is required" };
+    }
+    const pv = validateProductMeta(b.block_type, b.meta);
+    if (!pv.ok) return { ok: false, error: `Validation failed: ${pv.error}` };
   }
 
   return {

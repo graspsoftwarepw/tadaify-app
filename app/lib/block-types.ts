@@ -144,7 +144,7 @@ export const BLOCK_TYPES: BlockTypeMeta[] = [
     icon: "🛍",
     category: "shop",
     tags: "shopify etsy gumroad stripe buy purchase ecommerce store",
-    defaultMeta: { productUrl: "", title: "", price: "" },
+    defaultMeta: { title: "", price: "", image: null, url: "", cta: "", ctaIcon: "lucide:shoppingCart", showPrice: true },
   },
   {
     id: "video",
