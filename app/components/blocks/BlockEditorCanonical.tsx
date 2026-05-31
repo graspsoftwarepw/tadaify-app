@@ -52,6 +52,7 @@ import { VideoForm, VIDEO_FORM_DEFAULTS, type VideoFormValue } from "~/component
 import { AccordionForm, ACCORDION_FORM_DEFAULTS, type AccordionFormValue } from "~/components/blocks/forms/AccordionForm";
 import { CustomHtmlForm, CUSTOM_HTML_FORM_DEFAULTS, type CustomHtmlFormValue } from "~/components/blocks/forms/CustomHtmlForm";
 import { CountdownForm, COUNTDOWN_FORM_DEFAULTS, type CountdownFormValue } from "~/components/blocks/forms/CountdownForm";
+import { buildBlockSavePayload, saveBlock } from "~/lib/block-save";
 
 // ---------------------------------------------------------------------------
 // Block type catalog
@@ -243,7 +244,7 @@ export function BlockEditorCanonical({
   onOpenChange,
   initialType = "link",
   blockId = null,
-  pageId: _pageId = null,
+  pageId = null,
   tier = "creator",
   onSaved,
   onDuplicate,
@@ -365,19 +366,41 @@ export function BlockEditorCanonical({
   }, [blockType, tier, schedule, ab]);
 
   async function doSave() {
+    // Create needs a page id; edit (blockId set) does not.
+    if (!blockId && !pageId) {
+      setSavedHint("Can't save — missing page");
+      return;
+    }
     setSaving(true);
+    setSavedHint(null);
     try {
-      // TODO: wire to POST/PATCH /api/blocks API
-      await new Promise((r) => setTimeout(r, 400));
-      setSavedHint("Saved just now");
-      onSaved?.({
+      // Variant B is persisted only for Business when the variants differ —
+      // mirrors the tier gate's "keeps Variant A live" partial-save for lower
+      // tiers. Schedule is persisted only when the tier allows it.
+      const includeVariantB =
+        TIER_RANK[tier] >= TIER_RANK.business && countAbDiffs() > 0;
+      const allowSchedule = TIER_RANK[tier] >= TIER_RANK.creator;
+
+      const payload = buildBlockSavePayload({
         type: blockType,
         variantA: ab.variantA.data,
         variantB: ab.variantB.data,
+        includeVariantB,
         visible,
-        scheduleStart: schedule.scheduleStart,
-        scheduleEnd: schedule.scheduleEnd,
+        schedule: allowSchedule
+          ? { start: schedule.scheduleStart, end: schedule.scheduleEnd }
+          : null,
       });
+
+      const result = await saveBlock({ payload, blockId, pageId });
+      if (!result.ok) {
+        setSavedHint(result.error ?? "Save failed");
+        return;
+      }
+      setSavedHint("Saved just now");
+      onSaved?.(result.block);
+    } catch {
+      setSavedHint("Save failed — please try again");
     } finally {
       setSaving(false);
     }
