@@ -51,6 +51,10 @@ export default [
   route("/api/upload/avatar", "routes/api.upload.avatar.ts"),
   route("/api/avatar/:key", "routes/api.avatar.$key.ts"),
 
+  // Block thumbnail upload + serve API (F-BLOCK-LINK-COMPLETE-001, #289)
+  route("/api/upload/block-thumb", "routes/api.upload.block-thumb.ts"),
+  route("/api/block-thumb/:key", "routes/api.block-thumb.$key.ts"),
+
   // Block CRUD API (F-BLOCK-INFRA-CRUD-001, tadaify-app#199)
   // Order matters: specific routes before parameterised ones
   route("/api/blocks/reorder", "routes/api.blocks.reorder.ts"),

@@ -24,11 +24,13 @@
 import type { ReactNode } from "react";
 import type { PublicBlock } from "~/lib/block-render-registry";
 import { renderIcon } from "~/lib/icon-resolve";
+import { buildBlockThumbUrl } from "~/routes/api.block-thumb.$key";
 
 /** Type-guard for the `meta` JSON blob. */
 interface LinkBlockMeta {
   icon?: string | null;
   newtab?: boolean;
+  thumb?: string | null;
 }
 
 function readLinkMeta(meta: unknown): LinkBlockMeta {
@@ -37,6 +39,7 @@ function readLinkMeta(meta: unknown): LinkBlockMeta {
   return {
     icon: typeof m.icon === "string" ? m.icon : null,
     newtab: typeof m.newtab === "boolean" ? m.newtab : true,
+    thumb: typeof m.thumb === "string" && m.thumb ? m.thumb : null,
   };
 }
 
@@ -53,7 +56,9 @@ export function LinkBlockRenderer(block: PublicBlock): ReactNode {
   const label = block.title || "Link";
   const hasUrl = typeof block.url === "string" && block.url.length > 0;
   const newtab = meta.newtab !== false;
-  const iconEl = meta.icon ? renderIcon(meta.icon, { size: 20 }) : null;
+  // A custom thumbnail takes the leading visual slot; the icon is the fallback.
+  const thumbUrl = meta.thumb ? buildBlockThumbUrl(meta.thumb) : null;
+  const iconEl = !thumbUrl && meta.icon ? renderIcon(meta.icon, { size: 20 }) : null;
 
   // `rel="noopener noreferrer"` per TR (BR-BLOCK-LINK-007 hardening) — even
   // when newtab is off we keep `noopener` because outbound creator links
@@ -75,7 +80,16 @@ export function LinkBlockRenderer(block: PublicBlock): ReactNode {
         aria-disabled={hasUrl ? undefined : true}
         data-testid={`block-link-${block.id}`}
       >
-        {iconEl ? (
+        {thumbUrl ? (
+          <img
+            className="block-link-thumb"
+            src={thumbUrl}
+            alt=""
+            aria-hidden="true"
+            data-testid={`block-link-thumb-${block.id}`}
+            style={{ width: "28px", height: "28px", objectFit: "cover", borderRadius: "6px" }}
+          />
+        ) : iconEl ? (
           <span className="block-link-icon" aria-hidden="true">
             {iconEl}
           </span>

@@ -75,4 +75,24 @@ describe("LinkBlockRenderer", () => {
     );
     expect(html).toContain(">Link<");
   });
+
+  it("renders a custom thumbnail <img> from meta.thumb (served via /api/block-thumb)", () => {
+    const html = renderToStaticMarkup(
+      LinkBlockRenderer(
+        makeBlock({ meta: { thumb: "block-thumbs/u1/abc.jpg" } }),
+      ),
+    );
+    expect(html).toContain("block-link-thumb");
+    expect(html).toContain("/api/block-thumb/");
+  });
+
+  it("prefers the thumbnail over the icon when both are set", () => {
+    const html = renderToStaticMarkup(
+      LinkBlockRenderer(
+        makeBlock({ meta: { thumb: "block-thumbs/u1/abc.jpg", icon: "simple-icons:spotify" } }),
+      ),
+    );
+    expect(html).toContain("block-link-thumb");
+    expect(html).not.toContain("block-link-icon");
+  });
 });

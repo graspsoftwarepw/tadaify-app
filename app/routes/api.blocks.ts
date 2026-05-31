@@ -22,6 +22,7 @@
 
 import type { Route } from "./+types/api.blocks";
 import { extractAccessToken, resolveUserId } from "~/lib/worker-auth";
+import { validateLinkUrl } from "~/lib/validate-link-url";
 import {
   purgeCacheForHandleAndAwait,
   type CachePurgeWaitable,
@@ -83,12 +84,21 @@ function validateCreateBlock(
   if (typeof b.block_type !== "string" || b.block_type.trim() === "") {
     return { ok: false, error: "Validation failed: block_type is required" };
   }
-  const url =
+  let url =
     b.url === undefined || b.url === null
       ? null
       : typeof b.url === "string"
       ? b.url
       : null;
+
+  // Link blocks: validate + canonicalise the destination URL server-side
+  // (defence in depth — the editor validates too). Rejects javascript:/data:
+  // and other non-http(s) schemes.
+  if (b.block_type === "link") {
+    const r = validateLinkUrl(url ?? "");
+    if (!r.ok) return { ok: false, error: `Validation failed: ${r.error}` };
+    url = r.url;
+  }
 
   return {
     ok: true,

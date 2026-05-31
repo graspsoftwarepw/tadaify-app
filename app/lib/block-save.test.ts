@@ -7,9 +7,32 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   serializeContent,
+  deserializeContent,
   buildBlockSavePayload,
   saveBlock,
 } from "./block-save";
+
+describe("deserializeContent (edit mode)", () => {
+  it("recovers a link form value from stored meta", () => {
+    const meta = { label: "Listen", url: "spotify.com/x", icon: "spotify", newtab: false, thumb: null };
+    expect(deserializeContent(meta)).toEqual(meta);
+  });
+
+  it("strips the non-form meta keys (variantB / schedule)", () => {
+    const meta = {
+      label: "Listen",
+      url: "spotify.com/x",
+      variantB: { label: "B" },
+      schedule: { start: "2026-01-01", end: "" },
+    };
+    expect(deserializeContent(meta)).toEqual({ label: "Listen", url: "spotify.com/x" });
+  });
+
+  it("returns an empty object for null / non-object meta", () => {
+    expect(deserializeContent(null)).toEqual({});
+    expect(deserializeContent("nope")).toEqual({});
+  });
+});
 
 describe("serializeContent", () => {
   it("link → title=label, url normalized, meta carries icon/newtab", () => {

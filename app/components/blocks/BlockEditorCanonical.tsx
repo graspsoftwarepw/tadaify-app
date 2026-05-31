@@ -52,7 +52,29 @@ import { VideoForm, VIDEO_FORM_DEFAULTS, type VideoFormValue } from "~/component
 import { AccordionForm, ACCORDION_FORM_DEFAULTS, type AccordionFormValue } from "~/components/blocks/forms/AccordionForm";
 import { CustomHtmlForm, CUSTOM_HTML_FORM_DEFAULTS, type CustomHtmlFormValue } from "~/components/blocks/forms/CustomHtmlForm";
 import { CountdownForm, COUNTDOWN_FORM_DEFAULTS, type CountdownFormValue } from "~/components/blocks/forms/CountdownForm";
-import { buildBlockSavePayload, saveBlock } from "~/lib/block-save";
+import {
+  buildBlockSavePayload,
+  deserializeContent,
+  saveBlock,
+} from "~/lib/block-save";
+import { validateLinkUrl } from "~/lib/validate-link-url";
+
+/** Per-type, save-time field validation. Returns field errors, or {} if valid. */
+interface ContentErrors {
+  label?: string;
+  url?: string;
+}
+function validateContent(type: BlockType, data: unknown): ContentErrors {
+  if (type !== "link") return {};
+  const d = (data ?? {}) as { label?: unknown; url?: unknown };
+  const errors: ContentErrors = {};
+  if (typeof d.label !== "string" || !d.label.trim()) {
+    errors.label = "Label is required.";
+  }
+  const urlResult = validateLinkUrl(d.url);
+  if (!urlResult.ok) errors.url = urlResult.error;
+  return errors;
+}
 
 // ---------------------------------------------------------------------------
 // Block type catalog
@@ -192,6 +214,19 @@ function defaultContentState(type: BlockType): ContentState {
   }
 }
 
+/**
+ * EDIT mode: rebuild a variant's editor `ContentState` from a stored block's
+ * `meta`. Merges the recovered form value over the type's defaults so missing
+ * fields fall back gracefully. Exported for the dashboard's "edit block" entry.
+ */
+export function blockToContentState(type: BlockType, meta: unknown): ContentState {
+  const base = defaultContentState(type);
+  return {
+    type,
+    data: { ...base.data, ...deserializeContent(meta) },
+  } as ContentState;
+}
+
 // A/B state structure
 interface AbState {
   activeTab: "A" | "B";
@@ -212,6 +247,10 @@ export interface BlockEditorCanonicalProps {
   initialType?: BlockType;
   /** Block ID — null for new blocks */
   blockId?: string | null;
+  /** Existing block's content (edit mode) — seeds Variant A instead of defaults. */
+  initialContent?: ContentState | null;
+  /** Existing block's visibility (edit mode). */
+  initialVisible?: boolean;
   /** Page ID — needed for CREATE calls */
   pageId?: string | null;
   /** Current creator tier */
@@ -244,6 +283,8 @@ export function BlockEditorCanonical({
   onOpenChange,
   initialType = "link",
   blockId = null,
+  initialContent = null,
+  initialVisible = true,
   pageId = null,
   tier = "creator",
   onSaved,
@@ -251,9 +292,10 @@ export function BlockEditorCanonical({
   onDelete,
 }: BlockEditorCanonicalProps): ReactElement {
   const [blockType, setBlockType] = useState<BlockType>(initialType);
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(initialVisible);
   const [saving, setSaving] = useState(false);
   const [savedHint, setSavedHint] = useState<string | null>(null);
+  const [contentErrors, setContentErrors] = useState<ContentErrors>({});
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
   // Portal into `.app-dashboard-root` so this modal's scoped CSS applies (Radix
@@ -267,7 +309,7 @@ export function BlockEditorCanonical({
   // A/B state
   const [ab, setAb] = useState<AbState>({
     activeTab: "A",
-    variantA: defaultContentState(initialType),
+    variantA: initialContent ?? defaultContentState(initialType),
     variantB: defaultContentState(initialType),
   });
 
@@ -283,6 +325,7 @@ export function BlockEditorCanonical({
   const activeContent = ab.activeTab === "A" ? ab.variantA : ab.variantB;
 
   function setActiveContent(next: ContentState) {
+    if (Object.keys(contentErrors).length > 0) setContentErrors({});
     if (ab.activeTab === "A") {
       setAb((prev) => ({ ...prev, variantA: next }));
     } else {
@@ -325,6 +368,15 @@ export function BlockEditorCanonical({
 
   // Save logic with TierGate validation
   const handleSave = useCallback(async () => {
+    // Field validation first — block save and surface inline errors if invalid.
+    const errors = validateContent(blockType, activeContent.data);
+    if (Object.keys(errors).length > 0) {
+      setContentErrors(errors);
+      setSavedHint(null);
+      return;
+    }
+    setContentErrors({});
+
     const features: TierGateFeature[] = [];
     const abDiffs = countAbDiffs();
 
@@ -537,6 +589,7 @@ export function BlockEditorCanonical({
                     content={activeContent}
                     onChange={setActiveContent}
                     blockType={blockType}
+                    errors={contentErrors}
                   />
                 </section>
 
@@ -646,6 +699,7 @@ export function BlockEditorCanonical({
               <button
                 type="button"
                 className="btn-save"
+                data-testid="editor-save"
                 onClick={() => void handleSave()}
                 disabled={saving}
                 aria-busy={saving}
@@ -689,15 +743,18 @@ interface FormBodyProps {
   content: ContentState;
   onChange: (next: ContentState) => void;
   blockType: BlockType;
+  errors?: ContentErrors;
 }
 
-function FormBody({ content, onChange, blockType }: FormBodyProps): ReactElement {
+function FormBody({ content, onChange, blockType, errors }: FormBodyProps): ReactElement {
   switch (blockType) {
     case "link":
       return (
         <LinkForm
           value={(content as { type: "link"; data: LinkFormValue }).data}
           onChange={(data) => onChange({ type: "link", data })}
+          labelError={errors?.label ?? null}
+          urlError={errors?.url ?? null}
         />
       );
     case "image":

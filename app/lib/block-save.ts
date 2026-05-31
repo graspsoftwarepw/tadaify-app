@@ -139,6 +139,25 @@ export function serializeContent(
   return { title, url, meta };
 }
 
+/** Keys that `buildBlockSavePayload` injects into meta but are NOT form fields. */
+const NON_FORM_META_KEYS = ["variantB", "schedule"] as const;
+
+/**
+ * Inverse of `serializeContent` for EDIT mode: recover a variant's form-value
+ * record from a stored block's `meta`. Strips the non-form meta keys
+ * (`variantB` / `schedule`) injected by `buildBlockSavePayload`. The caller
+ * merges the result over the block type's form defaults so any field absent
+ * from an older save still gets a sane default.
+ *
+ * Note: newsletter provider secrets were never persisted (see serialize), so
+ * they cannot — and must not — be recovered here.
+ */
+export function deserializeContent(meta: unknown): Record<string, unknown> {
+  const raw = asRecord(meta);
+  for (const key of NON_FORM_META_KEYS) delete raw[key];
+  return raw;
+}
+
 export interface BuildPayloadInput {
   type: BlockSaveType;
   variantA: unknown;

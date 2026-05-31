@@ -118,7 +118,7 @@ describe("U2 — POST /api/blocks create", () => {
     const otherPageId = "eeeeeeee-0000-0000-0000-000000000001";
     const res = (await action({
       request: makeRequest({
-        body: { page_id: otherPageId, block_type: "link" },
+        body: { page_id: otherPageId, block_type: "link", url: "https://example.com" },
         bearer: "tok",
       }),
       context: makeContext(),
@@ -166,7 +166,7 @@ describe("U2 — POST /api/blocks create", () => {
     const res = (await action({
       request: makeRequest({
         // PAGE_ID belongs to USER_ID (user A), not user B
-        body: { page_id: PAGE_ID, block_type: "link" },
+        body: { page_id: PAGE_ID, block_type: "link", url: "https://example.com" },
         bearer: "tok-user-b",
       }),
       context: makeContext(),
@@ -205,7 +205,7 @@ describe("U2 — POST /api/blocks create", () => {
 
     await action({
       request: makeRequest({
-        body: { page_id: PAGE_ID, block_type: "link", title: "x" },
+        body: { page_id: PAGE_ID, block_type: "link", title: "x", url: "https://example.com" },
         bearer: "tok",
       }),
       context: makeContext(),
@@ -239,7 +239,7 @@ describe("U2 — POST /api/blocks create", () => {
 
     await action({
       request: makeRequest({
-        body: { page_id: PAGE_ID, block_type: "link", title: "x" },
+        body: { page_id: PAGE_ID, block_type: "link", title: "x", url: "https://example.com" },
         bearer: "tok",
       }),
       context: {
