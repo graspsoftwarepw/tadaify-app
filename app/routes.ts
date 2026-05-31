@@ -37,6 +37,9 @@ export default [
   // Account API (F-APP-DASHBOARD-001a, #171)
   route("/api/account/dismiss-welcome", "routes/api.account.dismiss-welcome.ts"),
 
+  // Profile update API (F-PROFILE-SAVE-001)
+  route("/api/profile", "routes/api.profile.ts"),
+
   // Avatar upload + serve API (F-ONBOARDING-001c, tadaify-app#138 / TR-tadaify-003)
   route("/api/upload/avatar", "routes/api.upload.avatar.ts"),
   route("/api/avatar/:key", "routes/api.avatar.$key.ts"),
