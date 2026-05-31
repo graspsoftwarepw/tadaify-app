@@ -295,12 +295,14 @@ export function HomepagePanel({
   // The "Add a link" CTA opens this with initialType="link".
   const [canonicalEditorOpen, setCanonicalEditorOpen] = useState(false);
 
-  // Profile editor — toggled by the pencil button. TODO: wire to profile
-  // update endpoint (#171 follow-up).
+  // Profile editor — toggled by the pencil button. Saves display_name + bio
+  // via POST /api/profile (F-PROFILE-SAVE-001). Pronouns has no column yet.
   const [editingProfile, setEditingProfile] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState(displayName ?? "");
   const [editPronouns, setEditPronouns] = useState("");
   const [editBio, setEditBio] = useState(bio ?? "");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   // Organise dropdown + its two destinations (collection inline + archive).
   const [organiseOpen, setOrganiseOpen] = useState(false);
@@ -343,12 +345,39 @@ export function HomepagePanel({
     setEditDisplayName(displayName ?? "");
     setEditPronouns("");
     setEditBio(bio ?? "");
+    setProfileError(null);
     setEditingProfile(false);
   };
 
-  // TODO: wire to profile update endpoint.
-  const saveProfileEdit = () => {
-    setEditingProfile(false);
+  // Persist display_name + bio to /api/profile, then reload so the SSR loader
+  // re-renders the saved identity (matches the block-save reload pattern).
+  // NOTE: pronouns is intentionally not sent — there is no `profiles` column
+  // for it yet, so the field stays local-only until a migration adds storage.
+  const saveProfileEdit = async () => {
+    setSavingProfile(true);
+    setProfileError(null);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          display_name: editDisplayName,
+          bio: editBio,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        setProfileError(data?.error ?? "Couldn't save — please try again.");
+        return;
+      }
+      setEditingProfile(false);
+      if (typeof window !== "undefined") window.location.reload();
+    } catch {
+      setProfileError("Couldn't save — please try again.");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   // ─── Render ───────────────────────────────────────────────────────────
@@ -636,11 +665,17 @@ export function HomepagePanel({
               onChange={(e) => setEditBio(e.target.value)}
             />
           </div>
+          {profileError ? (
+            <p className="pe-error" role="alert" data-testid="profile-editor-error">
+              {profileError}
+            </p>
+          ) : null}
           <div className="pe-actions">
             <button
               type="button"
               className="btn btn-ghost btn-sm"
               onClick={cancelProfileEdit}
+              disabled={savingProfile}
               data-testid="profile-editor-cancel"
             >
               Cancel
@@ -649,9 +684,10 @@ export function HomepagePanel({
               type="button"
               className="btn btn-primary btn-sm"
               onClick={saveProfileEdit}
+              disabled={savingProfile}
               data-testid="profile-editor-save"
             >
-              Save changes
+              {savingProfile ? "Saving…" : "Save changes"}
             </button>
           </div>
         </div>
