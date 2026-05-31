@@ -465,6 +465,17 @@ export function BlockPickerModal({
   const [aiOpen, setAiOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Radix portals to document.body by default — OUTSIDE the `.app-dashboard-root`
+  // wrapper that ALL of this modal's CSS is scoped under, so the fixed-position
+  // overlay rules never matched and the picker rendered unstyled at the bottom
+  // of the page (off-screen). Portal into the dashboard root so the scoped
+  // styles apply. SSR-safe: resolved in an effect, client-only.
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    setPortalContainer(document.querySelector<HTMLElement>(".app-dashboard-root"));
+  }, [open]);
+
   // Auto-focus search input 200ms after open (matches mockup line 736)
   useEffect(() => {
     if (!open) return;
@@ -493,7 +504,7 @@ export function BlockPickerModal({
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
+      <Dialog.Portal container={portalContainer ?? undefined}>
         {/* Backdrop — matches mockup .modal-backdrop (fixed inset, flex center) */}
         <Dialog.Overlay
           className="modal-backdrop is-open block-picker-modal"

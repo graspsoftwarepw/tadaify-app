@@ -30,7 +30,7 @@
  * Replaces: LinkBlockEditor.tsx (stub from #56 slice A)
  */
 
-import { useCallback, useState, type ReactElement } from "react";
+import { useCallback, useEffect, useState, type ReactElement } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { TierLevel, TierGateFeature } from "~/components/TierGateModal";
 import { TierGateModal } from "~/components/TierGateModal";
@@ -256,6 +256,14 @@ export function BlockEditorCanonical({
   const [savedHint, setSavedHint] = useState<string | null>(null);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
+  // Portal into `.app-dashboard-root` so this modal's scoped CSS applies (Radix
+  // otherwise portals to document.body, outside the scope). SSR-safe.
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    setPortalContainer(document.querySelector<HTMLElement>(".app-dashboard-root"));
+  }, [open]);
+
   // A/B state
   const [ab, setAb] = useState<AbState>({
     activeTab: "A",
@@ -440,13 +448,17 @@ export function BlockEditorCanonical({
   return (
     <>
       <Dialog.Root open={open} onOpenChange={onOpenChange}>
-        <Dialog.Portal>
+        <Dialog.Portal container={portalContainer ?? undefined}>
           <Dialog.Overlay
             className="modal-backdrop is-open"
             style={{ zIndex: 50 }}
           />
           <Dialog.Content
-            className="modal"
+            // `block-editor-canonical` is the scope class all 248 of this
+            // modal's CSS rules hang off — it was only ever a data-testid, so
+            // the scoped styles never applied. Adding it as a className (and
+            // portaling into .app-dashboard-root) makes the editor styled.
+            className="modal block-editor-canonical"
             style={{
               position: "fixed",
               left: "50%",

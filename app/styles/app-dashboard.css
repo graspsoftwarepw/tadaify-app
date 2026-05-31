@@ -11384,8 +11384,9 @@ body.dark-mode .app-dashboard-root .main-settings .team-invite-success .is-list 
   padding: 16px;
 }
 
-/* Modal shell */
-.app-dashboard-root .block-editor-canonical .modal {
+/* Modal shell — compound selector: the panel element carries BOTH `modal` and
+   `block-editor-canonical` classes (the scope class was previously missing). */
+.app-dashboard-root .block-editor-canonical.modal {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -11396,7 +11397,7 @@ body.dark-mode .app-dashboard-root .main-settings .team-invite-success .is-list 
   overflow: hidden;
 }
 @media (max-width: 720px) {
-  .app-dashboard-root .block-editor-canonical .modal {
+  .app-dashboard-root .block-editor-canonical.modal {
     border-radius: 0; max-height: 100vh; height: 100vh; width: 100%;
   }
 }
@@ -11828,7 +11829,7 @@ body.dark-mode .app-dashboard-root .main-settings .team-invite-success .is-list 
 .app-dashboard-root .block-editor-canonical .ai-btn-inline { padding: 2px 8px; font-size: 10.5px; letter-spacing: 0; text-transform: none; }
 
 /* dark mode overrides */
-body.dark-mode .app-dashboard-root .block-editor-canonical .modal { background: #141A2D; border-color: #1F2937; }
+body.dark-mode .app-dashboard-root .block-editor-canonical.modal { background: #141A2D; border-color: #1F2937; }
 body.dark-mode .app-dashboard-root .block-editor-canonical .modal-head, body.dark-mode .app-dashboard-root .block-editor-canonical .modal-foot { background: #141A2D; border-color: #1F2937; }
 body.dark-mode .app-dashboard-root .block-editor-canonical .section { background: #141A2D; border-color: #1F2937; }
 body.dark-mode .app-dashboard-root .block-editor-canonical .col-preview .section { background: #0B0F1E; }
@@ -11843,7 +11844,7 @@ body.dark-mode .app-dashboard-root .block-editor-canonical .nlt-panel { backgrou
 body.dark-mode .app-dashboard-root .block-editor-canonical .add-social-pop { background: #141A2D; border-color: #1F2937; }
 body.dark-mode .app-dashboard-root .block-editor-canonical .section.tier-gated { background: #141A2D; border-color: #1F2937; }
 @media (prefers-reduced-motion: reduce) {
-  .app-dashboard-root .block-editor-canonical .modal { transition: none !important; }
+  .app-dashboard-root .block-editor-canonical.modal { transition: none !important; }
 }
 body.dark-mode .app-dashboard-root .main-settings .team-pending-empty { background: #0B0F1E; border-color: #1F2937; }
 
