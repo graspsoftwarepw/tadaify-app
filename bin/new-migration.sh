@@ -102,7 +102,7 @@ cat > "$FILEPATH" << STUB
  * Issue:        #NNN
  * Summary:      One-line description of the schema change.
  * Tables:       public.<table>
- * GDPR-impact:  [ ] none  [x] user-data -> delete_user_data() + user-export-data updated
+ * GDPR-impact:  [x] none  [ ] user-data -> delete_user_data() + user-export-data updated
  * Depends-on:   none
  * Post-steps:   none
  */

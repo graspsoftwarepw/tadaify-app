@@ -40,7 +40,12 @@ MIGRATIONS_DIR = REPO_ROOT / "supabase" / "migrations"
 STRUCTURE_YML = REPO_ROOT / "docs" / "app-structure.yml"
 SCHEMA_REL = "docs/schema.sql"
 
-FILENAME_RE = re.compile(r"^(\d{14})_([a-z][a-z0-9_]*?)_([a-z][a-z0-9_]+)\.sql$")
+# A migration filename is <ts>_<module>_<verb_noun>.sql where BOTH the module and
+# the verb_noun may contain underscores, so the filename alone cannot tell where
+# the module ends. The header `Module:` is the authority; here we only assert the
+# overall shape (timestamp + at least two underscore-joined lowercase tokens) and
+# verify the module as a prefix segment below.
+FILENAME_RE = re.compile(r"^(\d{14})_([a-z][a-z0-9_]*[a-z0-9])\.sql$")
 HEADER_KEY_RE = re.compile(r"^\s*\*\s*([A-Za-z-]+):\s*(.*?)\s*$")
 BRTR_RE = re.compile(r"\b(?:BR|TR)-[A-Za-z0-9_-]+")
 
@@ -148,7 +153,7 @@ def check() -> int:
         if not fm:
             failures.append(f"{name}: filename does not match YYYYMMDDHHMMSS_<module>_<verb_noun>.sql")
             continue
-        file_module = fm.group(2)
+        ts = fm.group(1)
         header = parse_header(path)
 
         for key in REQUIRED_KEYS:
@@ -159,9 +164,18 @@ def check() -> int:
         if not feature or "NNN" in feature or not BRTR_RE.search(feature):
             failures.append(f"{name}: Feature must be non-empty with >=1 BR-*/TR-* ref (got: '{feature}')")
 
+        # Module/filename agreement. Both module and verb_noun may contain
+        # underscores, so the filename split is ambiguous — the header is the
+        # authority. Require the filename to start <ts>_<module_lower>_… (the
+        # module as a prefix segment, with a non-empty verb_noun after it).
         mod = header.get("Module", "").strip().lower()
-        if mod and mod != file_module:
-            failures.append(f"{name}: Module '{mod}' does not match filename token '{file_module}'")
+        if mod:
+            expected_prefix = f"{ts}_{mod}_"
+            if not (name.startswith(expected_prefix) and len(name) > len(expected_prefix) + len(".sql")):
+                failures.append(
+                    f"{name}: Module '{mod}' is not a prefix segment of the filename "
+                    f"(expected it to start '{expected_prefix}')"
+                )
 
         for k in ("Issue", "Summary", "Tables", "Depends-on", "Post-steps"):
             if k in header and (not header[k] or "NNN" in header[k]):
