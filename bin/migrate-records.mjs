@@ -6,11 +6,12 @@
 //   --kind=tr  read every docs/requirements/technical/NNNN-<slug>.md record and
 //              (over)write docs/TECHNICAL_REQUIREMENTS.md as an ID-sorted
 //              "ID | Level | Title" table.
-//   --kind=br  read every docs/requirements/business/NNNN-<slug>.md record and
-//              (over)write docs/BUSINESS_REQUIREMENTS.md as an ID-sorted
-//              "ID | Title | Status" table. The business/ directory does not
-//              exist until P3; over an empty/absent set the run exits 0 without
-//              writing (no-records message), deferring real BR output to P3.
+//   --kind=br  read every docs/requirements/business/NNNN-<slug>.md atomic MADR
+//              record (keyed frontmatter: id, title, area, status) and regenerate
+//              docs/requirements/business/INDEX.md (an ID-sorted "ID | Title |
+//              Status" table) plus one per-area view docs/requirements/business/
+//              <AREA>.md per distinct area. When the business/ directory is empty
+//              or absent the run exits 0 without writing (no-records message).
 //
 // Records come in TWO shapes:
 //   * keyed YAML frontmatter  — `id:` / `level:` / `status:` … in a leading
@@ -37,16 +38,26 @@ const KINDS = {
     recordsRel: "docs/requirements/technical/",
     linkPrefix: "requirements/technical/",
     outPath: join(REPO_ROOT, "docs", "TECHNICAL_REQUIREMENTS.md"),
+    indexRel: "docs/TECHNICAL_REQUIREMENTS.md",
     heading: "Technical Requirements",
     noun: "TR",
+    // TR titles come from the first `# ID — Title` heading, NOT frontmatter —
+    // some TR records carry a `title:` that intentionally differs from the
+    // heading, and the shipped index uses the heading form.
+    titleSource: "heading",
   },
   br: {
     recordsDir: join(REPO_ROOT, "docs", "requirements", "business"),
     recordsRel: "docs/requirements/business/",
-    linkPrefix: "requirements/business/",
-    outPath: join(REPO_ROOT, "docs", "BUSINESS_REQUIREMENTS.md"),
+    // INDEX.md and the per-area views live INSIDE the records dir, so a record
+    // link from there is the bare sibling filename (no directory prefix).
+    linkPrefix: "",
+    indexPath: join(REPO_ROOT, "docs", "requirements", "business", "INDEX.md"),
+    indexRel: "docs/requirements/business/INDEX.md",
     heading: "Business Requirements",
     noun: "BR",
+    // BR atomic records carry the human title in keyed `title:` frontmatter.
+    titleSource: "frontmatter",
   },
 };
 
@@ -55,7 +66,7 @@ function usage(message) {
   process.stderr.write(
     `usage: node ${SELF} --kind=br|tr\n` +
       `  --kind=tr  regenerate docs/TECHNICAL_REQUIREMENTS.md from docs/requirements/technical/\n` +
-      `  --kind=br  regenerate docs/BUSINESS_REQUIREMENTS.md from docs/requirements/business/\n`,
+      `  --kind=br  regenerate docs/requirements/business/INDEX.md + per-area views from docs/requirements/business/\n`,
   );
 }
 
@@ -119,7 +130,7 @@ function parseFrontmatter(body) {
   return fields;
 }
 
-function parseRecord(name, body) {
+function parseRecord(name, body, cfg) {
   const headingMatch = HEADING_RE.exec(body);
   const heading = headingMatch ? headingMatch[1] : null;
   const headingTitle = heading ? titleFromHeading(heading) : null;
@@ -127,6 +138,8 @@ function parseRecord(name, body) {
   let id;
   let level = "";
   let status = "";
+  let area = "";
+  let fmTitle = null;
 
   if (body.startsWith("---")) {
     const fm = parseFrontmatter(body);
@@ -134,6 +147,8 @@ function parseRecord(name, body) {
       if (fm.id) id = fm.id;
       if (fm.level) level = fm.level;
       if (fm.status) status = fm.status;
+      if (fm.area) area = fm.area;
+      if (fm.title) fmTitle = fm.title;
     }
   } else {
     // prose-header shape: id from heading prefix, level/status from **Key:** lines.
@@ -151,12 +166,21 @@ function parseRecord(name, body) {
     if (statusLine) status = statusLine[1].trim();
   }
 
-  const title = headingTitle;
+  // Title source is kind-specific: BR uses keyed `title:` frontmatter; TR uses
+  // the first `# ID — Title` heading (some TR records carry a divergent
+  // `title:` that must NOT override the shipped heading-derived index).
+  const title = cfg.titleSource === "frontmatter" ? fmTitle : headingTitle;
 
   if (!id) die(`record ${name}: no parseable ID (no frontmatter id: and no \`# ID — …\` heading)`);
-  if (!title) die(`record ${name}: no parseable title (first \`# …\` heading missing or lacks \`${SEPARATOR.trim()}\` separator)`);
+  if (!title) {
+    die(
+      cfg.titleSource === "frontmatter"
+        ? `record ${name}: no parseable title (frontmatter \`title:\` missing)`
+        : `record ${name}: no parseable title (first \`# …\` heading missing or lacks \`${SEPARATOR.trim()}\` separator)`,
+    );
+  }
 
-  return { id, level, status, title, file: name };
+  return { id, level, status, area, title, file: name };
 }
 
 function loadRecords(cfg) {
@@ -174,7 +198,7 @@ function loadRecords(cfg) {
   const records = [];
   for (const name of files) {
     const body = readFileSync(join(cfg.recordsDir, name), "utf8");
-    records.push(parseRecord(name, body));
+    records.push(parseRecord(name, body, cfg));
   }
   return records;
 }
@@ -237,6 +261,66 @@ function renderTr(records, cfg) {
   return lines.join("\n");
 }
 
+// Render the BR INDEX.md: a flat "ID | Title | Status" table over every record,
+// sorted by ID, each ID linking its sibling NNNN-<slug>.md file.
+function renderBrIndex(records, cfg) {
+  const lines = [];
+  lines.push(`# ${cfg.heading} — INDEX`);
+  lines.push("");
+  lines.push(`> **Auto-generated** on ${today()} by \`${SELF} --kind=br\`.`);
+  lines.push(`> Do NOT hand-edit this file. Edit the individual BR records in \`${cfg.recordsRel}\`.`);
+  lines.push(`> To add a new BR: create \`${cfg.recordsRel}NNNN-<slug>.md\` with MADR frontmatter.`);
+  lines.push("");
+  lines.push(`## All ${cfg.heading}`);
+  lines.push("");
+  lines.push("| ID | Title | Status |");
+  lines.push("|----|-------|--------|");
+  for (const r of records) {
+    lines.push(`| [${r.id}](${cfg.linkPrefix}${r.file}) | ${r.title} | ${r.status} |`);
+  }
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push(`*Generated from ${records.length} MADR records in \`${cfg.recordsRel}\`.*`);
+  lines.push("");
+  return lines.join("\n");
+}
+
+// Render a per-area view (<AREA>.md): the records of one area, sorted by ID.
+function renderBrArea(area, records, cfg) {
+  const lines = [];
+  lines.push(`# ${cfg.heading} — ${area}`);
+  lines.push("");
+  lines.push(`> **Auto-generated** on ${today()} by \`${SELF} --kind=br\`.`);
+  lines.push(`> Do NOT hand-edit this file. Edit the individual BR records in \`${cfg.recordsRel}\`.`);
+  lines.push("");
+  lines.push(`## ${area} ${cfg.heading}`);
+  lines.push("");
+  lines.push("| ID | Title | Status |");
+  lines.push("|----|-------|--------|");
+  for (const r of records) {
+    lines.push(`| [${r.id}](${cfg.linkPrefix}${r.file}) | ${r.title} | ${r.status} |`);
+  }
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push(`*Generated from ${records.length} MADR records in area \`${area}\`.*`);
+  lines.push("");
+  return lines.join("\n");
+}
+
+// Group sorted records by their `area`, preserving ID order within each group;
+// areas are emitted in ascending area-name order for deterministic output.
+function groupByArea(records) {
+  const groups = new Map();
+  for (const r of records) {
+    if (!r.area) die(`record ${r.file}: no parseable area (frontmatter \`area:\` missing)`);
+    if (!groups.has(r.area)) groups.set(r.area, []);
+    groups.get(r.area).push(r);
+  }
+  return new Map([...groups.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
+}
+
 // --- main -------------------------------------------------------------------
 
 function main() {
@@ -248,8 +332,7 @@ function main() {
   if (kind === "br") {
     if (records === null || records.length === 0) {
       process.stdout.write(
-        `no BR records under ${cfg.recordsRel} — nothing to generate ` +
-          `(business records land in P3); skipping write.\n`,
+        `no BR records under ${cfg.recordsRel} — nothing to generate; skipping write.\n`,
       );
       process.exit(0);
     }
@@ -268,12 +351,26 @@ function main() {
 
   records.sort((a, b) => compareIds(a.id, b.id));
 
-  const output = kind === "tr" ? renderTr(records, cfg) : null;
-  if (output === null) die(`BR rendering not implemented yet (deferred to P3)`);
+  if (kind === "tr") {
+    writeFileSync(cfg.outPath, renderTr(records, cfg));
+    process.stdout.write(
+      `wrote ${cfg.outPath.replace(REPO_ROOT + "/", "")} from ${records.length} ${cfg.noun} records.\n`,
+    );
+    return;
+  }
 
-  writeFileSync(cfg.outPath, output);
+  // kind === "br": regenerate INDEX.md plus one <AREA>.md per distinct area.
+  const byArea = groupByArea(records); // also validates every record has an area
+  const written = [join(cfg.recordsDir, "INDEX.md")];
+  writeFileSync(join(cfg.recordsDir, "INDEX.md"), renderBrIndex(records, cfg));
+  for (const [area, areaRecords] of byArea) {
+    const areaPath = join(cfg.recordsDir, `${area}.md`);
+    writeFileSync(areaPath, renderBrArea(area, areaRecords, cfg));
+    written.push(areaPath);
+  }
   process.stdout.write(
-    `wrote ${cfg.outPath.replace(REPO_ROOT + "/", "")} from ${records.length} ${cfg.noun} records.\n`,
+    `wrote ${written.length} file(s) (${cfg.indexRel} + ${byArea.size} per-area view(s)) ` +
+      `from ${records.length} ${cfg.noun} records.\n`,
   );
 }
 
