@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-005
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S1 (smoke-test-2026-05-06 WARN-1) — login page uses "Log in" copy, not "Sign in"
  *
  * Brand lock: register page and landing use "Log in →"; login page must match.

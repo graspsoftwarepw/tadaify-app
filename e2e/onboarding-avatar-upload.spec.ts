@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-003, TR-tadaify-003
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite for R2 avatar upload pipeline (tadaify-app#138).
  *
  * Covers: TR-tadaify-003 / BR-ONBOARDING-003 / DEC-310=B

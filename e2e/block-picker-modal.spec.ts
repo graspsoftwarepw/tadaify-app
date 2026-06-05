@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-DASH-004, TR-tadaify-014
+ * Story: #201
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — BlockPickerModal shell (S1–S7)
  *
  * Covers: BR-BLOCK-PICKER-001..005, TR (component, registry, search, filter, onSelect)

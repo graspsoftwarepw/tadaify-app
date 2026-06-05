@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-CREATOR-001, BR-DASH-004
+ * Story: #291
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright suite — Product block, complete flow (F-BLOCK-PRODUCT-COMPLETE-001, #291)
  *
  * Exercises the canonical picker → editor flow end-to-end for the product block,

@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-005, BR-ONBOARDING-006
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S3 — Bug #6a regression: tier page had no CTA (dead-lock)
  *
  * Issue: tadaify-app#188

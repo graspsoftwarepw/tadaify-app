@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-005, TR-tadaify-004
+ * Story: #139
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite: onboarding tier-step persistence + profile_extras
  *
  * Story: F-ONBOARDING-001d (#139)

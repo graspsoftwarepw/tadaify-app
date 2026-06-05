@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-CREATOR-001, BR-DASH-004
+ * Story: #289
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright suite — Link block, complete flow (F-BLOCK-LINK-COMPLETE-001, #289)
  *
  * Exercises the CANONICAL picker → editor flow end-to-end (not the legacy

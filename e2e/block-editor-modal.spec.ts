@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-DASH-004, TR-tadaify-008
+ * Story: #200
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — BlockEditorModal shell (S1–S7)
  *
  * Covers: BR-BLOCK-EDITOR-001..004, TR-tadaify-008

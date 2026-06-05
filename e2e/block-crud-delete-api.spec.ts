@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-CREATOR-001, TR-tadaify-008
+ * Story: #199
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S1 — API integration: DELETE /api/blocks/:id removes row; cache purge stub fires
  *
  * Story: F-BLOCK-INFRA-CRUD-001 (tadaify-app#199)

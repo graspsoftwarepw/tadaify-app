@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-001, BR-ONBOARDING-002, BR-ONBOARDING-006
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite for onboarding wizard skeleton (#165 / #136).
  *
  * Covers: BR-Slice-C / BR-ONBOARDING-001..006 / DEC-310=B / DEC-311=A / DEC-332=D

@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-006, BR-AUTH-007
+ * Story: #190
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S1 (issue tadaify-app#190 Bug #1, DEC-363=A)
  *
  * "taken handle shows new copy + 3 clickable chips that auto-fill handle on click"

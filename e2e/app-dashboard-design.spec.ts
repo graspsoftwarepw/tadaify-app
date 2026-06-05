@@ -1,4 +1,9 @@
 /**
+ * Module: APP-DESIGN
+ * Covers: BR-DASH-003
+ * Story: #173
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — App Dashboard Design Panel (F-APP-DASHBOARD-001b, #173)
  *
  * Covers: VE-26b-01..35, ECN-26b-01..13, AC (all design-panel ACs)

@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-005
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S7 — Bug #6b regression: dual pricing source of truth on tier page
  *
  * Issue: tadaify-app#188

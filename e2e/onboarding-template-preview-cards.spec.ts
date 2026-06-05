@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-004
+ * Story: #136
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S6 — Bug #4a regression: template preview cards were stubs (emoji + tagline only)
  *
  * Issue: tadaify-app#188

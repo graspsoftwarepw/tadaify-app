@@ -1,4 +1,9 @@
 /**
+ * Module: APP-DASHBOARD
+ * Covers: BR-DASH-005
+ * Story: #187
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright spec: persistent welcome header across all /register sections (S1-S4)
  *
  * Story: F-002a — persistent welcome header + universal alternatives (tadaify-app#187)

@@ -1,4 +1,9 @@
 /**
+ * Module: LANDING
+ * Covers: BR-LANDING-001
+ * Story: #184
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S1 + S2 — Landing page: no guest-mode promise + no unauth editor surface (DEC-355=C)
  *
  * Verifies that F-001 guest-mode editor has been fully removed from the public-facing

@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-DASH-004, TR-tadaify-014
+ * Story: #205
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — IconPicker component (S1–S7)
  *
  * Covers: BR-ICON-PICKER-001..006, TR-tadaify-014 (picker component)

@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-001
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S1 — Bug #1 regression: duplicate phone disclaimer on Section B
  *
  * Issue: tadaify-app#188

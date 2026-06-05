@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-001
+ * Story: #136
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S5 — Bug #3 regression: welcome step was a stub vs locked mockup
  *
  * Issue: tadaify-app#188
