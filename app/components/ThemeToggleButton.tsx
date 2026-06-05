@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-004
  * ThemeToggleButton — sun/moon SVG toggle that mirrors
  * mockups/tadaify-mvp/register.html lines 65-76 + 498.
  *

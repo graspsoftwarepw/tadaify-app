@@ -1,4 +1,7 @@
 /**
+ * @module AUTH
+ * @covers BR-OTP-001
+ * @covers BR-AUTH-008
  * OtpResendControl — shared resend button + per-session cap fallback
  *
  * Used by register.tsx and login.tsx in the B-otp section.

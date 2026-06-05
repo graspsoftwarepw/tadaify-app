@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-008
  * TierGateModal — shared upsell modal shown when a creator clicks Save on a
  * feature that requires a higher subscription tier than they currently have.
  *

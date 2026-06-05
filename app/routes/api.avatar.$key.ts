@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-003
  * GET /api/avatar/:key
  *
  * Serves avatar bytes from R2.

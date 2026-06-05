@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-003
  * POST /api/upload/avatar
  *
  * Backend-proxy avatar upload pipeline (TR-tadaify-003).

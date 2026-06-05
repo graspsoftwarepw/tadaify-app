@@ -1,4 +1,6 @@
 /**
+ * @module LANDING
+ * @covers BR-LANDING-001
  * / — Landing page
  *
  * Story 1 / F-LANDING-001.

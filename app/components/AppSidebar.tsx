@@ -1,4 +1,6 @@
 /**
+ * @module APP-DASHBOARD
+ * @covers BR-DASH-002
  * AppSidebar — left sidebar navigation for the /app dashboard.
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~2417-2577.

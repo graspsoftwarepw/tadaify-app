@@ -1,4 +1,9 @@
 /**
+ * @module APP-DASHBOARD
+ * @covers BR-DASH-001
+ * @covers BR-DASH-007
+ * @covers BR-DASH-008
+ * @covers TR-tadaify-005
  * /app — Post-onboarding home dashboard (F-APP-DASHBOARD-001a + 001b)
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html (canonical primary)

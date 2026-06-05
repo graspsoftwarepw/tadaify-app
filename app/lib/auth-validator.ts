@@ -1,4 +1,6 @@
 /**
+ * @module AUTH
+ * @covers BR-AUTH-001
  * Auth validation — pure, side-effect-free.
  * Used by both API routes (server-side) and client-side UI checks.
  *

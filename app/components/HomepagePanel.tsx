@@ -1,4 +1,6 @@
 /**
+ * @module APP-PAGES
+ * @covers BR-DASH-004
  * HomepagePanel — main content area for the /app dashboard, ?tab=page view.
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~2579-2854

@@ -1,4 +1,6 @@
 /**
+ * @module APP-SETTINGS
+ * @covers TR-tadaify-007
  * POST /api/profile
  *
  * Persist the authenticated creator's editable identity fields

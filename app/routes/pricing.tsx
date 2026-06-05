@@ -1,4 +1,6 @@
 /**
+ * @module LANDING
+ * @covers BR-LANDING-001
  * /pricing — Pricing landing page
  *
  * Story: F-PRICING-LANDING-001 v2 Phase A (mockups/tadaify-mvp/pricing.html, 896 LOC).

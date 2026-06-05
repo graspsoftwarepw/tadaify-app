@@ -1,4 +1,10 @@
 /**
+ * @module AUTH
+ * @covers BR-AUTH-001
+ * @covers BR-AUTH-002
+ * @covers BR-AUTH-003
+ * @covers BR-AUTH-006
+ * @covers BR-AUTH-007
  * /register — 5-section email-OTP registration flow
  *
  * Story: F-REGISTER-001a — email-OTP + Auth Hook + handle binding

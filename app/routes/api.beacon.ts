@@ -1,4 +1,6 @@
 /**
+ * @module APP-INSIGHTS
+ * @covers BR-DASH-007
  * POST /api/beacon
  *
  * First-party, cookieless analytics ingestion (DEC-075/077/082). The public

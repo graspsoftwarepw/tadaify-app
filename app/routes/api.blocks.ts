@@ -1,4 +1,7 @@
 /**
+ * @module BLOCKS
+ * @covers BR-DASH-004
+ * @covers BR-CREATOR-001
  * GET /api/blocks?page_id=<uuid>   — list blocks for a page, ordered by position ASC
  * POST /api/blocks                 — create a new block
  *

@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-005
  * LivePreviewPane — right-side live preview column.
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~3529-3621

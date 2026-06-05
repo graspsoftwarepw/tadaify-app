@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-004
  * Theme utility helpers — pure functions extracted from ThemeToggleButton
  * for testability without a DOM environment.
  *

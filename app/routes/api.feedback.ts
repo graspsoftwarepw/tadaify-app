@@ -1,4 +1,6 @@
 /**
+ * @module APP-SETTINGS
+ * @covers BR-DASH-009
  * POST /api/feedback
  *
  * Persist an in-app feedback submission from the dashboard Feedback panel

@@ -1,4 +1,6 @@
 /**
+ * @module PUBLIC-PAGES
+ * @covers BR-CREATOR-001
  * PublicChrome — visitor-facing page chrome shared across the public render
  * route (`GET /:handle`) and its 404 / 500 ErrorBoundary fallbacks.
  *

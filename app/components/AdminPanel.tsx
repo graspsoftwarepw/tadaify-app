@@ -1,4 +1,6 @@
 /**
+ * @module ADMIN
+ * @covers BR-DASH-003
  * AdminPanel — Container for the Administration panel.
  *
  * Visual contract: mockups/tadaify-mvp/app-admin-{blog,store,schedule,portfolio,paid-articles}.html

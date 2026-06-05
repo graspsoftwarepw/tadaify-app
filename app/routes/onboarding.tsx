@@ -1,4 +1,11 @@
 /**
+ * @module ONBOARDING
+ * @covers BR-ONBOARDING-001
+ * @covers BR-ONBOARDING-002
+ * @covers BR-ONBOARDING-003
+ * @covers BR-ONBOARDING-004
+ * @covers BR-ONBOARDING-005
+ * @covers BR-ONBOARDING-006
  * /onboarding — Shared wizard layout
  *
  * Story: F-ONBOARDING-001a — Wizard skeleton + state propagation + 5 routes

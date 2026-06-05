@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-003
  * avatar-validator — client-side file validation for avatar uploads.
  *
  * Runs BEFORE the POST request for fast user feedback.
