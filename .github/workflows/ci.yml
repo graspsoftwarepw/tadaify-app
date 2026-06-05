@@ -46,3 +46,12 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Pillar-0 generated maps (grasp-app-structure, #308): fail the build if the
+      # committed docs/maps/*.md drifted from the route registry / records (maps-check),
+      # or if any view/module is an orphan (req orphans). Both pure Node readers, no deps.
+      - name: Maps — staleness check
+        run: ./bin/maps-check
+
+      - name: Maps — orphan check
+        run: ./bin/req orphans
