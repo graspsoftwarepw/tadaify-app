@@ -135,7 +135,7 @@ approval (no self-approval). P1 converts nothing; the phases below do the work, 
 | **P4** | [#307](https://github.com/graspsoftwarepw/tadaify-app/issues/307) | **Module registry**: author `docs/modules/registry.yml`, assign `owns` globs over `app/`, add `@module`. | `ownership`, `module_br` |
 | **P5** | [#308](https://github.com/graspsoftwarepw/tadaify-app/issues/308) | **Maps**: generate `docs/maps/{views,modules,e2e}.md` + `test-coverage-matrix.md`. | `staleness` baseline |
 | **P6** | [#309](https://github.com/graspsoftwarepw/tadaify-app/issues/309) | **Migrations**: add the mandatory `/* … BR/TR … */` header to non-legacy migrations; adopt the filename grammar going forward. | `migrations`, `gdpr` |
-| **P7** | [#310](https://github.com/graspsoftwarepw/tadaify-app/issues/310) | **E2E module-first**: move the 41 specs under `e2e/modules/`, add `Module:` + `Covers:` headers, wire the requirement↔test edge. | 41 `e2e` WARN + `requirement_test_edge` |
+| **P7** | [#310](https://github.com/graspsoftwarepw/tadaify-app/issues/310) | **E2E module-first**: add `Module:` + `Covers:` headers to the 41 legacy specs **in place** (grandfathered — not relocated); `e2e/modules/<AREA>/` is the target for new/adopted specs only; wire the requirement↔test edge. | 41 `e2e` WARN + `requirement_test_edge` |
 | **P8** | [#311](https://github.com/graspsoftwarepw/tadaify-app/issues/311) | **Flip `strict: true`** once the validator reports `fail=0` in strict mode. | turns enforcement on |
 
 Until P8, the validator runs report-only: it never fails the build, and the WARN count is the
