@@ -1,4 +1,8 @@
 /**
+ * @module AUTH
+ * @covers BR-AUTH-004
+ * @covers BR-AUTH-005
+ * @covers TR-AUTH-01
  * /login — 3-provider login screen for returning users
  *
  * Story: F-REGISTER-001a — email-OTP + Auth Hook + handle binding

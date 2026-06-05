@@ -1,4 +1,6 @@
 /**
+ * @module ONBOARDING
+ * @covers TR-tadaify-006
  * OnboardingPreviewPane — right-column live preview for onboarding steps.
  *
  * Visual contract: mockups/tadaify-mvp/onboarding-profile.html

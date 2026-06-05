@@ -1,4 +1,6 @@
 /**
+ * @module LANDING
+ * @covers BR-LANDING-001
  * POST /api/handle/check
  *
  * Real-time handle availability check called by the landing-page claim form

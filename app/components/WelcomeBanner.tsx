@@ -1,4 +1,6 @@
 /**
+ * @module APP-DASHBOARD
+ * @covers BR-DASH-005
  * WelcomeBanner — dismissible post-onboarding welcome message.
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~2603-2613.

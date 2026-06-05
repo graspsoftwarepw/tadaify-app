@@ -1,4 +1,6 @@
 /**
+ * @module APP-DASHBOARD
+ * @covers BR-DASH-002
  * AppAppbar — top application bar for the /app dashboard.
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines ~2392-2411

@@ -1,4 +1,6 @@
 /**
+ * @module APP-DESIGN
+ * @covers BR-DASH-003
  * DesignPanel — Container for the Design panel (section.main-design).
  *
  * Visual contract: mockups/tadaify-mvp/app-dashboard.html lines 2857-3458

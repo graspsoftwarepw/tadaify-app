@@ -1,4 +1,7 @@
 /**
+ * @module PUBLIC-PAGES
+ * @covers BR-CREATOR-001
+ * @covers TR-tadaify-009
  * GET /:handle — public creator page (SSR via Cloudflare Worker)
  *
  * Reads `pages` + `blocks` + `profiles` (+ `profile_extras` for avatar) from

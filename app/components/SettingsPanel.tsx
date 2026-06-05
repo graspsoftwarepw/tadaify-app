@@ -1,4 +1,7 @@
 /**
+ * @module APP-SETTINGS
+ * @covers BR-DASH-009
+ * @covers BR-DASH-010
  * SettingsPanel — Container for the Settings panel (section.main-settings).
  *
  * Visual contract: mockups/tadaify-mvp/app-settings-account.html (shell + nav)

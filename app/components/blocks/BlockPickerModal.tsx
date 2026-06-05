@@ -1,4 +1,7 @@
 /**
+ * @module BLOCKS
+ * @covers BR-DASH-004
+ * @covers TR-tadaify-008
  * BlockPickerModal — gallery of block types with search, category tabs,
  * tier-gating, and AI Suggest tab.
  *

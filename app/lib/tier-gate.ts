@@ -1,4 +1,6 @@
 /**
+ * @module SHARED
+ * @covers TR-tadaify-004
  * tier-gate — Utility for checking save-action permissions by tier.
  *
  * Design contract: gate at SAVE not at DISPLAY (feedback_no_blur_premium_features.md).

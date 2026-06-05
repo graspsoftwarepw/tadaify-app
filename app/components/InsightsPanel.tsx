@@ -1,4 +1,6 @@
 /**
+ * @module APP-INSIGHTS
+ * @covers BR-DASH-007
  * InsightsPanel — main content area for the /app dashboard, ?tab=insights view.
  *
  * Visual contract: mockups/tadaify-mvp/app-insights.html (entire file).
