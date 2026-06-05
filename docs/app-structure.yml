@@ -1,0 +1,44 @@
+# docs/app-structure.yml — repo-local opt-in marker for grasp-app-structure.
+#
+# Phase P1 (issue #304, epic #303): tadaify-app is the first product repo to adopt
+# the skill. strict:false → planning / report-only — this marker enforces NOTHING
+# yet. It declares the COMPLETE local-dev port manifest and opts the repo into the
+# validator's report mode. Strict enforcement is flipped on only by P8, after the
+# repo actually passes (P2–P7 convert the structure first).
+#
+# Contract owner: agents-local/skills/grasp-app-structure/reference/structure-spec.md
+# Port-manifest schema owner: .../reference/ports.md
+# Central port registry: agents-local/docs/business-app-port-ranges.yml (app: tadaify)
+
+contract: grasp-business-app-structure
+repo_kind: business-stack-app
+stack:
+  frontend: react
+  router: rr7
+  db: supabase
+strict: false                       # planning / report-only (P1)
+
+local_dev:
+  # port_namespace MUST equal supabase/config.toml project_id ("tadaify").
+  port_namespace: tadaify
+  base_port: 54351                  # [api] port — the app's anchor / registry row.
+  range: [54350, 54359]             # inclusive [lo, hi]; tadaify's reserved Supabase band.
+  container_pattern: "supabase_<service>_<project_id>"
+  services:
+    # Every port supabase/config.toml declares is mirrored here — no hidden
+    # defaults (ports.md §4). Each value equals the live config.toml value.
+    supabase_api: 54351             # [api] port
+    db: 54352                       # [db] port
+    shadow: 54350                   # [db] shadow_port
+    pooler: 54359                   # [db.pooler] port  (enabled = false, port still reserved)
+    studio: 54353                   # [studio] port
+    inbucket: 54354                 # [inbucket] port
+    analytics: 54357                # [analytics] port  (enabled = true, backend = postgres)
+    edge_inspector: 8083            # [edge_runtime] inspector_port — outside the 5435x band,
+                                    # host-shared, declared explicitly (ports.md §1/§4).
+    # App dev/preview host ports — owned by the build tooling, not config.toml.
+    # Pinned in package.json via --port … --strictPort (the script is the source of
+    # truth; these MUST equal what it pins). Both sit OUTSIDE the 5435x range and are
+    # the shared host ports recorded in the central registry's shared_host_ports.
+    app: 5173                       # react-router dev --port 5173 --strictPort (== shared_host_ports.app_vite)
+    test_preview: 4321              # vite preview --port 4321 --strictPort (== shared_host_ports.test_preview_astro)
