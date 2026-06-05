@@ -1,6 +1,6 @@
 # Technical Requirements — INDEX
 
-> **Auto-generated** on 2026-04-29 by `bin/migrate-records.mjs --kind=tr`. Updated 2026-04-29 with TR-AUTH-01..06 (F-REGISTER-001a Slice B).
+> **Auto-generated** on 2026-06-05 by `bin/migrate-records.mjs --kind=tr`.
 > Do NOT hand-edit this file. Edit the individual TR records in `docs/requirements/technical/`.
 > To add a new TR: create `docs/requirements/technical/NNNN-<slug>.md` with MADR frontmatter.
 
@@ -16,25 +16,29 @@
 | [TR-006](requirements/technical/0006-tr-006-guard-hooks-block-supabase-writes-py-blocks-all-supab.md) | MUST | Guard hooks: `block-supabase-writes.py` blocks all Supabase MCP write tools. |
 | [TR-007](requirements/technical/0007-tr-007-supabase-mcp-read-only-in-all-sessions.md) | MUST | Supabase MCP: read-only in all sessions. |
 | [TR-008](requirements/technical/0008-tr-008-language-typescript-everywhere.md) | MUST | Language: TypeScript everywhere. |
-| [TR-009](requirements/technical/0009-tr-009-no-github-workflows-in-this-repo-yet-local-only-phase.md) | ~~MUST~~ | ~~No `.github/workflows/` in this repo yet — local-only phase.~~ **Superseded by TR-tadaify-001** |
+| [TR-009](requirements/technical/0009-tr-009-no-github-workflows-in-this-repo-yet-local-only-phase.md) | MUST | No `.github/workflows/` in this repo yet — local-only phase. |
 | [TR-010](requirements/technical/0010-tr-010-every-commit-body-starts-with-claude-commit-line-huma.md) | MUST | Every commit body starts with `Claude commit:` line (human-scannable attribution). |
 | [TR-011](requirements/technical/0011-tr-011-google-fonts-loaded-via-links-export-in-app-root-tsx-.md) | SHOULD | Google Fonts loaded via `links` export in `app/root.tsx` (no `@import url()` in CSS — avoids render-blocking in Workers SSR) |
 | [TR-012](requirements/technical/0012-tr-012-cloudflare-workers-ai-binding-ai-configured-in-wrangl.md) | SHOULD | Cloudflare Workers AI binding (`AI`) configured in `wrangler.jsonc` [ai] block |
 | [TR-013](requirements/technical/0013-tr-013-supabase-edge-functions-for-server-side-operations-th.md) | MAY | Supabase Edge Functions for server-side operations that need the service role key (GDPR export, account deletion) |
 | [TR-AUTH-01](requirements/technical/0014-tr-auth-01-email-otp-login-uses-dedicated-login-otp-endpoint.md) | MUST | Login email-OTP uses `/api/auth/login-otp` (not signup endpoint) |
-| [TR-AUTH-02](requirements/technical/0015-tr-auth-02-verify-returns-access-token-for-password-setup.md) | MUST | `POST /api/auth/verify` response includes `access_token` for downstream password setup |
-| [TR-AUTH-03](requirements/technical/0016-tr-auth-03-handle-race-pre-check-in-verify.md) | MUST | Handle race-condition pre-check in `POST /api/auth/verify` before profiles INSERT |
-| [TR-AUTH-04](requirements/technical/0017-tr-auth-04-handle-reserve-profiles-pre-check.md) | MUST | Handle reservation must check `profiles` table before inserting into `handle_reservations` |
+| [TR-AUTH-02](requirements/technical/0015-tr-auth-02-verify-returns-access-token-for-password-setup.md) | MUST | `POST /api/auth/verify` response includes `access_token` |
+| [TR-AUTH-03](requirements/technical/0016-tr-auth-03-handle-race-pre-check-in-verify.md) | MUST | Handle race-condition pre-check in `POST /api/auth/verify` |
+| [TR-AUTH-04](requirements/technical/0017-tr-auth-04-handle-reserve-profiles-pre-check.md) | MUST | Handle reservation must check `profiles` table before inserting |
 | [TR-AUTH-05](requirements/technical/0018-tr-auth-05-supabase-profiles-table-service-role-insert-only.md) | MUST | `profiles` table: service-role INSERT only; RLS own-row for select/update |
-| [TR-AUTH-06](requirements/technical/0019-tr-auth-06-handle-otp-meta-stored-in-raw-user-meta-data.md) | MUST | Handle + tos\_version stored in `raw_user_meta_data` at OTP send time |
-| [TR-tadaify-001](requirements/technical/0020-tr-tadaify-001-unit-test-ci-gate.md) | MUST | Unit-test CI gate; Playwright stays local (supersedes TR-009) |
-| [TR-tadaify-002](requirements/technical/0021-tr-tadaify-002-auth-email-templates.md) | MUST | Auth email templates contract (plain-text fallback files / token-only OTP / local files / inline CSS only) — multipart MIME wire delivery PENDING text_path support / Edge Function dispatcher / Resend Phase 3 |
-| [TR-tadaify-005](requirements/technical/0022-tr-tadaify-005-app-dashboard-ssr-contract.md) | MUST | App dashboard SSR-first contract: loader fetches profile + account_settings + pages + blocks in parallel; pure-function extractables for URL-param parsing; onboarding state derivation in `lib/onboarding-state.ts`; DEC-332=D enforced via type system |
-| [TR-tadaify-003](requirements/technical/0024-tr-tadaify-003-r2-avatar-pipeline-contract.md) | MUST | R2 avatar pipeline contract: backend-proxy upload via Worker route (NOT direct presigned PUT), server-side magic-byte validation (JPG/PNG/WebP only) + 2MB cap, key pattern `avatars/<userId>/<uuid>.<ext>`, 7-day signed read URL, 24h orphan cleanup cron, miniflare-emulated AVATARS_R2 for local dev + Playwright (via `@cloudflare/vite-plugin`; no MOCK_R2 stub), prod R2 binding via separate tadaify-aws infra story, `delete_user_data()` enqueues R2 object delete, `AVATAR_UPLOADS_ENABLED` feature flag. Inherits TR-tadaify-007. |
-| [TR-tadaify-006](requirements/technical/0023-tr-tadaify-006-onboarding-preview-pane-event-contract.md) | MUST | Onboarding preview-pane event/state contract: shared `<OnboardingPreviewPane />` publishes/consumes `tdf:onboarding:state-update` with payload `{ handle, name, bio, av, platforms, socials, tpl }`. Viewport persists in `sessionStorage['tadaify:onboarding:viewport']` (desktop/tablet/mobile). Debounce: 150ms. Tier + complete steps have no preview pane (DEC-297=B + DEC-332=D). |
-| [TR-tadaify-007](requirements/technical/0024-tr-tadaify-007-profile-extras-shared-data-contract.md) | MUST | Shared `profile_extras` data contract: single table `public.profile_extras` (PK user_id FK + tier_slug CHECK + timestamps + updated_at trigger + ON DELETE CASCADE). RLS: own-row SELECT/INSERT/UPDATE; service_role bypass. Incremental: each sub-feature ALTERs to add its own NULLABLE column. GDPR: cascade + delete_user_data() + user-export-data export. |
-| [TR-tadaify-004](requirements/technical/0025-tr-tadaify-004-tier-persistence-semantics.md) | MUST | Tier persistence semantics: `onboarding.tier` action INSERTs `tier_slug='free'` via service-role REST (ignore-duplicates / ON CONFLICT DO NOTHING, idempotent, never overwrites existing row). tier URL/body param IGNORED — server enforces 'free' (DEC-311=A). Stripe webhook (F-PRICING-001 future) is the only mutation path for non-free values. |
+| [TR-AUTH-06](requirements/technical/0019-tr-auth-06-handle-otp-meta-stored-in-raw-user-meta-data.md) | MUST | Handle + tos_version stored in `raw_user_meta_data` at OTP send time |
+| [TR-tadaify-001](requirements/technical/0020-tr-tadaify-001-unit-test-ci-gate.md) | MUST | Unit-test CI gate; Playwright stays local |
+| [TR-tadaify-002](requirements/technical/0021-tr-tadaify-002-auth-email-templates.md) | MUST | Auth email templates contract |
+| [TR-tadaify-003](requirements/technical/0024-tr-tadaify-003-r2-avatar-pipeline-contract.md) | MUST | R2 avatar pipeline contract |
+| [TR-tadaify-004](requirements/technical/0025-tr-tadaify-004-tier-persistence-semantics.md) | MUST | Tier persistence semantics on top of TR-tadaify-007 |
+| [TR-tadaify-005](requirements/technical/0022-tr-tadaify-005-app-dashboard-ssr-contract.md) | MUST | App Dashboard SSR-first contract |
+| [TR-tadaify-006](requirements/technical/0023-tr-tadaify-006-onboarding-preview-pane-event-contract.md) | MUST | Onboarding preview-pane event/state contract |
+| [TR-tadaify-007](requirements/technical/0024-tr-tadaify-007-profile-extras-shared-data-contract.md) | MUST | `profile_extras` shared data contract |
+| [TR-tadaify-008](requirements/technical/0026-tr-tadaify-008-radix-dialog-canonical.md) |  | Radix UI Dialog as canonical modal/dialog primitive |
+| [TR-tadaify-009](requirements/technical/0028-tr-tadaify-009-public-render-edge-cache.md) | MUST | Public-render edge cache contract |
+| [TR-tadaify-010](requirements/technical/0029-tr-tadaify-010-cache-purge-on-crud.md) | MUST | Cache purge on block CRUD |
+| [TR-tadaify-014](requirements/technical/0027-tr-tadaify-014-icon-libraries-lucide-react-simple-icons.md) |  | Icon libraries: lucide-react + simple-icons (DEC-378=A) |
 
 ---
 
-*Generated from 25 MADR records in `docs/requirements/technical/`.*
+*Generated from 30 MADR records in `docs/requirements/technical/`.*
