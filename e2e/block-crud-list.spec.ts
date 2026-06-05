@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-CREATOR-001, BR-DASH-004
+ * Story: #199
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S5 — Dashboard loads blocks list for own page
  *
  * Story: F-BLOCK-INFRA-CRUD-001 (tadaify-app#199)

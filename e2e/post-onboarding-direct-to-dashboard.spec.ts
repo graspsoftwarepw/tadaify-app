@@ -1,4 +1,9 @@
 /**
+ * Module: APP-DASHBOARD
+ * Covers: BR-DASH-001, BR-ONBOARDING-006
+ * Story: #190
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S5 (issue tadaify-app#190 Bug #4, DEC-366=A)
  *
  * "tier step CTA lands directly on /app dashboard, no intermediate UI"

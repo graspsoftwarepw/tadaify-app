@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-CREATOR-001, TR-tadaify-008
+ * Story: #199
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S2 — API integration: POST /api/blocks/reorder atomically updates positions
  *
  * Story: F-BLOCK-INFRA-CRUD-001 (tadaify-app#199)

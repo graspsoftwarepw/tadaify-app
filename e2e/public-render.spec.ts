@@ -1,4 +1,9 @@
 /**
+ * Module: PUBLIC-PAGES
+ * Covers: BR-CREATOR-001
+ * Story: #202
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — Public creator page render (F-BLOCK-INFRA-PUBLIC-RENDER-001, #202)
  *
  * Covers: S1–S8 per issue #202 body.

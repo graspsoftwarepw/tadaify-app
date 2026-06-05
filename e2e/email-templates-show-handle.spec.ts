@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-002
+ * Story: #190
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S2, S3 (issue tadaify-app#190 Bug #2, DEC-364=A)
  *
  * S2: "signup OTP email greets @{handle}, not @{email}"

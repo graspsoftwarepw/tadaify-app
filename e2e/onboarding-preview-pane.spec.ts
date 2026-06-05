@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-003
+ * Story: #137
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite for onboarding preview pane (tadaify-app#137).
  *
  * Covers: S1-S5 per issue #137 test plan.

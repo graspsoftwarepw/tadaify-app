@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-005
+ * Story: #190
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S4 (issue tadaify-app#190 Bug #3)
  *
  * "login OTP success lands on /app dashboard, not 404"

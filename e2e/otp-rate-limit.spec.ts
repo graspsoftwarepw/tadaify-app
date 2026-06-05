@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-OTP-001, BR-AUTH-008
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — OTP resend rate-limit (BR-OTP-RATE-LIMIT-001)
  *
  * Covers: BR-OTP-RATE-LIMIT-001, DEC-342=A

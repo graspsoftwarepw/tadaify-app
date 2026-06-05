@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-004, BR-ONBOARDING-005
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S4 — Bugs #4b + #6d regression: "coming in a future update" leak
  *
  * Issue: tadaify-app#188

@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-002
+ * Story: #178
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite for OTP grid layout fix (tadaify-app#178).
  *
  * Bug: `repeat(6, 1fr)` resolves to `minmax(auto, 1fr)` on <input> elements,

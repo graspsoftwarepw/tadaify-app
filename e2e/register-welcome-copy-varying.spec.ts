@@ -1,4 +1,9 @@
 /**
+ * Module: APP-DASHBOARD
+ * Covers: BR-DASH-005
+ * Story: #196
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S1 — Varying welcome header copy per /register section (DEC-358=B, tadaify-app#196)
  *
  * Spec: "varying header copy: 'Hey' on A → 'almost there' on B-otp → 'Welcome' on C"

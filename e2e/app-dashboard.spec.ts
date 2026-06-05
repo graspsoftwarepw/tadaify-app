@@ -1,4 +1,9 @@
 /**
+ * Module: APP-DASHBOARD
+ * Covers: BR-DASH-001, BR-DASH-002, BR-DASH-006, BR-DASH-007, BR-DASH-008, BR-DASH-009, BR-DASH-010, TR-tadaify-005
+ * Story: #171
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite — App Dashboard (F-APP-DASHBOARD-001a, #171)
  *
  * Covers: BR-Slice-C, AC#1-AC#26, TR-tadaify-005, ECN-26a-01..26

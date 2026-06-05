@@ -1,4 +1,9 @@
 /**
+ * Module: LANDING
+ * Covers: BR-LANDING-001, BR-AUTH-001
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Critical path smoke spec — portfolio invariant.
  *
  * This file MUST always exist per feature-checklist §8. It verifies the

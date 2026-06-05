@@ -1,4 +1,9 @@
 /**
+ * Module: ONBOARDING
+ * Covers: BR-ONBOARDING-004
+ * Story: #136
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * S2 — Bug #5 regression: multi-select template radio (broken state management)
  *
  * Issue: tadaify-app#188

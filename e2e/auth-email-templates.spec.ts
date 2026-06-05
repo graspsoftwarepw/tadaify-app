@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-002, TR-AUTH-01
+ * Story: #150
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Auth email templates — Playwright spec
  * Issue: #150 (TR-tadaify-002 production templates Phase 1+2)
  *

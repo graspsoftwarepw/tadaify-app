@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-001
+ * Story: #183
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright spec — SSO provider list after Apple SSO removal (DEC-346=C).
  *
  * Covers acceptance criteria S1, S2, S3 from issue tadaify-app#183.

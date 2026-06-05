@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-001, BR-AUTH-002, BR-AUTH-003, BR-AUTH-004
+ * Story: #149
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright test suite for register flow cascade fix (#149 / #163).
  *
  * Covers: BR-Slice-B (OTP-only register), BUG-149-{1,2,3,4,6}, ECN-149-{01,04,05,09,10,12}

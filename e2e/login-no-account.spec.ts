@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-005, TR-AUTH-01
+ * Story: #310
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright spec for issue tadaify-app#176 — friendly no-account UX on /login.
  *
  * Covers: BR-AUTH-05 (sign-in via OTP), TR-AUTH-01 (Supabase OTP)

@@ -1,4 +1,9 @@
 /**
+ * Module: AUTH
+ * Covers: BR-AUTH-001
+ * Story: #142
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Register page — visual mockup match (issue tadaify-app#142)
  *
  * S1-S6 per issue body § "Playwright test plan". Each test ships in this single

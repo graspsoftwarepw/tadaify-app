@@ -1,4 +1,9 @@
 /**
+ * Module: BLOCKS
+ * Covers: BR-CREATOR-001, BR-DASH-004
+ * Story: #56
+ * (P7 canonical header — grasp-app-structure #310; original notes below)
+ *
  * Playwright suite — Link button block (slice A)
  *
  * Story: F-BLOCK-LINK-001 slice A (tadaify-app#56)
