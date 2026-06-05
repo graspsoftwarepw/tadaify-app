@@ -18,6 +18,15 @@ stack:
   db: supabase
 strict: false                       # planning / report-only (P1)
 
+migrations:
+  # Grandfather cutoff (P6, issue #309). The migration header standard, the
+  # generated index (supabase/MIGRATIONS.md), and the schema.sql + GDPR-pair
+  # gates bind ONLY migrations whose YYYYMMDDHHMMSS timestamp is strictly
+  # GREATER than this value. The 19 pre-cutoff legacy files (latest
+  # 20260531000002_feedback.sql) are exempt and stay byte-for-byte untouched.
+  # Contract: agents-local/skills/grasp-app-structure/reference/migrations.md
+  cutoff: 20260531000002
+
 local_dev:
   # port_namespace MUST equal supabase/config.toml project_id ("tadaify").
   port_namespace: tadaify

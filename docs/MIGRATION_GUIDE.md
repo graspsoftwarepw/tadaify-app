@@ -1,5 +1,17 @@
 # Migration Guide — tadaify
 
+> **New migrations (post-cutoff `20260531000002`) follow the Grasp migration
+> standard.** Create them with `bin/new-migration.sh <module> <verb_noun>` (UTC
+> wall-clock name + the mandatory 8-key header), then regenerate the module-keyed
+> index `supabase/MIGRATIONS.md` via `scripts/gen-migrations-index.sh` and run the
+> gate `python3 scripts/check-migrations.py`. The cutoff lives in
+> `docs/app-structure.yml` (`migrations.cutoff`); the full contract is
+> `agents-local/skills/grasp-app-structure/reference/migrations.md`.
+>
+> The 19 pre-cutoff legacy migrations below are **grandfathered** — exempt from
+> the header/gate and never rewritten. The prose sections that follow remain the
+> applied/pending record for those legacy files.
+
 All database migrations that need to be applied to PROD are listed here under
 "Pending for PROD". After a migration is applied to PROD (via `v*` tag deploy),
 move it to "Applied".
