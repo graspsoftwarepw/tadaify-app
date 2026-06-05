@@ -1,14 +1,14 @@
 ---
-id: TR-AUTH-04
-type: tr
+id: TR-AUTH-004
+title: Handle reservation must check `profiles` table before inserting
+area: AUTH
 status: accepted
-date: 2026-04-29
 level: MUST
-topics: [auth, handle, reservation, profiles]
+covers: [BR-AUTH-007]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-29
+aliases: [TR-AUTH-04]
 ---
 
 # TR-AUTH-04 — Handle reservation must check `profiles` table before inserting

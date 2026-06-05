@@ -1,14 +1,14 @@
 ---
-id: TR-006
-type: tr
+id: TR-SHARED-006
+title: "Guard hooks: `block-supabase-writes.py` blocks all Supabase MCP write tools."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [guard, hooks, block, supabase]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-006]
 ---
 
 # TR-006 — Guard hooks: `block-supabase-writes.py` blocks all Supabase MCP write tools.

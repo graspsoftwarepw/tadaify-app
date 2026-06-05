@@ -1,14 +1,14 @@
 ---
-id: TR-004
-type: tr
+id: TR-SHARED-004
+title: "Database: Supabase (local Docker on port-band 5435X; DEV/PROD via Supabase hosted)."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [database, supabase, local, docker]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-004]
 ---
 
 # TR-004 — Database: Supabase (local Docker on port-band 5435X; DEV/PROD via Supabase hosted).

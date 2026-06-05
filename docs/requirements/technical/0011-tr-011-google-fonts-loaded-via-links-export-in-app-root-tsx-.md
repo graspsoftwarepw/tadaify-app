@@ -1,14 +1,14 @@
 ---
-id: TR-011
-type: tr
+id: TR-SHARED-011
+title: Google Fonts loaded via `links` export in `app/root.tsx` (no `@import url()` in CSS — avoids render-blocking in Workers SSR)
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: SHOULD
-topics: [google, fonts, loaded, links]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-011]
 ---
 
 # TR-011 — Google Fonts loaded via `links` export in `app/root.tsx` (no `@import url()` in CSS — avoids render-blocking in Workers SSR)

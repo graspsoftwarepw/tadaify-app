@@ -1,14 +1,14 @@
 ---
-id: TR-013
-type: tr
+id: TR-SHARED-013
+title: Supabase Edge Functions for server-side operations that need the service role key (GDPR export, account deletion)
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MAY
-topics: [supabase, edge, functions, server]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-013]
 ---
 
 # TR-013 — Supabase Edge Functions for server-side operations that need the service role key (GDPR export, account deletion)

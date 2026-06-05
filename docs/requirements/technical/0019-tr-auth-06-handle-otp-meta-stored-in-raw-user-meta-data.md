@@ -1,14 +1,14 @@
 ---
-id: TR-AUTH-06
-type: tr
+id: TR-AUTH-006
+title: Handle + tos_version stored in `raw_user_meta_data` at OTP send time
+area: AUTH
 status: accepted
-date: 2026-04-29
 level: MUST
-topics: [auth, signup, supabase, metadata]
+covers: [BR-AUTH-001, BR-AUTH-003]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-29
+aliases: [TR-AUTH-06]
 ---
 
 # TR-AUTH-06 — Handle + tos_version stored in `raw_user_meta_data` at OTP send time

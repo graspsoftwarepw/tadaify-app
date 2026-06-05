@@ -1,14 +1,14 @@
 ---
-id: TR-tadaify-001
-type: tr
+id: TR-SHARED-014
+title: Unit-test CI gate; Playwright stays local
+area: SHARED
 status: accepted
-date: 2026-05-02
 level: MUST
-topics: [ci, github-actions, unit-tests, typecheck, build]
-supersedes: [TR-009]
+covers: []
+supersedes: [TR-SHARED-009]
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-05-02
+aliases: [TR-tadaify-001]
 ---
 
 # TR-tadaify-001 — Unit-test CI gate; Playwright stays local

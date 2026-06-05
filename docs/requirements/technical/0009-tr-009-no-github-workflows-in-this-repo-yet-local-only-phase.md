@@ -1,14 +1,14 @@
 ---
-id: TR-009
-type: tr
+id: TR-SHARED-009
+title: No `.github/workflows/` in this repo yet — local-only phase.
+area: SHARED
 status: superseded
-date: 2026-04-28
 level: MUST
-topics: [github, workflows, repo, local]
+covers: []
 supersedes: []
-superseded_by: TR-tadaify-001
+superseded_by: TR-SHARED-014
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-009]
 ---
 
 # TR-009 — No `.github/workflows/` in this repo yet — local-only phase.

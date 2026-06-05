@@ -1,14 +1,14 @@
 ---
-id: TR-005
-type: tr
+id: TR-SHARED-005
+title: "Email (local dev): Supabase Inbucket on port 54354."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [email, local, supabase, inbucket]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-005]
 ---
 
 # TR-005 — Email (local dev): Supabase Inbucket on port 54354.

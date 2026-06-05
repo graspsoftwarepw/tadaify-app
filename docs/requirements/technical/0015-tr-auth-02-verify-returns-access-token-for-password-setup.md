@@ -1,14 +1,14 @@
 ---
-id: TR-AUTH-02
-type: tr
+id: TR-AUTH-002
+title: `POST /api/auth/verify` response includes `access_token`
+area: AUTH
 status: accepted
-date: 2026-04-29
 level: MUST
-topics: [auth, verify, access_token, password]
+covers: [BR-AUTH-004]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-29
+aliases: [TR-AUTH-02]
 ---
 
 # TR-AUTH-02 — `POST /api/auth/verify` response includes `access_token`

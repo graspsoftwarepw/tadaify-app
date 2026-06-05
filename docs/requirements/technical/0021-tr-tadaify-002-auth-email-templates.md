@@ -1,14 +1,14 @@
 ---
-id: TR-tadaify-002
-type: tr
+id: TR-AUTH-007
+title: Auth email templates contract
+area: AUTH
 status: accepted
-date: 2026-05-02
 level: MUST
-topics: [email, auth, templates, multipart-mime, inline-css, otp]
+covers: [BR-AUTH-002]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-05-02
+aliases: [TR-tadaify-002]
 ---
 
 # TR-tadaify-002 — Auth email templates contract
