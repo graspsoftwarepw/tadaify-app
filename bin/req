@@ -1,0 +1,193 @@
+#!/usr/bin/env node
+// bin/req — bidirectional reader over docs/maps/* (grasp-app-structure, #308).
+//
+// A PURE reader: it parses the three committed maps and never touches application code.
+// It calls bin/maps-check first and FAILS CLOSED (exit 2, "stale map") on a digest
+// mismatch, so a query can never answer against drifted maps.
+//
+//   bin/req find <ID>                 forward: ID (view | module path | BR/TR/F id) → subgraph
+//   bin/req who-governs <path|route>  reverse: URL / file path → governing ids + owning view
+//   bin/req orphans                   gaps: empty governs/tests, panel w/ no parent, viewless module
+//                                     (exit 1 if any orphan; exit 0 clean)
+//
+// Contract: agents-local/skills/grasp-app-structure/reference/maps.md
+
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { repoRoot, MAP_FILES, DIGEST_RE, normalizeUrl } from "./lib/maps-lib.mjs";
+
+const root = repoRoot();
+
+// ── fail closed on stale digest ──────────────────────────────────────────────
+function ensureFresh() {
+  const r = spawnSync(join(root, "bin/maps-check"), { encoding: "utf8" });
+  if (r.status !== 0) {
+    process.stderr.write("stale map: refusing to read drifted maps (run bin/maps-gen)\n");
+    if (r.stderr) process.stderr.write(r.stderr);
+    process.exit(2);
+  }
+}
+
+// ── map table parsing (reader only) ──────────────────────────────────────────
+function parseMap(file) {
+  const abs = join(root, "docs/maps", file);
+  if (!existsSync(abs)) { process.stderr.write(`missing map: docs/maps/${file}\n`); process.exit(2); }
+  const text = readFileSync(abs, "utf8");
+  if (!DIGEST_RE.test(text)) { process.stderr.write(`no digest header in docs/maps/${file}\n`); process.exit(2); }
+  const lines = text.split("\n").filter((l) => l.startsWith("|"));
+  if (lines.length < 2) return { cols: [], rows: [] };
+  const cols = splitRow(lines[0]);
+  const rows = lines.slice(2).map((l) => {
+    const cells = splitRow(l);
+    const o = {};
+    cols.forEach((c, i) => (o[c] = cells[i] ?? "—"));
+    return o;
+  });
+  return { cols, rows };
+}
+
+function splitRow(line) {
+  return line.replace(/^\|/, "").replace(/\|$/, "").split("|").map((s) => s.trim());
+}
+
+function list(v) {
+  return v && v !== "—" ? v.split(",").map((s) => s.trim()).filter(Boolean) : [];
+}
+
+function load() {
+  return {
+    views: parseMap("views.md").rows,
+    modules: parseMap("modules.md").rows,
+    e2e: parseMap("e2e.md").rows,
+  };
+}
+
+// ── find <ID> — forward ──────────────────────────────────────────────────────
+function find(id, db) {
+  let hit = 0;
+
+  // view id
+  for (const v of db.views.filter((v) => v.id === id)) {
+    hit++;
+    printView(v);
+  }
+  // module path
+  for (const m of db.modules.filter((m) => m.module === id)) {
+    hit++;
+    process.stdout.write(`module  ${m.module}  ${m.kind}  mounted_by=${m.mounted_by}\n`);
+    process.stdout.write(`  views    ${m.views}\n`);
+    process.stdout.write(`  governs  ${m.governs}\n`);
+    process.stdout.write(`  api      ${m.api}\n`);
+    process.stdout.write(`  e2e      ${m.e2e}\n`);
+    for (const vid of list(m.views)) {
+      const v = db.views.find((x) => x.id === vid);
+      if (v) printView(v, "    ");
+    }
+  }
+  // governing id (BR / TR / F-…) appearing in a view's governs
+  for (const v of db.views.filter((v) => list(v.governs).includes(id))) {
+    hit++;
+    process.stdout.write(`governs ${id}  →\n`);
+    printView(v, "  ");
+  }
+
+  if (!hit) { process.stderr.write(`no match for ${id}\n`); process.exit(1); }
+}
+
+function printView(v, ind = "") {
+  process.stdout.write(`${ind}view    ${v.id}  ${v.url}  ${v.kind}\n`);
+  process.stdout.write(`${ind}  module   ${v.module}\n`);
+  if (v.parent && v.parent !== "—") process.stdout.write(`${ind}  parent   ${v.parent}\n`);
+  process.stdout.write(`${ind}  governs  ${v.governs}\n`);
+  process.stdout.write(`${ind}  tests    ${v.tests}\n`);
+  process.stdout.write(`${ind}  e2e      ${v.e2e}\n`);
+}
+
+// ── who-governs <path|route> — reverse ───────────────────────────────────────
+function whoGoverns(query, db) {
+  const hasQuery = query.includes("?");
+  const norm = normalizeUrl(query);
+  let hit = 0;
+
+  for (const v of db.views) {
+    let match = false;
+    if (hasQuery) {
+      // query-panel: compare full url incl. query string
+      match = v.url === query || v.url === query.replace(/\$([A-Za-z0-9_]+)/g, ":$1");
+    } else {
+      match = normalizeUrl(v.url) === norm || v.module === query || v.module.endsWith(`/${query}`);
+    }
+    if (!match) continue;
+    hit++;
+    const gov = list(v.governs).join(", ");
+    process.stdout.write(`${v.id}  →  ${v.module}  →  ${gov}\n`);
+    if (v.parent && v.parent !== "—") process.stdout.write(`  host     ${v.parent}\n`);
+    process.stdout.write(`  tests    ${v.tests}\n`);
+  }
+
+  if (!hit) { process.stderr.write(`who-governs: no view for ${query}\n`); process.exit(1); }
+}
+
+// ── orphans — gaps ───────────────────────────────────────────────────────────
+function orphans(db) {
+  const viewModules = new Set(db.views.map((v) => v.module));
+  let any = false;
+
+  process.stdout.write("# modules with no view (excluding rr7-resource/guard)\n");
+  for (const m of db.modules) {
+    if (m.kind === "rr7-resource" || m.kind === "guard") continue;
+    if (list(m.views).length === 0 && !viewModules.has(m.module)) {
+      process.stdout.write(`  ${m.module} (${m.kind})\n`);
+      any = true;
+    }
+  }
+
+  process.stdout.write("# views with empty governs\n");
+  for (const v of db.views) {
+    if (list(v.governs).length === 0) { process.stdout.write(`  ${v.id} ${v.url}\n`); any = true; }
+  }
+
+  process.stdout.write("# views with empty tests\n");
+  for (const v of db.views) {
+    if (list(v.tests).length === 0) { process.stdout.write(`  ${v.id} ${v.url}\n`); any = true; }
+  }
+
+  process.stdout.write("# panel views with no parent (host)\n");
+  for (const v of db.views) {
+    if ((v.kind === "query-panel" || v.kind === "non-url-panel") && (!v.parent || v.parent === "—")) {
+      process.stdout.write(`  ${v.id} ${v.url}\n`); any = true;
+    }
+  }
+
+  if (any) process.exit(1);
+  process.stdout.write("clean: no orphans\n");
+  process.exit(0);
+}
+
+// ── dispatch ─────────────────────────────────────────────────────────────────
+const [cmd, arg] = process.argv.slice(2);
+if (!cmd) {
+  process.stderr.write("usage: bin/req <find <ID> | who-governs <path> | orphans>\n");
+  process.exit(64);
+}
+
+ensureFresh();
+const db = load();
+
+switch (cmd) {
+  case "find":
+    if (!arg) { process.stderr.write("find: <ID> required\n"); process.exit(64); }
+    find(arg, db);
+    break;
+  case "who-governs":
+    if (!arg) { process.stderr.write("who-governs: <path|route> required\n"); process.exit(64); }
+    whoGoverns(arg, db);
+    break;
+  case "orphans":
+    orphans(db);
+    break;
+  default:
+    process.stderr.write(`unknown command: ${cmd}\n`);
+    process.exit(64);
+}

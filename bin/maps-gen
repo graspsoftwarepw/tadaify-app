@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+// bin/maps-gen — generate docs/maps/{views,modules,e2e}.md (grasp-app-structure, #308).
+//
+// Parses the RR7 route registry (app/routes.ts), joins the P3 BR records and the P4
+// module registry + module annotations, and emits the three Pillar-0 maps, each with a
+// digest header computed over the *inputs*. The maps are NEVER hand-edited.
+//
+// Contract: agents-local/skills/grasp-app-structure/reference/maps.md
+// Usage: bin/maps-gen            (writes docs/maps/*.md)
+//        bin/maps-gen --check    (alias of bin/maps-check; non-writing freshness check)
+
+import { writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import {
+  repoRoot, buildModel, computeDigest, renderViews, renderModules, renderE2e, MAP_FILES,
+} from "./lib/maps-lib.mjs";
+
+const root = repoRoot();
+
+if (process.argv.includes("--check")) {
+  const { spawnSync } = await import("node:child_process");
+  const r = spawnSync(join(root, "bin/maps-check"), { stdio: "inherit" });
+  process.exit(r.status ?? 1);
+}
+
+const sha = computeDigest(root);
+const model = buildModel(root);
+
+const out = {
+  "views.md": renderViews(model, sha),
+  "modules.md": renderModules(model, sha),
+  "e2e.md": renderE2e(model, sha),
+};
+
+mkdirSync(join(root, "docs/maps"), { recursive: true });
+for (const f of MAP_FILES) {
+  writeFileSync(join(root, "docs/maps", f), out[f], "utf8");
+  process.stderr.write(`wrote docs/maps/${f} (sha=${sha})\n`);
+}

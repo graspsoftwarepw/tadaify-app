@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+// bin/maps-check — staleness verifier for docs/maps/*.md (grasp-app-structure, #308).
+//
+// Recomputes the digest over the current inputs (route registry + joined frontmatter +
+// annotations) and compares it to the header committed in each map. Exit 0 if all three
+// match; exit 1 + a `stale map: <file> (expected <new> got <old>)` line on stderr on any
+// mismatch (or a missing/unparsable header). CI runs this; bin/req calls it and fails
+// closed on a nonzero exit.
+//
+// Contract: agents-local/skills/grasp-app-structure/reference/maps.md
+// Usage: bin/maps-check   → exit 0 fresh / exit 1 + "stale map: …" on drift.
+
+import {
+  repoRoot, computeDigest, readMapDigest, MAP_FILES,
+} from "./lib/maps-lib.mjs";
+
+const root = repoRoot();
+const expected = computeDigest(root);
+
+let stale = false;
+for (const f of MAP_FILES) {
+  const got = readMapDigest(root, f);
+  if (got !== expected) {
+    stale = true;
+    process.stderr.write(`stale map: docs/maps/${f} (expected ${expected} got ${got ?? "none"})\n`);
+  }
+}
+
+if (stale) process.exit(1);
+process.stdout.write(`maps fresh (sha=${expected})\n`);
+process.exit(0);
