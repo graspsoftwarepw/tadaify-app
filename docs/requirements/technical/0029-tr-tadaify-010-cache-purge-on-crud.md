@@ -1,3 +1,16 @@
+---
+id: TR-PUBLICPAGES-002
+title: Cache purge on block CRUD
+area: PUBLICPAGES
+status: accepted
+level: MUST
+covers: [BR-CREATOR-001]
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-010]
+---
+
 # TR-tadaify-010 — Cache purge on block CRUD
 
 **Level:** MUST

@@ -1,14 +1,14 @@
 ---
-id: TR-AUTH-01
-type: tr
+id: TR-AUTH-001
+title: Login email-OTP uses `/api/auth/login-otp` (not signup endpoint)
+area: AUTH
 status: accepted
-date: 2026-04-29
 level: MUST
-topics: [auth, login, otp, email]
+covers: [BR-AUTH-005]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-29
+aliases: [TR-AUTH-01]
 ---
 
 # TR-AUTH-01 — Login email-OTP uses `/api/auth/login-otp` (not signup endpoint)

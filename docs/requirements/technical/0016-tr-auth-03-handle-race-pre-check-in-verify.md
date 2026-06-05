@@ -1,14 +1,14 @@
 ---
-id: TR-AUTH-03
-type: tr
+id: TR-AUTH-003
+title: Handle race-condition pre-check in `POST /api/auth/verify`
+area: AUTH
 status: accepted
-date: 2026-04-29
 level: MUST
-topics: [auth, verify, profiles, race-condition]
+covers: [BR-AUTH-003]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-29
+aliases: [TR-AUTH-03]
 ---
 
 # TR-AUTH-03 — Handle race-condition pre-check in `POST /api/auth/verify`

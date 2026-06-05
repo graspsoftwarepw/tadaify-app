@@ -1,3 +1,16 @@
+---
+id: TR-APPDASHBOARD-001
+title: App Dashboard SSR-first contract
+area: APPDASHBOARD
+status: accepted
+level: MUST
+covers: [BR-DASH-001]
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-005]
+---
+
 # TR-tadaify-005 — App Dashboard SSR-first contract
 
 **Level:** MUST

@@ -1,10 +1,14 @@
 ---
-id: TR-tadaify-004
-title: "Tier persistence semantics (onboarding)"
-level: MUST
+id: TR-APPSETTINGS-001
+title: Tier persistence semantics on top of TR-tadaify-007
+area: APPSETTINGS
 status: accepted
-created_at: 2026-05-05
-story: F-ONBOARDING-001d (#139)
+level: MUST
+covers: [BR-ONBOARDING-005]
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-004]
 ---
 
 # TR-tadaify-004 — Tier persistence semantics on top of TR-tadaify-007

@@ -1,14 +1,14 @@
 ---
-id: TR-AUTH-05
-type: tr
+id: TR-AUTH-005
+title: "`profiles` table: service-role INSERT only; RLS own-row for select/update"
+area: AUTH
 status: accepted
-date: 2026-04-29
 level: MUST
-topics: [auth, profiles, rls, supabase]
+covers: [BR-AUTH-003]
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-29
+aliases: [TR-AUTH-05]
 ---
 
 # TR-AUTH-05 — `profiles` table: service-role INSERT only; RLS own-row for select/update

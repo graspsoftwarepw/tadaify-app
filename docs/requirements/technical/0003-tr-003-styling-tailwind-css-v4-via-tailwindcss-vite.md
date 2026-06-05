@@ -1,14 +1,14 @@
 ---
-id: TR-003
-type: tr
+id: TR-SHARED-003
+title: "Styling: Tailwind CSS v4 via `@tailwindcss/vite`."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [styling, tailwind, tailwindcss, vite]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-003]
 ---
 
 # TR-003 — Styling: Tailwind CSS v4 via `@tailwindcss/vite`.

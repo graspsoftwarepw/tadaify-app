@@ -1,14 +1,14 @@
 ---
-id: TR-007
-type: tr
+id: TR-SHARED-007
+title: "Supabase MCP: read-only in all sessions."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [supabase, read, only, sessions]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-007]
 ---
 
 # TR-007 — Supabase MCP: read-only in all sessions.

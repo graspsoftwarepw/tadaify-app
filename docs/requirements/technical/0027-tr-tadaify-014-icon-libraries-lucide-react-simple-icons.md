@@ -1,3 +1,16 @@
+---
+id: TR-SHARED-017
+title: "Icon libraries: lucide-react + simple-icons (DEC-378=A)"
+area: SHARED
+status: accepted
+level: MUST
+covers: []
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-014]
+---
+
 # TR-tadaify-014 — Icon libraries: lucide-react + simple-icons (DEC-378=A)
 
 **ID:** TR-tadaify-014  

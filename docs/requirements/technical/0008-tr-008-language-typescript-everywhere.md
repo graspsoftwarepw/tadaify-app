@@ -1,14 +1,14 @@
 ---
-id: TR-008
-type: tr
+id: TR-SHARED-008
+title: "Language: TypeScript everywhere."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [language, typescript, everywhere]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-008]
 ---
 
 # TR-008 — Language: TypeScript everywhere.

@@ -1,10 +1,14 @@
 ---
-id: TR-tadaify-007
-title: "profile_extras shared data contract"
-level: MUST
+id: TR-SHARED-015
+title: `profile_extras` shared data contract
+area: SHARED
 status: accepted
-created_at: 2026-05-05
-story: F-ONBOARDING-001d (#139)
+level: MUST
+covers: []
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-007]
 ---
 
 # TR-tadaify-007 — `profile_extras` shared data contract

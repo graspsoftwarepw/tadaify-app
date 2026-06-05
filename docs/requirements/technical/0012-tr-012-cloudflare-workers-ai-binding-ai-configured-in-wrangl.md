@@ -1,14 +1,14 @@
 ---
-id: TR-012
-type: tr
+id: TR-SHARED-012
+title: Cloudflare Workers AI binding (`AI`) configured in `wrangler.jsonc` [ai] block
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: SHOULD
-topics: [cloudflare, workers, binding, configured]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-012]
 ---
 
 # TR-012 — Cloudflare Workers AI binding (`AI`) configured in `wrangler.jsonc` [ai] block

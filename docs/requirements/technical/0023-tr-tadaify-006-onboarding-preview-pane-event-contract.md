@@ -1,3 +1,16 @@
+---
+id: TR-ONBOARDING-001
+title: Onboarding preview-pane event/state contract
+area: ONBOARDING
+status: accepted
+level: MUST
+covers: [BR-ONBOARDING-001, BR-ONBOARDING-002, BR-ONBOARDING-003, BR-ONBOARDING-004]
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-006]
+---
+
 # TR-tadaify-006 — Onboarding preview-pane event/state contract
 
 **Level:** MUST

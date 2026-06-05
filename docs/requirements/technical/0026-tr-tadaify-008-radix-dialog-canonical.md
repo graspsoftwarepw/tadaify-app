@@ -1,3 +1,16 @@
+---
+id: TR-SHARED-016
+title: Radix UI Dialog as canonical modal/dialog primitive
+area: SHARED
+status: accepted
+level: MUST
+covers: []
+supersedes: []
+superseded_by: null
+authorized_by: vvaser@gmail.com
+aliases: [TR-tadaify-008]
+---
+
 # TR-tadaify-008 — Radix UI Dialog as canonical modal/dialog primitive
 
 **ID:** TR-tadaify-008  

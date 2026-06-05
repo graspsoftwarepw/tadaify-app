@@ -1,14 +1,14 @@
 ---
-id: TR-010
-type: tr
+id: TR-SHARED-010
+title: "Every commit body starts with `Claude commit:` line (human-scannable attribution)."
+area: SHARED
 status: accepted
-date: 2026-04-28
 level: MUST
-topics: [every, commit, body, starts]
+covers: []
 supersedes: []
 superseded_by: null
 authorized_by: vvaser@gmail.com
-authorized_at: 2026-04-28
+aliases: [TR-010]
 ---
 
 # TR-010 — Every commit body starts with `Claude commit:` line (human-scannable attribution).
