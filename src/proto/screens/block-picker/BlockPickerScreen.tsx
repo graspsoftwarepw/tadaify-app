@@ -9,7 +9,8 @@
  *
  * @implements fr-block-picker-modal
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import "./block-picker-proto.css";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import {
@@ -57,6 +58,21 @@ export function BlockPickerScreen() {
   const [q, setQ] = useState("");
   const [aiOpen, setAiOpen] = useState(false);
   const [ddOpen, setDdOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // The picker opened from the dashboard — dismissing returns there.
+  const close = () => navigate("/__proto/dashboard");
+
+  // Escape closes the AI sub-modal first, otherwise the picker.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (aiOpen) setAiOpen(false);
+      else close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [aiOpen]);
 
   const cats = ["All", ...REAL_CATS];
   const countFor = (c: string) => (c === "All" ? types.length : types.filter((t) => t.cat === c).length);
@@ -81,7 +97,13 @@ export function BlockPickerScreen() {
       <DashboardScreen />
 
       <div className="proto-root proto-picker">
-        <div className="modal-backdrop is-open" role="dialog" aria-modal="true" aria-labelledby="picker-h">
+        <div
+          className="modal-backdrop is-open"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="picker-h"
+          onClick={(e) => { if (e.target === e.currentTarget) close(); }}
+        >
           <div className="modal" role="document">
             <header className="modal-head">
               <h2 id="picker-h">Add a block</h2>
@@ -112,7 +134,7 @@ export function BlockPickerScreen() {
               <button className="iconbtn" type="button" aria-label="AI suggestions" title="AI suggestions" onClick={() => setAiOpen(true)}>
                 <span aria-hidden style={{ fontSize: 18 }}>✨</span>
               </button>
-              <button className="iconbtn" aria-label="Close" type="button">
+              <button className="iconbtn" aria-label="Close" type="button" onClick={close}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>

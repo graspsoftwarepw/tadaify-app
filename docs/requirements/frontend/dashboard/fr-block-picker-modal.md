@@ -20,8 +20,6 @@ types. Ported from `mockups/tadaify-mvp/app-block-picker.html`; overlays the das
 ([fr-dashboard-my-page](./fr-dashboard-my-page.md)) and uses the global colour tokens
 ([fr-globalui-theme-and-colours](../globalui/fr-globalui-theme-and-colours.md)).
 
-`status: proposed` — the render-baseline e2e is deferred to the dedicated Playwright batch.
-
 ## Composition
 
 Header:
@@ -45,18 +43,18 @@ Block list (grouped compact rows):
   beneath — chosen over a square-card grid so the modal stays compact across devices.
 - A row whose tier exceeds the current tier shall render in a locked state with an "Upgrade →" hint;
   unlocked rows show an "Add →" hint on hover (always shown on phone).
-
-- The modal shall render one row per block type — an icon, the label with inline badges
-  ("Most clicked", "New", or a tier badge such as "Pro+") on a single line, and a one-line description
-  beneath — chosen over a square-card grid so the modal stays compact across devices.
-- A row whose tier exceeds the current tier shall render in a locked state with an "Upgrade →" hint;
-  unlocked rows show an "Add →" hint on hover (always shown on phone).
 - When search or category filtering yields no types, the modal shall render an empty state.
+
+Dismissal:
+
+- The close button, a click on the backdrop, and the Escape key shall dismiss the modal and return to
+  the dashboard. While the AI sub-modal is open, Escape closes it first.
 
 AI suggestions sub-modal:
 
 - The sub-modal shall render the title "AI block suggestions", a quota note, and a list of suggestion
-  sets; each set renders a title and a row of block chips. A close button dismisses it.
+  sets (five: music creator, fitness coach, agency, live event, ecom AOV); each set renders a title and
+  a row of block chips. A close button dismisses it.
 
 ## Layout
 

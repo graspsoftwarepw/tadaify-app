@@ -40,4 +40,6 @@ export const aiSetsFixture = (): AiSet[] => [
   { title: "🎵 Music creator starter", chips: ["📺 Latest YT drop", "🔗 Spotify", "🌐 Social row", "✉️ Newsletter"] },
   { title: "💪 Fitness coach launch", chips: ["📝 Heading", "🛍 Workout PDF", "🛍 1:1 coaching", "❓ FAQ", "✉️ Mailing list"] },
   { title: "👥 Agency / talent rep", chips: ["🖼 Logo image", "📝 Roster", "🔗 Booking link", "✉️ Press inquiries"] },
+  { title: "⏳ Live event promo", chips: ["⏳ Countdown", "🔗 Tickets", "🖼 Venue map", "📺 Stream embed"] },
+  { title: "🛍 Ecom shop AOV booster", chips: ["🛍 Featured product", "🛍 Bundle", "⏳ Sale countdown", "❓ Returns FAQ"] },
 ];
