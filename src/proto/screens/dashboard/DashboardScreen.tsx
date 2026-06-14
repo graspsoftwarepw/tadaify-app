@@ -4,9 +4,11 @@
  * styling (app/styles/app-dashboard.css, loaded globally by root.tsx and scoped
  * under `.app-dashboard-root`). Presentational only; data from typed fixtures.
  *
- * @implements FR-GLOBALUI-VIEW-LAYOUT
+ * @implements fr-dashboard-my-page
+ * @implements fr-globalui-view-layout
  */
 import type { ReactNode } from "react";
+import "./dashboard-proto.css";
 import { toggleTheme } from "../../lib/theme";
 import {
   dashboardBlocksFixture,
@@ -39,13 +41,13 @@ function Orb() {
       <svg viewBox="0 0 32 32" width={28} height={28}>
         <defs>
           <radialGradient id="proto-orb" cx="35%" cy="30%">
-            <stop offset="0%" stopColor="#818CF8" />
-            <stop offset="55%" stopColor="#6366F1" />
-            <stop offset="100%" stopColor="#3730A3" />
+            <stop offset="0%" stopColor="var(--brand-secondary)" />
+            <stop offset="55%" stopColor="var(--brand-primary)" />
+            <stop offset="100%" stopColor="var(--brand-primary-hover)" />
           </radialGradient>
         </defs>
         <circle cx="16" cy="16" r="14" fill="url(#proto-orb)" />
-        <circle cx="23" cy="9" r="4" fill="#F59E0B" />
+        <circle cx="23" cy="9" r="4" fill="var(--brand-warm)" />
       </svg>
     </span>
   );
@@ -268,24 +270,21 @@ export function DashboardScreen() {
             </div>
 
             {/* Pinned message */}
-            <div
-              id="pinned-msg-row"
-              style={{ marginTop: 16, marginBottom: 4, padding: "10px 14px", background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10, display: "flex", alignItems: "center", gap: 10 }}
-            >
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
-                <span className="toggle" style={{ flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)" }}>Pinned message</span>
+            <div className="proto-pinned">
+              <label className="proto-pinned-label">
+                <span className="toggle" />
+                <span>Pinned message</span>
               </label>
-              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
+              <div className="proto-pinned-field">
                 <input
+                  className="proto-pinned-input"
                   type="text"
                   maxLength={80}
                   placeholder="e.g. New course Friday — set a reminder? 📣"
-                  style={{ flex: 1, fontFamily: "var(--font-sans)", fontSize: 13, padding: "6px 10px", border: "1px solid var(--border-strong)", borderRadius: 7, background: "var(--bg-elevated)", color: "var(--fg)", minWidth: 0 }}
                 />
-                <span style={{ fontSize: 11, color: "var(--fg-subtle)", flexShrink: 0 }}>80</span>
+                <span className="proto-pinned-meta">80</span>
               </div>
-              <span style={{ fontSize: 11, color: "var(--fg-subtle)", flexShrink: 0 }}>Dismissible by visitor</span>
+              <span className="proto-pinned-meta">Dismissible by visitor</span>
             </div>
 
             {/* Profile card */}

@@ -4,8 +4,8 @@
  * light/dark palette in one place (flip the theme with the toggle in the bar).
  * This is the visual source of truth that later catches colour drift.
  *
- * @implements FR-GLOBALUI-THEME-AND-COLOURS
- * @implements FR-GLOBALUI-VIEW-LAYOUT
+ * @implements fr-globalui-theme-and-colours
+ * @implements fr-globalui-view-layout
  */
 import type { ReactNode } from "react";
 import { ThemeToggle } from "./lib/ThemeToggle";

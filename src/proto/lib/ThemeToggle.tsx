@@ -6,7 +6,7 @@
  * Tailwind `dark:` variants. This is the user-facing control the prototype
  * isolation check requires (active dark-class mutation + accessible label).
  *
- * @implements FR-GLOBALUI-THEME-AND-COLOURS
+ * @implements fr-globalui-theme-and-colours
  */
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
