@@ -8,8 +8,6 @@ modules: [OTP]
 related_files: [app/lib/otp-rate-limit.ts, app/lib/otp-state.ts, app/components/OtpResendControl.tsx]
 tests: []
 migrations: [supabase/migrations/20260503000003_otp_rate_limit_attempts.sql, supabase/migrations/20260504000001_otp_rate_limit_pair_keyed_index.sql, supabase/migrations/20260504000002_otp_rate_limit_acquire_slot_rpc.sql, supabase/migrations/20260504000003_otp_slot_reservation_finalization.sql]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [BR-OTP-RATE-LIMIT-001]
 ---

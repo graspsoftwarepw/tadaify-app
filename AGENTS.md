@@ -18,4 +18,4 @@ A creator link-in-bio platform: public creator pages at `/<handle>` and an authe
 - `npm run dev` runs the app.
 - `npm run test` runs Vitest.
 - `npm run test:e2e:local` resets the local DB and runs Playwright e2e.
-- Deeper context: `docs/agent-context/claude-full-context.md` and `docs/decisions/`.
+- Deeper context: `docs/agent-context/claude-full-context.md`.

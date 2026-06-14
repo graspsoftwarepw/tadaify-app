@@ -8,8 +8,6 @@ modules: [AUTH]
 related_files: [app/routes/register.tsx, app/routes/api.auth.signup.ts, app/lib/handle-validator.ts]
 tests: []
 migrations: [supabase/migrations/20260501000001_profiles.sql]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [BR-AUTH-01]
 ---

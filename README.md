@@ -44,4 +44,4 @@ npm run preview
 - Supabase local (Docker) for Auth + Postgres + Inbucket
 - TypeScript everywhere
 
-See [docs/INDEX.md](docs/INDEX.md) for the full documentation map and [docs/decisions/INDEX.md](docs/decisions/INDEX.md) for all locked architectural decisions.
+See [docs/INDEX.md](docs/INDEX.md) for the full documentation map.

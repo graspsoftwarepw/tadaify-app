@@ -5,8 +5,6 @@ area: ONBOARDING
 status: accepted
 level: MUST
 covers: [BR-ONBOARDING-003]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [TR-tadaify-003]
 ---

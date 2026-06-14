@@ -8,8 +8,6 @@ modules: [DASH]
 related_files: [app/components/AppSidebar.tsx, app/components/AppSidebarDesignAccordion.tsx]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

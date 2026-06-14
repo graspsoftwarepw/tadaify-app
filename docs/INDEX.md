@@ -1,6 +1,6 @@
 # tadaify docs — Navigation Map
 
-Single source of truth for all product research, decisions, architecture, and branding.
+Single source of truth for all product research, architecture, and branding.
 **Open this file first** in any new Claude session working on tadaify.
 
 ---
@@ -12,17 +12,6 @@ Single source of truth for all product research, decisions, architecture, and br
 | [`specs/functional-spec.md`](specs/functional-spec.md) | **THE canonical spec** — 121KB, 1600+ lines. Contains all feature units F-001..F-MULTIPAGE, all DEC-* lockings, anti-patterns audit results. Start here. |
 | [`specs/archive/functional-spec-v2.md`](specs/archive/functional-spec-v2.md) | v2 (superseded) — applied 4 architecture pivots. Reference only. |
 | [`specs/archive/functional-spec-v1.md`](specs/archive/functional-spec-v1.md) | v1 (superseded) — post-competitor-audit baseline. Reference only. |
-
-For a flat lookup of all locked decisions: **see `decisions/INDEX.md`** below.
-
----
-
-## Decisions
-
-| File | Description |
-|---|---|
-| [`decisions/INDEX.md`](decisions/INDEX.md) | Flat table of all 50 DEC-* entries with one-line summary + line refs into `specs/functional-spec.md`. Fast lookup when you know a DEC-ID. |
-| [`decisions/insights-2026-04.md`](decisions/insights-2026-04.md) | DEC-073..DEC-083 — Insights & analytics decisions log (2026-04). |
 
 ---
 

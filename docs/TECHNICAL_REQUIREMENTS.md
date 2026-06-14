@@ -1,6 +1,6 @@
 # Technical Requirements — INDEX
 
-> **Auto-generated** on 2026-06-05 by `bin/migrate-records.mjs --kind=tr`.
+> **Auto-generated** on 2026-06-14 by `bin/migrate-records.mjs --kind=tr`.
 > Do NOT hand-edit this file. Edit the individual TR records in `docs/requirements/technical/`.
 > To add a new TR: create `docs/requirements/technical/NNNN-<slug>.md` with MADR frontmatter.
 

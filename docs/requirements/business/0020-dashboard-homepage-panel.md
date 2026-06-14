@@ -8,8 +8,6 @@ modules: [DASH]
 related_files: [app/routes/app.tsx, app/routes/api.account.pinned-message.ts]
 tests: []
 migrations: [supabase/migrations/20260531000001_account_settings_pinned_message.sql]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

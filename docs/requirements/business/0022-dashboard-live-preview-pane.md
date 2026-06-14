@@ -8,8 +8,6 @@ modules: [DASH]
 related_files: [app/components/LivePreviewPane.tsx]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

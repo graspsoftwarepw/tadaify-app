@@ -5,8 +5,6 @@ area: SHARED
 status: superseded
 level: MUST
 covers: []
-supersedes: []
-superseded_by: TR-SHARED-014
 authorized_by: vvaser@gmail.com
 aliases: [TR-009]
 ---
