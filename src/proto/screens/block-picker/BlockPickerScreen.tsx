@@ -1,7 +1,11 @@
 /**
- * Block picker modal — opens from the dashboard "Add block". Faithful port of
+ * Block picker modal — opens from the dashboard "Add block". Ported from
  * mockups/tadaify-mvp/app-block-picker.html, overlaid on the reused dashboard.
  * Presentational + local UI state only; data from typed fixtures.
+ *
+ * Category filtering (the mockup's scrolling tab strip did not scale): a header
+ * dropdown filters by category, and the "All" view groups blocks under category
+ * section headers. AI suggestions are a header action, not a category.
  *
  * @implements fr-block-picker-modal
  */
@@ -10,19 +14,19 @@ import "./block-picker-proto.css";
 import { DashboardScreen } from "../dashboard/DashboardScreen";
 import {
   aiSetsFixture,
-  blockCategoriesFixture,
   blockTypesFixture,
   type BlockType,
 } from "./blockPickerFixture";
 
 const CURRENT_TIER_RANK = 1; // creator
 const TIER_RANK: Record<string, number> = { "Pro+": 2 };
+const REAL_CATS = ["Links", "Media", "Forms", "Shop", "Layout"] as const;
 
 function isLocked(t: BlockType): boolean {
   return t.tier ? CURRENT_TIER_RANK < TIER_RANK[t.tier] : false;
 }
 
-function TypeCard({ t }: { t: BlockType }) {
+function TypeRow({ t }: { t: BlockType }) {
   const locked = isLocked(t);
   return (
     <a
@@ -48,45 +52,36 @@ function TypeCard({ t }: { t: BlockType }) {
 
 export function BlockPickerScreen() {
   const types = blockTypesFixture();
-  const categories = blockCategoriesFixture();
   const aiSets = aiSetsFixture();
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
   const [aiOpen, setAiOpen] = useState(false);
+  const [ddOpen, setDdOpen] = useState(false);
 
-  const visible = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return types.filter((t) => {
-      const inCat = cat === "All" || cat === "AI ✨" || t.cat === cat;
-      const inQ = !needle || t.label.toLowerCase().includes(needle) || t.desc.toLowerCase().includes(needle);
-      return inCat && inQ;
-    });
+  const cats = ["All", ...REAL_CATS];
+  const countFor = (c: string) => (c === "All" ? types.length : types.filter((t) => t.cat === c).length);
+
+  const searchHit = (t: BlockType) => {
+    const n = q.trim().toLowerCase();
+    return !n || t.label.toLowerCase().includes(n) || t.desc.toLowerCase().includes(n);
+  };
+
+  // "All" → grouped sections; a specific category → just that category's rows.
+  const groups = useMemo(() => {
+    const wanted = cat === "All" ? REAL_CATS : [cat as (typeof REAL_CATS)[number]];
+    return wanted
+      .map((c) => ({ cat: c, items: types.filter((t) => t.cat === c && searchHit(t)) }))
+      .filter((g) => g.items.length);
   }, [types, cat, q]);
 
-  function selectCat(c: string) {
-    if (c === "AI ✨") setAiOpen(true);
-    else setCat(c);
-  }
-
-  function countFor(c: string): string {
-    if (c === "All") return String(types.length);
-    if (c === "AI ✨") return "";
-    return String(types.filter((t) => t.cat === c).length);
-  }
+  const empty = groups.length === 0;
 
   return (
     <>
-      {/* Frozen dashboard backdrop */}
       <DashboardScreen />
 
-      {/* Picker modal overlay (own token root so dark flips with the toggle) */}
       <div className="proto-root proto-picker">
-        <div
-          className="modal-backdrop is-open"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="picker-h"
-        >
+        <div className="modal-backdrop is-open" role="dialog" aria-modal="true" aria-labelledby="picker-h">
           <div className="modal" role="document">
             <header className="modal-head">
               <h2 id="picker-h">Add a block</h2>
@@ -94,15 +89,29 @@ export function BlockPickerScreen() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
-                <input
-                  className="search"
-                  type="text"
-                  placeholder="Find a block type…"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  autoComplete="off"
-                />
+                <input className="search" type="text" placeholder="Find a block type…" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" />
               </div>
+
+              <div className="cat-dd">
+                <button className="cat-dd-btn" type="button" onClick={() => setDdOpen((o) => !o)} aria-expanded={ddOpen} aria-label="Filter by category">
+                  {cat === "All" ? "All categories" : cat}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+                {ddOpen && (
+                  <div className="cat-dd-menu" role="menu">
+                    {cats.map((c) => (
+                      <button key={c} type="button" role="menuitem" className={c === cat ? "is-active" : ""} onClick={() => { setCat(c); setDdOpen(false); }}>
+                        <span>{c === "All" ? "All categories" : c}</span>
+                        <span className="ct">{countFor(c)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button className="iconbtn" type="button" aria-label="AI suggestions" title="AI suggestions" onClick={() => setAiOpen(true)}>
+                <span aria-hidden style={{ fontSize: 18 }}>✨</span>
+              </button>
               <button className="iconbtn" aria-label="Close" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -110,42 +119,23 @@ export function BlockPickerScreen() {
               </button>
             </header>
 
-            <nav className="modal-tabs" aria-label="Block categories" role="tablist">
-              {categories.map((c) => {
-                const active = c === cat;
-                const ct = countFor(c);
-                return (
-                  <button
-                    key={c}
-                    role="tab"
-                    aria-selected={active}
-                    className={active ? "is-active" : ""}
-                    type="button"
-                    onClick={() => selectCat(c)}
-                  >
-                    {c}
-                    {ct !== "" && <span className="ct">{ct}</span>}
-                  </button>
-                );
-              })}
-            </nav>
-
             <div className="modal-body">
               <div className="card-grid" role="list">
-                {visible.length === 0 ? (
-                  <div className="grid-empty">
-                    <div className="ic" aria-hidden>🔍</div>
-                    No block types match “{q}”.
-                  </div>
+                {empty ? (
+                  <div className="grid-empty"><div className="ic" aria-hidden>🔍</div>No block types match “{q}”.</div>
                 ) : (
-                  visible.map((t) => <TypeCard key={t.id} t={t} />)
+                  groups.map((g) => (
+                    <div key={g.cat}>
+                      <div className="tc-group-head">{g.cat}</div>
+                      {g.items.map((t) => <TypeRow key={t.id} t={t} />)}
+                    </div>
+                  ))
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* AI suggest sub-modal */}
         {aiOpen && (
           <div className="ai-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ai-h">
             <div className="ai-modal" role="document">
@@ -168,11 +158,7 @@ export function BlockPickerScreen() {
                 {aiSets.map((set) => (
                   <button key={set.title} className="ai-set" type="button" onClick={() => setAiOpen(false)}>
                     <div className="ttl">{set.title}</div>
-                    <div className="blocks-row">
-                      {set.chips.map((c) => (
-                        <span key={c} className="b-chip">{c}</span>
-                      ))}
-                    </div>
+                    <div className="blocks-row">{set.chips.map((c) => <span key={c} className="b-chip">{c}</span>)}</div>
                   </button>
                 ))}
               </div>

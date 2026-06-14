@@ -26,15 +26,25 @@ types. Ported from `mockups/tadaify-mvp/app-block-picker.html`; overlays the das
 
 Header:
 
-- The modal shall render the title "Add a block", a search input ("Find a block type…"), and a close button.
+- The modal shall render the title "Add a block", a search input ("Find a block type…"), a category
+  filter dropdown, an "✨" AI suggestions button, and a close button.
 
-Category tabs:
+Category filter:
 
-- The modal shall render a tab row: All, Links, Media, Forms, Shop, Layout, and "AI ✨".
-- Each tab except "AI ✨" shall render a count of matching block types; the active tab is highlighted.
-- Selecting "AI ✨" shall open the AI suggestions sub-modal.
+- The category dropdown shall list "All categories" plus the real categories (Links, Media, Forms,
+  Shop, Layout), each with a count of matching block types — chosen over a tab strip so it does not
+  overflow as categories grow.
+- "AI ✨" is not a category; the "✨" header button opens the AI suggestions sub-modal.
 
-Block list (compact rows):
+Block list (grouped compact rows):
+
+- With "All categories" selected, the list shall group blocks under category section headers
+  (Links / Media / Forms / Shop / Layout); selecting a single category shows just that category.
+- The modal shall render one row per block type — an icon, the label with inline badges
+  ("Most clicked", "New", or a tier badge such as "Pro+") on a single line, and a one-line description
+  beneath — chosen over a square-card grid so the modal stays compact across devices.
+- A row whose tier exceeds the current tier shall render in a locked state with an "Upgrade →" hint;
+  unlocked rows show an "Add →" hint on hover (always shown on phone).
 
 - The modal shall render one row per block type — an icon, the label with inline badges
   ("Most clicked", "New", or a tier badge such as "Pro+") on a single line, and a one-line description

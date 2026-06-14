@@ -34,8 +34,6 @@ export const blockTypesFixture = (): BlockType[] => [
   { id: "countdown", label: "Countdown timer", icon: "⏳", cat: "Layout", desc: "Drives urgency for launches, drops, events.", isNew: true },
 ];
 
-export const blockCategoriesFixture = (): string[] => ["All", "Links", "Media", "Forms", "Shop", "Layout", "AI ✨"];
-
 export type AiSet = { title: string; chips: string[] };
 
 export const aiSetsFixture = (): AiSet[] => [
