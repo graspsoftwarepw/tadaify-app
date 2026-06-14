@@ -463,7 +463,10 @@ export function BlockEditorScreen() {
 
   function saveBlock() {
     const blockers: string[] = [];
-    if ((String(base.scheduleStart || "") || String(base.scheduleEnd || "")) && TIER_RANK[tier] < TIER_RANK.creator) blockers.push("Schedule visibility (Creator)");
+    // Schedule can be set either by the global Schedule-visibility section (into base)
+    // or by a block's own schedule field (into the active variant); activeContent
+    // merges variant over base, so checking it catches both paths.
+    if ((String(activeContent.scheduleStartsAt || "") || String(activeContent.scheduleEndsAt || "")) && TIER_RANK[tier] < TIER_RANK.creator) blockers.push("Schedule visibility (Creator)");
     if (bDiffers && !isBusiness) blockers.push(`A/B testing (Business · ${diffs.length} field${diffs.length === 1 ? "" : "s"})`);
     if (blockers.length) {
       setSaveStatus(`Upgrade needed: ${blockers.join(", ")}`);
@@ -614,8 +617,8 @@ export function BlockEditorScreen() {
                   </div>
                   <div className="section-body">
                     <div className="field-row">
-                      <div className="field"><label htmlFor="be-sched-start">Show from</label><input id="be-sched-start" type="datetime-local" value={scheduleStart} onChange={(e) => { setScheduleStart(e.target.value); setBase((b) => ({ ...b, scheduleStart: e.target.value })); bump(); }} /></div>
-                      <div className="field"><label htmlFor="be-sched-end">Hide after</label><input id="be-sched-end" type="datetime-local" value={scheduleEnd} onChange={(e) => { setScheduleEnd(e.target.value); setBase((b) => ({ ...b, scheduleEnd: e.target.value })); bump(); }} /></div>
+                      <div className="field"><label htmlFor="be-sched-start">Show from</label><input id="be-sched-start" type="datetime-local" value={scheduleStart} onChange={(e) => { setScheduleStart(e.target.value); setBase((b) => ({ ...b, scheduleStartsAt: e.target.value })); bump(); }} /></div>
+                      <div className="field"><label htmlFor="be-sched-end">Hide after</label><input id="be-sched-end" type="datetime-local" value={scheduleEnd} onChange={(e) => { setScheduleEnd(e.target.value); setBase((b) => ({ ...b, scheduleEndsAt: e.target.value })); bump(); }} /></div>
                     </div>
                     <div className="help">Leave both empty to keep the block always visible. Useful for limited-time launches.</div>
                     {TIER_RANK[tier] < TIER_RANK.creator && (
