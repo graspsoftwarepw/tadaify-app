@@ -17,6 +17,17 @@ import { CreatorAboutPublicScreen } from "./screens/creator-about-public/Creator
 import { CreatorBlogPublicScreen } from "./screens/creator-blog-public/CreatorBlogPublicScreen";
 import { BlockPickerScreen } from "./screens/block-picker/BlockPickerScreen";
 import { BlockEditorScreen } from "./screens/block-editor/BlockEditorScreen";
+import { AboutEditorScreen } from "./screens/page-editors/AboutEditorScreen";
+import { LinksArchiveEditorScreen } from "./screens/page-editors/LinksArchiveEditorScreen";
+import { ContactEditorScreen } from "./screens/page-editors/ContactEditorScreen";
+import { FaqEditorScreen } from "./screens/page-editors/FaqEditorScreen";
+import { NewsletterSignupEditorScreen } from "./screens/page-editors/NewsletterSignupEditorScreen";
+import { BlogEditorScreen } from "./screens/page-editors/BlogEditorScreen";
+import { PortfolioEditorScreen } from "./screens/page-editors/PortfolioEditorScreen";
+import { ScheduleEditorScreen } from "./screens/page-editors/ScheduleEditorScreen";
+import { CustomEditorScreen } from "./screens/page-editors/CustomEditorScreen";
+import { PaidArticlesEditorScreen } from "./screens/page-editors/PaidArticlesEditorScreen";
+import { LegalEditorScreen } from "./screens/page-editors/LegalEditorScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -37,7 +48,17 @@ const SCREENS: Screen[] = [
   { segment: "block-picker", label: "Block picker modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "block-editor", label: "Block editor modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "settings", label: "Settings (8 tabs)", status: "planned", batch: "P3 · Settings" },
-  { segment: "pages-blog", label: "Page editors", status: "planned", batch: "P4 · Page editors" },
+  { segment: "page-about", label: "Editor — About page", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-links-archive", label: "Editor — Links archive", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-contact", label: "Editor — Contact", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-faq", label: "Editor — FAQ", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-newsletter-signup", label: "Editor — Newsletter signup", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-blog", label: "Editor — Blog", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-portfolio", label: "Editor — Portfolio", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-schedule", label: "Editor — Schedule", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-custom", label: "Editor — Custom page", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-paid-articles", label: "Editor — Paid articles", status: "ready", batch: "P4 · Page editors" },
+  { segment: "page-legal", label: "Editor — Legal", status: "ready", batch: "P4 · Page editors" },
   { segment: "onboarding", label: "Onboarding + auth", status: "planned", batch: "P5 · Onboarding/auth" },
 ];
 
@@ -109,6 +130,28 @@ export default function ProtoDevHost() {
       return <BlockPickerScreen />;
     case "block-editor":
       return <BlockEditorScreen />;
+    case "page-about":
+      return <AboutEditorScreen />;
+    case "page-links-archive":
+      return <LinksArchiveEditorScreen />;
+    case "page-contact":
+      return <ContactEditorScreen />;
+    case "page-faq":
+      return <FaqEditorScreen />;
+    case "page-newsletter-signup":
+      return <NewsletterSignupEditorScreen />;
+    case "page-blog":
+      return <BlogEditorScreen />;
+    case "page-portfolio":
+      return <PortfolioEditorScreen />;
+    case "page-schedule":
+      return <ScheduleEditorScreen />;
+    case "page-custom":
+      return <CustomEditorScreen />;
+    case "page-paid-articles":
+      return <PaidArticlesEditorScreen />;
+    case "page-legal":
+      return <LegalEditorScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:
