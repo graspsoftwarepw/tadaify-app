@@ -1,0 +1,118 @@
+/* Public creator page — token-driven styling ported from
+   mockups/tadaify-mvp/creator-public.html. Scoped under `.proto-public` so it
+   never collides with the app's route-scoped public-creator.css. Brand tints
+   are expressed with color-mix over tokens; decorative multi-stop gradients
+   (avatar sunset, affiliate thumbnails, podcast) are intentional art.
+
+   @implements fr-public-creator-page */
+
+.proto-public { background: var(--bg); color: var(--fg); min-height: 100vh; }
+
+.proto-public .creator-shell {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr;
+  gap: 64px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+  align-items: start;
+}
+@media (max-width: 880px) {
+  .proto-public .creator-shell { grid-template-columns: 1fr; gap: 32px; padding: 40px 20px 60px; }
+  .proto-public .identity { position: static !important; text-align: center; }
+}
+.proto-public .identity { position: sticky; top: 60px; }
+.proto-public .avatar {
+  width: 140px; height: 140px; border-radius: 50%;
+  background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+  margin-bottom: 20px; border: 4px solid var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 600; font-size: 52px; color: #7C2D12;
+}
+.proto-public .name { font-family: var(--font-display); font-size: 34px; font-weight: 600; line-height: 1.1; }
+.proto-public .bio { color: var(--fg-muted); margin: 12px 0; line-height: 1.6; }
+.proto-public .socials { display: flex; gap: 10px; margin-top: 16px; }
+.proto-public .social {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; text-decoration: none; color: var(--fg-muted);
+  transition: transform 140ms, border 140ms;
+}
+.proto-public .social:hover { transform: translateY(-2px); border-color: var(--brand-primary); color: var(--brand-primary); }
+
+.proto-public .blocks { display: flex; flex-direction: column; gap: 14px; }
+
+.proto-public .cb {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 20px; padding: 20px 22px; text-decoration: none; color: inherit;
+  display: block; box-shadow: var(--shadow-sm);
+  transition: transform 180ms ease, box-shadow 180ms ease, border 180ms ease;
+}
+.proto-public .cb:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--brand-primary); }
+.proto-public .cb-hero { background: var(--brand-primary); color: #FFF; border-color: var(--brand-primary); padding: 28px 24px; }
+.proto-public .cb-hero:hover { background: var(--brand-primary-hover); border-color: var(--brand-primary-hover); color: #FFF; }
+.proto-public .cb-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.proto-public .cb-title { font-weight: 600; font-size: 17px; line-height: 1.3; }
+.proto-public .cb-sub { color: var(--fg-muted); font-size: 13px; margin-top: 4px; }
+.proto-public .cb-hero .cb-sub { color: rgba(255,255,255,0.85); }
+.proto-public .cb-price { font-family: var(--font-display); font-weight: 600; font-size: 24px; color: var(--brand-warm); }
+.proto-public .cb-hero .cb-price { color: var(--brand-warm-soft); }
+.proto-public .cb-price .strike { text-decoration: line-through; color: var(--fg-subtle); font-size: 15px; margin-right: 8px; font-family: var(--font-sans); font-weight: 500; }
+.proto-public .cb-cta {
+  margin-top: 16px; display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.2); color: #FFF; padding: 8px 18px;
+  border-radius: var(--radius-full); font-weight: 600; font-size: 14px;
+}
+.proto-public .cb-cta-soft { background: color-mix(in srgb, var(--brand-primary) 12%, transparent); color: var(--brand-primary); }
+.proto-public .cb-free-pill { background: var(--success-bg); color: var(--success); padding: 4px 10px; border-radius: var(--radius-full); font-size: 12px; font-weight: 700; }
+.proto-public .cb-section-heading {
+  font-family: var(--font-display); font-style: italic; color: var(--fg-muted);
+  font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em; margin: 12px 4px 2px;
+}
+.proto-public .cb-affiliate {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+  text-decoration: none; color: inherit;
+}
+.proto-public .cb-affiliate .thumb {
+  width: 54px; height: 54px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 600; color: #FFF;
+}
+.proto-public .cb-affiliate .thumb.t1 { background: linear-gradient(135deg, #EF4444, #F59E0B); }
+.proto-public .cb-affiliate .thumb.t2 { background: linear-gradient(135deg, #111827, #4B5563); }
+.proto-public .cb-affiliate .body { flex: 1; }
+.proto-public .aff-badge { display: inline-block; font-size: 10px; font-weight: 700; color: var(--fg-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+.proto-public .cb-podcast { background: linear-gradient(135deg, #0F172A, #1E293B); color: #FFF; border-color: transparent; }
+.proto-public .cb-podcast:hover { color: #FFF; }
+
+.proto-public .cb-countdown {
+  background:
+    radial-gradient(180px 90px at 92% 12%, color-mix(in srgb, var(--brand-warm) 18%, transparent), transparent 60%),
+    var(--bg-elevated);
+  border-color: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  box-shadow: var(--shadow-lg); padding: 22px 22px 18px;
+}
+.proto-public .cb-countdown:hover { border-color: color-mix(in srgb, var(--brand-primary) 38%, transparent); }
+.proto-public .countdown-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.proto-public .countdown-label { font-family: var(--font-display); font-size: 20px; font-weight: 600; line-height: 1.15; color: var(--fg); }
+.proto-public .countdown-sub { margin-top: 6px; font-size: 13px; color: var(--fg-muted); line-height: 1.5; }
+.proto-public .countdown-icon { font-size: 24px; line-height: 1; flex-shrink: 0; }
+.proto-public .countdown-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.proto-public .countdown-cell { background: var(--bg-muted); border: 1px solid color-mix(in srgb, var(--brand-primary) 12%, transparent); border-radius: 14px; padding: 12px 10px 11px; text-align: center; }
+.proto-public .countdown-num { font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1; color: var(--fg); letter-spacing: -0.02em; }
+.proto-public .countdown-unit { margin-top: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--fg-subtle); }
+.proto-public .countdown-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; color: var(--brand-primary); font-size: 13px; font-weight: 700; text-decoration: none; }
+.proto-public .countdown-link:hover { text-decoration: underline; }
+.proto-public .countdown-note { margin-top: 8px; font-size: 12px; color: var(--fg-subtle); line-height: 1.45; }
+
+.proto-public .powered { text-align: center; margin-top: 36px; padding: 12px; color: var(--fg-subtle); font-size: 12px; }
+.proto-public .powered a { color: var(--brand-primary); font-weight: 600; }
+.proto-public .powered .wordmark { font-size: 14px; }
+
+/* Mockup-only top strip (hub link + url + theme toggle) */
+.proto-public .public-topstrip { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; gap: 12px; }
+.proto-public .public-topstrip .url { color: var(--fg-subtle); font-family: var(--font-mono); }
