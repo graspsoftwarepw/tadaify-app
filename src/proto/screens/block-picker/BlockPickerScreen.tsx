@@ -32,12 +32,14 @@ function TypeCard({ t }: { t: BlockType }) {
       className={`type-card is-${t.cat.toLowerCase()}${locked ? " is-locked" : ""}`}
     >
       <div className="ic" aria-hidden>{t.icon}</div>
-      <div className="ttl">{t.label}</div>
-      <div className="desc">{t.desc}</div>
-      <div className="badges">
-        {t.popular && <span className="bd popular">Most clicked</span>}
-        {t.isNew && <span className="bd new">New</span>}
-        {t.tier && <span className="bd tier">{t.tier}</span>}
+      <div className="tc-body">
+        <div className="tc-head">
+          <span className="ttl">{t.label}</span>
+          {t.popular && <span className="bd popular">Most clicked</span>}
+          {t.isNew && <span className="bd new">New</span>}
+          {t.tier && <span className="bd tier">{t.tier}</span>}
+        </div>
+        <div className="desc">{t.desc}</div>
       </div>
       <span className="add-cta">{locked ? "Upgrade →" : "Add →"}</span>
     </a>
@@ -140,21 +142,6 @@ export function BlockPickerScreen() {
                 )}
               </div>
             </div>
-
-            <footer className="modal-foot">
-              <span className="reorder">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-                Drag to reorder blocks after adding.
-              </span>
-              <a className="templates" href="#" onClick={(e) => e.preventDefault()}>
-                Browse our templates
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <polyline points="9 6 15 12 9 18" />
-                </svg>
-              </a>
-            </footer>
           </div>
         </div>
 

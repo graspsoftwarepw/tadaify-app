@@ -34,17 +34,14 @@ Category tabs:
 - Each tab except "AI ✨" shall render a count of matching block types; the active tab is highlighted.
 - Selecting "AI ✨" shall open the AI suggestions sub-modal.
 
-Card grid:
+Block list (compact rows):
 
-- The modal shall render a card per block type: an icon, the label, a description, and badges
-  ("Most clicked", "New", or a tier badge such as "Pro+").
-- A card whose tier exceeds the current tier shall render in a locked state with an "Upgrade →" hint;
-  unlocked cards show an "Add →" hint on hover.
+- The modal shall render one row per block type — an icon, the label with inline badges
+  ("Most clicked", "New", or a tier badge such as "Pro+") on a single line, and a one-line description
+  beneath — chosen over a square-card grid so the modal stays compact across devices.
+- A row whose tier exceeds the current tier shall render in a locked state with an "Upgrade →" hint;
+  unlocked rows show an "Add →" hint on hover (always shown on phone).
 - When search or category filtering yields no types, the modal shall render an empty state.
-
-Footer:
-
-- The modal shall render a "Drag to reorder blocks after adding." note and a "Browse our templates" link.
 
 AI suggestions sub-modal:
 
@@ -53,9 +50,9 @@ AI suggestions sub-modal:
 
 ## Layout
 
-- **Desktop:** centered modal (max 720px), three-column card grid, sub-modal centered (max 560px).
-- **Tablet:** two-column card grid.
-- **Phone:** the modal fills the viewport; the card grid collapses to a single column.
+- **Desktop / tablet:** a compact centered modal (max 520px) with a single-column list of block rows;
+  the AI sub-modal is centered (max 560px).
+- **Phone:** the modal fills the viewport; the same single-column row list is used.
 
 ## Related requirements
 
