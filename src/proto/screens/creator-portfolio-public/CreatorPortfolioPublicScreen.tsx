@@ -159,7 +159,7 @@ export function CreatorPortfolioPublicScreen() {
             <h1>{c.hero.title}</h1>
             <p className="lede">{c.hero.lede}</p>
             <div className="meta-line">
-              <span><b>{visibleProjects.length}</b> projects · {c.hero.span}</span>
+              <span><b>{activeTag ? visibleProjects.length : c.hero.projectCount}</b> projects · {c.hero.span}</span>
               <span className="dot" />
               <button type="button" className="linklike" onClick={() => alert("Mockup — opens RSS in newsreader")}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
