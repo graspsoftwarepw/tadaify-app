@@ -371,7 +371,7 @@ export function CreatorPortfolioPublicScreen() {
             </>
           )}
 
-          {!isEmpty && (
+          {!isEmpty && layout !== "carousel" && (
             <div className="pagination">
               <div className="pg-meta">
                 Showing <b>{c.pagination.rangeStart}–{c.pagination.rangeEnd}</b> of <b>{c.pagination.total}</b> projects
