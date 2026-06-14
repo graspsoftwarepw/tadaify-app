@@ -8,8 +8,6 @@ modules: [AUTH]
 related_files: [app/routes/api.handle.check.ts, app/lib/handle-validator.ts]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [BR-AUTH-06]
 ---

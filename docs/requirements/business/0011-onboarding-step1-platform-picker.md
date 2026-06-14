@@ -8,8 +8,6 @@ modules: [ONBOARDING]
 related_files: [app/routes/onboarding.welcome.tsx, app/routes/onboarding.tsx, app/lib/onboarding-state.ts]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

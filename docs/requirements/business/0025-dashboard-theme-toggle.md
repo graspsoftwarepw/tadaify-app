@@ -8,8 +8,6 @@ modules: [DASH]
 related_files: [app/lib/theme-utils.ts, app/components/AppAppbar.tsx]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

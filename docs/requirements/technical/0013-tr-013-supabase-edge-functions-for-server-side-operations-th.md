@@ -5,8 +5,6 @@ area: SHARED
 status: accepted
 level: MAY
 covers: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [TR-013]
 ---

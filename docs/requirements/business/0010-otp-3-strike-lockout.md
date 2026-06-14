@@ -8,8 +8,6 @@ modules: [AUTH]
 related_files: [app/lib/otp-state.ts, app/routes/api.auth.verify.ts]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [BR-AUTH-08]
 ---

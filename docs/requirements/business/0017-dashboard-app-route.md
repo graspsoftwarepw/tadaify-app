@@ -8,8 +8,6 @@ modules: [DASH]
 related_files: [app/routes/app.tsx, app/lib/worker-auth.ts]
 tests: []
 migrations: [supabase/migrations/20260503000001_app_dashboard_tables.sql]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

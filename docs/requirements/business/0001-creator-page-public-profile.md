@@ -8,8 +8,6 @@ modules: [CREATOR]
 related_files: [app/routes/$handle.tsx, app/lib/public-page-query.ts]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [BR-001]
 ---
