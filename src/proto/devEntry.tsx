@@ -12,6 +12,7 @@ import { useParams } from "react-router";
 import "./theme/proto-tokens.css";
 import { StyleGuide } from "./StyleGuide";
 import { DashboardScreen } from "./screens/dashboard/DashboardScreen";
+import { CreatorPublicScreen } from "./screens/creator-public/CreatorPublicScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -26,7 +27,7 @@ type Screen = {
 const SCREENS: Screen[] = [
   { segment: "dashboard", label: "Creator dashboard — My page", status: "ready", batch: "Dashboard" },
   { segment: "style-guide", label: "Style guide · tokens & states", status: "ready", batch: "Foundation" },
-  { segment: "creator-public", label: "Public creator page", status: "planned", batch: "P1 · Public pages" },
+  { segment: "creator-public", label: "Public creator page", status: "ready", batch: "P1 · Public pages" },
   { segment: "settings", label: "Settings (8 tabs)", status: "planned", batch: "P3 · Settings" },
   { segment: "pages-blog", label: "Page editors", status: "planned", batch: "P4 · Page editors" },
   { segment: "onboarding", label: "Onboarding + auth", status: "planned", batch: "P5 · Onboarding/auth" },
@@ -90,6 +91,8 @@ export default function ProtoDevHost() {
       return <ProtoIndex />;
     case "dashboard":
       return <DashboardScreen />;
+    case "creator-public":
+      return <CreatorPublicScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:
