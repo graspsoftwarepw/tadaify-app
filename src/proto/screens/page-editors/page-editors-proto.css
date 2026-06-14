@@ -350,6 +350,7 @@
   flex-direction: column;
   gap: 6px;
   margin-bottom: 14px;
+  min-width: 0;
 }
 .proto-page-editor .pe-field:last-child {
   margin-bottom: 0;
@@ -372,6 +373,8 @@
 .proto-page-editor .pe-area,
 .proto-page-editor .pe-select {
   width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
   padding: 10px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
@@ -402,6 +405,9 @@
 .proto-page-editor .pe-prefix-wrap {
   display: flex;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
@@ -452,9 +458,30 @@
   gap: 14px;
   grid-template-columns: 1fr 1fr;
 }
+.proto-page-editor .pe-field-row > * {
+  min-width: 0;
+}
 @media (max-width: 640px) {
   .proto-page-editor .pe-field-row {
     grid-template-columns: 1fr;
+  }
+  /* Header must not overflow the phone viewport: stack title above the actions,
+     let the actions wrap and shrink, and ellipsise the url-pill. */
+  .proto-page-editor .pe-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .proto-page-editor .pe-head .actions {
+    width: 100%;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .proto-page-editor .pe-head .url-pill {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
