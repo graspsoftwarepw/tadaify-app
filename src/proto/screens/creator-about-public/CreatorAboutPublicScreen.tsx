@@ -101,6 +101,7 @@ export function CreatorAboutPublicScreen() {
             <p key={i}>
               {p.text}
               {p.em && <em>{p.em}</em>}
+              {p.emAfter}
             </p>
           ))}
         </div>

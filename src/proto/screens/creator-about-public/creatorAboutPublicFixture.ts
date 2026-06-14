@@ -47,7 +47,7 @@ export type AboutContent = {
   nav: AboutNavLink[];
   hero: AboutHero;
   bioHeading: string;
-  bioParagraphs: { text: string; em?: string }[];
+  bioParagraphs: { text: string; em?: string; emAfter?: string }[];
   highlightsHeading: string;
   highlights: AboutHighlight[];
   timelineHeading: string;
@@ -87,6 +87,7 @@ export const aboutContentFixture = (): AboutContent => ({
     {
       text: "My method is unsexy: heavy basics, real recovery, and exactly enough volume to keep moving forward. ",
       em: "No 4 AM cold-plunge content. No 30-day shred programs.",
+      emAfter: " Just the boring stuff that actually works for the next ten years.",
     },
   ],
   highlightsHeading: "Highlights",
