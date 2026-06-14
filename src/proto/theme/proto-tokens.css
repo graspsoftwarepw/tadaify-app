@@ -1,0 +1,175 @@
+/* =========================================================================
+   tadaify prototype — design tokens + core component library
+   Foundation for grasp-prototyping-screens. Ported from
+   mockups/tadaify-mvp/shared/tokens.css (Indigo Serif brand lock 2026-04-24)
+   and extended with a REAL dark palette under `.dark` so the prototype
+   renders correctly in both themes (the legacy mockups shipped light-only).
+
+   @implements fr-globalui-theme-and-colours
+   ========================================================================= */
+
+/* Enable Tailwind's `dark:` variant via the `.dark` class instead of the
+   prefers-color-scheme default, so the in-app toggle drives theming. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* --- Brand palette (LOCKED, theme-invariant) --- */
+  --brand-primary:       #6366F1;
+  --brand-primary-hover: #4F46E5;
+  --brand-secondary:     #8B5CF6;
+  --brand-warm:          #F59E0B;
+  --brand-warm-soft:     #FDE68A;
+  --brand-warm-dark:     #D97706;
+
+  /* --- Surfaces (light) --- */
+  --bg:          #F9FAFB;
+  --bg-elevated: #FFFFFF;
+  --bg-muted:    #F3F4F6;
+  --bg-sunken:   #E5E7EB;
+
+  /* --- Foreground (light) --- */
+  --fg:         #111827;
+  --fg-muted:   #4B5563;
+  --fg-subtle:  #9CA3AF;
+  --fg-inverse: #F9FAFB;
+
+  /* --- Border (light) --- */
+  --border:        #E5E7EB;
+  --border-strong: #D1D5DB;
+  --border-focus:  #6366F1;
+
+  /* --- Semantic (light) --- */
+  --success: #10B981; --success-bg: #D1FAE5;
+  --warning: #F59E0B; --warning-bg: #FEF3C7;
+  --danger:  #EF4444; --danger-bg:  #FEE2E2;
+  --info:    #3B82F6; --info-bg:    #DBEAFE;
+
+  /* --- Wordmark (DEC-WORDMARK-01: zero separators) --- */
+  --wm-ta:  #6366F1;
+  --wm-da:  #F59E0B;
+  --wm-ify: #111827;
+
+  /* --- Gradients --- */
+  --hero-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  --warm-gradient: linear-gradient(135deg, #F59E0B 0%, #FDE68A 100%);
+
+  /* --- Typography --- */
+  --font-display: 'Crimson Pro', 'Georgia', serif;
+  --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* --- Radius --- */
+  --radius-sm: 6px; --radius: 10px; --radius-md: 14px;
+  --radius-lg: 20px; --radius-xl: 28px; --radius-full: 9999px;
+
+  /* --- Shadow (light) --- */
+  --shadow-sm:    0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow:       0 4px 12px rgba(17, 24, 39, 0.06);
+  --shadow-lg:    0 12px 32px rgba(17, 24, 39, 0.10);
+  --shadow-xl:    0 24px 60px rgba(17, 24, 39, 0.14);
+  --shadow-brand: 0 10px 30px rgba(99, 102, 241, 0.35);
+}
+
+/* --- Dark palette ---------------------------------------------------------
+   Derived from the existing `body.dark-mode` overrides in app/app.css so the
+   two stay visually consistent. Only surfaces/foreground/border/semantic-bg
+   flip; the brand accent stays constant by design.
+
+   Scoped to `.proto-root` (style-guide / foundation surfaces) so it never
+   competes with the reused app dashboard CSS, which themes via `body.dark-mode`
+   on its own `.app-dashboard-root` subtree. */
+.dark .proto-root {
+  --bg:          #0B0F1E;
+  --bg-elevated: #0E1428;
+  --bg-muted:    #141A2D;
+  --bg-sunken:   #1F2937;
+
+  --fg:         #F3F4F6;
+  --fg-muted:   #9CA3AF;
+  --fg-subtle:  #6B7280;
+  --fg-inverse: #111827;
+
+  --border:        #1F2937;
+  --border-strong: #374151;
+  --border-focus:  #6366F1;
+
+  --success-bg: rgba(16, 185, 129, 0.16);
+  --warning-bg: rgba(245, 158, 11, 0.16);
+  --danger-bg:  rgba(239, 68, 68, 0.16);
+  --info-bg:    rgba(59, 130, 246, 0.16);
+
+  --wm-ify: #F3F4F6;
+
+  --shadow-sm:    0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow:       0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg:    0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-xl:    0 24px 60px rgba(0, 0, 0, 0.55);
+  --shadow-brand: 0 10px 30px rgba(99, 102, 241, 0.45);
+}
+
+/* =========================================================================
+   CORE COMPONENT LIBRARY (token-driven, theme-agnostic via var())
+   Ported from the mockup shared library; every value reads a token, so the
+   `.dark` overrides above re-theme these automatically.
+   ========================================================================= */
+
+.proto-root {
+  font-family: var(--font-sans);
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.proto-root h1, .proto-root h2, .proto-root h3, .proto-root h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--fg);
+}
+
+/* Wordmark — tada!ify */
+.wordmark { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em;
+  white-space: nowrap; display: inline-flex; align-items: baseline; line-height: 1; }
+.wm-ta { color: var(--wm-ta); } .wm-da { color: var(--wm-da); } .wm-ify { color: var(--wm-ify); }
+.wordmark-sm { font-size: 20px; } .wordmark-md { font-size: 28px; } .wordmark-lg { font-size: 44px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 22px; font-weight: 600; font-size: 15px; border-radius: var(--radius-full);
+  border: 1px solid transparent; transition: transform 120ms ease, box-shadow 160ms ease,
+  background 160ms ease, color 160ms ease; white-space: nowrap; cursor: pointer; }
+.btn:hover { transform: translateY(-1px); }
+.btn-primary { background: var(--brand-primary); color: #FFF; box-shadow: var(--shadow-brand); }
+.btn-primary:hover { background: var(--brand-primary-hover); color: #FFF; }
+.btn-secondary { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.btn-secondary:hover { background: var(--bg-muted); }
+.btn-ghost { background: transparent; color: var(--fg); }
+.btn-ghost:hover { background: var(--bg-muted); }
+.btn-warm { background: var(--brand-warm); color: #1F2937; }
+.btn-warm:hover { background: var(--brand-warm-dark); color: #FFF; }
+.btn-sm { padding: 8px 14px; font-size: 13px; } .btn-lg { padding: 16px 30px; font-size: 17px; }
+
+/* Inputs */
+.input { display: block; width: 100%; padding: 12px 16px; font-size: 15px; line-height: 1.5;
+  background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border-strong);
+  border-radius: var(--radius); outline: none; transition: border 140ms ease, box-shadow 140ms ease; }
+.input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14); }
+
+/* Pills */
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; font-size: 12px;
+  font-weight: 600; border-radius: var(--radius-full); background: var(--bg-muted); color: var(--fg);
+  white-space: nowrap; }
+.pill-primary { background: rgba(99, 102, 241, 0.12); color: var(--brand-primary); }
+.pill-warm    { background: rgba(245, 158, 11, 0.15); color: var(--brand-warm-dark); }
+.pill-success { background: var(--success-bg); color: var(--success); }
+.pill-danger  { background: var(--danger-bg);  color: var(--danger); }
+.pill-pro     { background: linear-gradient(135deg, #6366F1, #8B5CF6); color: #FFF; }
+
+/* Cards */
+.card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 24px; box-shadow: var(--shadow-sm); }
+.card-lg { padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.card-highlight { border: 2px solid var(--brand-primary); box-shadow: var(--shadow-lg); }
+
+label { display: block; font-size: 13px; font-weight: 600; color: var(--fg-muted); margin-bottom: 6px; }

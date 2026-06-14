@@ -1,4 +1,4 @@
-<!-- generated: bin/maps-gen sha=476740feb7e6 DO NOT EDIT -->
+<!-- generated: bin/maps-gen sha=4aeca7413b46 DO NOT EDIT -->
 
 | module | kind | mounted_by | views | governs | api | e2e |
 |----|----|----|----|----|----|----|
