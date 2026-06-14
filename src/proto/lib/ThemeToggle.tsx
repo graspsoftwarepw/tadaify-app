@@ -10,6 +10,7 @@
  */
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { toggleTheme } from "./theme";
 
 function prefersDark(): boolean {
   if (typeof window === "undefined") return false;
@@ -25,9 +26,7 @@ export function ThemeToggle() {
   }, []);
 
   function toggle() {
-    const next = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", next);
-    setDark(next);
+    setDark(toggleTheme());
   }
 
   return (

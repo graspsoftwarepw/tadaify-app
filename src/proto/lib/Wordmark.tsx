@@ -7,8 +7,8 @@
 export function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   return (
     <span className={`wordmark wordmark-${size}`} aria-label="tada!ify">
-      <span className="wm-ta" aria-hidden>tada</span>
-      <span className="wm-da" aria-hidden>!</span>
+      <span className="wm-ta" aria-hidden>ta</span>
+      <span className="wm-da" aria-hidden>da!</span>
       <span className="wm-ify" aria-hidden>ify</span>
     </span>
   );

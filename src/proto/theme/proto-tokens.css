@@ -73,8 +73,12 @@
 /* --- Dark palette ---------------------------------------------------------
    Derived from the existing `body.dark-mode` overrides in app/app.css so the
    two stay visually consistent. Only surfaces/foreground/border/semantic-bg
-   flip; the brand accent stays constant by design. */
-.dark {
+   flip; the brand accent stays constant by design.
+
+   Scoped to `.proto-root` (style-guide / foundation surfaces) so it never
+   competes with the reused app dashboard CSS, which themes via `body.dark-mode`
+   on its own `.app-dashboard-root` subtree. */
+.dark .proto-root {
   --bg:          #0B0F1E;
   --bg-elevated: #0E1428;
   --bg-muted:    #141A2D;
