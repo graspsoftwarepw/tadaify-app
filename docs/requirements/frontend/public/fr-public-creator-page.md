@@ -2,7 +2,7 @@
 id: fr-public-creator-page
 title: Public creator page
 area: PUBLIC
-status: accepted
+status: proposed
 modules: [PUBLIC]
 routes: [/__proto/creator-public]
 related_files:
