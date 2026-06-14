@@ -1,4 +1,8 @@
 @import "tailwindcss" source(".");
+/* Scan the dev-only prototype tree so its Tailwind utilities (e.g. `md:flex`,
+   arbitrary `bg-[var(--bg-elevated)]`) are generated. The /__proto routes are
+   dev-only; in production this only adds a handful of unused utility classes. */
+@source "../src/proto";
 /* Design tokens (`./styles/tokens.css`) are imported up-front by `root.tsx`
    so they load before this stylesheet and any Tailwind utility overrides. */
 

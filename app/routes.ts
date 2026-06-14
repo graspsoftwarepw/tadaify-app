@@ -1,6 +1,15 @@
 import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 
+// Dev-only clickable prototype mounted under /__proto/* (grasp-prototyping-screens).
+// Added to the route table only in development so the production Cloudflare
+// Workers bundle never drags in the mock prototype tree under src/proto/.
+const protoRoutes: RouteConfig = import.meta.env.DEV
+  ? [route("/__proto/*", "../src/proto/devEntry.tsx")]
+  : [];
+
 export default [
+  ...protoRoutes,
+
   // Landing
   index("routes/_index.tsx"),
 
