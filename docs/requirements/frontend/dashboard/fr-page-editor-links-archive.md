@@ -10,7 +10,6 @@ related_files:
   - src/proto/screens/page-editors/page-editors-proto.css
   - src/proto/screens/page-editors/LinksArchiveEditorScreen.tsx
   - src/proto/screens/page-editors/linksArchiveEditorFixture.ts
-  - src/proto/screens/dashboard/DashboardChrome.tsx
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours, fr-page-editor-about]
 ---

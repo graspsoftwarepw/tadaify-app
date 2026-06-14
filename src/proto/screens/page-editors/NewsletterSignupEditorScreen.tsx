@@ -327,7 +327,7 @@ export function NewsletterSignupEditorScreen() {
               </Field>
             </FieldRow>
             <Field label="GDPR consent checkbox">
-              <RowToggle name="Show consent checkbox" sub="Required for EU visitors. Logs the explicit \"I agree\" timestamp on every signup." on={consent} onChange={(v) => { setConsent(v); dirty(); }} />
+              <RowToggle name="Show consent checkbox" sub={'Required for EU visitors. Logs the explicit "I agree" timestamp on every signup.'} on={consent} onChange={(v) => { setConsent(v); dirty(); }} />
               <TierHint>EU visitors must opt-in explicitly under GDPR Art. 7. We default this on so you stay compliant.</TierHint>
             </Field>
             <Field label="Consent copy" hint="shown next to the checkbox">

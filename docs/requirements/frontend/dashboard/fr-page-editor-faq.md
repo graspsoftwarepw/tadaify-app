@@ -6,11 +6,8 @@ status: proposed
 modules: [DASHBOARD]
 routes: [/__proto/page-faq]
 related_files:
-  - src/proto/screens/page-editors/EditorShell.tsx
-  - src/proto/screens/page-editors/page-editors-proto.css
   - src/proto/screens/page-editors/FaqEditorScreen.tsx
   - src/proto/screens/page-editors/faqEditorFixture.ts
-  - src/proto/screens/dashboard/DashboardChrome.tsx
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours, fr-page-editor-about]
 ---

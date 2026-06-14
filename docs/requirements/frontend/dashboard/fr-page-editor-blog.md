@@ -6,11 +6,8 @@ status: proposed
 modules: [DASHBOARD]
 routes: [/__proto/page-blog]
 related_files:
-  - src/proto/screens/page-editors/EditorShell.tsx
-  - src/proto/screens/page-editors/page-editors-proto.css
   - src/proto/screens/page-editors/BlogEditorScreen.tsx
   - src/proto/screens/page-editors/blogEditorFixture.ts
-  - src/proto/screens/dashboard/DashboardChrome.tsx
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours, fr-page-editor-about]
 ---
