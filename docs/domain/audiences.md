@@ -8,55 +8,53 @@
 > as RLS). Personas defined here are the single canonical "souls" reused by downstream test-data
 > personas — define once, here. See the domain doc: [`tadaify.md`](./tadaify.md).
 
-## Personas
+## The three audiences (Owner's model)
 
-- **Visitor / fan** — anonymous; the creator's audience. Lands on a public creator page from social,
-  clicks out, subscribes, buys via external links, books. Holds no tadaify account.
-- **Prospective creator** — anonymous on the marketing site; evaluates tadaify and claims a handle to
-  register. Becomes a Creator after OTP. (signup-first — no anonymous editing.)
-- **Creator (account owner)** — the paying customer; owns exactly one handle/page at MVP and the
-  account's billing. Tier (Free / Creator / Pro / Business) modulates what is unlocked *within* the
-  dashboard, asserted at save — not a separate persona.
-- **Team member (Business)** — a collaborator invited to a Business account (account-level); edits
-  content but holds no ownership or billing authority. Included so design never grants them owner
-  powers. (Distinct from an *agency master* managing several sub-account pages, whose authority is not
-  yet modelled — see the note below.)
-- **Platform admin / staff** — internal operator; runs the admin-only marketing preview generator and
-  the moderation/appeals queue under the binding Creator Safeguard. Not a creator-facing role.
+tadaify has exactly **three** audiences:
 
-## Layers
+1. **Creator (influencer)** — our **customer**. Comes to put themselves out there fast: claims a
+   handle, picks a template, clicks together their page from modules, publishes, and watches their
+   cookieless insights. Often someone fed up with cookie nags / paywalled basics / forced branding
+   elsewhere. Pays for premium unlocks (incl. cheap branding removal).
+2. **Public visitor (follower / subscriber)** — the creator's own audience. **Anonymous**, holds no
+   tadaify account; just visits the hosted public page, follows links out, subscribes, buys via the
+   creator's external links, reads. May post and vote on the embedded "ask before ship" board where a
+   creator has one.
+3. **Platform admin (the Owner)** — runs tadaify. Has an admin dashboard for the business: who pays,
+   how much, plans and promotions, and platform operations / moderation. Not a creator-facing role and
+   never edits a creator's page content as them.
 
-- **Public landing & marketing** — `tadaify.com`, `/pricing`, `/register`, `/login`, legal pages.
-- **Public creator surfaces** — `tadaify.com/<handle>` and its sub-pages (about, blog, portfolio,
-  contact, FAQ, schedule, products, newsletter, paid articles, legal). Creator-generated, world-readable.
-- **Creator dashboard** — `/app/*`: blocks editor, design, insights, shop, page editors, settings
-  (account, billing, security, GDPR, API keys, team, domain, affiliate). Auth-gated.
-- **Platform admin** — `/admin/*` and `preview.tadaify.com`: marketing preview generator, moderation
-  and `admin_appeals`. Staff-only.
+## Layers (app surfaces)
+
+- **Public marketing & signup** — `tadaify.com` landing, pricing, register / login.
+- **Public creator page** — `tadaify.com/<handle>` and its sub-pages, hosted by tadaify's engine.
+- **Creator dashboard** — `/app/*`: template + module editor, design, insights, shop, settings,
+  billing. Auth-gated.
+- **Admin dashboard** — `/admin/*`: billing/revenue overview, plans & promotions, platform ops and
+  moderation. Owner-only.
 
 ## Authority matrix
 
 | persona | layer | can see | can do | cannot do |
 |---|---|---|---|---|
-| Visitor / fan | Public landing & marketing | marketing, pricing, value props, handle-claim field, login link | browse; check handle availability; start a handle claim | enter dashboard or admin; edit any page; see another user's account data |
-| Visitor / fan | Public creator surfaces | a creator's published page, profile card, pinned message, published blocks, sub-pages | click links; subscribe to newsletter; submit contact form; book a schedule slot; open external product links | edit anything; see hidden or scheduled-off blocks; view insights or draft/unpublished content |
-| Prospective creator | Public landing & marketing | everything the visitor sees plus register and OTP-verify flows | claim a handle; register; verify email-OTP; sign in via Google, X, or email-OTP | build a page before the account is verified (signup-first); claim a handle already held or reserved |
-| Creator (account owner) | Public creator surfaces | own live page exactly as visitors do, plus own hidden and scheduled blocks via preview or view-as | share the page; copy the handle link; preview as a visitor | edit content from the public surface (editing is dashboard-only); see other creators' private data |
-| Creator (account owner) | Creator dashboard | all own page data, blocks, design, insights, settings, billing and plan state | create, edit, reorder, schedule, and publish blocks; customise theme and layout; run AI features within the monthly credit bucket; manage billing, custom domain, API keys, team (Business), affiliate; export or delete own account (GDPR) | use tier-gated features without upgrading (gate asserts at save); access other creators' accounts; enter platform admin; moderate anyone; claim a second handle at MVP |
-| Creator (account owner) | Public landing & marketing | marketing and pricing while signed in | start an upgrade or downgrade via pricing or billing | claim an additional handle at MVP; change another account's plan |
-| Team member (Business) | Creator dashboard | the Business account's page data, blocks, design, and insights they are granted | create, edit, reorder, schedule, and publish blocks; customise design; run AI within the account bucket | manage billing or the plan; add or remove members; transfer or delete the account; change the bound handle |
-| Team member (Business) | Public creator surfaces | the account's live page as a visitor does, plus hidden and scheduled blocks via preview | preview and view-as for the account's page | edit content from the public surface; act on any account other than the one they were invited to |
-| Platform admin / staff | Platform admin | the marketing preview generator, generated previews, the moderation queue, and `admin_appeals` | generate private 1-to-1 previews on `preview.tadaify.com`; take moderation action under Creator Safeguard; review and resolve appeals | disable the mandatory preview "not live" disclosure; skip the 48h notice or human appeal; edit or publish a creator's page content as them |
-| Platform admin / staff | Public creator surfaces | any public creator page for moderation review | flag or hide a single block; escalate an account for review under Creator Safeguard | account-suspend without the 48h notice and appeal path; impersonate a creator; alter a creator's content silently |
+| Creator (influencer) | Public marketing & signup | marketing, pricing, value props, handle-claim field, login | check handle availability; claim a handle; register and verify via email-OTP; sign in; start an upgrade | build a page before the account is verified; claim a handle already held or reserved |
+| Creator (influencer) | Creator dashboard | all own page data, modules, template/design, own insights, settings, billing and plan state | pick a template; add, arrange, edit, schedule and publish modules; customise the design; run AI within the plan allowance; manage billing and cheap branding removal; export or delete own account | use a paid feature without upgrading (gate asserts at save); access another creator's account; enter the admin dashboard; see platform-wide revenue or other creators' data |
+| Creator (influencer) | Public creator page | own live page as visitors see it, plus own hidden / scheduled modules via preview | share the page; copy the handle link; preview / view-as a visitor | edit content from the public surface (editing is dashboard-only); see another creator's private data |
+| Public visitor (follower) | Public creator page | a creator's published page, profile, published modules, sub-pages | click links; subscribe to a newsletter; submit a contact form; book a schedule slot; open external product links; read public content; post and vote on an embedded "ask before ship" board | edit anything; see hidden / scheduled-off / draft modules; view the creator's insights; access any dashboard |
+| Public visitor (follower) | Public marketing & signup | marketing, pricing, the handle-claim field | browse; start a handle claim to become a creator | reach any dashboard or admin surface; see another user's account data |
+| Platform admin (Owner) | Admin dashboard | platform-wide billing and revenue, who pays and how much, plans and promotions, platform ops and the moderation queue | view payments and revenue; configure plans and promotions; run platform operations; take moderation action | edit or publish a creator's page content as them; silently impersonate a creator |
+| Platform admin (Owner) | Public creator page | any public creator page for moderation review | flag or hide a module; escalate an account for review | edit a creator's content silently; impersonate a creator; act outside the moderation path |
 
 ## Notes on authority
 
-- **Tier is not a persona.** Free / Creator / Pro / Business all share the Creator-owner rows above;
-  the difference is *which dashboard capabilities are unlocked*, gated honestly at save
-  (`app/lib/tier-gate.ts`) — never by hiding or disabling the control.
-- **Agency multi-handle is not yet modelled.** The matrix above covers the single-account case; at MVP
-  a Creator account drives one handle/page. Whether Business introduces an agency-master persona
-  managing several sub-account pages is unconfirmed — confirm scope with the Owner before adding
-  cross-account rows. The Business team-member rows are account-level guardrails and stand regardless.
-- **Creator Safeguard binds the admin layer:** every "cannot do" in the admin rows above is a hard
-  platform commitment, not a UI nicety.
+- **Three audiences, no more.** There is no team-member, agency, or sub-account persona in the product
+  concept — do not introduce one. If multi-seat or agency capability is ever added, it reopens this map
+  with the Owner first.
+- **Tier is not a persona.** Free and paid creators share the Creator rows; tiers only change *which
+  dashboard capabilities are unlocked*, gated honestly at save (`app/lib/tier-gate.ts`) — never by
+  hiding or disabling a control.
+- **The visitor is always anonymous.** No public-page action requires a tadaify account; feedback-board
+  posting/voting is the visitor's only "write", and it belongs to the creator's board, not a tadaify
+  account.
+- **Admin is the Owner's business cockpit**, not a creator surface; its powers are revenue/plan/ops and
+  moderation, never content authorship on a creator's behalf.

@@ -4,108 +4,107 @@
 
 > The always-on domain model every other skill reads before designing a screen, writing a
 > requirement, seeding data, or asserting a test. It captures *what the app is*, *who it serves*, and
-> *the rules reality and the business impose on any record*. Grounded in the live code, the
-> requirement records (`docs/requirements/`), and the Owner — not in any external decision log.
+> *the rules any record must obey*. Grounded in the Owner's product concept and the live code
+> (`app/`, `docs/requirements/`) — not in any external decision log.
 
 ## What the app is
 
-tadaify is a **creator link-in-bio platform**: each creator gets one public page at
-`tadaify.com/<handle>` that aggregates their links, content, and commerce, plus an authenticated
-dashboard at `/app` to build and measure it. It is a direct competitor to Linktree and Beacons, and is
-**signup-first** — there is no guest editor; you register before you build.
+**tadaify** turns the "**ta-da!**" moment into a product — the *"look at me, here I am, let me show you
+who I am"* reveal. It is the page where a person introduces themselves and shows off what they do. Think
+Linktree, but **broader and all-in-one**: not just a list of links, but a single hosted page that can
+carry whatever the creator wants to show.
 
-Everything lives under one domain: the marketing site, the public creator pages, and the dashboard
-share `tadaify.com`, with the handle namespace (`tadaify.com/<handle>`) reserved for creator pages.
+The defining choice is **template-first, not a freeform builder**. tadaify is *not* a generic
+drag-a-component website builder. The creator picks a beautiful predefined template and clicks together
+their page in a few steps. It must be fast and genuinely useful for creators and influencers who want to
+put themselves out there *right now*, without design work.
+
+Everything lives under one domain: the marketing site, the hosted public creator pages, and the
+dashboard share `tadaify.com`, with the handle namespace (`tadaify.com/<handle>`) reserved for the
+creator pages our engine hosts.
+
+## Modular content — "anything we can think of"
+
+A creator's page is assembled from **modules / block types**, and the set is deliberately extensible —
+we can keep adding new kinds. Today's kinds and the direction:
+
+- **Links** — plain redirects to the creator's existing presence (a YouTube channel or episode, a
+  social profile, an external store, anything with a URL).
+- **Blog** — posts the creator writes and clicks together on tadaify itself.
+- **Paid articles** — gated long-form content.
+- **Shop / Store** — the creator builds their own storefront surface.
+- **Profiles / specialised modules** — e.g. a trader profile, and whatever future module a creator
+  type needs.
+
+The point is the *modular system*: tadaify can host many surface types (about, blog, portfolio,
+contact, FAQ, schedule, products, newsletter, paid articles, …) and grow new ones, all under one page.
 
 ## Who the customers are
 
-The **paying customer is the creator** — an individual or small team with an audience who needs a
-single shareable hub. Four creator archetypes double as the canonical "souls" for realistic fixtures:
+The **paying customer is the creator / influencer** — someone who wants their page up fast and to show
+themselves. A second, important slice of the market: people **tired of being annoyed** by Linktree or
+similar products (cookie nags, paywalled basics, forced branding) who come to tadaify for relief. The
+**served-but-not-paying audience** is each creator's own followers / subscribers / visitors, who never
+hold a tadaify account — they just visit the hosted page.
 
-- **Solo content creator** (musician, artist, streamer, writer) — links, music/video embeds, a
-  newsletter, maybe a paid article or merch link. The default persona.
-- **Coach / educator** (fitness, courses) — booking/schedule, FAQ, products, lead-capture newsletter.
-- **Small business / shop** — product blocks, external store links, contact form.
-- **Agency** — manages multiple creator pages; the audience for the top Business tier.
+## What sets tadaify apart (positioning)
 
-The **served-but-not-paying audience** is the creator's own visitors/fans, who never hold a tadaify
-account — they consume the public page (click links, subscribe, buy via external links, book).
-Prospective creators are anonymous visitors on the marketing site who claim a handle and register.
+- **Privacy-first.** No cookies, no annoying cookie-consent nag. Analytics are counted a different,
+  cookieless way (`app/lib/insights/` — daily-salt visitor hashing), so creators still get their
+  numbers without tracking visitors.
+- **Mostly free.** Anything that costs tadaify nothing to provide is **not** artificially paywalled.
+  Free is genuinely generous; this is a deliberate wedge against competitors that charge for basics.
+- **Competitively priced**, and **cheap to remove the brand.** Unlike rivals that lock "Powered by …"
+  removal behind expensive tiers, tadaify lets a creator drop the "Powered by tadaify" mark very
+  cheaply.
+- **Community-first.** Product direction is driven by users. In parallel we build a companion,
+  **"ask before ship"** — an embeddable feedback **board / widget** where users post and **vote** on
+  what they need; the team ships the winners on a short cadence. The same community-first ethos is a
+  tadaify principle, not just a side app.
 
-## Domain narrative
+## How a creator uses it
 
-A creator **registers** by claiming a unique `@handle` on the landing page, verifies via 6-digit
-email-OTP, and the handle is then **permanently bound** to the account
-(`BR-AUTH-001/002/003`, `app/lib/handle-validator.ts`). A **5-step onboarding wizard** (platform
-picker → social-handle entry → profile → template → read-only plan overview), followed by a separate
-success/complete screen, seeds the first page from handle-based social-import (no platform OAuth).
+A creator claims a unique `@handle`, verifies via email-OTP, and the handle is then bound to their
+account (`app/lib/handle-validator.ts`, `BR-AUTH-*`). A short, template-driven onboarding seeds their
+first page. From the **dashboard** (`/app`) they add and arrange modules, customise the look from the
+template, publish, and watch their **(cookieless) insights**. The public page at `tadaify.com/<handle>`
+is what their audience sees: profile, the published modules, and any sub-pages.
 
-The creator then works in the **dashboard** (`/app`): a page is an ordered list of **blocks**
-(link button, image, embed, heading, divider, social row, newsletter signup, product, video,
-FAQ/accordion, custom HTML, countdown — 12 types at MVP; livestream is a commented v2 candidate).
-Blocks are edited in a **centered modal** (never a right-side slide-in drawer), each with a
-type-specific form, a live preview, and tier-gated extras (schedule visibility, A/B testing). The
-creator customizes theme/layout (stack or grid), publishes, and watches **Insights** (every
-interaction is tracked at every tier; cookieless unique visitors via a daily salt —
-`app/lib/insights/`).
+Money flows two ways: the creator's **subscription** to tadaify (paid features / cheap branding
+removal), and the creator's **own commerce** (shop / product / paid-article modules — external sales
+links are the creator's; tadaify hosts the surface).
 
-The public page at `tadaify.com/<handle>` is what the audience sees: profile card, optional pinned
-message, the published blocks, and sub-pages (about, blog, portfolio, contact, FAQ, schedule,
-products, newsletter, paid articles, legal). Renaming a handle keeps the old URL redirecting for a
-grace period.
+## Tiers & gating (principle, not price list)
 
-Money flows two ways: **subscription** (the creator pays tadaify; Stripe) and **the creator's own
-commerce** (product blocks link out to the creator's external store; tadaify does not process the
-creator's sales at MVP).
+A free-heavy model with paid unlocks. The gating principle is **honest**: free is generous, paid
+features are the ones that genuinely cost tadaify to run, and the premium UI is never faked — a
+below-tier creator can see and try a premium control; the gate asserts at **save** with an upgrade
+prompt, never a blur or a disabled button (`app/lib/tier-gate.ts`).
 
-## Tiers & gating
-
-Four flat tiers, USD, with **honest gating** — no fake limits: the premium UI stays visible and
-editable, and the gate asserts at save (`app/lib/tier-gate.ts`, `feedback_no_blur_premium_features`):
-
-| Tier | Headline unlocks |
-|---|---|
-| **Free** | Page + blocks + basic insights; small monthly AI-credit allowance |
-| **Creator** | Custom domain (1), schedule-visibility, larger AI allowance |
-| **Pro** | Creator API + MCP, deeper insights, larger AI allowance |
-| **Business** | A/B testing, team members, agency capabilities, unlimited AI |
-
-> Exact prices, AI-credit numbers, API rate limits, and team/handle caps are owned by the live billing
-> code and pricing page, not this doc — **confirm current values with the Owner / `SettingsBilling`
-> before quoting them.** Price is locked for the life of an uninterrupted subscription.
+> Exact tier names, prices, AI-credit allowances, and limits are owned by the live billing code and the
+> pricing page — **confirm current values with the Owner / `SettingsBilling` before quoting them.**
 
 ## Invariants (rules any record / design must obey)
 
-- **One account ↔ one permanently-bound handle.** A handle is claimed at register, OTP-verified, then
-  immutable; it cannot be transferred or reused while held. A short reservation prevents the
-  landing→register race (`BR-AUTH-003/007`). At MVP a single creator account drives a single page.
-  Business-tier agency / multi-handle capability is **not assumed by MVP design or data — confirm
-  scope with the Owner** before modelling cross-account behaviour.
-- **Signup-first.** No page, block, or dashboard state exists without a verified account; there is no
-  anonymous-authored content.
-- **A page is an ordered list of blocks.** Block order is creator-defined; a block has exactly one of
-  the 12 MVP types; visibility can be scheduled (Creator+) and is otherwise "always visible".
-- **Tier gating is honest and asserted at save, never faked in the UI.** A below-tier creator may open
-  and fill a premium control (A/B variant B, schedule dates); the gate fires only on save with an
-  upgrade prompt — the UI is never blurred or disabled (`app/lib/tier-gate.ts`).
-- **Every interaction is tracked at every tier; analytics are cookieless.** Click/visit events exist
-  for Free too; what differs by tier is the *query window / refresh cadence*, not the collection
-  (`app/lib/insights/`).
-- **AI credits are one shared monthly bucket** spent by all AI features (text-only at MVP: theme
-  matcher, bio rewrite, copy suggest).
-- **Trust commitments are binding:** no "Powered by tadaify" watermark (self-referral is opt-in);
-  price-lock honoured; **Creator Safeguard** before any account-level moderation (advance notice +
-  human appeal + prorated refund for prepaid annual).
-- **Marketing previews are admin-only and never public.** No `tadaify.com/preview/<handle>`; previews
-  live on `preview.tadaify.com/<slug>` with a mandatory "not live" disclosure the admin cannot disable.
-- **Auth providers at MVP: Google + X + Email-OTP only.**
+- **One account ↔ one bound handle.** A handle is claimed at register, OTP-verified, then bound to the
+  account; a short reservation prevents the landing→register race (`BR-AUTH-*`). One creator account
+  drives one hosted page.
+- **The build model is template-first.** A page is a template plus an ordered set of modules; design is
+  picked, not hand-coded. Don't model a freeform component builder.
+- **Modules are an open, extensible set.** Treat the block/module catalogue as growing; never hard-code
+  an assumption that the list is closed.
+- **Privacy-first analytics.** Visitor measurement is cookieless and consent-nag-free; every
+  interaction can be counted at every tier, with tier affecting the *view/retention window*, not the
+  collection (`app/lib/insights/`).
+- **Honest gating, asserted at save.** Premium UI stays visible and editable; the gate fires at save.
+- **Branding removal is a cheap, first-class unlock**, not an expensive top-tier gate.
+- **Community-first delivery** via the "ask before ship" board: user-voted features on a short cadence.
 
-## Out of scope at MVP (so data/design don't assume them)
+## Companion product
 
-Multi-**page** accounts (a single creator running several distinct pages) are post-MVP. tadaify does
-not process the creator's own product sales (product blocks link out); marketing is EN-only at launch.
-Business agency / multi-**handle** scope is unconfirmed here — treat as not-yet-built and confirm with
-the Owner.
+**ask before ship** — an embeddable feedback board/widget (post + vote) that any product, including
+tadaify, can attach to collect and prioritise user requests. It encodes tadaify's community-first
+principle; treat it as a sibling in the same ecosystem.
 
 ## See also
 
