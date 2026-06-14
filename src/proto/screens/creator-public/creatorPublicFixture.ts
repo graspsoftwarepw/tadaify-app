@@ -1,7 +1,10 @@
 /**
  * Typed mock seam for the public creator page. Mirrors
  * mockups/tadaify-mvp/creator-public.html so the screen graduates by swapping
- * this factory for the real published-page loader.
+ * this factory for the real published-page loader. Defines the FR's rendered
+ * data contract.
+ *
+ * @implements fr-public-creator-page
  */
 
 export type PublicProfile = {

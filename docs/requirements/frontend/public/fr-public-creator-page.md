@@ -8,6 +8,7 @@ routes: [/__proto/creator-public]
 related_files:
   - src/proto/screens/creator-public/CreatorPublicScreen.tsx
   - src/proto/screens/creator-public/creator-public-proto.css
+  - src/proto/screens/creator-public/creatorPublicFixture.ts
 devices: all
 related_requirements: [fr-globalui-theme-and-colours]
 ---
