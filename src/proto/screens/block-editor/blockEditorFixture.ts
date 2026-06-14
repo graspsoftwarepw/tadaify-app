@@ -302,10 +302,10 @@ export const aiOptionsFixture = (): AiOption[] => [
   { lbl: "Friendly", text: "New track is live — give it a listen 🎧" },
   { lbl: "Curious", text: "Wanna hear what I made this week?" },
 ];
-export const AI_QUOTA_HINT = "Free 5 / Creator 20 / Pro 100 / Business unlimited per DEC-AI-QUOTA-LADDER-01.";
+export const AI_QUOTA_HINT = "Monthly AI credits depend on your plan — Free has a small allowance, paid plans more, top tier unlimited.";
 
 /* ------------------------------------------------------------------ */
-/* EMBED PROVIDERS (auto-detect whitelist — 12 providers, DEC-109)    */
+/* EMBED PROVIDERS (auto-detect whitelist — 12 providers)             */
 /* ------------------------------------------------------------------ */
 export type EmbedProvider = { id: string; label: string; icon: string; detect: RegExp };
 export const embedProvidersFixture = (): EmbedProvider[] => [
@@ -324,7 +324,7 @@ export const embedProvidersFixture = (): EmbedProvider[] => [
 ];
 
 /* ------------------------------------------------------------------ */
-/* NEWSLETTER PROVIDERS (6 native + webhook, DEC-116/117/118/119)     */
+/* NEWSLETTER PROVIDERS (6 native + webhook)                          */
 /* ------------------------------------------------------------------ */
 export type NewsletterProvider = { id: string; name: string; apiKeyHelp?: string; lists?: [string, string][] };
 export const newsletterProvidersFixture = (): Record<string, NewsletterProvider> => ({
