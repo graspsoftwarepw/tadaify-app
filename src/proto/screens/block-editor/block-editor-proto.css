@@ -417,10 +417,14 @@
 .proto-block-editor .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* === Demo tier toolbar ================================================ */
-.proto-block-editor .demo-toolbar { position: fixed; bottom: 16px; right: 16px; z-index: 100; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--fg-subtle); display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-lg); max-width: calc(100vw - 32px); }
+/* The demo-only tier switcher floats above the modal so its buttons stay usable,
+   but the container itself must not steal pointer events from the modal footer
+   (Save/Discard) where it overlaps at tablet / narrow-desktop widths — only its
+   interactive controls capture clicks. */
+.proto-block-editor .demo-toolbar { position: fixed; bottom: 16px; right: 16px; z-index: 100; pointer-events: none; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 11px; font-weight: 600; color: var(--fg-subtle); display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-lg); max-width: calc(100vw - 32px); }
 .proto-block-editor .demo-toolbar .dt-label { text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
-.proto-block-editor .demo-toolbar .dt-btns { display: flex; gap: 4px; flex-wrap: wrap; }
-.proto-block-editor .demo-toolbar button { padding: 4px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font-sans); color: var(--fg); }
+.proto-block-editor .demo-toolbar .dt-btns { display: flex; gap: 4px; flex-wrap: wrap; pointer-events: auto; }
+.proto-block-editor .demo-toolbar button { padding: 4px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font-sans); color: var(--fg); pointer-events: auto; }
 .proto-block-editor .demo-toolbar button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
 .proto-block-editor .demo-toolbar .dt-tip { font-size: 10px; color: var(--fg-subtle); font-weight: 500; max-width: 220px; }
 @media (max-width: 599px) { .proto-block-editor .demo-toolbar { bottom: 8px; right: 8px; padding: 8px 10px; } .proto-block-editor .demo-toolbar .dt-tip { display: none; } }
