@@ -17,9 +17,10 @@
 - **Creator (account owner)** — the paying customer; owns exactly one handle/page at MVP and the
   account's billing. Tier (Free / Creator / Pro / Business) modulates what is unlocked *within* the
   dashboard, asserted at save — not a separate persona.
-- **Team member (Business)** — a collaborator invited to a Business account (≤10); edits content but
-  holds no ownership or billing authority. Business-only and post-MVP-adjacent; included so design
-  never grants them owner powers.
+- **Team member (Business)** — a collaborator invited to a Business account (≤10, account-level); edits
+  content but holds no ownership or billing authority. Included so design never grants them owner
+  powers. (Distinct from an *agency master* managing N sub-account pages — see the open reconciliation
+  note below and in [`tadaify.md`](./tadaify.md#open-reconciliation).)
 - **Platform admin / staff** — internal operator; runs the admin-only marketing preview generator and
   the moderation/appeals queue under the binding Creator Safeguard. Not a creator-facing role.
 
@@ -53,7 +54,11 @@
 - **Tier is not a persona.** Free / Creator / Pro / Business all share the Creator-owner rows above;
   the difference is *which dashboard capabilities are unlocked*, gated honestly at save
   ([DEC-043](../decisions/0007-everything-free-gating.md)) — never by hiding or disabling the control.
-- **Multi-handle / multi-creator (agency) is post-MVP.** At MVP a Creator owns exactly one handle, so
-  cross-account rows do not exist yet; the Business team-member rows are forward-looking guardrails.
+- **Agency multi-handle is an unresolved conflict, not settled as post-MVP.** The accepted decision
+  [DEC-Q5-A](../decisions/0014-full-business-tier-at-mvp.md) ships agency sub-accounts (a master
+  managing N pages) at MVP, while an engineering note flags it SPIKE-gated; see the open reconciliation
+  in [`tadaify.md`](./tadaify.md#open-reconciliation). The matrix above models only the single-account
+  case; the **agency-master** persona and cross-account authority rows are deferred to that
+  reconciliation. The Business team-member rows are account-level guardrails and stand regardless.
 - **Creator Safeguard binds the admin layer** ([DEC-SYN-05](../decisions/0021-creator-safeguard-48h-warning.md)):
   every "cannot do" in the admin rows above is a hard platform commitment, not a UI nicety.

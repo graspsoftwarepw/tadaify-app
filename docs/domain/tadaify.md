@@ -29,8 +29,12 @@ the canonical "souls" for realistic fixtures:
   newsletter, maybe a paid article or merch link. The default persona.
 - **Coach / educator** (fitness, courses) — booking/schedule, FAQ, products, lead-capture newsletter.
 - **Small business / shop** — product blocks, external store links, contact form.
-- **Agency** — manages multiple creators; the audience for the Business tier (5 handles + 10 team
-  members, agency-friendly — multi-handle is Phase B, SPIKE-gated, **not** MVP).
+- **Agency** — manages multiple creator pages; the audience for the Business tier. The accepted
+  decision ships the **full** Business tier at MVP, explicitly including agency sub-accounts (one
+  master account managing N creator pages — [DEC-Q5-A](../decisions/0014-full-business-tier-at-mvp.md),
+  F-BIZ-001). This is in tension with an engineering note that flags multi-handle as SPIKE-gated; the
+  conflict is unresolved — see [*Open reconciliation*](#open-reconciliation). It is treated as
+  accepted-but-not-yet-built, not out of scope.
 
 The **served-but-not-paying audience** is the creator's own visitors/fans, who never hold an account on
 tadaify — they consume the public page (click links, subscribe, buy via external links, book).
@@ -40,8 +44,10 @@ Prospective creators are anonymous visitors on the marketing site who claim a ha
 
 A creator **registers** by claiming a unique `@handle` on the landing page, verifies via 6-digit
 email-OTP, and the handle is then **permanently bound** to the account
-([BR-AUTH-001/002/003](../requirements/business/INDEX.md)). A 5-step **onboarding wizard** (platform
-picker → social-handle entry → profile → template → read-only plan overview → success) seeds the first
+([BR-AUTH-001/002/003](../requirements/business/INDEX.md)). A **5-step onboarding wizard** (platform
+picker → social-handle entry → profile → template → read-only plan overview —
+[BR-ONBOARDING-001…005](../requirements/business/INDEX.md)), followed by a separate success/complete
+screen ([BR-ONBOARDING-006](../requirements/business/INDEX.md)), seeds the first
 page from handle-based social-import (no platform OAuth — [DEC-SOCIAL-01](../decisions/0011-social-import-handle-based.md),
 [DEC-026](../decisions/0026-platform-oauth-import-rejected.md)).
 
@@ -82,14 +88,19 @@ Authority: [DEC-279](../decisions/0009-pricing-final-7.99-19.99.md), [DEC-287](.
 [DEC-CREATOR-API-01](../decisions/0029-creator-api-pro-tier.md). Price is **locked for life** for an
 uninterrupted subscription ([DEC-PRICELOCK-01](../decisions/0027-price-lock-for-life.md)). Extra custom
 domain is a universal $1.99/mo add-on ([DEC-PRICELOCK-02](../decisions/0028-domain-addon-pricing.md)).
-*Multi-handle (Business) is SPIKE-gated and not in the MVP build.
+*Agency sub-accounts / multi-handle (Business) are accepted for MVP per
+[DEC-Q5-A](../decisions/0014-full-business-tier-at-mvp.md) but engineering-flagged as SPIKE-gated —
+see [*Open reconciliation*](#open-reconciliation).
 
 ## Invariants (rules any record / design must obey)
 
 - **One account ↔ one permanently-bound handle.** A handle is claimed at register, OTP-verified, then
   immutable; it cannot be transferred or reused while held. Reservation (15 min) prevents the
-  landing→register race ([BR-AUTH-003/007](../requirements/business/INDEX.md)). Multi-handle is
-  Business-only and post-MVP — at MVP every account has exactly one page.
+  landing→register race ([BR-AUTH-003/007](../requirements/business/INDEX.md)). For Free / Creator /
+  Pro, one account = exactly one handle/page. Business is the exception: the accepted decision
+  ([DEC-Q5-A](../decisions/0014-full-business-tier-at-mvp.md)) ships agency sub-accounts (one master
+  managing N pages) at MVP, though this is engineering-flagged SPIKE-gated — see
+  [*Open reconciliation*](#open-reconciliation). This invariant is therefore **not** unconditional.
 - **Signup-first.** No page, block, or dashboard state exists without a verified account; there is no
   anonymous-authored content ([DEC-355](../decisions/0049-drop-f001-guest-mode-signup-first.md)).
 - **A page is an ordered list of blocks.** Block order is creator-defined; a block has exactly one of
@@ -116,9 +127,27 @@ domain is a universal $1.99/mo add-on ([DEC-PRICELOCK-02](../decisions/0028-doma
 
 ## Out of scope at MVP (so data/design don't assume them)
 
-Multi-page accounts ([DEC-024](../decisions/0024-multi-page-post-mvp.md)) and multi-handle/agency
-multi-creator are post-MVP; tadaify does not process the creator's own product sales (product blocks
-link out); marketing is EN-only at launch ([DEC-013](../decisions/0013-en-only-marketing-at-launch.md)).
+Multi-**page** accounts — a single creator running several distinct pages —
+([DEC-024](../decisions/0024-multi-page-post-mvp.md)) are post-MVP. tadaify does not process the
+creator's own product sales (product blocks link out); marketing is EN-only at launch
+([DEC-013](../decisions/0013-en-only-marketing-at-launch.md)). Note: agency multi-**handle**
+sub-accounts are a *separate* matter — accepted for MVP per DEC-Q5-A but SPIKE-flagged
+(see [*Open reconciliation*](#open-reconciliation)), **not** an item on this out-of-scope list.
+
+## Open reconciliation
+
+One unresolved source conflict the next domain pass (or the Owner) must settle:
+
+- **Business multi-handle / agency sub-accounts at MVP.** The accepted decision record
+  [DEC-Q5-A](../decisions/0014-full-business-tier-at-mvp.md) ships the full Business tier at MVP,
+  including F-BIZ-001 *agency sub-accounts* (one master account managing N creator pages) and 5 F-BIZ
+  units. No accepted decision supersedes it. However, engineering context
+  (`docs/agent-context/claude-full-context.md`) flags agency multi-handle as Phase-B / SPIKE-gated
+  ("do NOT implement until SPIKE + sub-decisions are locked"). Until a decision record resolves this,
+  this doc treats agency sub-accounts as **accepted-but-not-yet-built**: design and data may assume the
+  capability exists per DEC-Q5-A, but must not assume it is implemented. The audiences matrix in
+  [`audiences.md`](./audiences.md) currently models only the single-account case; the agency-master
+  persona and cross-account authority rows are deferred to that reconciliation.
 
 ## See also
 
