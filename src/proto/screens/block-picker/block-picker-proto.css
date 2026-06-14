@@ -1,0 +1,98 @@
+/* Block picker modal — token-driven styling ported from
+   mockups/tadaify-mvp/app-block-picker.html. Scoped under `.proto-picker`.
+   Brand tints use color-mix over tokens; dark mode follows the app's
+   `body.dark-mode` mechanism (the picker overlays the reused dashboard).
+
+   @implements fr-block-picker-modal */
+
+.proto-picker .modal-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg-dark, #0B0F1E) 55%, transparent);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.proto-picker .modal {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 18px; box-shadow: var(--shadow-xl);
+  width: min(520px, 100%); max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+}
+@media (max-width: 720px) {
+  .proto-picker .modal-backdrop { padding: 0; align-items: stretch; }
+  .proto-picker .modal { border-radius: 0; max-height: 100vh; height: 100vh; }
+}
+.proto-picker .modal-head {
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0; flex-wrap: wrap;
+}
+.proto-picker .modal-head h2 { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin: 0; flex-shrink: 0; }
+.proto-picker .search-wrap { flex: 1; min-width: 200px; position: relative; }
+.proto-picker .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--fg-subtle); }
+.proto-picker input.search {
+  width: 100%; padding: 9px 12px 9px 36px; font-size: 13.5px;
+  border: 1px solid var(--border-strong); border-radius: 99px;
+  background: var(--bg); color: var(--fg); font-family: var(--font-sans);
+  outline: none; transition: border .14s, box-shadow .14s;
+}
+.proto-picker input.search:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 14%, transparent); }
+.proto-picker .modal-head .iconbtn { width: 32px; height: 32px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: transparent; border: 0; color: var(--fg-muted); cursor: pointer; }
+.proto-picker .modal-head .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.proto-picker .modal-head .iconbtn svg { width: 18px; height: 18px; }
+
+/* --- Category dropdown filter in the header --- */
+.proto-picker .cat-dd { position: relative; flex-shrink: 0; }
+.proto-picker .cat-dd-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 99px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.proto-picker .cat-dd-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; min-width: 190px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); padding: 4px; }
+.proto-picker .cat-dd-menu button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 8px 12px; border: 0; background: transparent; color: var(--fg); font-family: var(--font-sans); font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; text-align: left; }
+.proto-picker .cat-dd-menu button:hover { background: var(--bg-muted); }
+.proto-picker .cat-dd-menu button.is-active { color: var(--brand-primary); font-weight: 700; }
+.proto-picker .cat-dd-menu button .ct { color: var(--fg-subtle); font-weight: 700; }
+
+/* --- Grouped list with category section headers (the "All" view) --- */
+.proto-picker .tc-group-head { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-subtle); padding: 12px 4px 4px; position: sticky; top: 0; background: var(--bg-elevated); }
+.proto-picker .tc-group-head:first-child { padding-top: 2px; }
+
+.proto-picker .modal-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+/* Compact row list — better than square cards across device sizes. */
+.proto-picker .card-grid { display: flex; flex-direction: column; gap: 6px; }
+
+.proto-picker .type-card {
+  position: relative; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; text-align: left; font-family: var(--font-sans); color: inherit; text-decoration: none;
+  transition: border .12s, background .12s;
+}
+.proto-picker .type-card:hover { border-color: var(--brand-primary); background: color-mix(in srgb, var(--brand-primary) 5%, var(--bg)); }
+.proto-picker .type-card.is-locked { opacity: 0.85; }
+.proto-picker .type-card .ic { width: 36px; height: 36px; flex-shrink: 0; border-radius: 9px; background: color-mix(in srgb, var(--brand-primary) 12%, transparent); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.proto-picker .type-card.is-media .ic { background: color-mix(in srgb, var(--brand-warm) 16%, transparent); }
+.proto-picker .type-card.is-forms .ic { background: color-mix(in srgb, var(--success) 16%, transparent); }
+.proto-picker .type-card.is-shop .ic { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.proto-picker .type-card.is-layout .ic { background: color-mix(in srgb, var(--brand-secondary) 16%, transparent); }
+.proto-picker .tc-body { flex: 1; min-width: 0; }
+.proto-picker .tc-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.proto-picker .type-card .ttl { font-size: 13.5px; font-weight: 600; color: var(--fg); }
+.proto-picker .type-card .desc { font-size: 12px; color: var(--fg-muted); line-height: 1.35; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.proto-picker .type-card .bd { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 99px; }
+.proto-picker .bd.popular { background: color-mix(in srgb, var(--brand-warm) 18%, transparent); color: var(--brand-warm-dark); }
+.proto-picker .bd.tier { background: color-mix(in srgb, var(--brand-primary) 14%, transparent); color: var(--brand-primary); }
+.proto-picker .bd.new { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+.proto-picker .type-card .add-cta { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--brand-primary); opacity: 0; transition: opacity .15s; }
+.proto-picker .type-card:hover .add-cta { opacity: 1; }
+@media (max-width: 599px) { .proto-picker .type-card .add-cta { opacity: 1; } }
+
+.proto-picker .grid-empty { padding: 28px 16px; text-align: center; color: var(--fg-muted); font-size: 13px; background: var(--bg-muted); border-radius: 12px; border: 1px dashed var(--border-strong); }
+.proto-picker .grid-empty .ic { font-size: 26px; margin-bottom: 8px; }
+
+/* AI sub-modal */
+.proto-picker .ai-modal-backdrop { position: fixed; inset: 0; z-index: 80; background: color-mix(in srgb, var(--bg-dark, #0B0F1E) 70%, transparent); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.proto-picker .ai-modal { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-xl); width: min(560px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.proto-picker .ai-modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.proto-picker .ai-modal-head h3 { font-family: var(--font-display); font-size: 19px; flex: 1; margin: 0; }
+.proto-picker .ai-modal-body { padding: 18px 22px; overflow-y: auto; }
+.proto-picker .ai-set { background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; margin-bottom: 10px; transition: border .12s, transform .12s, box-shadow .12s; font-family: var(--font-sans); width: 100%; text-align: left; }
+.proto-picker .ai-set:hover { border-color: var(--brand-primary); transform: translateY(-1px); box-shadow: var(--shadow); }
+.proto-picker .ai-set .ttl { font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 6px; }
+.proto-picker .ai-set .blocks-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.proto-picker .ai-set .b-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--bg-muted); border-radius: 99px; font-size: 11.5px; color: var(--fg-muted); font-weight: 500; }

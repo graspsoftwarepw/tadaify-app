@@ -13,6 +13,7 @@ import "./theme/proto-tokens.css";
 import { StyleGuide } from "./StyleGuide";
 import { DashboardScreen } from "./screens/dashboard/DashboardScreen";
 import { CreatorPublicScreen } from "./screens/creator-public/CreatorPublicScreen";
+import { BlockPickerScreen } from "./screens/block-picker/BlockPickerScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -28,6 +29,7 @@ const SCREENS: Screen[] = [
   { segment: "dashboard", label: "Creator dashboard — My page", status: "ready", batch: "Dashboard" },
   { segment: "style-guide", label: "Style guide · tokens & states", status: "ready", batch: "Foundation" },
   { segment: "creator-public", label: "Public creator page", status: "ready", batch: "P1 · Public pages" },
+  { segment: "block-picker", label: "Block picker modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "settings", label: "Settings (8 tabs)", status: "planned", batch: "P3 · Settings" },
   { segment: "pages-blog", label: "Page editors", status: "planned", batch: "P4 · Page editors" },
   { segment: "onboarding", label: "Onboarding + auth", status: "planned", batch: "P5 · Onboarding/auth" },
@@ -93,6 +95,8 @@ export default function ProtoDevHost() {
       return <DashboardScreen />;
     case "creator-public":
       return <CreatorPublicScreen />;
+    case "block-picker":
+      return <BlockPickerScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:
