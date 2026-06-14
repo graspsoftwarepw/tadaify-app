@@ -5,8 +5,6 @@ area: PUBLICPAGES
 status: accepted
 level: MUST
 covers: [BR-CREATOR-001]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [TR-tadaify-010]
 ---

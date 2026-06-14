@@ -8,8 +8,6 @@ modules: [DASH]
 related_files: [app/components/AppMobileTabs.tsx]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

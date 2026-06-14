@@ -1,6 +1,6 @@
 # Business Requirements — INDEX
 
-> **Auto-generated** on 2026-06-05 by `bin/migrate-records.mjs --kind=br`.
+> **Auto-generated** on 2026-06-14 by `bin/migrate-records.mjs --kind=br`.
 > Do NOT hand-edit this file. Edit the individual BR records in `docs/requirements/business/`.
 > To add a new BR: create `docs/requirements/business/NNNN-<slug>.md` with MADR frontmatter.
 

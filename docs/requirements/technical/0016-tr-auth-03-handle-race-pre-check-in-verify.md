@@ -5,8 +5,6 @@ area: AUTH
 status: accepted
 level: MUST
 covers: [BR-AUTH-003]
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [TR-AUTH-03]
 ---

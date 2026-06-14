@@ -8,8 +8,6 @@ modules: [ONBOARDING]
 related_files: [app/routes/onboarding.tier.tsx, app/lib/tier-gate.ts]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: []
 ---

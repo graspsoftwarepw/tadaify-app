@@ -8,8 +8,6 @@ modules: [AUTH]
 related_files: [app/routes/login.tsx, app/routes/api.auth.login-otp.ts, app/lib/login-otp-error.ts]
 tests: []
 migrations: []
-supersedes: []
-superseded_by: null
 authorized_by: vvaser@gmail.com
 aliases: [BR-AUTH-05]
 ---
