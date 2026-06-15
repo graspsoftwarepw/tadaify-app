@@ -78,9 +78,9 @@ export function CustomEditorScreen() {
   const [passwordOn, setPasswordOn] = useState(fx.options.passwordOn);
   const [openKebab, setOpenKebab] = useState<string | null>(null);
   const [picker, setPicker] = useState(false);
-
-  useEscapeKey(() => { setPicker(false); setOpenKebab(null); });
   const [templates, setTemplates] = useState(false);
+
+  useEscapeKey(() => { setPicker(false); setTemplates(false); setOpenKebab(null); });
 
   const dirty = () => setSaveState("dirty");
 

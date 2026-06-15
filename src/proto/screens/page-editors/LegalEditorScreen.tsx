@@ -83,10 +83,10 @@ export function LegalEditorScreen() {
   const [policies, setPolicies] = useState(fx.policies);
   const [openKebab, setOpenKebab] = useState<string | null>(null);
   const [addPolicy, setAddPolicy] = useState(false);
-
-  useEscapeKey(() => { setAddPolicy(false); setOpenKebab(null); });
   const [templatesModal, setTemplatesModal] = useState(false);
   const [versionModal, setVersionModal] = useState<string | null>(null);
+
+  useEscapeKey(() => { setAddPolicy(false); setTemplatesModal(false); setVersionModal(null); setOpenKebab(null); });
 
   const dirty = () => setSaveState("dirty");
   const toggleCollapse = (id: string) =>
