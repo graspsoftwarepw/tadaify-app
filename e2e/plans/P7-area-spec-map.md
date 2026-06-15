@@ -3,7 +3,7 @@
 Phase **P7** of adopting `grasp-app-structure` in tadaify-app (sub-issue of epic #303):
 **module-first e2e layout + canonical `Covers:` headers, grandfathering the 41**.
 
-Contract: `agents-local/skills/grasp-app-structure/reference/e2e.md`. Module slugs
+Contract: `e2e/plans/P7-area-spec-map.md`. Module slugs
 (`<AREA>`) and BR ids come from the merged **P4** registry (`docs/modules/registry.yml`)
 and **P3** business requirements (`docs/requirements/business/*.md`).
 

@@ -9,7 +9,7 @@
 // over the *inputs* (route tuples + joined frontmatter + annotations), never the rendered
 // table, so cosmetic re-rendering does not churn the hash while any governing change does.
 //
-// Contract: agents-local/skills/grasp-app-structure/reference/maps.md
+// Contract: bin/lib/maps-lib.mjs
 //
 // IMPORTANT (validator interplay): the rendered map text must NEVER contain the literal
 // words "STALE" / "regenerate" / "<!-- stale -->" — validate_structure.py check 10 treats

@@ -5,9 +5,9 @@
 # the mandatory 8-key header. Using this script is MANDATORY for every migration
 # created after the grandfather cutoff — never hand-pick a timestamp.
 #
-# Standard: agents-local/skills/grasp-app-structure/reference/migrations.md
+# Standard: docs/MIGRATION_GUIDE.md
 # Adopted in tadaify-app via issue #309 (epic #303). The 19 pre-cutoff legacy
-# migrations (cutoff 20260531000002, see docs/app-structure.yml) are exempt and
+# migrations (cutoff 20260531000002, see supabase/migration-cutoff) are exempt and
 # stay byte-for-byte untouched.
 #
 # Problem it solves: a manually chosen timestamp (copied from another project or

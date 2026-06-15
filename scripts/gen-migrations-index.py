@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate supabase/MIGRATIONS.md — the module-keyed migration index.
 
-Standard: agents-local/skills/grasp-app-structure/reference/migrations.md §3.
+Standard: docs/MIGRATION_GUIDE.md §3.
 Adopted in tadaify-app via issue #309.
 
 The index is GENERATED, never hand-edited. It must reproduce byte-identical from
@@ -10,7 +10,7 @@ the current set of migration headers, so the output is fully deterministic:
 - The generation date stamp is the latest migration's date (derived from the
   newest YYYYMMDDHHMMSS filename), NOT today's wall-clock — otherwise the file
   would change every day and could not be verified byte-identical.
-- Post-cutoff migrations (timestamp > cutoff in docs/app-structure.yml) are
+- Post-cutoff migrations (timestamp > cutoff in supabase/migration-cutoff) are
   parsed for their `Module` + `Summary` header keys and grouped by module.
 - The 19 pre-cutoff legacy files have no header; they are listed verbatim under a
   single `Legacy (grandfathered, pre-cutoff)` section, ordered by filename.
@@ -30,30 +30,22 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MIGRATIONS_DIR = REPO_ROOT / "supabase" / "migrations"
 INDEX_PATH = REPO_ROOT / "supabase" / "MIGRATIONS.md"
-STRUCTURE_YML = REPO_ROOT / "docs" / "app-structure.yml"
+CUTOFF_FILE = REPO_ROOT / "supabase" / "migration-cutoff"
 
 FILENAME_RE = re.compile(r"^(\d{14})_(.+)\.sql$")
 HEADER_KEY_RE = re.compile(r"^\s*\*\s*([A-Za-z-]+):\s*(.*?)\s*$")
 
 
 def read_cutoff() -> str:
-    """Read migrations.cutoff from docs/app-structure.yml (string, no PyYAML dep)."""
-    in_migrations = False
-    for raw in STRUCTURE_YML.read_text(encoding="utf-8").splitlines():
-        line = raw.split("#", 1)[0].rstrip()
+    """Read the grandfather cutoff (a single 14-digit timestamp) from
+    supabase/migration-cutoff. Lines may carry `#` comments; blank lines are ignored."""
+    for raw in CUTOFF_FILE.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
         if not line:
             continue
-        if re.match(r"^migrations:\s*$", line):
-            in_migrations = True
-            continue
-        if in_migrations:
-            m = re.match(r"^\s+cutoff:\s*(\d{14})\s*$", line)
-            if m:
-                return m.group(1)
-            # leaving the migrations: block (a new top-level key) → stop
-            if re.match(r"^\S", line):
-                break
-    raise SystemExit("ERROR: migrations.cutoff not found in docs/app-structure.yml")
+        if re.fullmatch(r"\d{14}", line):
+            return line
+    raise SystemExit(f"ERROR: no 14-digit cutoff timestamp found in {CUTOFF_FILE.relative_to(REPO_ROOT)}")
 
 
 def parse_header(path: Path) -> dict[str, str]:
