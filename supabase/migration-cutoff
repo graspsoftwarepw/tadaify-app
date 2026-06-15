@@ -1,0 +1,12 @@
+# Migration grandfather cutoff for tadaify-app — a single 14-digit UTC timestamp.
+#
+# Migrations whose 14-digit filename timestamp is <= this value are LEGACY (they
+# predate the current migration standard) and are exempt from the post-cutoff gate
+# (scripts/check-migrations.py): they are never inspected for headers, requirement
+# refs, or the GDPR delete/export pair. Migrations strictly GREATER than this value
+# must satisfy the full standard. bin/new-migration.sh always stamps "now", which is
+# always greater, so new files are governed; never hand-pick a timestamp at/below it.
+#
+# Read by scripts/check-migrations.py and scripts/gen-migrations-index.py.
+# See docs/MIGRATION_GUIDE.md for the full standard.
+20260531000002

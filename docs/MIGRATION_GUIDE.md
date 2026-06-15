@@ -5,8 +5,8 @@
 > wall-clock name + the mandatory 8-key header), then regenerate the module-keyed
 > index `supabase/MIGRATIONS.md` via `scripts/gen-migrations-index.sh` and run the
 > gate `python3 scripts/check-migrations.py`. The cutoff lives in
-> `docs/app-structure.yml` (`migrations.cutoff`); the full contract is
-> `agents-local/skills/grasp-app-structure/reference/migrations.md`.
+> [`supabase/migration-cutoff`](../supabase/migration-cutoff) (a single 14-digit
+> timestamp); the full standard is documented below.
 >
 > The 19 pre-cutoff legacy migrations below are **grandfathered** — exempt from
 > the header/gate and never rewritten. The prose sections that follow remain the

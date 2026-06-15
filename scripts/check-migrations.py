@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Post-cutoff migration gate.
 
-Standard: agents-local/skills/grasp-app-structure/reference/migrations.md.
+Standard: docs/MIGRATION_GUIDE.md.
 Adopted in tadaify-app via issue #309 (epic #303).
 
 Binds ONLY migrations whose 14-digit timestamp is strictly greater than the
-grandfather cutoff recorded in docs/app-structure.yml (migrations.cutoff). The 19
+grandfather cutoff recorded in supabase/migration-cutoff. The 19
 pre-cutoff legacy files are exempt — they are never inspected for headers and
 MUST stay byte-for-byte untouched.
 
@@ -37,7 +37,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MIGRATIONS_DIR = REPO_ROOT / "supabase" / "migrations"
-STRUCTURE_YML = REPO_ROOT / "docs" / "app-structure.yml"
+CUTOFF_FILE = REPO_ROOT / "supabase" / "migration-cutoff"
 SCHEMA_REL = "docs/schema.sql"
 
 # A migration filename is <ts>_<module>_<verb_noun>.sql where BOTH the module and
@@ -62,21 +62,15 @@ REQUIRED_KEYS = [
 
 
 def read_cutoff() -> str:
-    in_migrations = False
-    for raw in STRUCTURE_YML.read_text(encoding="utf-8").splitlines():
-        line = raw.split("#", 1)[0].rstrip()
+    """Read the grandfather cutoff (a single 14-digit timestamp) from
+    supabase/migration-cutoff. Lines may carry `#` comments; blank lines are ignored."""
+    for raw in CUTOFF_FILE.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
         if not line:
             continue
-        if re.match(r"^migrations:\s*$", line):
-            in_migrations = True
-            continue
-        if in_migrations:
-            m = re.match(r"^\s+cutoff:\s*(\d{14})\s*$", line)
-            if m:
-                return m.group(1)
-            if re.match(r"^\S", line):
-                break
-    sys.exit("ERROR: migrations.cutoff not found in docs/app-structure.yml")
+        if re.fullmatch(r"\d{14}", line):
+            return line
+    sys.exit(f"ERROR: no 14-digit cutoff timestamp found in {CUTOFF_FILE.relative_to(REPO_ROOT)}")
 
 
 def parse_header(path: Path) -> dict[str, str]:
