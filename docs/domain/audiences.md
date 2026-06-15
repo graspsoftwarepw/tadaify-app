@@ -26,8 +26,13 @@ capability aimed at a post-MVP agency customer):
    creator's external links, reads. May post and vote on the embedded "ask before ship" board where a
    creator has one.
 3. **Platform admin (the Owner)** — runs tadaify. Has an admin dashboard for the business: who pays,
-   how much, plans and promotions, and platform operations / moderation. Not a creator-facing role and
-   never edits a creator's page content as them.
+   how much, plans and promotions, platform operations, and **trust & safety / moderation**. Because
+   tadaify hosts open self-registered profiles, the admin must assume bad actors alongside legitimate
+   creators — scammers, fraudsters, and adult / OnlyFans-style or regionally-sensitive content that
+   may be legal in one country and not another — and react to user reports by warning or taking down
+   profiles. May **impersonate** a creator ("login as user") to investigate or assist, but only from
+   the moderation/support path and only with a visible banner and a full audit trail. Not a
+   creator-facing role and never edits a creator's page content as them outside such a logged session.
 4. **Team member (Business / agency)** — a collaborator the Business account owner invites and assigns
    a role. Helps run the account's profile(s) and content from the dashboard, but never owns billing or
    the account itself. The seat model behind the agency use-case (one account, many managed profiles,
@@ -40,8 +45,9 @@ capability aimed at a post-MVP agency customer):
 - **Public creator page** — `tadaify.com/<handle>` and its sub-pages, hosted by tadaify's engine.
 - **Creator dashboard** — `/app/*`: template + module editor, design, insights, shop, settings,
   billing. Auth-gated.
-- **Admin dashboard** — `/admin/*`: billing/revenue overview, plans & promotions, platform ops and
-  moderation. Owner-only.
+- **Admin dashboard** — `/admin/*`: billing/revenue overview, plans & promotions, platform ops, and
+  trust & safety — the report/moderation queue, warnings + cure-period workflow, take-downs, logged
+  impersonation, and the continuous agent-monitoring feed. Owner-only.
 
 ## Authority matrix
 
@@ -58,9 +64,9 @@ Complete: 4 personas × 4 layers = 16 rows.
 | Public visitor (follower) | Creator dashboard | nothing — the dashboard is auth-gated | nothing | reach `/app/*`; view or edit any creator's modules, insights, settings, or billing |
 | Public visitor (follower) | Admin dashboard | nothing — the admin surface is internal | nothing | reach `/admin/*`; see any billing, revenue, plan, or moderation data |
 | Platform admin (Owner) | Public marketing & signup | the public marketing and pricing pages, like anyone | browse the public site | gain creator or admin privileges from this layer (it grants none) |
-| Platform admin (Owner) | Public creator page | any public creator page for moderation review | flag or hide a module; escalate an account for review | edit a creator's content silently; impersonate a creator; act outside the moderation path |
-| Platform admin (Owner) | Creator dashboard | nothing — admins do not enter creators' dashboards | nothing | author, edit, or publish a creator's modules as them; impersonate a creator inside `/app/*` |
-| Platform admin (Owner) | Admin dashboard | platform-wide billing and revenue, who pays and how much, plans and promotions, platform ops and the moderation queue | view payments and revenue; configure plans and promotions; run platform operations; take moderation action | edit or publish a creator's page content as them |
+| Platform admin (Owner) | Public creator page | any public creator page for moderation review, including content reported as scam / fraud / adult / regionally-illegal | flag or hide a module; issue a warning that starts the clear cure-period workflow; take down a page or account; review user reports; escalate for review | act outside the audited moderation path; edit a creator's content silently (every moderation action is logged) |
+| Platform admin (Owner) | Creator dashboard | a creator's dashboard **only via logged, audited impersonation** ("login as user"), entered from the admin moderation/support path | impersonate a creator to investigate or assist, with every action logged and an impersonation banner shown; exit impersonation | enter a creator's dashboard silently or un-audited; impersonate outside the moderation/support path (the impersonation banner + audit log are mandatory) |
+| Platform admin (Owner) | Admin dashboard | platform-wide billing and revenue, plans and promotions, platform ops, the moderation/report queue, take-down history, the warning/cure-period workflow, and the continuous agent-monitoring feed | view payments and revenue; configure plans and promotions; run platform operations; triage user reports; issue warnings and run the cure-period workflow; take down content/accounts; launch a logged impersonation; take moderation action | edit or publish a creator's page content as them outside an audited impersonation session |
 | Team member (Business / agency) | Public marketing & signup | marketing and pricing, like anyone | browse the public site; accept an invite to join a Business account | self-provision a Business account or change its plan from here |
 | Team member (Business / agency) | Public creator page | the account's public profile(s) as a visitor sees them, plus hidden/scheduled modules via preview | preview / view-as for the profiles they manage | edit content from the public surface; touch a profile outside the account they were invited to |
 | Team member (Business / agency) | Creator dashboard | the Business account's managed profile(s), modules, design, insights and team roster, scoped to their assigned role | create, edit, schedule and publish modules; customise design; run AI within the account allowance; manage profiles their role permits | manage billing or the plan; add / remove members or change roles; transfer or delete the account; act on another agency's account (all owner-only) |
@@ -82,4 +88,21 @@ Complete: 4 personas × 4 layers = 16 rows.
   posting/voting is the visitor's only "write", and it belongs to the creator's board, not a tadaify
   account.
 - **Admin is the Owner's business cockpit**, not a creator surface; its powers are revenue/plan/ops and
-  moderation, never content authorship on a creator's behalf.
+  trust & safety, never content authorship on a creator's behalf.
+- **Moderation and impersonation are audited, never silent.** tadaify deliberately plans for bad actors
+  (scam / fraud / adult / regionally-illegal content) alongside legitimate creators. Anyone can report a
+  profile; the admin triages reports, and may warn, take down, or **impersonate** ("login as user") a
+  creator to investigate or assist. Impersonation is allowed **only** from the moderation/support path,
+  always shows an impersonation banner, and logs every action to the audit trail — the matrix permits
+  it on exactly those terms and forbids any silent or un-audited entry into a creator's dashboard. A
+  differentiator is the **clear warning path**: a warned creator gets an explicit "you've been warned,
+  N days to cure" view rather than a silent strike, and tadaify agents monitor profiles continuously to
+  surface serious issues early.
+
+  > **Owner-ratified change (2026-06-15).** The Platform admin rows previously forbade impersonation
+  > outright. The Owner ratified opening it as an **audited, banner-visible** moderation/support
+  > capability — tadaify hosts open self-registration and must plan for scam / fraud / adult /
+  > regionally-sensitive content, react to user reports, take down profiles, and let support
+  > "login as user" to investigate or assist. This authority change was made by Owner decision (not to
+  > fit a mockup); the trust & safety reporting → warn/cure-period → take-down workflow and continuous
+  > agent monitoring were ratified in the same decision.

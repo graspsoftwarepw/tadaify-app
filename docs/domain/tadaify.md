@@ -81,6 +81,31 @@ Money flows two ways: the creator's **subscription** to tadaify (paid features /
 removal), and the creator's **own commerce** (shop / product / paid-article modules — external sales
 links are the creator's; tadaify hosts the surface).
 
+## Trust & safety / moderation
+
+tadaify hosts **open, self-registered** public profiles, so the platform plans from day one for the
+full range of actors — not just legitimate influencers but scammers, fraudsters, and creators posting
+adult / OnlyFans-style or otherwise sensitive content that may be legal in one country and not in
+another. Reacting to this is a first-class platform responsibility, not an afterthought:
+
+- **Anyone can report.** A reporting form lets visitors and creators flag a profile or module they find
+  suspicious or harmful; reports land in the admin moderation/report queue.
+- **The Owner moderates from the admin dashboard.** Triage reports, and warn, hide, or take down a
+  profile/module/account. Every moderation action is logged.
+- **A clear warning path is a differentiator.** Unlike rivals' silent strikes, a warned creator gets an
+  explicit, dedicated view — "you've been warned, here's why, you have N days to fix it" — with the
+  remedy and deadline spelled out. The cure-period workflow is part of the product, not a back-office
+  email.
+- **Logged impersonation for investigation/support.** The admin can "login as user" to investigate or
+  assist a creator, but only from the moderation/support path, always behind a visible impersonation
+  banner, with every action written to the audit log. Silent or un-audited entry into a creator's
+  dashboard is never allowed.
+- **Continuous agent monitoring.** tadaify agents monitor profiles on an ongoing basis to surface
+  serious problems (illegal or dangerous content, scams) early, ahead of or alongside user reports.
+
+See the authority terms in [`audiences.md`](./audiences.md) (Platform admin rows) — moderation and
+impersonation are permitted only on the audited terms stated there.
+
 ## Tiers & gating (principle, not price list)
 
 A free-heavy model with paid unlocks. The gating principle is **honest**: free is generous, paid
