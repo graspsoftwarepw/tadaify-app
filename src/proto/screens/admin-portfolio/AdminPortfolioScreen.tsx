@@ -335,6 +335,7 @@ export function AdminPortfolioScreen() {
             <div className="ap-modal-foot">
               <button className="btn btn-danger-ghost btn-sm" type="button" onClick={closeComposer}>Delete draft</button>
               <span className="ap-foot-spacer" />
+              <button className="btn btn-ghost" type="button" onClick={closeComposer}>Cancel</button>
               <button className="btn btn-ghost" type="button" onClick={closeComposer}>Save draft</button>
               <button className="btn btn-primary" type="button" onClick={closeComposer}>Publish</button>
             </div>

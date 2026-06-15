@@ -188,7 +188,7 @@ export function DashboardChrome({
           {/* Pages */}
           <div className="nav-group">
             <button
-              className="nav-item nav-pages-parent active"
+              className={`nav-item nav-pages-parent${activeNav ? "" : " active"}`}
               aria-expanded="true"
               aria-label="Pages"
               type="button"
@@ -200,7 +200,7 @@ export function DashboardChrome({
             </button>
             <div className="nav-sub-list" data-expanded="true" role="group" aria-label="Pages list">
               {pages.map((p) => {
-                const isActive = p.id === activePage;
+                const isActive = !activeNav && p.id === activePage;
                 const cls = `nav-sub-item${isActive ? " active is-current" : ""}`;
                 return p.href ? (
                   <a className={cls} href={p.href} key={p.id}>

@@ -8,6 +8,7 @@ routes: [/__proto/affiliate]
 related_files:
   - src/proto/screens/affiliate/AffiliateScreen.tsx
   - src/proto/screens/affiliate/affiliateFixture.ts
+  - src/proto/screens/affiliate/affiliate-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---

@@ -8,6 +8,7 @@ routes: [/__proto/domain]
 related_files:
   - src/proto/screens/domain/DomainScreen.tsx
   - src/proto/screens/domain/domainFixture.ts
+  - src/proto/screens/domain/domain-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---

@@ -8,6 +8,7 @@ routes: [/__proto/admin-paid-articles]
 related_files:
   - src/proto/screens/admin-paid-articles/AdminPaidArticlesScreen.tsx
   - src/proto/screens/admin-paid-articles/adminPaidArticlesFixture.ts
+  - src/proto/screens/admin-paid-articles/admin-paid-articles-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---

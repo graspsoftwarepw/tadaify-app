@@ -8,6 +8,7 @@ routes: [/__proto/insights]
 related_files:
   - src/proto/screens/insights/InsightsScreen.tsx
   - src/proto/screens/insights/insightsFixture.ts
+  - src/proto/screens/insights/insights-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---

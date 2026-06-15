@@ -8,6 +8,7 @@ routes: [/__proto/admin-blog]
 related_files:
   - src/proto/screens/admin-blog/AdminBlogScreen.tsx
   - src/proto/screens/admin-blog/adminBlogFixture.ts
+  - src/proto/screens/admin-blog/admin-blog-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---

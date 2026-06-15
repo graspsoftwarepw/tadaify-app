@@ -8,6 +8,7 @@ routes: [/__proto/admin-schedule]
 related_files:
   - src/proto/screens/admin-schedule/AdminScheduleScreen.tsx
   - src/proto/screens/admin-schedule/adminScheduleFixture.ts
+  - src/proto/screens/admin-schedule/admin-schedule-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---

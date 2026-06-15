@@ -8,6 +8,7 @@ routes: [/__proto/admin-portfolio]
 related_files:
   - src/proto/screens/admin-portfolio/AdminPortfolioScreen.tsx
   - src/proto/screens/admin-portfolio/adminPortfolioFixture.ts
+  - src/proto/screens/admin-portfolio/admin-portfolio-proto.css
 devices: all
 related_requirements: [fr-globalui-view-layout, fr-globalui-theme-and-colours]
 ---
