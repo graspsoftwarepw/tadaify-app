@@ -1,0 +1,267 @@
+/* Public Legal page — scoped styles for the policy-render page. Faithful port
+   of the body styles in mockups/tadaify-mvp/creator-legal-public.html: page
+   hero, policy chooser pills, TOC sidebar + content grid, high-contrast policy
+   typography, per-policy footer with version history, and the whole-page review
+   footer. Token-driven so it re-themes in light/dark automatically. Everything
+   is scoped under `.proto-legal-public` so it never collides with other
+   screens; the shared chrome (topstrip, creator-nav, footer) is PublicChrome's.
+
+   @implements fr-creator-legal-public */
+
+.proto-legal-public * { box-sizing: border-box; }
+
+/* Page hero */
+.proto-legal-public .page-hero {
+  max-width: 1080px; margin: 0 auto; padding: 24px 24px 8px; min-width: 0;
+}
+.proto-legal-public .page-hero h1 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(34px, 5vw, 48px); letter-spacing: -0.02em; margin: 0 0 8px;
+}
+.proto-legal-public .page-hero .lede {
+  max-width: 700px; color: var(--fg-muted);
+  font-size: 15.5px; line-height: 1.6; margin: 0;
+}
+.proto-legal-public .page-hero .meta-line {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin-top: 16px; font-size: 12.5px; color: var(--fg-muted);
+}
+.proto-legal-public .page-hero .meta-line b { color: var(--fg); font-weight: 600; }
+.proto-legal-public .meta-line .dot {
+  width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle);
+}
+.proto-legal-public .meta-line .live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent);
+}
+
+/* Policy chooser pills */
+.proto-legal-public .pill-bar {
+  max-width: 1080px; margin: 0 auto; padding: 14px 24px 0;
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+.proto-legal-public .pill-bar .pb-label {
+  font-size: 12px; color: var(--fg-muted); margin-right: 6px; font-weight: 600;
+}
+.proto-legal-public .pb-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong);
+  font-size: 12.5px; font-weight: 500; color: var(--fg-muted);
+  cursor: pointer; font-family: inherit; transition: all .12s ease;
+}
+.proto-legal-public .pb-pill:hover {
+  border-color: var(--brand-primary); color: var(--brand-primary);
+}
+.proto-legal-public .pb-pill.is-active {
+  background: var(--brand-primary); color: #fff; border-color: var(--brand-primary);
+}
+.proto-legal-public .pb-pill .pb-emoji { font-size: 13px; }
+
+/* Toolbar */
+.proto-legal-public .toolbar-row {
+  max-width: 1080px; margin: 0 auto; padding: 14px 24px;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+}
+.proto-legal-public .toolbar-row .tr-note { font-size: 12.5px; color: var(--fg-muted); }
+.proto-legal-public .toolbar-row .tr-spacer { flex: 1; }
+.proto-legal-public .btn-tool {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 9px;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong);
+  font-size: 12.5px; font-weight: 600; color: var(--fg-muted);
+  cursor: pointer; font-family: inherit; transition: all .12s ease;
+}
+.proto-legal-public .btn-tool:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+/* Layout grid: TOC sidebar + content */
+.proto-legal-public .legal-grid {
+  max-width: 1080px; margin: 0 auto; padding: 28px 24px 64px;
+  display: grid; gap: 36px; grid-template-columns: 1fr;
+}
+@media (min-width: 960px) {
+  .proto-legal-public .legal-grid { grid-template-columns: 240px 1fr; gap: 48px; }
+}
+
+/* TOC sidebar */
+.proto-legal-public .toc { align-self: start; min-width: 0; }
+@media (min-width: 960px) {
+  .proto-legal-public .toc { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
+}
+.proto-legal-public .toc-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.proto-legal-public .toc-section {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 10px; border-radius: 8px;
+  font-size: 13px; color: var(--fg-muted); font-weight: 600;
+  background: transparent; border: 0; cursor: pointer; font-family: inherit;
+  text-align: left; transition: background .12s ease, color .12s ease;
+}
+.proto-legal-public .toc-section .ts-emoji { font-size: 14px; flex-shrink: 0; line-height: 1; }
+.proto-legal-public .toc-section:hover { background: var(--bg-muted); color: var(--fg); }
+.proto-legal-public .toc-section.is-current {
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary);
+}
+.proto-legal-public .toc-sub {
+  list-style: none; padding: 0 0 0 10px; margin: 2px 0 4px 26px;
+  display: flex; flex-direction: column; gap: 1px;
+  border-left: 1px solid var(--border);
+}
+.proto-legal-public .toc-sub li a {
+  display: block; padding: 5px 8px; border-radius: 6px;
+  font-size: 12px; color: var(--fg-muted); font-weight: 400; text-decoration: none;
+}
+.proto-legal-public .toc-sub li a:hover { background: var(--bg-muted); color: var(--fg); }
+
+/* Content column */
+.proto-legal-public .content { min-width: 0; max-width: 760px; }
+.proto-legal-public .policy { margin-bottom: 56px; scroll-margin-top: 24px; }
+.proto-legal-public .policy:last-child { margin-bottom: 0; }
+.proto-legal-public .policy-head {
+  padding-bottom: 16px; border-bottom: 2px solid var(--border-strong);
+  margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
+}
+.proto-legal-public .ph-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 14%, transparent), color-mix(in srgb, var(--brand-warm) 12%, transparent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.proto-legal-public .ph-meta { flex: 1; min-width: 200px; }
+.proto-legal-public .ph-meta h2 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(26px, 3.5vw, 34px); letter-spacing: -0.015em; margin: 0;
+}
+.proto-legal-public .ph-line {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-top: 8px; font-size: 12.5px; color: var(--fg-muted);
+}
+.proto-legal-public .ph-line .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--fg-subtle); }
+.proto-legal-public .ph-version {
+  font-family: var(--font-mono); font-weight: 600;
+  padding: 3px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary); font-size: 11.5px;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent);
+}
+.proto-legal-public .ph-effective { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+.proto-legal-public .ph-actions { display: flex; gap: 6px; }
+.proto-legal-public .ph-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  color: var(--fg-muted); cursor: pointer; font-size: 13px; transition: all .12s ease;
+}
+.proto-legal-public .ph-action:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+
+/* Policy body — high-contrast readability typography */
+.proto-legal-public .policy-body {
+  font-family: var(--font-display); font-size: 17px; line-height: 1.75; color: var(--fg);
+}
+.proto-legal-public .policy-body h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 22px; letter-spacing: -0.01em; margin: 36px 0 12px; scroll-margin-top: 24px;
+}
+.proto-legal-public .policy-body h3:first-child { margin-top: 0; }
+.proto-legal-public .policy-body p { margin: 0 0 16px; }
+.proto-legal-public .policy-body ul,
+.proto-legal-public .policy-body ol { margin: 0 0 16px; padding-left: 24px; }
+.proto-legal-public .policy-body li { margin-bottom: 8px; }
+.proto-legal-public .policy-body blockquote {
+  margin: 16px 0; padding: 12px 18px;
+  border-left: 3px solid var(--brand-primary);
+  background: var(--bg-elevated); color: var(--fg-muted); font-style: italic;
+}
+
+/* Per-policy footer */
+.proto-legal-public .policy-foot {
+  margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--border);
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  font-size: 12.5px; color: var(--fg-muted);
+}
+.proto-legal-public .policy-foot .pf-spacer { flex: 1; }
+.proto-legal-public .policy-foot code {
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 1px 6px; background: var(--bg-elevated);
+  border-radius: 5px; border: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+/* Version history disclosure */
+.proto-legal-public .ver-history { display: flex; flex-direction: column; align-items: flex-start; }
+.proto-legal-public .vh-summary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--fg-muted);
+  cursor: pointer; font-family: inherit; transition: border-color .12s ease;
+}
+.proto-legal-public .vh-summary:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.proto-legal-public .vh-list {
+  list-style: none; padding: 12px 0 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px; width: 100%;
+}
+.proto-legal-public .vh-list li {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 12px; background: var(--bg-elevated);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 12.5px; color: var(--fg-muted);
+}
+.proto-legal-public .vh-version {
+  font-family: var(--font-mono); font-weight: 600;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--bg-muted); color: var(--brand-primary);
+  font-size: 11px; border: 1px solid var(--border); flex-shrink: 0;
+}
+.proto-legal-public .vh-eff { flex: 1; min-width: 0; }
+.proto-legal-public .vh-view {
+  background: transparent; border: 0; cursor: pointer; font-family: inherit;
+  color: var(--brand-primary); font-weight: 600; font-size: 12.5px;
+}
+.proto-legal-public .vh-view:hover { text-decoration: underline; }
+
+/* Whole-page review footer */
+.proto-legal-public .page-foot {
+  max-width: 1080px; margin: 24px auto 0; padding: 24px 24px 12px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  font-size: 12.5px; color: var(--fg-muted);
+}
+.proto-legal-public .page-foot .pf-meta b { color: var(--fg); font-weight: 600; }
+.proto-legal-public .pf-mail {
+  background: transparent; border: 0; cursor: pointer; font-family: inherit;
+  color: var(--brand-primary); font-weight: 600; font-size: 12.5px;
+}
+.proto-legal-public .pf-mail:hover { text-decoration: underline; }
+.proto-legal-public .page-copyright {
+  max-width: 1080px; margin: 0 auto; padding: 4px 24px 8px;
+  font-size: 12px; color: var(--fg-subtle);
+}
+
+/* Mockup-only state switcher */
+.proto-legal-public .state-strip {
+  max-width: 1080px; margin: 16px auto 0; padding: 12px 24px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12px; color: var(--fg-muted); border-top: 1px dashed var(--border-strong);
+}
+.proto-legal-public .state-strip button {
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-weight: 600; color: var(--fg-muted); cursor: pointer; font-family: inherit;
+}
+.proto-legal-public .state-strip button:hover,
+.proto-legal-public .state-strip button.is-active {
+  color: var(--brand-primary); border-color: var(--brand-primary);
+}
+.proto-legal-public .state-strip .ss-note { opacity: 0.6; margin-left: auto; }
+
+@media (max-width: 600px) {
+  .proto-legal-public .page-hero { padding-top: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proto-legal-public * { transition: none !important; }
+}

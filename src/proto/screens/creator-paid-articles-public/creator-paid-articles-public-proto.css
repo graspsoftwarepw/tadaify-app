@@ -1,0 +1,147 @@
+/* Public Paid articles listing — scoped styles for the article-grid page.
+   Faithful port of the body styles in
+   mockups/tadaify-mvp/creator-paid-articles-public.html: page hero with a count
+   badge, search + tag-filter toolbar, the responsive article-card grid (tinted
+   cover, locked badge, title, excerpt, price/read-time foot + Buy), and the
+   load-more affordance. Token-driven so it re-themes in light/dark. Scoped
+   under `.proto-paid-articles-public`; chrome is PublicChrome's.
+
+   @implements fr-creator-paid-articles-public */
+
+.proto-paid-articles-public * { box-sizing: border-box; }
+
+/* Hero */
+.proto-paid-articles-public .hero {
+  max-width: 980px; margin: 0 auto; padding: 36px 20px 18px; min-width: 0;
+}
+.proto-paid-articles-public .hero h1 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(32px, 5vw, 44px); margin: 0 0 8px; letter-spacing: -0.01em;
+}
+.proto-paid-articles-public .hero h1 .badge {
+  display: inline-flex; vertical-align: middle; margin-left: 12px;
+  padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary); font-size: 13px; font-weight: 600;
+  font-family: var(--font-sans);
+}
+.proto-paid-articles-public .hero p {
+  font-size: 17px; color: var(--fg-muted); max-width: 620px; margin: 0; line-height: 1.55;
+}
+
+/* Toolbar */
+.proto-paid-articles-public .toolbar {
+  max-width: 980px; margin: 0 auto; padding: 18px 20px 6px;
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.proto-paid-articles-public .search-wrap {
+  position: relative; flex: 1; min-width: 200px; max-width: 360px;
+}
+.proto-paid-articles-public .search-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; color: var(--fg-subtle); pointer-events: none;
+}
+.proto-paid-articles-public .search-wrap input {
+  width: 100%; padding: 10px 14px 10px 36px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--bg-elevated); color: var(--fg);
+  font: inherit; font-size: 14px; outline: 0;
+}
+.proto-paid-articles-public .search-wrap input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+.proto-paid-articles-public .tag-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.proto-paid-articles-public .tag-chip {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--bg-elevated); color: var(--fg-muted);
+  font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: inherit;
+}
+.proto-paid-articles-public .tag-chip.is-active {
+  border-color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 6%, transparent);
+  color: var(--brand-primary);
+}
+
+/* Articles grid */
+.proto-paid-articles-public .articles {
+  max-width: 980px; margin: 22px auto 0; padding: 0 20px 40px;
+  display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.proto-paid-articles-public .art-card {
+  border: 1px solid var(--border); border-radius: 14px;
+  background: var(--bg-elevated); overflow: hidden;
+  display: flex; flex-direction: column; min-width: 0;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.proto-paid-articles-public .art-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.proto-paid-articles-public .art-cover {
+  aspect-ratio: 16/10; width: 100%; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 36px; position: relative;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+}
+.proto-paid-articles-public .art-cover.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); }
+.proto-paid-articles-public .art-cover.t-rose { background: linear-gradient(135deg, #FB7185, #BE185D); }
+.proto-paid-articles-public .art-cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+.proto-paid-articles-public .art-cover.t-slate { background: linear-gradient(135deg, #475569, #0F172A); }
+.proto-paid-articles-public .art-cover .lock {
+  position: absolute; top: 10px; right: 10px;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; backdrop-filter: blur(4px);
+}
+.proto-paid-articles-public .art-meta {
+  padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+}
+.proto-paid-articles-public .art-title {
+  font-family: var(--font-display); font-weight: 600; font-size: 18px; margin: 0; line-height: 1.3;
+}
+.proto-paid-articles-public .art-title button {
+  background: transparent; border: 0; padding: 0; cursor: pointer;
+  font: inherit; color: var(--fg); text-align: left;
+}
+.proto-paid-articles-public .art-title button:hover { color: var(--brand-primary); }
+.proto-paid-articles-public .art-excerpt {
+  font-size: 13.5px; color: var(--fg-muted); line-height: 1.5; flex: 1;
+}
+.proto-paid-articles-public .art-foot {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-top: 6px; border-top: 1px solid var(--border);
+}
+.proto-paid-articles-public .art-price {
+  font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--brand-primary);
+}
+.proto-paid-articles-public .art-readtime { font-size: 11.5px; color: var(--fg-muted); }
+.proto-paid-articles-public .art-buy {
+  margin-left: auto; padding: 6px 14px; border-radius: 999px;
+  background: var(--brand-primary); color: #fff;
+  font-size: 12.5px; font-weight: 600; border: 0; cursor: pointer; font-family: inherit;
+}
+.proto-paid-articles-public .art-buy:hover { background: var(--brand-primary-hover); }
+.proto-paid-articles-public .art-empty {
+  grid-column: 1 / -1; text-align: center; color: var(--fg-muted);
+  font-size: 14px; padding: 40px 0;
+}
+
+/* Load more */
+.proto-paid-articles-public .load-more-wrap {
+  max-width: 980px; margin: 0 auto; padding: 0 20px 40px; text-align: center;
+}
+.proto-paid-articles-public .load-more {
+  padding: 11px 22px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg-elevated);
+  color: var(--fg); font-weight: 500; font-size: 14px; cursor: pointer; font-family: inherit;
+}
+.proto-paid-articles-public .load-more:hover { border-color: var(--border-strong); }
+
+@media (max-width: 640px) {
+  .proto-paid-articles-public .hero h1 { font-size: 32px; }
+  .proto-paid-articles-public .hero p { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proto-paid-articles-public * { transition: none !important; }
+}

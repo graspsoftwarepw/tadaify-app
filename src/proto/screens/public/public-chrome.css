@@ -1,0 +1,92 @@
+/* Shared public-page chrome — topstrip + creator-nav + footer for the NEW
+   public creator sub-pages (contact, faq, schedule, …). Faithfully ported from
+   the inline chrome in CreatorAboutPublicScreen. Scoped under `.proto-public`
+   so it never collides with other screens. Token-driven; brand tints via
+   color-mix. The avatar sunset gradient is intentional decorative art.
+
+   PublicChrome is shared and carries no per-page @implements. */
+
+.proto-public {
+  background:
+    radial-gradient(800px 400px at 50% -10%, color-mix(in srgb, var(--brand-warm) 10%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 80% 30%, color-mix(in srgb, var(--brand-primary) 7%, transparent), transparent 60%),
+    var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  font-family: var(--font-sans);
+}
+
+/* Mockup-only top strip (hub link + url + theme toggle). */
+.proto-public .public-topstrip {
+  padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; gap: 12px; flex-wrap: wrap;
+}
+.proto-public .public-topstrip .ts-right {
+  display: inline-flex; align-items: center; gap: 12px; min-width: 0;
+}
+.proto-public .public-topstrip .url {
+  color: var(--fg-subtle); font-family: var(--font-mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+
+/* Canonical creator nav (inherited home chrome). */
+.proto-public .creator-nav {
+  max-width: 1080px; margin: 0 auto;
+  padding: 22px 24px 0;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; flex-wrap: wrap;
+}
+.proto-public .cn-handle {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 600; font-size: 18px;
+  color: var(--fg); text-decoration: none; min-width: 0;
+}
+.proto-public .cn-handle .av {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+  display: flex; align-items: center; justify-content: center;
+  color: #7C2D12; font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.proto-public .cn-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.proto-public .cn-links a,
+.proto-public .cn-links .cn-link-btn {
+  padding: 6px 12px; border-radius: 99px; font-size: 13.5px; font-weight: 500;
+  color: var(--fg-muted); text-decoration: none;
+  background: transparent; border: 0; cursor: pointer; font-family: inherit;
+}
+.proto-public .cn-links a.is-current,
+.proto-public .cn-links a:hover,
+.proto-public .cn-links .cn-link-btn.is-current,
+.proto-public .cn-links .cn-link-btn:hover {
+  color: var(--brand-primary);
+  background: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+}
+.proto-public .cn-links .cn-link-btn.is-current { cursor: default; }
+@media (max-width: 600px) { .proto-public .creator-nav { padding-top: 16px; } }
+
+/* Inherited footer (social row + powered-by wordmark). */
+.proto-public .creator-footer {
+  max-width: 980px; margin: 0 auto;
+  padding: 32px 20px 48px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  text-align: center;
+}
+.proto-public .social-stack {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+.proto-public .social-icon-pub {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--fg-muted); font-size: 15px; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  transition: all .15s ease;
+}
+.proto-public .social-icon-pub:hover {
+  border-color: var(--brand-primary); color: var(--brand-primary);
+  transform: translateY(-1px);
+}
+.proto-public .powered { font-size: 12px; color: var(--fg-subtle); }
+.proto-public .powered a { color: var(--brand-primary); font-weight: 600; }
