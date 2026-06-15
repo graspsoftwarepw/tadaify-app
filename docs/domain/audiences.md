@@ -98,3 +98,11 @@ Complete: 4 personas × 4 layers = 16 rows.
   differentiator is the **clear warning path**: a warned creator gets an explicit "you've been warned,
   N days to cure" view rather than a silent strike, and tadaify agents monitor profiles continuously to
   surface serious issues early.
+
+  > **Owner-ratified change (2026-06-15).** The Platform admin rows previously forbade impersonation
+  > outright. The Owner ratified opening it as an **audited, banner-visible** moderation/support
+  > capability — tadaify hosts open self-registration and must plan for scam / fraud / adult /
+  > regionally-sensitive content, react to user reports, take down profiles, and let support
+  > "login as user" to investigate or assist. This authority change was made by Owner decision (not to
+  > fit a mockup); the trust & safety reporting → warn/cure-period → take-down workflow and continuous
+  > agent monitoring were ratified in the same decision.
