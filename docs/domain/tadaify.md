@@ -47,6 +47,13 @@ similar products (cookie nags, paywalled basics, forced branding) who come to ta
 **served-but-not-paying audience** is each creator's own followers / subscribers / visitors, who never
 hold a tadaify account — they just visit the hosted page.
 
+A **future (post-MVP) customer is the marketing agency** — an outfit that manages many creators (e.g.
+dozens of influencers) and wants to run them all from one tadaify account for convenience. This drives
+the **Business** tier: one account managing multiple creator profiles, with invited **team members**
+who each hold a role (see the Team member persona in [`audiences.md`](./audiences.md)). The agency
+customer is post-MVP — do not bake multi-profile agency mechanics into MVP data/flows without a fresh
+Owner decision; Settings → Team is the seam where the seat model lives.
+
 ## What sets tadaify apart (positioning)
 
 - **Privacy-first.** No cookies, no annoying cookie-consent nag. Analytics are counted a different,

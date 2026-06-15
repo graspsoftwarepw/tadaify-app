@@ -46,6 +46,11 @@ global colour tokens ([fr-globalui-theme-and-colours](../globalui/fr-globalui-th
 - The nav rail shall be the ordered list: Account, Billing, Security, GDPR & data, Theme (New pill),
   a divider, API keys (Pro pill), Team (Business pill), a divider, Danger zone (rendered in the danger
   colour). The active item is highlighted and marked `aria-current="page"`.
+- The **Team (Business)** tab is the seat surface for the **Team member (Business / agency)** persona
+  defined in [`docs/domain/audiences.md`](../../../domain/audiences.md) — it backs the post-MVP agency
+  use-case (one account managing many creator profiles). Member-management, role, SSO and audit
+  controls shown here are owner-delegated; the owner-only powers (billing, plan, member management,
+  account transfer/delete) never delegate to a team member.
 - A section may opt into a shared sticky save-bar at the bottom of the viewport. The save-bar shows a
   status hint with a state dot, a "Discard" button, and a primary button; switching tabs clears it.
 - On phones the nav rail shall collapse to a horizontal scrolling pill strip and the content drops its
@@ -123,9 +128,13 @@ global colour tokens ([fr-globalui-theme-and-colours](../globalui/fr-globalui-th
 - **Export your data (Art. 20)** — a hero with a Request export action that opens a centred modal (a
   category checklist + format note + Generate); plus a recent-exports table (Requested, Status, Size,
   Expires, Download) where expired rows are disabled. The table scrolls within its card on narrow widths.
-- **Cookies tadaify uses** — an essential-cookies notice with an always-on locked toggle (no opt-out).
-- **Visitor cookie banner** — a banner-style picker (bottom bar / corner / centred modal, the last
-  Pro-badged) with a non-interactive preview; switching style updates in place.
+- **Cookies tadaify uses** — an essential-cookies notice (login session, security, CSRF) with an
+  always-on locked toggle; states plainly there is no analytics or marketing cookie.
+- **Visitor analytics — cookieless, no consent banner** — an explainer that tadaify counts visits
+  without cookies and without a consent banner (privacy-preserving daily-salt hashing), so there is
+  nothing for visitors to consent to and no banner to configure. There is **no** visitor
+  cookie-consent-banner configuration surface — that would contradict the cookieless positioning in
+  `docs/domain/tadaify.md`. GDPR data rights (export, erasure) remain fully available regardless.
 - **Personal data on tadaify** — a data-stat summary grid and a "View detailed breakdown" expander
   revealing a per-category table.
 - **Policies you've accepted** — a table (Policy, Version, Accepted on, View) with mocked View / "View

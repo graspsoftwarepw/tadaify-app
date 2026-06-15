@@ -1,18 +1,22 @@
 /**
- * Settings · GDPR & data tab — a ready-export banner, the data-export request
- * action (Art. 20) with a recent-exports table, the essential-cookies notice,
- * a visitor cookie-banner style picker, a personal-data summary with a
- * detailed breakdown expander, the accepted-policies table, and the DPA &
- * subprocessors block (Art. 28). Faithful port of
- * mockups/tadaify-mvp/app-settings-gdpr.html, composed on the shared
+ * Settings · GDPR & data tab — the GDPR data rights that stay available even
+ * though tadaify is cookieless: a ready-export banner, the data-export request
+ * action (Art. 20) with a recent-exports table, the essential-cookies notice, a
+ * "cookieless — no consent banner" explainer (NOT a cookie-consent config —
+ * tadaify counts views without cookies/consent, so there is nothing to configure),
+ * a personal-data summary with a detailed breakdown expander, the accepted-policies
+ * table, the DPA & subprocessors block (Art. 28), and the right-to-be-forgotten
+ * (Art. 17) cross-link. Ported from mockups/tadaify-mvp/app-settings-gdpr.html
+ * minus the visitor cookie-consent-banner surface, which contradicts the
+ * cookieless positioning (docs/domain/tadaify.md). Composed on the shared
  * SettingsShell primitives.
  *
  * This tab is mostly actions and exports — it never raises the shell save-bar.
  * Local state only: the request-export action opens a centred modal (category
- * checklist + Generate) that closes on Escape / backdrop / Cancel; the banner
- * style picker and breakdown expander toggle in place. Every outbound action
- * (download export, view policy, download DPA, erasure cross-link) is mocked
- * with an alert — no dead links. Data comes from the typed gdprFixture.
+ * checklist + Generate) that closes on Escape / backdrop / Cancel; the breakdown
+ * expander toggles in place. Every outbound action (download export, view policy,
+ * download DPA, erasure cross-link) is mocked with an alert — no dead links. Data
+ * comes from the typed gdprFixture.
  *
  * @implements fr-settings
  */
@@ -26,7 +30,6 @@ const mock = (msg: string) => () => alert(msg);
 export function GdprTab() {
   const fx = gdprFixture();
   const [exportOpen, setExportOpen] = useState(false);
-  const [banner, setBanner] = useState<"bar" | "corner" | "modal">("bar");
   const [breakdown, setBreakdown] = useState(false);
 
   return (
@@ -149,72 +152,14 @@ export function GdprTab() {
         </div>
       </SettingsSection>
 
-      {/* Visitor cookie banner */}
-      <SettingsSection
-        title="Visitor cookie banner"
-        action={
-          <button className="field-link" type="button" onClick={mock("Mockup — would open the Cookie Policy")}>
-            View Cookie Policy →
-          </button>
-        }
-      >
+      {/* No visitor cookie banner: tadaify is cookieless by design (no consent
+          nag). Visitor analytics use privacy-preserving daily-salt hashing, so
+          there is nothing for a visitor to consent to and no banner to configure. */}
+      <SettingsSection title="Visitor analytics — cookieless, no consent banner">
         <p className="section-lead">
-          Choose how the consent banner appears to <strong>visitors on your public page</strong>. Only essential cookies are set by
-          default; first-party visitor analytics are opt-in via the banner. We never load Meta Pixel, Google Ads, or any third-party
-          tracker on your behalf.
-        </p>
-        <div className="banner-preview-wrap">
-          <div className="banner-preview-label">Cookie banner preview · how it appears on your public page</div>
-          <div className={`banner-preview-stage stage-${banner}`}>
-            <div className="stage-fauxnav" aria-hidden>
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="stage-faux-label" aria-hidden>
-              tadaify.com/alexandra
-            </div>
-            <div className="banner-bar">
-              <div className="bb-text">
-                We use cookies for analytics and to make your visit better.
-                <small>You can change your preferences any time.</small>
-              </div>
-              <div className="bb-actions">
-                <button className="btn btn-ghost btn-xs" type="button" disabled>
-                  Reject all
-                </button>
-                <button className="btn btn-ghost btn-xs" type="button" disabled>
-                  Customize
-                </button>
-                <button className="btn btn-primary btn-xs" type="button" disabled>
-                  Accept all
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="banner-style-picker" role="tablist" aria-label="Cookie banner style">
-            {([
-              ["bar", "Bottom bar"],
-              ["corner", "Corner card"],
-              ["modal", "Centered modal"],
-            ] as const).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={banner === id}
-                className={`bsp-btn${banner === id ? " active" : ""}`}
-                onClick={() => setBanner(id)}
-              >
-                {label}
-                {id === "modal" && <span className="pro-tag">Pro</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-        <p className="section-lead" style={{ marginTop: 14, fontSize: 12.5 }}>
-          Banner style is the only setting here — visitor consent itself is handled by the banner. Changes save automatically when you
-          switch styles.
+          tadaify counts your visits <strong>without cookies and without a consent banner</strong> — visitor analytics use
+          privacy-preserving daily-salt hashing, never per-visitor tracking. There is no Meta Pixel, Google Ads, or third-party
+          tracker, and nothing for your visitors to accept or reject. You still get your numbers in Insights.
         </p>
       </SettingsSection>
 

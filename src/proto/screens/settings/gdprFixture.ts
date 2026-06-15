@@ -74,7 +74,6 @@ export const gdprFixture = (): GdprFixture => ({
     { category: "Uploaded files (avatar, covers, post images)", count: "217 files · 42.7 MB", storedIn: "S3" },
     { category: "Billing history (invoices, charges)", count: "14 invoices", storedIn: "Stripe (mirror)" },
     { category: "Login & settings audit log", count: "412 events", storedIn: "audit_log" },
-    { category: "Cookie consent decisions you made", count: "9 changes", storedIn: "user_consent" },
   ],
   policies: [
     { id: "tos", name: "Terms of Service", version: "v3", acceptedOn: "2026-03-04 · 18:22 UTC", changed: true },

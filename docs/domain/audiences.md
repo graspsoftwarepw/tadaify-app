@@ -10,14 +10,17 @@
 > defined here are the single canonical "souls" reused by downstream test-data personas — define once,
 > here. See the domain doc: [`tadaify.md`](./tadaify.md).
 
-## The three audiences (Owner's model)
+## The audiences (Owner's model)
 
-tadaify has exactly **three** audiences:
+tadaify has **four** audiences (the fourth — the Business/agency team member — is a Business-tier
+capability aimed at a post-MVP agency customer):
 
-1. **Creator (influencer)** — our **customer**. Comes to put themselves out there fast: claims a
+1. **Creator (influencer)** — our core **customer**. Comes to put themselves out there fast: claims a
    handle, picks a template, clicks together their page from modules, publishes, and watches their
    cookieless insights. Often someone fed up with cookie nags / paywalled basics / forced branding
-   elsewhere. Pays for premium unlocks (incl. cheap branding removal).
+   elsewhere. Pays for premium unlocks (incl. cheap branding removal). On the **Business** tier this
+   same account-owner role can be a **marketing agency** managing many creator profiles (e.g. dozens of
+   influencers) under one tadaify account, and inviting team members to help run them (see persona 4).
 2. **Public visitor (follower / subscriber)** — the creator's own audience. **Anonymous**, holds no
    tadaify account; just visits the hosted public page, follows links out, subscribes, buys via the
    creator's external links, reads. May post and vote on the embedded "ask before ship" board where a
@@ -25,6 +28,11 @@ tadaify has exactly **three** audiences:
 3. **Platform admin (the Owner)** — runs tadaify. Has an admin dashboard for the business: who pays,
    how much, plans and promotions, and platform operations / moderation. Not a creator-facing role and
    never edits a creator's page content as them.
+4. **Team member (Business / agency)** — a collaborator the Business account owner invites and assigns
+   a role. Helps run the account's profile(s) and content from the dashboard, but never owns billing or
+   the account itself. The seat model behind the agency use-case (one account, many managed profiles,
+   several people). Business-tier capability; the agency customer is a **post-MVP** target, so this
+   persona is forward-looking but is modelled now to justify the Settings → Team surface.
 
 ## Layers (app surfaces)
 
@@ -37,7 +45,7 @@ tadaify has exactly **three** audiences:
 
 ## Authority matrix
 
-Complete: 3 personas × 4 layers = 12 rows.
+Complete: 4 personas × 4 layers = 16 rows.
 
 | persona | layer | can see | can do | cannot do |
 |---|---|---|---|---|
@@ -53,12 +61,20 @@ Complete: 3 personas × 4 layers = 12 rows.
 | Platform admin (Owner) | Public creator page | any public creator page for moderation review | flag or hide a module; escalate an account for review | edit a creator's content silently; impersonate a creator; act outside the moderation path |
 | Platform admin (Owner) | Creator dashboard | nothing — admins do not enter creators' dashboards | nothing | author, edit, or publish a creator's modules as them; impersonate a creator inside `/app/*` |
 | Platform admin (Owner) | Admin dashboard | platform-wide billing and revenue, who pays and how much, plans and promotions, platform ops and the moderation queue | view payments and revenue; configure plans and promotions; run platform operations; take moderation action | edit or publish a creator's page content as them |
+| Team member (Business / agency) | Public marketing & signup | marketing and pricing, like anyone | browse the public site; accept an invite to join a Business account | self-provision a Business account or change its plan from here |
+| Team member (Business / agency) | Public creator page | the account's public profile(s) as a visitor sees them, plus hidden/scheduled modules via preview | preview / view-as for the profiles they manage | edit content from the public surface; touch a profile outside the account they were invited to |
+| Team member (Business / agency) | Creator dashboard | the Business account's managed profile(s), modules, design, insights and team roster, scoped to their assigned role | create, edit, schedule and publish modules; customise design; run AI within the account allowance; manage profiles their role permits | manage billing or the plan; add / remove members or change roles; transfer or delete the account; act on another agency's account (all owner-only) |
+| Team member (Business / agency) | Admin dashboard | nothing — the admin surface is platform-staff-only | nothing | reach `/admin/*`; see platform revenue, plans, or the moderation queue |
 
 ## Notes on authority
 
-- **Three audiences, no more.** There is no team-member, agency, or sub-account persona in the product
-  concept — do not introduce one. If multi-seat or agency capability is ever added, it reopens this map
-  with the Owner first.
+- **Team member is a Business/agency seat, owner-delegated.** The Owner ratified adding this persona to
+  back the agency use-case (one Business account managing many creator profiles for, e.g., 50
+  influencers). A team member's authority is always a subset the account owner grants by role; the
+  owner-only powers (billing, plan, member management, account transfer/delete) never delegate. Agencies
+  are a **post-MVP** customer, so treat this persona as forward-looking — do not build multi-profile
+  agency mechanics into MVP data/flows without a fresh Owner decision; the Settings → Team surface is
+  the seam where it lands.
 - **Tier is not a persona.** Free and paid creators share the Creator rows; tiers only change *which
   dashboard capabilities are unlocked*, gated honestly at save (`app/lib/tier-gate.ts`) — never by
   hiding or disabling a control.
