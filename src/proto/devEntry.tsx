@@ -42,6 +42,15 @@ import { CustomEditorScreen } from "./screens/page-editors/CustomEditorScreen";
 import { PaidArticlesEditorScreen } from "./screens/page-editors/PaidArticlesEditorScreen";
 import { LegalEditorScreen } from "./screens/page-editors/LegalEditorScreen";
 import { SettingsScreen } from "./screens/settings/SettingsScreen";
+import { AdminBlogScreen } from "./screens/admin-blog/AdminBlogScreen";
+import { AdminStoreScreen } from "./screens/admin-store/AdminStoreScreen";
+import { AdminPortfolioScreen } from "./screens/admin-portfolio/AdminPortfolioScreen";
+import { AdminScheduleScreen } from "./screens/admin-schedule/AdminScheduleScreen";
+import { AdminPaidArticlesScreen } from "./screens/admin-paid-articles/AdminPaidArticlesScreen";
+import { DomainScreen } from "./screens/domain/DomainScreen";
+import { AffiliateScreen } from "./screens/affiliate/AffiliateScreen";
+import { InsightsScreen } from "./screens/insights/InsightsScreen";
+import { FeedbackScreen } from "./screens/feedback/FeedbackScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -86,6 +95,15 @@ const SCREENS: Screen[] = [
   { segment: "page-custom", label: "Editor — Custom page", status: "ready", batch: "P4 · Page editors" },
   { segment: "page-paid-articles", label: "Editor — Paid articles", status: "ready", batch: "P4 · Page editors" },
   { segment: "page-legal", label: "Editor — Legal", status: "ready", batch: "P4 · Page editors" },
+  { segment: "admin-blog", label: "Administration — Blog", status: "ready", batch: "P4 · Administration" },
+  { segment: "admin-store", label: "Administration — Store (v2)", status: "ready", batch: "P4 · Administration" },
+  { segment: "admin-portfolio", label: "Administration — Portfolio", status: "ready", batch: "P4 · Administration" },
+  { segment: "admin-schedule", label: "Administration — Schedule", status: "ready", batch: "P4 · Administration" },
+  { segment: "admin-paid-articles", label: "Administration — Paid articles", status: "ready", batch: "P4 · Administration" },
+  { segment: "domain", label: "Configuration — Custom domain", status: "ready", batch: "P4 · Administration" },
+  { segment: "affiliate", label: "Affiliate program", status: "ready", batch: "P4 · Administration" },
+  { segment: "insights", label: "Insights", status: "ready", batch: "P4 · Administration" },
+  { segment: "feedback", label: "Feedback", status: "ready", batch: "P4 · Administration" },
   { segment: "onboarding", label: "Onboarding + auth", status: "planned", batch: "P5 · Onboarding/auth" },
 ];
 
@@ -207,6 +225,24 @@ export default function ProtoDevHost() {
       return <LegalEditorScreen />;
     case "settings":
       return <SettingsScreen />;
+    case "admin-blog":
+      return <AdminBlogScreen />;
+    case "admin-store":
+      return <AdminStoreScreen />;
+    case "admin-portfolio":
+      return <AdminPortfolioScreen />;
+    case "admin-schedule":
+      return <AdminScheduleScreen />;
+    case "admin-paid-articles":
+      return <AdminPaidArticlesScreen />;
+    case "domain":
+      return <DomainScreen />;
+    case "affiliate":
+      return <AffiliateScreen />;
+    case "insights":
+      return <InsightsScreen />;
+    case "feedback":
+      return <FeedbackScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:

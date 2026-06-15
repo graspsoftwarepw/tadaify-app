@@ -1,0 +1,474 @@
+/* Scoped styling for the Administration → Schedule (bookings) view.
+   Ported from mockups/tadaify-mvp/app-admin-schedule.html. Everything is scoped
+   under `.proto-admin-schedule` (or the centred `.as-modal-backdrop`) and every
+   value derives from the design tokens so light/dark stays auditable. The
+   appbar + sidebar chrome is NOT styled here — it reuses the global
+   app/styles/app-dashboard.css under `.app-dashboard-root`, and shared atoms
+   (.btn, .chip, .iconbtn, .page-head) come from there too.
+
+   @implements fr-admin-schedule
+   @implements fr-globalui-view-layout */
+
+.proto-admin-schedule {
+  max-width: 1200px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.proto-admin-schedule *,
+.proto-admin-schedule *::before,
+.proto-admin-schedule *::after {
+  box-sizing: border-box;
+}
+
+/* ── Breadcrumb ── */
+.proto-admin-schedule .as-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  margin-bottom: 14px;
+}
+.proto-admin-schedule .as-crumb a {
+  color: var(--fg-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+}
+.proto-admin-schedule .as-crumb a:hover {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+.proto-admin-schedule .as-crumb .sep {
+  color: var(--fg-subtle);
+}
+.proto-admin-schedule .as-crumb .here {
+  color: var(--fg);
+  font-weight: 600;
+  padding: 2px 6px;
+}
+
+/* The page-tab page-head is a plain flex row; let the sub wrap + actions stay
+   tidy and reflow on phone. */
+.proto-admin-schedule .page-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.proto-admin-schedule .page-head .sub {
+  max-width: 540px;
+}
+.proto-admin-schedule .page-head .sub a {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.proto-admin-schedule .page-head .actions {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ── Chip tones not already in the global sheet ── */
+.proto-admin-schedule .chip.tier {
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary);
+}
+
+/* ── Stats row ── */
+.proto-admin-schedule .as-stats {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-bottom: 18px;
+}
+.proto-admin-schedule .as-stat {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  min-width: 0;
+}
+.proto-admin-schedule .as-stat .stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.proto-admin-schedule .as-stat .stat-value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.proto-admin-schedule .as-stat .stat-sub {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+/* ── Section card ── */
+.proto-admin-schedule .as-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.proto-admin-schedule .as-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.proto-admin-schedule .as-section-head h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  margin: 0;
+}
+.proto-admin-schedule .as-section-head .sub {
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+.proto-admin-schedule .as-head-spacer {
+  flex: 1;
+}
+.proto-admin-schedule .as-section-body {
+  padding: 18px;
+}
+
+/* ── Bookings list ── */
+.proto-admin-schedule .as-bookings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.proto-admin-schedule .booking-row {
+  display: grid;
+  grid-template-columns: 84px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  min-width: 0;
+}
+.proto-admin-schedule .booking-row:hover {
+  border-color: var(--border-strong);
+}
+.proto-admin-schedule .booking-row .b-time {
+  width: 84px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+  text-align: center;
+}
+.proto-admin-schedule .booking-row .b-time .t-hour {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+.proto-admin-schedule .booking-row .b-time .t-period {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+.proto-admin-schedule .booking-row .b-meta {
+  min-width: 0;
+}
+.proto-admin-schedule .booking-row .b-attendee {
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0 0 3px;
+}
+.proto-admin-schedule .booking-row .b-info {
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.proto-admin-schedule .booking-row .b-actions {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .proto-admin-schedule .booking-row {
+    grid-template-columns: 64px 1fr auto;
+    padding: 10px;
+  }
+  .proto-admin-schedule .booking-row .b-time {
+    width: auto;
+  }
+}
+
+/* ── Calendar toolbar ── */
+.proto-admin-schedule .cal-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.proto-admin-schedule .cal-nav {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.proto-admin-schedule .cal-nav .month-label {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  min-width: 140px;
+  text-align: center;
+}
+.proto-admin-schedule .view-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-md);
+}
+.proto-admin-schedule .view-tab {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.proto-admin-schedule .view-tab.is-active {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Calendar grid ── */
+.proto-admin-schedule .cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.proto-admin-schedule .cal-dow {
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  text-align: center;
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border);
+}
+.proto-admin-schedule .cal-cell {
+  min-height: 96px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 6px;
+  position: relative;
+  cursor: pointer;
+  min-width: 0;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+}
+.proto-admin-schedule .cal-cell:nth-child(7n + 7) {
+  border-right: 0;
+}
+.proto-admin-schedule .cal-cell.is-other {
+  background: var(--bg);
+  color: var(--fg-subtle);
+}
+.proto-admin-schedule .cal-cell.is-today {
+  background: color-mix(in srgb, var(--brand-primary) 6%, transparent);
+}
+.proto-admin-schedule .cal-cell .c-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.proto-admin-schedule .cal-cell.is-today .c-num {
+  color: var(--brand-primary);
+}
+.proto-admin-schedule .cal-cell .c-event {
+  display: block;
+  font-size: 10.5px;
+  padding: 2px 5px;
+  border-radius: var(--radius-sm);
+  margin-top: 3px;
+  background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+  color: var(--brand-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proto-admin-schedule .cal-cell .c-event.warm {
+  background: color-mix(in srgb, var(--brand-warm) 14%, transparent);
+  color: var(--brand-warm-dark);
+}
+.proto-admin-schedule .cal-cell .c-event.success {
+  background: var(--success-bg);
+  color: #065f46;
+}
+@media (max-width: 640px) {
+  .proto-admin-schedule .cal-cell {
+    min-height: 64px;
+    padding: 4px;
+  }
+  .proto-admin-schedule .cal-cell .c-event {
+    display: none;
+  }
+  .proto-admin-schedule .cal-cell.has-events::after {
+    content: "•";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--brand-primary);
+  }
+}
+
+/* ── Empty state (no Schedule page) ── */
+.proto-admin-schedule .as-empty {
+  text-align: center;
+  padding: 56px 24px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+.proto-admin-schedule .as-empty .empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  margin-bottom: 18px;
+}
+.proto-admin-schedule .as-empty h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+.proto-admin-schedule .as-empty p {
+  color: var(--fg-muted);
+  font-size: 14px;
+  max-width: 460px;
+  margin: 0 auto 18px;
+  line-height: 1.55;
+}
+.proto-admin-schedule .as-empty .empty-actions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Demo toggle row */
+.proto-admin-schedule .as-demo {
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ============================================================
+   Booking-detail modal — centred, never a side drawer
+   ============================================================ */
+.as-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-dark) 55%, transparent);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.as-modal {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.as-modal .as-modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.as-modal .as-modal-head h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  margin: 0;
+  flex: 1;
+}
+.as-modal .as-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.as-modal .as-modal-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.as-modal .as-foot-spacer {
+  flex: 1;
+}
+.as-modal .detail-grid {
+  display: grid;
+  gap: 12px 16px;
+  grid-template-columns: 120px 1fr;
+  font-size: 13.5px;
+}
+.as-modal .detail-grid dt {
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.as-modal .detail-grid dd {
+  margin: 0;
+  color: var(--fg);
+  min-width: 0;
+  word-break: break-word;
+}
+.as-modal .btn-danger-ghost {
+  background: var(--bg-elevated);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+@media (max-width: 640px) {
+  .as-modal .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 4px 0;
+  }
+  .as-modal .detail-grid dt {
+    margin-top: 8px;
+  }
+}

@@ -1,0 +1,617 @@
+/* Scoped styling for the Administration → Portfolio project-management view.
+   Ported from mockups/tadaify-mvp/app-admin-portfolio.html. Everything is scoped
+   under `.proto-admin-portfolio` (and the `.ap-modal-backdrop` overlay) and every
+   value derives from the design tokens so light/dark stays auditable.
+
+   The appbar + sidebar chrome is NOT styled here — it reuses the global
+   app/styles/app-dashboard.css under `.app-dashboard-root`. Global `.btn`,
+   `.btn-primary`, `.btn-ghost`, `.btn-sm`, `.iconbtn`, `.chip`, `.chip.live`,
+   `.chip.featured` are inherited; this file only adds the portfolio-specific
+   pieces (and the `.chip.draft` / `.chip.archived` / `.btn-danger-ghost`
+   variants the global sheet does not expose here).
+
+   @implements fr-admin-portfolio
+   @implements fr-globalui-view-layout */
+
+.proto-admin-portfolio {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 1200px;
+}
+.proto-admin-portfolio *,
+.proto-admin-portfolio *::before,
+.proto-admin-portfolio *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* ── Chip variants the global sheet does not expose ── */
+.proto-admin-portfolio .chip.draft {
+  background: var(--bg-muted);
+  color: var(--fg-muted);
+}
+.proto-admin-portfolio .chip.archived {
+  background: var(--bg-sunken);
+  color: var(--fg-subtle);
+}
+
+/* ── Breadcrumb ── */
+.proto-admin-portfolio .ap-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.proto-admin-portfolio .ap-crumb a {
+  color: var(--fg-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+.proto-admin-portfolio .ap-crumb a:hover {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+.proto-admin-portfolio .ap-crumb .sep {
+  color: var(--fg-subtle);
+}
+.proto-admin-portfolio .ap-crumb .here {
+  color: var(--fg);
+  font-weight: 600;
+  padding: 2px 6px;
+}
+
+/* ── Page header ── */
+.proto-admin-portfolio .ap-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.proto-admin-portfolio .ap-page-head h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+  margin: 0;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.proto-admin-portfolio .ap-page-head .ph-emoji {
+  font-size: 26px;
+}
+.proto-admin-portfolio .ap-sub-line {
+  color: var(--fg-muted);
+  font-size: 13.5px;
+  margin-top: 6px;
+  max-width: 540px;
+  line-height: 1.5;
+}
+.proto-admin-portfolio .ap-inline-link {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.proto-admin-portfolio .ap-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Section card ── */
+.proto-admin-portfolio .ap-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.proto-admin-portfolio .ap-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.proto-admin-portfolio .ap-section-head h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  margin: 0;
+}
+.proto-admin-portfolio .ap-section-sub {
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+.proto-admin-portfolio .ap-section-body {
+  padding: 18px;
+}
+
+/* ── Toolbar ── */
+.proto-admin-portfolio .ap-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.proto-admin-portfolio .ap-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-muted);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+.proto-admin-portfolio .ap-tab {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.proto-admin-portfolio .ap-tab.is-active {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+.proto-admin-portfolio .ap-tab-count {
+  margin-left: 6px;
+  font-size: 11px;
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.proto-admin-portfolio .ap-tab.is-active .ap-tab-count {
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  color: var(--brand-primary);
+}
+
+.proto-admin-portfolio .ap-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+  max-width: 320px;
+}
+.proto-admin-portfolio .ap-search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--fg-subtle);
+  pointer-events: none;
+}
+.proto-admin-portfolio .ap-search-wrap input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+.proto-admin-portfolio .ap-search-wrap input:focus {
+  border-color: var(--brand-primary);
+}
+.proto-admin-portfolio .ap-sort-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+/* ── Projects grid ── */
+.proto-admin-portfolio .ap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.proto-admin-portfolio .ap-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  overflow: hidden;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.proto-admin-portfolio .ap-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+.proto-admin-portfolio .ap-cover {
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: #fff;
+  position: relative;
+}
+.proto-admin-portfolio .ap-cover-glyph {
+  font-size: 32px;
+}
+.proto-admin-portfolio .ap-tone-indigo {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+}
+.proto-admin-portfolio .ap-tone-emerald {
+  background: linear-gradient(135deg, #34D399, #047857);
+}
+.proto-admin-portfolio .ap-tone-warm {
+  background: linear-gradient(135deg, var(--brand-warm), #D97706);
+}
+.proto-admin-portfolio .ap-tone-slate {
+  background: linear-gradient(135deg, #475569, #0F172A);
+}
+.proto-admin-portfolio .ap-tone-rose {
+  background: linear-gradient(135deg, #FB7185, #BE185D);
+}
+.proto-admin-portfolio .ap-badge-row {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 48px);
+}
+.proto-admin-portfolio .ap-drag-handle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, #fff 20%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  cursor: grab;
+}
+.proto-admin-portfolio .ap-meta {
+  padding: 12px 14px;
+}
+.proto-admin-portfolio .ap-title {
+  font-weight: 600;
+  font-size: 14.5px;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proto-admin-portfolio .ap-sub {
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.proto-admin-portfolio .ap-card-actions {
+  padding: 0 12px 12px;
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+/* ── Pagination ── */
+.proto-admin-portfolio .ap-pagination {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.proto-admin-portfolio .ap-page-btn {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.proto-admin-portfolio .ap-page-btn.is-current {
+  background: var(--brand-primary);
+  color: #fff;
+  border-color: var(--brand-primary);
+}
+.proto-admin-portfolio .ap-page-btn:hover:not(.is-current) {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+
+/* ── Empty states ── */
+.proto-admin-portfolio .ap-empty {
+  text-align: center;
+  padding: 56px 24px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.proto-admin-portfolio .ap-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #FB7185, #BE185D);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  margin-bottom: 18px;
+}
+.proto-admin-portfolio .ap-empty h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+.proto-admin-portfolio .ap-empty p {
+  color: var(--fg-muted);
+  font-size: 14px;
+  max-width: 460px;
+  margin: 0 auto 18px;
+  line-height: 1.55;
+}
+.proto-admin-portfolio .ap-empty code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+  background: var(--bg-muted);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+.proto-admin-portfolio .ap-empty-actions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.proto-admin-portfolio .ap-templates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 24px auto 0;
+  max-width: 640px;
+}
+.proto-admin-portfolio .ap-template-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.proto-admin-portfolio .ap-template-card:hover {
+  border-color: var(--brand-primary);
+}
+.proto-admin-portfolio .ap-template-card .t-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  margin-bottom: 4px;
+  color: var(--fg);
+}
+.proto-admin-portfolio .ap-template-card .t-sub {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+/* ── Demo state switcher ── */
+.proto-admin-portfolio .ap-demo-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+.proto-admin-portfolio .ap-demo-label {
+  font-size: 12px;
+  color: var(--fg-subtle);
+  font-weight: 600;
+}
+.proto-admin-portfolio .ap-demo-switch .btn.is-active {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+/* ── Project composer modal ── */
+.ap-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-dark, #111827) 55%, transparent);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.ap-modal-backdrop *,
+.ap-modal-backdrop *::before,
+.ap-modal-backdrop *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+.ap-modal {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--bg-dark, #111827) 25%, transparent);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ap-modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ap-modal-head h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  margin: 0;
+}
+.ap-modal-head .ap-head-spacer {
+  flex: 1;
+}
+.ap-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.ap-modal-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ap-modal-foot .ap-foot-spacer {
+  flex: 1;
+}
+
+/* danger-ghost button (not exposed globally outside settings) */
+.ap-modal-foot .btn-danger-ghost {
+  background: var(--bg-elevated);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.ap-modal-foot .btn-danger-ghost:hover {
+  background: var(--danger-bg);
+}
+
+/* fields */
+.ap-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.ap-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.ap-field-input,
+.ap-field-area,
+.ap-field-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  outline: 0;
+}
+.ap-field-area {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.ap-field-area-tall {
+  min-height: 140px;
+}
+.ap-field-input:focus,
+.ap-field-area:focus,
+.ap-field-select:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+.ap-field-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) {
+  .ap-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ap-cover-uploader {
+  display: block;
+  width: 100%;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  text-align: center;
+  background: var(--bg);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.ap-cover-uploader:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+.ap-cover-uploader .cu-emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.ap-cover-uploader .cu-sub {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.ap-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+}
+.ap-gallery-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: var(--bg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-subtle);
+  font-size: 18px;
+  cursor: pointer;
+  border: 0;
+}
+.ap-gallery-thumb.add {
+  border: 1.5px dashed var(--border-strong);
+  background: transparent;
+}
