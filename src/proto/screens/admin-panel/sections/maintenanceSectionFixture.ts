@@ -2,6 +2,7 @@
  * Typed mock seam for the Maintenance admin pane. Mirrors the duration presets
  * and history rows in mockups/tadaify-mvp/admin-panel.html so the section
  * graduates by swapping these factories for real app_settings.maintenance data.
+ * @implements fr-admin-panel
  */
 
 export type MaintenancePreset = {

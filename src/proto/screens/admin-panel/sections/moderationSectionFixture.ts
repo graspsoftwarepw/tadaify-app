@@ -5,6 +5,7 @@
  * graduates by swapping these factories for real moderation data.
  *
  * Mock-only typed view-model — no live data.
+ * @implements fr-admin-panel
  */
 
 export type ChipTone = "" | "warn" | "danger" | "success";

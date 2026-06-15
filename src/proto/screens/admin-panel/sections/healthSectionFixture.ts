@@ -3,6 +3,7 @@
  * live traffic charts, recent errors and latency table in
  * mockups/tadaify-mvp/admin-panel.html so the section graduates by swapping
  * these factories for real Workers Analytics Engine / status-probe data.
+ * @implements fr-admin-panel
  */
 
 export type HealthServiceStatus = "green" | "yellow" | "red";

@@ -2,6 +2,7 @@
  * Typed mock seam for the option lists the global admin modals render. Mirrors
  * the <select>/<option> sets in mockups/tadaify-mvp/admin-panel.html so the
  * modals graduate by swapping these factories for real config.
+ * @implements fr-admin-panel
  */
 
 export type CompUpgradeOptions = {

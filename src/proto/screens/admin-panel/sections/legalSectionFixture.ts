@@ -3,6 +3,7 @@
  * documents, draft, diff preview, and version-history rows in
  * mockups/tadaify-mvp/admin-panel.html so the section graduates by swapping
  * these factories for real legal_documents / acceptance data.
+ * @implements fr-admin-panel
  */
 
 export type LegalDocument = {

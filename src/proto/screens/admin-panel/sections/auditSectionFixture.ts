@@ -3,6 +3,7 @@
  * type segments, and insert-only log rows in
  * mockups/tadaify-mvp/admin-panel.html so the section graduates by swapping
  * these factories for real audit_log query results.
+ * @implements fr-admin-panel
  */
 
 /** Chip colour variant on an audit action — empty string = the neutral chip. */
