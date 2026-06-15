@@ -29,6 +29,7 @@ import { ScheduleEditorScreen } from "./screens/page-editors/ScheduleEditorScree
 import { CustomEditorScreen } from "./screens/page-editors/CustomEditorScreen";
 import { PaidArticlesEditorScreen } from "./screens/page-editors/PaidArticlesEditorScreen";
 import { LegalEditorScreen } from "./screens/page-editors/LegalEditorScreen";
+import { SettingsScreen } from "./screens/settings/SettingsScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -49,7 +50,7 @@ const SCREENS: Screen[] = [
   { segment: "creator-portfolio-public", label: "Public creator — Portfolio", status: "ready", batch: "P1 · Public pages" },
   { segment: "block-picker", label: "Block picker modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "block-editor", label: "Block editor modal", status: "ready", batch: "P2 · Dashboard modals" },
-  { segment: "settings", label: "Settings (8 tabs)", status: "planned", batch: "P3 · Settings" },
+  { segment: "settings", label: "Settings (account, billing, security, …)", status: "ready", batch: "P3 · Settings" },
   { segment: "page-about", label: "Editor — About page", status: "ready", batch: "P4 · Page editors" },
   { segment: "page-links-archive", label: "Editor — Links archive", status: "ready", batch: "P4 · Page editors" },
   { segment: "page-contact", label: "Editor — Contact", status: "ready", batch: "P4 · Page editors" },
@@ -156,6 +157,8 @@ export default function ProtoDevHost() {
       return <PaidArticlesEditorScreen />;
     case "page-legal":
       return <LegalEditorScreen />;
+    case "settings":
+      return <SettingsScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:
