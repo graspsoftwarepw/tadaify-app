@@ -47,17 +47,18 @@ distinct from the creator `DashboardChrome`) and uses the global colour tokens
 - The screen shall render a single-page admin shell: an appbar (the tadaify wordmark + an "Admin"
   brand tag, a global search field with a `⌘K` hint, the current admin role chip, the admin email,
   and a dark-mode toggle) and a left admin sidebar.
-- The sidebar shall show the signed-in admin (avatar + email + role chip) and an "Operations" nav
-  group of eight items — Overview, Users (847), Registration (247, warn), Maintenance, Moderation
-  (3, danger), Legal, Health (an "All green" status pill), and Audit log — followed by a divider and
-  links to the Creator dashboard and Sign out.
+- The sidebar shall show the signed-in admin (avatar + email + a static Super-admin role chip) and an
+  "Operations" nav group of eight items — Overview, Users (847), Registration (247, warn),
+  Maintenance, Moderation (3, danger), Legal, Health (an "All green" status pill), and Audit log —
+  followed by a divider and a Sign out action. It shall **not** expose a direct "Creator dashboard"
+  entry point: per the audiences matrix, the admin never enters a creator's dashboard except through a
+  logged impersonation session.
 - Selecting a nav item shall switch the active section in place; the active item shall be the only
   one marked current.
-- A **read-only** role state shall surface a read-only banner and disable mutating actions (the
-  `ro-disable` / `ro-hide-write` affordances), driven by the shell's `data-role`. A role chip in the
-  appbar toggles between Super-admin and Read-only for prototype demonstration.
 - An **impersonation** banner shall appear while impersonating a creator (entered from the user-detail
-  modal's "Login as user"), with an "Exit impersonation" control that clears it.
+  modal's "Login as user"), with an "Exit impersonation" control that clears it. Impersonation is the
+  audited moderation/support capability the audiences matrix permits ("login as user", banner + audit
+  trail) — see [`docs/domain/audiences.md`](../../../domain/audiences.md), Platform admin rows.
 
 ## Sections
 

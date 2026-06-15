@@ -46,7 +46,6 @@ export function AdminPanelScreen() {
   const nav = adminNavFixture();
 
   const [section, setSection] = useState<AdminSection>("overview");
-  const [role, setRole] = useState<"super" | "readonly">("super");
   const [impersonating, setImpersonating] = useState<string | null>(null);
   const [modal, setModal] = useState<{ id: AdminModalId; ctx: AdminCtx } | null>(null);
 
@@ -61,8 +60,6 @@ export function AdminPanelScreen() {
         nav={nav}
         activeSection={section}
         onNavigate={onNavigate}
-        role={role}
-        onRoleToggle={() => setRole((r) => (r === "super" ? "readonly" : "super"))}
         impersonating={impersonating}
         onExitImpersonation={() => setImpersonating(null)}
       >

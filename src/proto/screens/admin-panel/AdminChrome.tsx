@@ -43,8 +43,6 @@ export type AdminChromeProps = {
   nav: AdminNavItem[];
   activeSection: AdminSection;
   onNavigate: (section: AdminSection) => void;
-  role: "super" | "readonly";
-  onRoleToggle: () => void;
   impersonating: string | null;
   onExitImpersonation: () => void;
   children: ReactNode;
@@ -55,14 +53,12 @@ export function AdminChrome({
   nav,
   activeSection,
   onNavigate,
-  role,
-  onRoleToggle,
   impersonating,
   onExitImpersonation,
   children,
 }: AdminChromeProps) {
   return (
-    <div className="proto-admin-panel" data-role={role}>
+    <div className="proto-admin-panel" data-role="super">
       {impersonating && (
         <div className="impersonation-banner" id="imp-banner">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
@@ -91,15 +87,10 @@ export function AdminChrome({
 
         <div className="spacer" />
 
-        <button
-          type="button"
-          className={`role-chip ${role === "super" ? "role-super" : "role-readonly"}`}
-          title="Toggle admin role (prototype demo)"
-          onClick={onRoleToggle}
-        >
+        <span className="role-chip role-super" title="Your admin role">
           <span className="rc-dot" />
-          <span>{role === "super" ? "Super-admin" : "Read-only"}</span>
-        </button>
+          <span>Super-admin</span>
+        </span>
         <span className="admin-email">{profile.email}</span>
 
         <button className="iconbtn" type="button" onClick={() => toggleTheme()} aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -114,9 +105,9 @@ export function AdminChrome({
             <div className="utxt">
               <div className="uname">{profile.email}</div>
               <div className="urole">
-                <span className={`role-chip ${role === "super" ? "role-super" : "role-readonly"}`} style={{ fontSize: 9.5, padding: "2px 7px" }}>
+                <span className="role-chip role-super" style={{ fontSize: 9.5, padding: "2px 7px" }}>
                   <span className="rc-dot" />
-                  <span>{role === "super" ? "Super-admin" : "Read-only"}</span>
+                  <span>Super-admin</span>
                 </span>
               </div>
             </div>
@@ -140,10 +131,6 @@ export function AdminChrome({
 
           <div className="adm-nav-divider" />
 
-          <a href="/__proto/dashboard" className="adm-nav-item">
-            <S><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></S>
-            <span className="label">Creator dashboard</span>
-          </a>
           <button type="button" className="adm-nav-item danger" onClick={() => window.alert("Sign out (prototype)")}>
             <S><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></S>
             <span className="label">Sign out</span>
@@ -151,12 +138,6 @@ export function AdminChrome({
         </aside>
 
         <main className="adm-main">
-          {role === "readonly" && (
-            <div className="ro-banner">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-              You have <b>read-only</b> admin access. Mutating actions are disabled. Ask a Super-admin to make changes.
-            </div>
-          )}
           {children}
         </main>
       </div>
