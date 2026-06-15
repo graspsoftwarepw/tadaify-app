@@ -1,0 +1,151 @@
+/* AI Suggest sub-modal — token-driven styling ported from
+   mockups/tadaify-mvp/app-ai-suggest-modal.html. Scoped under `.proto-ai-suggest`.
+   Brand tints use color-mix over tokens; dark mode follows the app's
+   `body.dark-mode` mechanism (the sub-modal overlays the reused dashboard).
+
+   @implements fr-ai-suggest-modal */
+
+.proto-ai-suggest *, .proto-ai-suggest *::before, .proto-ai-suggest *::after { box-sizing: border-box; }
+
+/* Mockup-only state switcher (review scaffolding, not part of the modal). */
+.proto-ai-suggest .state-strip {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 90;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 8px 14px; min-width: 0;
+  background: color-mix(in srgb, var(--bg-elevated) 92%, var(--brand-primary));
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-sans);
+}
+.proto-ai-suggest .state-strip .ss-note { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-subtle); }
+.proto-ai-suggest .ss-group { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.proto-ai-suggest .ss-group .ss-lbl { font-size: 11px; font-weight: 600; color: var(--fg-muted); }
+.proto-ai-suggest .state-strip button {
+  padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); background: var(--bg);
+  color: var(--fg-muted); font-family: var(--font-sans); font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.proto-ai-suggest .state-strip button.is-active { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+/* Backdrop + modal shell */
+.proto-ai-suggest .ai-modal-backdrop {
+  position: fixed; inset: 0; z-index: 80;
+  background: color-mix(in srgb, var(--bg-dark, #0B0F1E) 55%, transparent);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.proto-ai-suggest .ai-modal {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 18px; box-shadow: var(--shadow-xl);
+  width: min(560px, 100%); max-height: calc(100vh - 32px); min-width: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+@media (max-width: 600px) {
+  .proto-ai-suggest .ai-modal-backdrop { padding: 0; align-items: stretch; }
+  .proto-ai-suggest .ai-modal { border-radius: 0; max-height: 100vh; height: 100vh; width: 100%; }
+}
+
+.proto-ai-suggest .ai-modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; flex-shrink: 0; min-width: 0; }
+.proto-ai-suggest .ai-modal-head h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; flex: 1; min-width: 0; margin: 0; letter-spacing: -0.01em; }
+.proto-ai-suggest .ai-modal-head .sparkle { color: var(--brand-warm); margin-right: 4px; }
+.proto-ai-suggest .ai-modal-head .target-name { color: var(--brand-primary); }
+.proto-ai-suggest .iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: transparent; border: 0; color: var(--fg-muted); cursor: pointer; }
+.proto-ai-suggest .iconbtn:hover { background: var(--bg-muted); color: var(--fg); }
+.proto-ai-suggest .iconbtn svg { width: 16px; height: 16px; }
+
+.proto-ai-suggest .cost-strip-wrap { padding: 12px 22px 0; }
+.proto-ai-suggest .ctx-cost { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-width: 0; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 10px; font-size: 12px; line-height: 1.4; color: var(--fg-muted); }
+.proto-ai-suggest .ctx-cost .meter { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.proto-ai-suggest .ctx-cost .line { color: var(--fg); font-weight: 500; }
+.proto-ai-suggest .ctx-cost .line b { font-weight: 700; }
+.proto-ai-suggest .ctx-cost .who { color: var(--fg-subtle); font-weight: 500; font-size: 11px; }
+.proto-ai-suggest .ctx-cost .sub { font-size: 11px; color: var(--fg-subtle); }
+.proto-ai-suggest .ctx-cost .bar { height: 4px; background: color-mix(in srgb, var(--fg) 8%, transparent); border-radius: 99px; overflow: hidden; margin-top: 2px; }
+.proto-ai-suggest .ctx-cost .bar > i { display: block; height: 100%; background: var(--brand-primary); border-radius: 99px; }
+.proto-ai-suggest .ctx-cost.is-low { background: color-mix(in srgb, var(--brand-warm) 10%, transparent); border-color: color-mix(in srgb, var(--brand-warm) 32%, transparent); }
+.proto-ai-suggest .ctx-cost.is-low .bar > i { background: var(--brand-warm); }
+.proto-ai-suggest .ctx-cost.is-out { background: var(--danger-bg, color-mix(in srgb, var(--danger) 10%, transparent)); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
+.proto-ai-suggest .ctx-cost.is-out .bar > i { background: var(--danger); }
+
+.proto-ai-suggest .ai-modal-body { padding: 16px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.proto-ai-suggest .ctx-strip { display: flex; gap: 10px; padding: 10px 12px; min-width: 0; background: var(--bg-muted); border-radius: 10px; font-size: 12.5px; color: var(--fg-muted); line-height: 1.5; }
+.proto-ai-suggest .ctx-strip .ctx-icon { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; color: var(--brand-primary); }
+.proto-ai-suggest .ctx-strip .ctx-text { min-width: 0; }
+.proto-ai-suggest .ctx-strip .ctx-text b { color: var(--fg); font-weight: 600; }
+.proto-ai-suggest .ctx-strip code { font-family: var(--font-mono); font-size: 11.5px; padding: 1px 5px; background: color-mix(in srgb, var(--brand-primary) 10%, transparent); color: var(--brand-primary); border-radius: 4px; word-break: break-word; }
+
+.proto-ai-suggest .refine { display: grid; gap: 6px; min-width: 0; }
+.proto-ai-suggest .refine label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--fg-muted); }
+.proto-ai-suggest .refine label .opt { font-weight: 500; color: var(--fg-subtle); font-size: 11px; }
+.proto-ai-suggest .refine textarea { width: 100%; min-width: 0; padding: 10px 12px; font-size: 13.5px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--fg); font-family: var(--font-sans); resize: vertical; min-height: 64px; outline: none; transition: border .14s, box-shadow .14s; }
+.proto-ai-suggest .refine textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 14%, transparent); background: var(--bg-elevated); }
+
+.proto-ai-suggest .suggestions-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.proto-ai-suggest .suggestions-head .lbl { font-size: 12px; font-weight: 600; color: var(--fg-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.proto-ai-suggest .suggestions-head .count { font-size: 11.5px; color: var(--fg-subtle); }
+
+.proto-ai-suggest .sugg-list { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.proto-ai-suggest .sugg-card { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px 12px 12px; min-width: 0; width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer; transition: border .14s, background .14s, transform .12s, box-shadow .14s; font-family: var(--font-sans); text-align: left; }
+.proto-ai-suggest .sugg-card:hover { border-color: var(--border-strong); background: var(--bg-elevated); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.proto-ai-suggest .sugg-card.is-selected { border-color: var(--brand-primary); background: color-mix(in srgb, var(--brand-primary) 6%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 10%, transparent); }
+.proto-ai-suggest .sugg-card .idx { flex-shrink: 0; width: 22px; height: 22px; border-radius: 7px; background: var(--bg-muted); color: var(--fg-muted); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); margin-top: 1px; }
+.proto-ai-suggest .sugg-card.is-selected .idx { background: var(--brand-primary); color: #fff; }
+.proto-ai-suggest .sugg-card .copy { flex: 1; min-width: 0; font-size: 14px; line-height: 1.45; color: var(--fg); font-weight: 500; }
+.proto-ai-suggest .sugg-card .style-tag { flex-shrink: 0; align-self: flex-start; margin-top: 2px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; color: var(--fg-muted); background: var(--bg-muted); }
+.proto-ai-suggest .sugg-card.is-selected .style-tag { background: color-mix(in srgb, var(--brand-warm) 14%, transparent); color: var(--brand-warm-dark); }
+.proto-ai-suggest .sugg-card .check { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--success); color: #fff; display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+.proto-ai-suggest .sugg-card.is-selected .check { display: flex; }
+
+/* Skeletons (loading) */
+.proto-ai-suggest .sugg-skeleton { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px 12px 12px; min-width: 0; background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; }
+.proto-ai-suggest .sk-block { background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%); background-size: 200% 100%; animation: ai-shimmer 1.4s linear infinite; border-radius: 6px; height: 14px; }
+.proto-ai-suggest .sk-idx { width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; margin-top: 1px; background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%); background-size: 200% 100%; animation: ai-shimmer 1.4s linear infinite; }
+.proto-ai-suggest .sk-copy { flex: 1; min-width: 0; }
+.proto-ai-suggest .sk-line-1 { display: block; width: 75%; height: 14px; }
+.proto-ai-suggest .sk-line-2 { display: block; width: 45%; height: 12px; margin-top: 8px; }
+.proto-ai-suggest .sk-tag { width: 56px; height: 16px; border-radius: 99px; flex-shrink: 0; margin-top: 1px; background: linear-gradient(90deg, var(--bg-muted) 0%, var(--bg-sunken) 50%, var(--bg-muted) 100%); background-size: 200% 100%; animation: ai-shimmer 1.4s linear infinite; }
+@keyframes ai-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .proto-ai-suggest .sk-block, .proto-ai-suggest .sk-idx, .proto-ai-suggest .sk-tag { animation: none; } }
+
+/* Error state */
+.proto-ai-suggest .err-box { padding: 16px; min-width: 0; background: var(--danger-bg, color-mix(in srgb, var(--danger) 8%, transparent)); border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent); border-radius: 12px; color: var(--fg); display: flex; gap: 12px; align-items: flex-start; }
+.proto-ai-suggest .err-box .err-icon { flex-shrink: 0; width: 20px; height: 20px; color: var(--danger); margin-top: 1px; }
+.proto-ai-suggest .err-box .err-msg { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.5; }
+.proto-ai-suggest .err-box .err-msg b { display: block; margin-bottom: 2px; color: var(--fg); font-weight: 600; }
+.proto-ai-suggest .err-box .err-sub { display: block; color: var(--fg-muted); font-weight: 400; }
+.proto-ai-suggest .err-box .err-actions { margin-top: 10px; display: flex; gap: 8px; }
+.proto-ai-suggest .err-box .err-actions button { padding: 7px 12px; font-size: 12.5px; font-weight: 600; border-radius: 8px; border: 1px solid var(--danger); background: transparent; color: var(--danger); cursor: pointer; font-family: var(--font-sans); }
+.proto-ai-suggest .err-box .err-actions button:hover { background: var(--danger); color: #fff; }
+
+/* Empty state */
+.proto-ai-suggest .empty-box { padding: 18px; min-width: 0; background: var(--bg-muted); border: 1px dashed var(--border-strong); border-radius: 12px; text-align: center; }
+.proto-ai-suggest .empty-box .empty-icon { width: 32px; height: 32px; margin: 0 auto 8px; color: var(--fg-subtle); }
+.proto-ai-suggest .empty-box .empty-h { font-size: 14px; font-weight: 600; color: var(--fg); margin-bottom: 4px; }
+.proto-ai-suggest .empty-box .empty-sub { font-size: 12.5px; color: var(--fg-muted); max-width: 360px; margin: 0 auto; line-height: 1.5; }
+
+/* Out-of-quota hard-block */
+.proto-ai-suggest .out-box { padding: 22px 18px; min-width: 0; text-align: center; background: color-mix(in srgb, var(--danger) 4%, transparent); border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent); border-radius: 12px; }
+.proto-ai-suggest .out-box .out-icon { width: 40px; height: 40px; border-radius: 99px; background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+.proto-ai-suggest .out-box .out-h { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--fg); margin-bottom: 6px; letter-spacing: -0.01em; }
+.proto-ai-suggest .out-box .out-countdown { font-size: 14px; color: var(--fg-muted); margin-bottom: 14px; }
+.proto-ai-suggest .out-box .out-countdown b { font-family: var(--font-mono); color: var(--fg); font-weight: 600; }
+.proto-ai-suggest .out-box details { margin-top: 16px; padding-top: 14px; border-top: 1px dashed color-mix(in srgb, var(--fg) 10%, transparent); text-align: left; }
+.proto-ai-suggest .out-box details summary { font-size: 12px; font-weight: 600; color: var(--fg-muted); cursor: pointer; list-style: none; }
+.proto-ai-suggest .out-box details summary::-webkit-details-marker { display: none; }
+.proto-ai-suggest .out-box details p { margin: 8px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--fg-muted); }
+.proto-ai-suggest .upgrade-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; background: var(--brand-warm); color: #fff; font-size: 13px; font-weight: 600; border: 0; font-family: var(--font-sans); cursor: pointer; }
+.proto-ai-suggest .upgrade-btn:hover { background: var(--brand-warm-dark); }
+
+/* Foot */
+.proto-ai-suggest .ai-modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); background: var(--bg-elevated); display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; min-width: 0; }
+.proto-ai-suggest .ai-modal-foot .left { display: flex; gap: 8px; min-width: 0; }
+.proto-ai-suggest .ai-modal-foot .right { display: flex; gap: 8px; margin-left: auto; min-width: 0; }
+.proto-ai-suggest .btn-primary, .proto-ai-suggest .btn-secondary, .proto-ai-suggest .btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; border-radius: 8px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: background .14s, border-color .14s, color .14s, transform .12s; }
+.proto-ai-suggest .btn-primary { background: var(--brand-primary); color: #fff; }
+.proto-ai-suggest .btn-primary:not(:disabled):hover { background: var(--brand-primary-hover); transform: translateY(-1px); }
+.proto-ai-suggest .btn-primary:disabled { background: var(--bg-sunken); color: var(--fg-subtle); cursor: not-allowed; }
+.proto-ai-suggest .btn-secondary { background: var(--bg-elevated); color: var(--fg); border-color: var(--border-strong); }
+.proto-ai-suggest .btn-secondary:hover { background: var(--bg-muted); }
+.proto-ai-suggest .btn-secondary svg { flex-shrink: 0; }
+.proto-ai-suggest .btn-ghost { background: transparent; color: var(--fg-muted); }
+.proto-ai-suggest .btn-ghost:hover { background: var(--bg-muted); color: var(--fg); }
+.proto-ai-suggest .refresh-cost { font-size: 11px; font-weight: 500; color: var(--fg-subtle); margin-left: 2px; }

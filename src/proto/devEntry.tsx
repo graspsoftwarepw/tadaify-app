@@ -28,6 +28,8 @@ import { CreatorPaidArticlePublicScreen } from "./screens/creator-paid-article-p
 import { ProductPublicScreen } from "./screens/product-public/ProductPublicScreen";
 import { BlockPickerScreen } from "./screens/block-picker/BlockPickerScreen";
 import { BlockEditorScreen } from "./screens/block-editor/BlockEditorScreen";
+import { AiSuggestModalScreen } from "./screens/ai-suggest-modal/AiSuggestModalScreen";
+import { TierGateModalScreen } from "./screens/tier-gate-modal/TierGateModalScreen";
 import { AboutEditorScreen } from "./screens/page-editors/AboutEditorScreen";
 import { LinksArchiveEditorScreen } from "./screens/page-editors/LinksArchiveEditorScreen";
 import { ContactEditorScreen } from "./screens/page-editors/ContactEditorScreen";
@@ -70,6 +72,8 @@ const SCREENS: Screen[] = [
   { segment: "product-public", label: "Public — Product", status: "ready", batch: "P1 · Public pages" },
   { segment: "block-picker", label: "Block picker modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "block-editor", label: "Block editor modal", status: "ready", batch: "P2 · Dashboard modals" },
+  { segment: "ai-suggest-modal", label: "AI suggest modal", status: "ready", batch: "P2 · Dashboard modals" },
+  { segment: "tier-gate-modal", label: "Tier gate / upsell modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "settings", label: "Settings (account, billing, security, …)", status: "ready", batch: "P3 · Settings" },
   { segment: "page-about", label: "Editor — About page", status: "ready", batch: "P4 · Page editors" },
   { segment: "page-links-archive", label: "Editor — Links archive", status: "ready", batch: "P4 · Page editors" },
@@ -175,6 +179,10 @@ export default function ProtoDevHost() {
       return <BlockPickerScreen />;
     case "block-editor":
       return <BlockEditorScreen />;
+    case "ai-suggest-modal":
+      return <AiSuggestModalScreen />;
+    case "tier-gate-modal":
+      return <TierGateModalScreen />;
     case "page-about":
       return <AboutEditorScreen />;
     case "page-links-archive":
