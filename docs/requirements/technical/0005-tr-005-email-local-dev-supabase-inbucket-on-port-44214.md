@@ -1,6 +1,6 @@
 ---
 id: TR-SHARED-005
-title: "Email (local dev): Supabase Inbucket on port 54354."
+title: "Email (local dev): Supabase Inbucket on port 44214."
 area: SHARED
 status: accepted
 level: MUST
@@ -9,7 +9,7 @@ authorized_by: vvaser@gmail.com
 aliases: [TR-005]
 ---
 
-# TR-005 — Email (local dev): Supabase Inbucket on port 54354.
+# TR-005 — Email (local dev): Supabase Inbucket on port 44214.
 
 > **Level:** MUST
 

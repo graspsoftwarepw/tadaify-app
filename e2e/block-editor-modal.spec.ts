@@ -12,7 +12,7 @@
  * Prerequisites:
  *   - `supabase start` (port-band 5435X) — NOT required for shell-only tests
  *     (test harness page is static, no auth needed)
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *
  * Test harness: /test-block-editor-modal (app/routes/test-block-editor-modal.tsx)
  * No auth required — test harness mounts modal directly.

@@ -19,7 +19,7 @@ import {
   type LoaderData,
 } from "./$handle";
 
-const SUPABASE_URL = "http://localhost:54321";
+const SUPABASE_URL = "http://localhost:44210";
 const SERVICE_KEY = "test-service-key";
 const USER_ID = "00000000-0000-0000-0000-000000000202";
 const PAGE_ID = "11111111-0000-0000-0000-000000000202";

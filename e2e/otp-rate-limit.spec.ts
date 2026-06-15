@@ -11,8 +11,8 @@
  *
  * Prerequisites:
  *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
- *   - Mailpit accessible at http://localhost:54354
+ *   - `npm run dev` (App: http://localhost:44200)
+ *   - Mailpit accessible at http://localhost:44214
  *
  * Per-test handle isolation: t179rl* prefix
  * Cleanup: afterAll deletes auth users + otp_rate_limit_attempts for handles
@@ -29,14 +29,14 @@ import { test, expect, type Page, type APIRequestContext } from "@playwright/tes
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   // well-known local demo service-role JWT (safe — local dev only)
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-const MAILPIT_URL = "http://localhost:54354";
-const APP_URL = process.env.APP_URL ?? "http://localhost:5173";
+const MAILPIT_URL = "http://localhost:44214";
+const APP_URL = process.env.APP_URL ?? "http://localhost:44200";
 
 /** All test handles share this prefix — cleaned up in afterAll */
 const HANDLE_PREFIX = "t179rl";

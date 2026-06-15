@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action, validateProfileBody, BIO_MAX_LENGTH } from "./api.profile";
 
-const SUPABASE_URL = "http://localhost:54351";
+const SUPABASE_URL = "http://localhost:44210";
 const SERVICE_KEY = "test-service-key";
 
 function makeContext() {

@@ -10,7 +10,7 @@
  * Story: tadaify-app#205 F-BLOCK-INFRA-ICON-PICKER-001
  *
  * Prerequisites:
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *   - No auth required — test harness mounts picker directly
  *
  * Test harness: /test-icon-picker (app/routes/test-icon-picker.tsx)

@@ -25,7 +25,7 @@
 | [TR-SHARED-002](requirements/technical/0002-tr-002-runtime-cloudflare-workers-not-pages.md) | MUST | Runtime: Cloudflare Workers (NOT Pages). |
 | [TR-SHARED-003](requirements/technical/0003-tr-003-styling-tailwind-css-v4-via-tailwindcss-vite.md) | MUST | Styling: Tailwind CSS v4 via `@tailwindcss/vite`. |
 | [TR-SHARED-004](requirements/technical/0004-tr-004-database-supabase-local-docker-on-port-band-5435x-dev.md) | MUST | Database: Supabase (local Docker on port-band 5435X; DEV/PROD via Supabase hosted). |
-| [TR-SHARED-005](requirements/technical/0005-tr-005-email-local-dev-supabase-inbucket-on-port-54354.md) | MUST | Email (local dev): Supabase Inbucket on port 54354. |
+| [TR-SHARED-005](requirements/technical/0005-tr-005-email-local-dev-supabase-inbucket-on-port-44214.md) | MUST | Email (local dev): Supabase Inbucket on port 44214. |
 | [TR-SHARED-006](requirements/technical/0006-tr-006-guard-hooks-block-supabase-writes-py-blocks-all-supab.md) | MUST | Guard hooks: `block-supabase-writes.py` blocks all Supabase MCP write tools. |
 | [TR-SHARED-007](requirements/technical/0007-tr-007-supabase-mcp-read-only-in-all-sessions.md) | MUST | Supabase MCP: read-only in all sessions. |
 | [TR-SHARED-008](requirements/technical/0008-tr-008-language-typescript-everywhere.md) | MUST | Language: TypeScript everywhere. |

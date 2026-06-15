@@ -7,13 +7,16 @@ the same machine. Each project owns a fixed, non-overlapping port range.
 
 ### Port allocation
 
-| Project       | Base port | API   | DB    | Studio | Inbucket | Analytics | Pooler | Shadow DB |
-| ------------- | --------- | ----- | ----- | ------ | -------- | --------- | ------ | --------- |
-| untiltify-app | 54320     | 54321 | 54322 | 54323  | 54324    | 54327     | 54329  | 54320     |
-| tadaify-app   | 54350     | 54351 | 54352 | 54353  | 54354    | 54357     | 54359  | 54350     |
+| Service | App   | Preview | API   | DB    | Studio | Inbucket | Analytics | Pooler | Shadow |
+| ------- | ----- | ------- | ----- | ----- | ------ | -------- | --------- | ------ | ------ |
+| tadaify | 44200 | 44201   | 44210 | 44211 | 44213  | 44214    | 44217     | 44219  | 44212  |
 
-The full Tadaify port map is defined in `supabase/config.toml`. Do not edit
-these ports ad hoc; local Supabase projects must keep unique ranges.
+Ports are governed by **`ports.yaml`** at the repo root — the single source of truth
+(grasp-running-local-apps). `supabase/config.toml` and this table mirror it; there is no
+cross-project port registry any more (each repo owns its own reserved band). tadaify owns
+**`44200`–`44229`**: the app at the range start, the Supabase stack in the "second ten"
+(`44210`–`44219`), and a `dynamic` ad-hoc pool (`44220`–`44229`). Change a port in
+`ports.yaml` first, run its lint, then update `supabase/config.toml` in lockstep.
 
 ### First-time setup
 
@@ -48,10 +51,10 @@ npm run test:e2e:local
 
 Local mode uses:
 
-- Supabase Local API: `http://127.0.0.1:54351`
-- Supabase Studio: `http://127.0.0.1:54353`
-- Inbucket UI: `http://127.0.0.1:54354`
-- App URL: `http://127.0.0.1:5173`
+- Supabase Local API: `http://127.0.0.1:44210`
+- Supabase Studio: `http://127.0.0.1:44213`
+- Inbucket UI: `http://127.0.0.1:44214`
+- App URL: `http://127.0.0.1:44200`
 
 For the interactive Playwright UI after local env preparation:
 
@@ -62,9 +65,10 @@ npm run test:e2e:ui:local -- e2e/register-cascade.spec.ts
 
 ### Port collisions
 
-`tadaify-app` permanently reserves `54350`, `54351`, `54352`, `54353`,
-`54354`, `54357`, and `54359`. `bin/e2e-local-env.sh` detects collisions before
-starting Supabase and reports the exact container or process holding the port.
+`tadaify-app` permanently reserves the Supabase ports `44210`, `44211`, `44212`,
+`44213`, `44214`, `44217`, and `44219` (see `ports.yaml`). `bin/e2e-local-env.sh`
+detects collisions before starting Supabase and reports the exact container or
+process holding the port.
 
 If another Supabase Local project is holding one of these ports, stop that
 project non-destructively:

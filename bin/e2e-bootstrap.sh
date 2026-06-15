@@ -119,6 +119,6 @@ Next steps:
   npm run test:e2e:ui        # interactive Playwright UI
   npm run dev                # React Router dev server (uses .dev.vars)
 
-Supabase Studio:   http://127.0.0.1:54353
-Inbucket (mail):   http://127.0.0.1:54354
+Supabase Studio:   http://127.0.0.1:44213
+Inbucket (mail):   http://127.0.0.1:44214
 MSG

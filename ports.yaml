@@ -1,0 +1,21 @@
+# This repo's local port reservations — the single source of truth for its ports
+# (grasp-running-local-apps). Free ports are derived (range minus reserved), never stored.
+# Validate after editing: skills/installed/grasp-running-local-apps/scripts/ports lint
+repo: tadaify-app
+range:   { start: 44200, end: 44229 }   # tadaify-app's registered high-band slice (Mac-safe)
+reserved:
+  - { port: 44200, service: react-router dev server, kind: node }   # the frontend app
+  - { port: 44201, service: vite preview,            kind: node }    # `vite preview` (build smoke / e2e)
+  # Supabase local stack — the "second ten"; reserved even when a service is not started
+  # (local dev runs the fewest services it needs; the slot stays owned).
+  - { port: 44210, service: supabase api,            kind: docker }  # [api] Kong/API gateway
+  - { port: 44211, service: supabase db,             kind: db }      # [db] Postgres
+  - { port: 44212, service: supabase db shadow,      kind: db }      # [db] shadow_port (migration diff)
+  - { port: 44213, service: supabase studio,         kind: docker }  # [studio]
+  - { port: 44214, service: supabase inbucket web,   kind: docker }  # [inbucket] mail web UI
+  - { port: 44215, service: supabase inbucket smtp,  kind: docker }  # [inbucket] smtp_port (off by default)
+  - { port: 44216, service: supabase inbucket pop3,  kind: docker }  # [inbucket] pop3_port (off by default)
+  - { port: 44217, service: supabase analytics,      kind: docker }  # [analytics] Logflare
+  - { port: 44218, service: supabase edge inspector, kind: node }    # [edge_runtime] inspector_port
+  - { port: 44219, service: supabase pooler,         kind: docker }  # [db.pooler] Supavisor (off by default)
+dynamic: { start: 44220, end: 44229 }   # ad-hoc pool: worktree previews + ephemeral e2e bands

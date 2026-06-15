@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:5173";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:44200";
 const e2eEnv = process.env.E2E_ENV ?? "shared";
 const isLocalE2E = e2eEnv === "local";
 
@@ -46,7 +46,7 @@ export default defineConfig({
   // Start dev server before running tests. Local E2E must not reuse an
   // already-running server because it may be bound to hosted Supabase values.
   webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 5173",
+    command: "npm run dev -- --host 127.0.0.1 --port 44200",
     url: baseURL,
     reuseExistingServer: !isLocalE2E,
     timeout: 120_000,

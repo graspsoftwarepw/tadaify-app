@@ -1,7 +1,7 @@
 -- tadaify local seed
 -- Pattern: per-test users named test-<story>-<scenario>@local.test / password TestPass123!
 -- Add as needed by feature stories. Seed validation runs via `seed-validator` skill.
--- Inbucket for email testing: http://localhost:54354
+-- Inbucket for email testing: http://localhost:44214
 
 -- ── F-REGISTER-001a users ────────────────────────────────────────────────────
 -- Scenario: returning user for /login test (S5 in F-REGISTER-001a.plan.md)

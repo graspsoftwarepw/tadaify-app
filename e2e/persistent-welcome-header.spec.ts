@@ -15,7 +15,7 @@
  * S4: Real-time handle update — header text tracks handle input character-by-character
  *
  * Prerequisites:
- *   - `supabase start` + `npm run dev` (App: http://localhost:5173)
+ *   - `supabase start` + `npm run dev` (App: http://localhost:44200)
  *   - Supabase service-role key available in env or fallback JWT used
  *
  * Run: npx playwright test e2e/persistent-welcome-header.spec.ts
@@ -27,12 +27,12 @@ import { test, expect, type Page } from "@playwright/test";
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-const MAILPIT_URL = "http://localhost:54354";
+const MAILPIT_URL = "http://localhost:44214";
 
 // Unique per-test handle to avoid collisions with parallel test runs.
 // Each S1 test that clicks Continue gets its own handle so handle

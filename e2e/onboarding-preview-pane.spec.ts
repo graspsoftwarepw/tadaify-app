@@ -14,7 +14,7 @@
  * Prerequisites:
  *   - `supabase start` (port-band 5435X)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *
  * Per-test handle isolation (t137s1..t137s5 prefix).
  * AfterAll cleanup hook: DELETE handle_reservations where handle ilike 't137%'.
@@ -28,7 +28,7 @@ import { test, expect } from "@playwright/test";
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const HANDLE_PREFIX = "t137";
 
@@ -81,22 +81,22 @@ test("S1: preview pane visible on welcome/social/profile/template steps", async 
   const handle = "t137s1";
 
   // welcome
-  await page.goto(`http://localhost:5173/onboarding/welcome?handle=${handle}`);
+  await page.goto(`http://localhost:44200/onboarding/welcome?handle=${handle}`);
   await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
   await expect(page.locator("[data-testid='viewport-switcher']")).toBeVisible();
 
   // social
-  await page.goto(`http://localhost:5173/onboarding/social?handle=${handle}&platforms=instagram`);
+  await page.goto(`http://localhost:44200/onboarding/social?handle=${handle}&platforms=instagram`);
   await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
 
   // profile
-  await page.goto(`http://localhost:5173/onboarding/profile?handle=${handle}&platforms=instagram&socials=%7B%7D`);
+  await page.goto(`http://localhost:44200/onboarding/profile?handle=${handle}&platforms=instagram&socials=%7B%7D`);
   await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
   await expect(page.locator("iframe[data-onboarding-preview]")).toBeVisible();
 
   // template
   await page.goto(
-    `http://localhost:5173/onboarding/template?handle=${handle}&platforms=instagram&socials=%7B%7D&name=T137+User&bio=`
+    `http://localhost:44200/onboarding/template?handle=${handle}&platforms=instagram&socials=%7B%7D&name=T137+User&bio=`
   );
   await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
 });
@@ -110,7 +110,7 @@ test("S2: state broadcast updates iframe within 200ms (debounce contract)", asyn
   const handle = "t137s2";
 
   await page.goto(
-    `http://localhost:5173/onboarding/profile?handle=${handle}&platforms=&socials=%7B%7D`
+    `http://localhost:44200/onboarding/profile?handle=${handle}&platforms=&socials=%7B%7D`
   );
 
   // Wait for preview pane to be visible
@@ -142,7 +142,7 @@ test("S6: social input updates iframe preview with social handle after debounce"
   const handle = "t137s6";
 
   await page.goto(
-    `http://localhost:5173/onboarding/social?handle=${handle}&platforms=instagram`
+    `http://localhost:44200/onboarding/social?handle=${handle}&platforms=instagram`
   );
 
   // Wait for preview pane
@@ -174,7 +174,7 @@ test("S3: viewport switcher persists via sessionStorage across steps", async ({ 
 
   // Go to profile step and click Tablet
   await page.goto(
-    `http://localhost:5173/onboarding/profile?handle=${handle}&platforms=&socials=%7B%7D`
+    `http://localhost:44200/onboarding/profile?handle=${handle}&platforms=&socials=%7B%7D`
   );
   await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
 
@@ -184,7 +184,7 @@ test("S3: viewport switcher persists via sessionStorage across steps", async ({ 
 
   // Navigate to template step
   await page.goto(
-    `http://localhost:5173/onboarding/template?handle=${handle}&platforms=&socials=%7B%7D&name=T137+User&bio=`
+    `http://localhost:44200/onboarding/template?handle=${handle}&platforms=&socials=%7B%7D&name=T137+User&bio=`
   );
   await expect(page.locator("[data-testid='onboarding-preview-pane']")).toBeVisible();
 
@@ -210,7 +210,7 @@ test("S4: tier step renders without preview pane (single-column layout)", async 
   const handle = "t137s4";
 
   await page.goto(
-    `http://localhost:5173/onboarding/tier?handle=${handle}&platforms=&socials=%7B%7D&name=T137User&tpl=chopin`
+    `http://localhost:44200/onboarding/tier?handle=${handle}&platforms=&socials=%7B%7D&name=T137User&tpl=chopin`
   );
 
   // No preview pane
@@ -229,7 +229,7 @@ test("S5: complete step has DEC-332=D handle-claim composition (no preview pane)
   const handle = "t137s5";
 
   await page.goto(
-    `http://localhost:5173/onboarding/complete?handle=${handle}&tier=free&tpl=chopin&name=T137User`
+    `http://localhost:44200/onboarding/complete?handle=${handle}&tier=free&tpl=chopin&name=T137User`
   );
 
   // No preview pane on complete step
