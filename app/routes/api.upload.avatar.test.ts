@@ -87,7 +87,7 @@ describe("detectImageType — U1 (pure function)", () => {
 
 // ── action handler tests ───────────────────────────────────────────────────────
 
-const MOCK_SUPABASE_URL = "http://localhost:54351";
+const MOCK_SUPABASE_URL = "http://localhost:44210";
 const MOCK_SERVICE_KEY = "test-service-key";
 const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001";
 

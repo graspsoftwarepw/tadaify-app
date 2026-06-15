@@ -10,8 +10,8 @@
  * Covers: BR-BLOCK-CRUD-001, AC#6, ECN-CRUD-12
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `supabase start` (port-band 44210-44219) with `./bin/worktree-env-init.sh`
+ *   - `npm run dev` (App: http://localhost:44200)
  *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
  *
  * Run: npx playwright test e2e/block-crud-rls-isolation.spec.ts
@@ -19,10 +19,10 @@
 
 import { test, expect } from "@playwright/test";
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? "";
-const APP_URL = "http://localhost:5173";
+const APP_URL = "http://localhost:44200";
 const TEST_PASSWORD = "TestPass123!";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

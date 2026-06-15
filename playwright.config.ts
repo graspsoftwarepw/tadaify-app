@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:5173";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:44200";
 const e2eEnv = process.env.E2E_ENV ?? "shared";
 const isLocalE2E = e2eEnv === "local";
 
@@ -11,7 +11,7 @@ const isLocalE2E = e2eEnv === "local";
  * (Playwright is excluded from CI per feedback_no_ci_tests.md).
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `.dev.vars` configured with Workers env bindings
  *   - `npm run dev` started (or let webServer block start it)
  */
@@ -29,7 +29,7 @@ export default defineConfig({
 
   use: {
     // Allow overriding via TEST_BASE_URL env var — used when running against
-    // a worktree dev server on a non-standard port (e.g. 5175 during PR validation).
+    // a worktree dev server on a non-standard port (e.g. 44221 during PR validation).
     baseURL,
     trace: "on-first-retry",
   },
@@ -46,7 +46,7 @@ export default defineConfig({
   // Start dev server before running tests. Local E2E must not reuse an
   // already-running server because it may be bound to hosted Supabase values.
   webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 5173",
+    command: "npm run dev -- --host 127.0.0.1 --port 44200",
     url: baseURL,
     reuseExistingServer: !isLocalE2E,
     timeout: 120_000,

@@ -37,14 +37,14 @@ make_sandbox() {
   fi
 }
 
-ENV_EXAMPLE_CONTENT='VITE_SUPABASE_URL=http://localhost:54351
+ENV_EXAMPLE_CONTENT='VITE_SUPABASE_URL=http://localhost:44210
 VITE_SUPABASE_ANON_KEY=eyJ...replace-with-output-of-supabase-status
 BEFORE_USER_CREATED_HOOK_SECRET=
 CLOUDFLARE_ACCOUNT_ID=
 CLOUDFLARE_API_TOKEN=
 '
 
-DEV_VARS_EXAMPLE_CONTENT='SUPABASE_URL=http://127.0.0.1:54351
+DEV_VARS_EXAMPLE_CONTENT='SUPABASE_URL=http://127.0.0.1:44210
 SUPABASE_ANON_KEY=eyJ...replace-with-output-of-supabase-status
 SUPABASE_SERVICE_ROLE_KEY=eyJ...replace-with-output-of-supabase-status
 HANDLE_RESERVATION_TTL_SECONDS=600
@@ -67,7 +67,7 @@ cat > "$MOCK_SUPABASE_RUNNING" <<'MOCK'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "status" ]]; then
   if [[ "${2:-}" == "-o" && "${3:-}" == "env" ]]; then
-    echo "SUPABASE_URL=http://127.0.0.1:54351"
+    echo "SUPABASE_URL=http://127.0.0.1:44210"
     echo "SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.FAKEANON"
     echo "SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.FAKESRK"
     exit 0

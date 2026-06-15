@@ -11,9 +11,9 @@
  * Default sub-tab: background (NOT theme — per mockup + issue refinement)
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
- *   - Mailpit accessible at http://localhost:54354
+ *   - `supabase start` (port-band 44210-44219) with `./bin/worktree-env-init.sh`
+ *   - `npm run dev` (App: http://localhost:44200)
+ *   - Mailpit accessible at http://localhost:44214
  *
  * Per-test handle isolation: t26bs1–t26bs7
  * Cleanup: afterAll deletes auth users + handle_reservations for t26bs* prefix
@@ -30,12 +30,12 @@ import { test, expect, type Page } from "@playwright/test";
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-const MAILPIT_URL = "http://localhost:54354";
+const MAILPIT_URL = "http://localhost:44214";
 const HANDLE_PREFIX = "t26bs";
 
 // ---------------------------------------------------------------------------
@@ -181,7 +181,7 @@ async function registerViaOtp(
   email: string
 ): Promise<void> {
   await clearMailpitForEmail(email);
-  await page.goto("http://localhost:5173/register");
+  await page.goto("http://localhost:44200/register");
 
   const handleInput = page.locator("input[name='handle'], input#handle");
   await handleInput.fill(handle);
@@ -236,7 +236,7 @@ async function completeWizard(
 }
 
 async function goToDashboard(page: Page): Promise<void> {
-  await page.goto("http://localhost:5173/app");
+  await page.goto("http://localhost:44200/app");
   await expect(page.locator("[data-testid='app-dashboard']")).toBeVisible({ timeout: 10_000 });
 }
 
@@ -335,7 +335,7 @@ test("S2 — breadcrumb stepper 3-cell window + keyboard nav", async ({ page }) 
   await expect(page).toHaveURL(/\/app/, { timeout: 10_000 });
 
   // Navigate to animations sub-tab (ECN-26b-05)
-  await page.goto("http://localhost:5173/app?tab=design&subtab=animations");
+  await page.goto("http://localhost:44200/app?tab=design&subtab=animations");
   await expect(page.locator("[data-testid='design-breadcrumb-stepper']")).toBeVisible({ timeout: 8_000 });
 
   // Current cell shows "Animations"
@@ -375,7 +375,7 @@ test("S3 — stepper current-cell dropdown picker → Footer sub-tab", async ({ 
   await page.getByRole("link", { name: /go to (your )?dashboard/i }).click();
   await expect(page).toHaveURL(/\/app/, { timeout: 10_000 });
 
-  await page.goto("http://localhost:5173/app?tab=design&subtab=background");
+  await page.goto("http://localhost:44200/app?tab=design&subtab=background");
   await expect(page.locator("[data-testid='design-breadcrumb-stepper']")).toBeVisible({ timeout: 8_000 });
 
   // Click stepper current cell → dropdown opens (VE-26b-06)
@@ -519,7 +519,7 @@ test("S4 — all 8 sub-tabs render canonical content", async ({ page }) => {
   ];
 
   for (const { subtab, assertion } of subtabChecks) {
-    await page.goto(`http://localhost:5173/app?tab=design&subtab=${subtab}`);
+    await page.goto(`http://localhost:44200/app?tab=design&subtab=${subtab}`);
     await expect(page.locator("[data-testid='design-panel']")).toBeVisible({ timeout: 8_000 });
     await assertion();
   }
@@ -540,7 +540,7 @@ test("S5 — save fires toast but does NOT persist to DB", async ({ page }) => {
   await page.getByRole("link", { name: /go to (your )?dashboard/i }).click();
   await expect(page).toHaveURL(/\/app/, { timeout: 10_000 });
 
-  await page.goto("http://localhost:5173/app?tab=design&subtab=colors");
+  await page.goto("http://localhost:44200/app?tab=design&subtab=colors");
   await expect(page.locator("[data-panel='colors']")).toBeVisible({ timeout: 8_000 });
 
   // Change Primary color
@@ -612,7 +612,7 @@ test("S6 — Image/Video background: visible + clickable; gate fires on save (fr
   await page.getByRole("link", { name: /go to (your )?dashboard/i }).click();
   await expect(page).toHaveURL(/\/app/, { timeout: 10_000 });
 
-  await page.goto("http://localhost:5173/app?tab=design&subtab=background");
+  await page.goto("http://localhost:44200/app?tab=design&subtab=background");
   await expect(page.locator("[data-panel='background']")).toBeVisible({ timeout: 8_000 });
 
   // Image tile visible AND clickable — NOT disabled, NOT blurred (VE-26b-16)

@@ -10,13 +10,13 @@ Tadaify — link-in-bio + creator commerce SaaS (React Router 7 / Remix on Cloud
 # 1. Install
 npm install
 
-# 2. Start Supabase local (port-band 5435X) and generate local env files
+# 2. Start Supabase local (port-band 44210-44219) and generate local env files
 npm run test:local:prepare
-# Inbucket UI: http://127.0.0.1:54354
+# Inbucket UI: http://127.0.0.1:44214
 
 # 3. Start dev server
 npm run dev
-# App: http://127.0.0.1:5173
+# App: http://127.0.0.1:44200
 
 # 4. Run local Playwright
 npm run test:e2e:local -- e2e/register-cascade.spec.ts

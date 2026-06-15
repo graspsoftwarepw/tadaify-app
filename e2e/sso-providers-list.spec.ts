@@ -9,7 +9,7 @@
  * Covers acceptance criteria S1, S2, S3 from issue tadaify-app#183.
  *
  * Prerequisites:
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *   - No Supabase interaction needed — these are UI-only smoke checks.
  *
  * Run: npx playwright test e2e/sso-providers-list.spec.ts

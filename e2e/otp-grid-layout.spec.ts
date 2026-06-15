@@ -15,10 +15,10 @@
  * Locked rules: feedback_bug_fix_must_have_tests.md, DEC-323, DEC-325
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
- *   - Mailpit accessible at http://localhost:54354
+ *   - `npm run dev` (App: http://localhost:44200)
+ *   - Mailpit accessible at http://localhost:44214
  *
  * Run: npx playwright test e2e/otp-grid-layout.spec.ts
  */
@@ -36,8 +36,8 @@ const __dirname = dirname(__filename);
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Supabase local API (port-band 5435X for tadaify) */
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+/** Supabase local API (port-band 44210-44219 for tadaify) */
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 
 /** Service role key — read from .dev.vars if not in env */
 const SERVICE_ROLE_KEY = (() => {
@@ -59,7 +59,7 @@ const SERVICE_ROLE_KEY = (() => {
   return "";
 })();
 
-const MAILPIT_URL = "http://localhost:54354";
+const MAILPIT_URL = "http://localhost:44214";
 
 /** Handle prefix — all t178* rows cleaned up in afterAll */
 const HANDLE_PREFIX = "t178";

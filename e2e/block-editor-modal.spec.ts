@@ -10,9 +10,9 @@
  * Story: tadaify-app#200 F-BLOCK-INFRA-EDITOR-MODAL-001
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) — NOT required for shell-only tests
+ *   - `supabase start` (port-band 44210-44219) — NOT required for shell-only tests
  *     (test harness page is static, no auth needed)
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *
  * Test harness: /test-block-editor-modal (app/routes/test-block-editor-modal.tsx)
  * No auth required — test harness mounts modal directly.

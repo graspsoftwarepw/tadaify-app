@@ -9,9 +9,9 @@
  * Covers: BR-Slice-C / BR-ONBOARDING-001..006 / DEC-310=B / DEC-311=A / DEC-332=D
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with env-setup reliability fix (#168)
+ *   - `supabase start` (port-band 44210-44219) with env-setup reliability fix (#168)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *
  * Layer 1: URL-state-machine traversal (no auth required — wizard is pre-auth)
  * Layer 2: per-test handle isolation (t165s1–t165s5 prefixed handles)
@@ -27,7 +27,7 @@ import { test, expect } from "@playwright/test";
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 /** Handle prefix — all t165* rows cleaned up in afterAll */

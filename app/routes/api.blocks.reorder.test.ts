@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { action } from "./api.blocks.reorder";
 import * as cachePurge from "~/lib/cache-purge";
 
-const SUPABASE_URL = "http://localhost:54321";
+const SUPABASE_URL = "http://localhost:44210";
 const SERVICE_KEY = "test-service-key";
 const PAGE_ID = "aaaaaaaa-0000-0000-0000-000000000001";
 const USER_ID = "bbbbbbbb-0000-0000-0000-000000000001";

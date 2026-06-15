@@ -7,7 +7,7 @@
  * component directly so Playwright can exercise it without requiring the full
  * block-picker flow (which is not yet implemented, per Phase 1 sub-story scope).
  *
- * The page is reachable at http://localhost:5173/test-block-editor-modal and
+ * The page is reachable at http://localhost:44200/test-block-editor-modal and
  * provides:
  *   - A button to open the editor modal (S1, S2, S3, S4, S6, S7)
  *   - Viewport-responsive layout (S5 uses 375×667 viewport)

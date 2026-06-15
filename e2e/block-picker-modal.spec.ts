@@ -10,7 +10,7 @@
  * Story: tadaify-app#201 F-BLOCK-INFRA-PICKER-MODAL-001
  *
  * Prerequisites:
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *   - No auth required — test harness mounts modal directly
  *
  * Test harness: /test-block-picker-modal (app/routes/test-block-picker-modal.tsx)

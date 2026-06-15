@@ -57,7 +57,7 @@ describe("handleScheduled — avatar cron wiring", () => {
   it("calls runOrphanCleanup and consumePendingR2Deletes when AVATARS_R2 binding is present", async () => {
     await handleScheduled({
       AVATARS_R2: makeFakeR2(),
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
     });
 
@@ -92,7 +92,7 @@ describe("handleScheduled — avatar cron wiring", () => {
 
     await handleScheduled({
       AVATARS_R2: makeFakeR2(),
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
     });
 
@@ -111,7 +111,7 @@ describe("handleScheduled — avatar cron wiring", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await handleScheduled({
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
       // No AVATARS_R2
     });
@@ -162,7 +162,7 @@ describe("handleScheduled — avatar cron wiring", () => {
 
     await handleScheduled({
       AVATARS_R2: makeFakeR2(),
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "test-key",
     });
 

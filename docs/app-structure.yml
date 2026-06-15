@@ -30,24 +30,25 @@ migrations:
 local_dev:
   # port_namespace MUST equal supabase/config.toml project_id ("tadaify").
   port_namespace: tadaify
-  base_port: 54351                  # [api] port — the app's anchor / registry row.
-  range: [54350, 54359]             # inclusive [lo, hi]; tadaify's reserved Supabase band.
+  # Ports are governed by `ports.yaml` at the repo root — the single source of truth
+  # (grasp-running-local-apps). This block mirrors it for humans; `ports.yaml` is authoritative,
+  # and supersedes the old central agents-local/docs/business-app-port-ranges.yml row.
+  range: [44200, 44229]             # tadaify-app's registered high-band slice (Mac-safe)
   container_pattern: "supabase_<service>_<project_id>"
   services:
-    # Every port supabase/config.toml declares is mirrored here — no hidden
-    # defaults (ports.md §4). Each value equals the live config.toml value.
-    supabase_api: 54351             # [api] port
-    db: 54352                       # [db] port
-    shadow: 54350                   # [db] shadow_port
-    pooler: 54359                   # [db.pooler] port  (enabled = false, port still reserved)
-    studio: 54353                   # [studio] port
-    inbucket: 54354                 # [inbucket] port
-    analytics: 54357                # [analytics] port  (enabled = true, backend = postgres)
-    edge_inspector: 8083            # [edge_runtime] inspector_port — outside the 5435x band,
-                                    # host-shared, declared explicitly (ports.md §1/§4).
-    # App dev/preview host ports — owned by the build tooling, not config.toml.
-    # Pinned in package.json via --port … --strictPort (the script is the source of
-    # truth; these MUST equal what it pins). Both sit OUTSIDE the 5435x range and are
-    # the shared host ports recorded in the central registry's shared_host_ports.
-    app: 5173                       # react-router dev --port 5173 --strictPort (== shared_host_ports.app_vite)
-    test_preview: 4321              # vite preview --port 4321 --strictPort (== shared_host_ports.test_preview_astro)
+    # --- App / preview host ports (build tooling, not config.toml; pinned via --strictPort). ---
+    app: 44200                      # react-router dev --port 44200 --strictPort
+    test_preview: 44201             # vite preview --port 44201 --strictPort
+    # --- Supabase local stack — EVERY port supabase/config.toml can expose (reserved even when off). ---
+    supabase_api: 44210             # [api] Kong/API gateway
+    db: 44211                       # [db] Postgres
+    shadow: 44212                   # [db] shadow_port — migration shadow/diff database
+    studio: 44213                   # [studio]
+    inbucket: 44214                 # [inbucket] mail web UI
+    inbucket_smtp: 44215            # [inbucket] smtp_port (off by default)
+    inbucket_pop3: 44216            # [inbucket] pop3_port (off by default)
+    analytics: 44217                # [analytics] Logflare (backend = postgres)
+    edge_inspector: 44218           # [edge_runtime] inspector_port — edge function Chrome inspector
+    pooler: 44219                   # [db.pooler] Supavisor connection pooler (off by default)
+  # Ad-hoc pool (worktree previews + ephemeral Supabase e2e bands): see `ports.yaml` `dynamic`.
+  dynamic: [44220, 44229]

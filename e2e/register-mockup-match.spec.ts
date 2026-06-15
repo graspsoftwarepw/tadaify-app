@@ -14,7 +14,7 @@
  *
  * Prerequisite for runs:
  *   - `./bin/worktree-env-init.sh && supabase start` (per #168)
- *   - `npm run dev` on http://localhost:5173 (or TEST_BASE_URL override)
+ *   - `npm run dev` on http://localhost:44200 (or TEST_BASE_URL override)
  */
 
 import { test, expect } from "@playwright/test";

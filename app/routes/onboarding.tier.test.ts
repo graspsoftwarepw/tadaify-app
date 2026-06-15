@@ -305,13 +305,13 @@ describe("onboarding.tier — U_TIER_DB_1: upsertTierFree calls Supabase with ti
     mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
 
     await upsertTierFree("user-abc-123", {
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "service-key",
     });
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://localhost:54351/rest/v1/profile_extras");
+    expect(url).toBe("http://localhost:44210/rest/v1/profile_extras");
     expect(opts.method).toBe("POST");
 
     const body = JSON.parse(opts.body as string) as { user_id: string; tier_slug: string };
@@ -323,7 +323,7 @@ describe("onboarding.tier — U_TIER_DB_1: upsertTierFree calls Supabase with ti
     mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
 
     await upsertTierFree("user-abc-123", {
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "service-key",
     });
 
@@ -351,7 +351,7 @@ describe("onboarding.tier — U_TIER_DB_2: upsertTierFree always writes 'free' (
     mockFetch.mockResolvedValueOnce(new Response("", { status: 201 }));
 
     await upsertTierFree("user-xyz", {
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "sk",
     });
 
@@ -384,7 +384,7 @@ describe("onboarding.tier — U_TIER_DB_3: upsertTierFree idempotent on 2nd call
       .mockResolvedValueOnce(new Response("", { status: 201 }))
       .mockResolvedValueOnce(new Response("", { status: 200 }));
 
-    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    const env = { SUPABASE_URL: "http://localhost:44210", SUPABASE_SERVICE_ROLE_KEY: "sk" };
 
     await expect(upsertTierFree("user-dup", env)).resolves.not.toThrow();
     await expect(upsertTierFree("user-dup", env)).resolves.not.toThrow();
@@ -409,7 +409,7 @@ describe("onboarding.tier — U_TIER_DB_8: upsertTierFree throws on Supabase fai
       new Response("internal error", { status: 500 }),
     );
 
-    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    const env = { SUPABASE_URL: "http://localhost:44210", SUPABASE_SERVICE_ROLE_KEY: "sk" };
     await expect(upsertTierFree("user-fail", env)).rejects.toThrow(
       /profile_extras INSERT failed: 500/,
     );
@@ -420,7 +420,7 @@ describe("onboarding.tier — U_TIER_DB_8: upsertTierFree throws on Supabase fai
       new Response("permission denied", { status: 403 }),
     );
 
-    const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+    const env = { SUPABASE_URL: "http://localhost:44210", SUPABASE_SERVICE_ROLE_KEY: "sk" };
     await expect(upsertTierFree("user-denied", env)).rejects.toThrow(
       /profile_extras INSERT failed: 403/,
     );
@@ -444,7 +444,7 @@ describe("onboarding.tier — U_TIER_DB_9: existing non-free tier is not overwri
     mockFetch.mockResolvedValueOnce(new Response("", { status: 200 }));
 
     await upsertTierFree("user-existing-pro", {
-      SUPABASE_URL: "http://localhost:54351",
+      SUPABASE_URL: "http://localhost:44210",
       SUPABASE_SERVICE_ROLE_KEY: "sk",
     });
 
@@ -490,7 +490,7 @@ describe("onboarding.tier — U_TIER_DB_10: action throws on /auth/v1/user 5xx (
         context: {
           cloudflare: {
             env: {
-              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_URL: "http://localhost:44210",
               SUPABASE_SERVICE_ROLE_KEY: "sk",
             },
           },
@@ -520,7 +520,7 @@ describe("onboarding.tier — U_TIER_DB_10: action throws on /auth/v1/user 5xx (
         context: {
           cloudflare: {
             env: {
-              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_URL: "http://localhost:44210",
               SUPABASE_SERVICE_ROLE_KEY: "sk",
             },
           },
@@ -567,7 +567,7 @@ describe("onboarding.tier — U_TIER_DB_11: action throws on /auth/v1/user 200 w
         context: {
           cloudflare: {
             env: {
-              SUPABASE_URL: "http://localhost:54351",
+              SUPABASE_URL: "http://localhost:44210",
               SUPABASE_SERVICE_ROLE_KEY: "sk",
             },
           },
@@ -609,7 +609,7 @@ describe("onboarding.tier — U_TIER_DB_12: action gracefully skips on 401/403 (
       context: {
         cloudflare: {
           env: {
-            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_URL: "http://localhost:44210",
             SUPABASE_SERVICE_ROLE_KEY: "sk",
           },
         },
@@ -644,7 +644,7 @@ describe("onboarding.tier — U_TIER_DB_12: action gracefully skips on 401/403 (
       context: {
         cloudflare: {
           env: {
-            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_URL: "http://localhost:44210",
             SUPABASE_SERVICE_ROLE_KEY: "sk",
           },
         },
@@ -716,7 +716,7 @@ describe("onboarding.tier — U_TIER_DB_5: action skips DB write if no auth cook
       context: {
         cloudflare: {
           env: {
-            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_URL: "http://localhost:44210",
             SUPABASE_SERVICE_ROLE_KEY: "sk",
           },
         },
@@ -819,7 +819,7 @@ describe("onboarding.tier — U_AVATAR_2: persistAvatarR2Key PATCHes profile_ext
 
   const userId = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
   const validKey = `avatars/${userId}/deadbeef-1234-5678-9abc-def012345678.jpg`;
-  const env = { SUPABASE_URL: "http://localhost:54351", SUPABASE_SERVICE_ROLE_KEY: "sk" };
+  const env = { SUPABASE_URL: "http://localhost:44210", SUPABASE_SERVICE_ROLE_KEY: "sk" };
 
   it("PATCHes profile_extras with avatar_r2_key for the user", async () => {
     mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
@@ -828,7 +828,7 @@ describe("onboarding.tier — U_AVATAR_2: persistAvatarR2Key PATCHes profile_ext
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(`http://localhost:54351/rest/v1/profile_extras?user_id=eq.${userId}`);
+    expect(url).toBe(`http://localhost:44210/rest/v1/profile_extras?user_id=eq.${userId}`);
     expect(opts.method).toBe("PATCH");
 
     const body = JSON.parse(opts.body as string) as { avatar_r2_key: string };
@@ -904,7 +904,7 @@ describe("onboarding.tier — U_AVATAR_3: action persists avatar_r2_key from URL
       context: {
         cloudflare: {
           env: {
-            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_URL: "http://localhost:44210",
             SUPABASE_SERVICE_ROLE_KEY: "sk",
           },
         },
@@ -952,7 +952,7 @@ describe("onboarding.tier — U_AVATAR_3: action persists avatar_r2_key from URL
       context: {
         cloudflare: {
           env: {
-            SUPABASE_URL: "http://localhost:54351",
+            SUPABASE_URL: "http://localhost:44210",
             SUPABASE_SERVICE_ROLE_KEY: "sk",
           },
         },

@@ -9,10 +9,10 @@
  * Covers: BR-Slice-B (OTP-only register), BUG-149-{1,2,3,4,6}, ECN-149-{01,04,05,09,10,12}
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with Bug 2 + Bug 3 fix in config.toml
+ *   - `supabase start` (port-band 44210-44219) with Bug 2 + Bug 3 fix in config.toml
  *   - `.dev.vars` configured with correct Workers env bindings (Bug 4 fix)
- *   - `npm run dev` (App: http://localhost:5173)
- *   - Mailpit accessible at http://localhost:54354 (Supabase local SMTP catcher)
+ *   - `npm run dev` (App: http://localhost:44200)
+ *   - Mailpit accessible at http://localhost:44214 (Supabase local SMTP catcher)
  *
  * S4 (Bug 5 — email template) is deferred to #150.
  * S6 requires HANDLE_RESERVATION_TTL_SECONDS<=30 (reads .dev.vars as fallback).
@@ -54,13 +54,13 @@ function readDevVar(key: string): string | undefined {
 // Constants — Supabase local (from .dev.vars / env)
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   // fallback to known local demo JWT (safe — local dev only)
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
-const MAILPIT_URL = "http://localhost:54354";
+const MAILPIT_URL = "http://localhost:44214";
 
 // Handle prefix — constant per spec run; cleaned up in afterAll
 const HANDLE_PREFIX = "t163";

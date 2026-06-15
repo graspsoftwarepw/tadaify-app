@@ -3,7 +3,7 @@
  * Run: node --test supabase/config-hook.test.mjs
  *
  * Reads config.toml via simple regex (no TOML parser dep) to assert:
- *   - hook URL uses the correct custom port (54351, not 54321)
+ *   - hook URL uses the reserved custom port (44210, not the Supabase default 54321)
  *   - [functions.before-user-created] has verify_jwt = false (Bug 3 fix)
  *   - API port matches hook URL port (drift detector)
  *
@@ -22,14 +22,14 @@ const configPath = join(__dirname, "config.toml");
 const config = readFileSync(configPath, "utf-8");
 
 describe("config.toml — hook URL port (Bug 2 regression guard)", () => {
-  it("hook URL uses port 54351 (not 54321)", () => {
+  it("hook URL uses port 44210 (not 54321)", () => {
     // Match the uri line under [auth.hook.before_user_created]
     const match = config.match(/\[auth\.hook\.before_user_created\][^[]*uri\s*=\s*"([^"]+)"/s);
     assert.ok(match, "Expected [auth.hook.before_user_created] uri to be present");
     const uri = match[1];
     assert.ok(
-      uri.includes(":54351/"),
-      `Hook URI should use port 54351, got: ${uri}`
+      uri.includes(":44210/"),
+      `Hook URI should use port 44210, got: ${uri}`
     );
     assert.ok(
       !uri.includes(":54321/"),

@@ -10,8 +10,8 @@ Per-test authorization protocol: user dictates edge cases live during Inbucket c
 ## Prerequisites
 
 - `supabase start` running (local Docker)
-- Inbucket available at `http://localhost:54354`
-- `npm run dev` running on port 5173
+- Inbucket available at `http://localhost:44214`
+- `npm run dev` running on port 44200
 - Seed user `test-register-001a-happy@local.test` / `TestPass123!` in `supabase/seed.sql`
 
 ---
@@ -29,7 +29,7 @@ Per-test authorization protocol: user dictates edge cases live during Inbucket c
 6. Click "Continue with Email" → Section B-email appears
 7. Type `test-register-001a-happy@local.test` in email input
 8. Click "Send me a code →" → Section B-otp appears; email in heading confirmed
-9. Open Inbucket at `http://localhost:54354`; read 6-digit code from email
+9. Open Inbucket at `http://localhost:44214`; read 6-digit code from email
 10. Enter code digit-by-digit in OTP grid → "Verify code →" button enables
 11. Click "Verify code →" → Section B-password-toggle appears
 12. Assert Card 1 (send code) is pre-selected (DEC-295 default)

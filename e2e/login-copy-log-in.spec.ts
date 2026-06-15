@@ -20,7 +20,7 @@
  * Covers: feedback_brand_lock_sweep_all_renderings.md
  *
  * Prerequisites:
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *   No auth required — /login is a public route.
  *
  * Run: npx playwright test e2e/login-copy-log-in.spec.ts

@@ -16,9 +16,9 @@
  * S5 — GDPR export includes tier_slug in JSON payload — ECN-139-07
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with env-setup reliability fix (#168)
+ *   - `supabase start` (port-band 44210-44219) with env-setup reliability fix (#168)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
- *   - `npm run dev` (App: http://localhost:5173)
+ *   - `npm run dev` (App: http://localhost:44200)
  *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY exported in env
  *   - SUPABASE_ANON_KEY exported for S3 cross-user REST test
  *
@@ -29,10 +29,10 @@ import { test, expect, type Page } from "@playwright/test";
 
 // ── Env / constants ───────────────────────────────────────────────────────────
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? "";
-const APP_URL = "http://localhost:5173";
+const APP_URL = "http://localhost:44200";
 
 /** Password used for all seeded test accounts */
 const TEST_PASSWORD = "TestPass123!";
@@ -389,7 +389,7 @@ test("S5 — GDPR export: user-export-data Edge Function returns tier_slug='free
     await injectSession(page, accessToken);
     await completeWizardAndTierStep(page, handle);
 
-    // Call the Edge Function (local: http://127.0.0.1:54351/functions/v1/user-export-data)
+    // Call the Edge Function (local: http://127.0.0.1:44210/functions/v1/user-export-data)
     const edgeFnUrl = `${SUPABASE_URL}/functions/v1/user-export-data`;
     const exportRes = await fetch(edgeFnUrl, {
       method: "GET",

@@ -10,7 +10,7 @@
  *
  * Prerequisites:
  *   - `./bin/worktree-env-init.sh` (populates .dev.vars from supabase status)
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `npm run dev` (starts dev server — @cloudflare/vite-plugin auto-emulates
  *     AVATARS_R2 via miniflare; no MOCK_R2 env var needed)
  *
@@ -35,7 +35,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54351";
+const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY ?? "";
 

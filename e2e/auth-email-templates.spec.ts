@@ -28,7 +28,7 @@ import { test, expect } from "@playwright/test";
 // does not execute the scenarios.
 // Tracking: https://github.com/graspsoftwarepw/tadaify-app/issues/160
 // ============================================================================
-const INBUCKET_URL = "http://127.0.0.1:54354";
+const INBUCKET_URL = "http://127.0.0.1:44214";
 
 // ---------------------------------------------------------------------------
 // S1 — Signup OTP email rendering (HTML + plain-text + brand)

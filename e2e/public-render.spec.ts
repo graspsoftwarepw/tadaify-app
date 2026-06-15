@@ -24,7 +24,7 @@
 
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:5173";
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:44200";
 
 const HANDLE_S1 = "test_render_s1";
 const HANDLE_S5 = "test_render_s5";
