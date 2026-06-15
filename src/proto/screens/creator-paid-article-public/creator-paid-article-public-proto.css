@@ -1,0 +1,212 @@
+/* Public single Paid article — scoped styles for the article-read page.
+   Faithful port of the body styles in
+   mockups/tadaify-mvp/creator-paid-article-public.html: breadcrumb, article
+   hero with author/price/purchased meta, cover, sticky Buy bar, long-form body
+   typography, the blur-then-unlock paywall card, comments, and related cards.
+   Token-driven so it re-themes in light/dark. Scoped under
+   `.proto-paid-article-public`; chrome is PublicChrome's.
+
+   The paywall blur is the paid-content product mechanic, not premium-feature
+   gating.
+
+   @implements fr-creator-paid-article-public */
+
+.proto-paid-article-public * { box-sizing: border-box; }
+
+.proto-paid-article-public .article-wrap {
+  max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; min-width: 0;
+}
+.proto-paid-article-public .breadcrumb { font-size: 13px; color: var(--fg-muted); margin-bottom: 18px; }
+.proto-paid-article-public .breadcrumb a { color: var(--brand-primary); text-decoration: none; }
+.proto-paid-article-public .breadcrumb a:hover { text-decoration: underline; }
+
+.proto-paid-article-public .article-hero h1 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(30px, 5vw, 42px); line-height: 1.15; margin: 0 0 16px; letter-spacing: -0.01em;
+}
+.proto-paid-article-public .article-meta {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  font-size: 13.5px; color: var(--fg-muted); margin-bottom: 24px;
+}
+.proto-paid-article-public .article-meta .author { display: inline-flex; align-items: center; gap: 8px; }
+.proto-paid-article-public .article-meta .author .av {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;
+}
+.proto-paid-article-public .price-chip {
+  padding: 4px 12px; border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary); font-weight: 600; font-size: 13px;
+}
+.proto-paid-article-public .purchased-chip {
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--success-bg); color: var(--success);
+  font-weight: 600; font-size: 12px;
+}
+
+.proto-paid-article-public .cover-img {
+  width: 100%; aspect-ratio: 16/9; border-radius: 16px;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: clamp(40px, 8vw, 64px); margin-bottom: 28px;
+}
+
+/* Sticky Buy CTA */
+.proto-paid-article-public .sticky-buy {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 24px; box-shadow: 0 4px 16px color-mix(in srgb, var(--fg) 4%, transparent);
+}
+.proto-paid-article-public .sb-price {
+  font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--brand-primary);
+}
+.proto-paid-article-public .sb-meta { font-size: 12.5px; color: var(--fg-muted); }
+.proto-paid-article-public .sb-spacer { flex: 1; }
+.proto-paid-article-public .btn-buy-lg {
+  padding: 10px 22px; border-radius: 999px;
+  background: var(--brand-primary); color: #fff;
+  font-weight: 600; font-size: 14.5px; border: 0; cursor: pointer; font-family: inherit;
+}
+.proto-paid-article-public .btn-buy-lg:hover { background: var(--brand-primary-hover); }
+
+/* Article body */
+.proto-paid-article-public .article-body {
+  font-size: 17px; line-height: 1.7; color: var(--fg);
+  font-family: var(--font-display); font-weight: 400;
+}
+.proto-paid-article-public .article-body h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 28px; margin: 36px 0 14px; line-height: 1.2;
+}
+.proto-paid-article-public .article-body p { margin: 0 0 18px; }
+.proto-paid-article-public .article-body blockquote {
+  border-left: 3px solid var(--brand-primary); padding: 4px 18px; margin: 24px 0;
+  color: var(--fg-muted); font-style: italic;
+}
+.proto-paid-article-public .article-body ul { margin: 0 0 18px; padding-left: 22px; }
+.proto-paid-article-public .article-body li { margin-bottom: 8px; }
+
+/* Paywall */
+.proto-paid-article-public .paywall-wrap { position: relative; margin: 24px 0; }
+.proto-paid-article-public .paywall-blur {
+  filter: blur(7px); opacity: 0.55; pointer-events: none; user-select: none;
+  max-height: 360px; overflow: hidden;
+}
+.proto-paid-article-public .paywall-blur.is-unlocked {
+  filter: none; opacity: 1; pointer-events: auto; user-select: auto;
+  max-height: none; overflow: visible;
+}
+.proto-paid-article-public .paywall-card {
+  margin-top: -260px; position: relative; z-index: 2;
+  padding: 32px 24px; border-radius: 18px;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--fg) 10%, transparent);
+  text-align: center;
+}
+.proto-paid-article-public .pw-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 26px; margin-bottom: 14px;
+}
+.proto-paid-article-public .paywall-card h3 {
+  font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 8px;
+}
+.proto-paid-article-public .paywall-card p {
+  color: var(--fg-muted); font-size: 14px; max-width: 420px; margin: 0 auto 18px; line-height: 1.55;
+}
+.proto-paid-article-public .pw-price {
+  font-family: var(--font-display); font-size: 38px; font-weight: 600; color: var(--brand-primary); margin: 0 0 14px;
+}
+.proto-paid-article-public .pw-buy {
+  padding: 12px 28px; border-radius: 999px;
+  background: var(--brand-primary); color: #fff;
+  font-weight: 600; font-size: 15px; border: 0; cursor: pointer; font-family: inherit;
+}
+.proto-paid-article-public .pw-buy:hover { background: var(--brand-primary-hover); }
+.proto-paid-article-public .pw-reassure {
+  font-size: 12.5px; color: var(--fg-muted); margin-top: 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.proto-paid-article-public .pw-stripe {
+  margin-top: 18px; padding: 12px 14px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--border);
+  font-size: 12px; color: var(--fg-muted);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+
+/* Comments */
+.proto-paid-article-public .comments-section {
+  margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--border);
+}
+.proto-paid-article-public .comments-section h3 {
+  font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 4px;
+}
+.proto-paid-article-public .cs-sub { font-size: 13px; color: var(--fg-muted); margin-bottom: 16px; }
+.proto-paid-article-public .comments-list { display: flex; flex-direction: column; gap: 14px; }
+.proto-paid-article-public .comment-row {
+  display: grid; grid-template-columns: 36px 1fr; gap: 12px;
+  padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-elevated); min-width: 0;
+}
+.proto-paid-article-public .comment-row .av {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg-muted); display: flex; align-items: center; justify-content: center;
+  font-weight: 600; color: var(--fg-muted); font-size: 13px;
+}
+.proto-paid-article-public .comment-row .c-author { font-weight: 600; font-size: 13px; }
+.proto-paid-article-public .comment-row .c-meta { font-size: 12px; color: var(--fg-muted); margin-bottom: 4px; }
+.proto-paid-article-public .comment-row .c-text { font-size: 13.5px; line-height: 1.55; }
+
+/* Related */
+.proto-paid-article-public .related {
+  margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--border);
+}
+.proto-paid-article-public .related h3 {
+  font-family: var(--font-display); font-weight: 600; font-size: 22px; margin: 0 0 16px;
+}
+.proto-paid-article-public .related-grid {
+  display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.proto-paid-article-public .related-card {
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-elevated); overflow: hidden; cursor: pointer;
+  padding: 0; text-align: left; font-family: inherit; min-width: 0;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.proto-paid-article-public .related-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.proto-paid-article-public .rc-cover {
+  aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 24px; background: linear-gradient(135deg, #FB7185, #BE185D);
+}
+.proto-paid-article-public .rc-cover.t-indigo { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+.proto-paid-article-public .rc-cover.t-warm { background: linear-gradient(135deg, #F59E0B, #D97706); }
+.proto-paid-article-public .rc-cover.t-emerald { background: linear-gradient(135deg, #34D399, #047857); }
+.proto-paid-article-public .rc-meta { padding: 10px 12px; }
+.proto-paid-article-public .rc-title { font-weight: 600; font-size: 13.5px; margin: 0 0 4px; color: var(--fg); }
+.proto-paid-article-public .rc-price { font-size: 12px; color: var(--brand-primary); font-weight: 600; }
+
+/* Mockup-only state switcher */
+.proto-paid-article-public .state-strip {
+  max-width: 760px; margin: 24px auto 0; padding: 12px 20px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12px; color: var(--fg-muted); border-top: 1px dashed var(--border-strong);
+}
+.proto-paid-article-public .state-strip button {
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-weight: 600; color: var(--fg-muted); cursor: pointer; font-family: inherit;
+}
+.proto-paid-article-public .state-strip button:hover,
+.proto-paid-article-public .state-strip button.is-active {
+  color: var(--brand-primary); border-color: var(--brand-primary);
+}
+.proto-paid-article-public .state-strip .ss-note { opacity: 0.6; margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .proto-paid-article-public * { transition: none !important; }
+}

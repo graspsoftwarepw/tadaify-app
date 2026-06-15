@@ -1,0 +1,247 @@
+/* Public Custom page — token-driven styling ported from
+   mockups/tadaify-mvp/creator-custom-public.html. Scoped under
+   `.proto-custom-public`; chrome lives in public-chrome.css. Block patterns
+   mirror the homepage block render; the image placeholder gradient is
+   intentional art.
+
+   @implements fr-creator-custom-public */
+
+/* Page hero (title from page settings) */
+.proto-custom-public .page-hero {
+  max-width: 760px; margin: 28px auto 8px;
+  padding: 0 24px; text-align: center;
+}
+.proto-custom-public .page-hero h1 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(34px, 5vw, 52px);
+  letter-spacing: -0.015em; margin: 0; line-height: 1.05;
+}
+.proto-custom-public .page-hero .page-sub {
+  color: var(--fg-muted); margin-top: 14px;
+  font-size: 16px; line-height: 1.6;
+}
+
+/* Block stack */
+.proto-custom-public .blocks {
+  max-width: 700px; margin: 36px auto 24px;
+  padding: 0 24px;
+  display: flex; flex-direction: column; gap: 18px;
+  min-width: 0;
+}
+.proto-custom-public .b-heading {
+  font-family: var(--font-display); font-weight: 600;
+  letter-spacing: -0.01em; line-height: 1.15;
+  margin: 14px 0 0;
+}
+.proto-custom-public .b-heading.h1 { font-size: clamp(30px, 4vw, 42px); text-align: center; }
+.proto-custom-public .b-heading.h2 { font-size: clamp(22px, 3vw, 30px); text-align: center; }
+.proto-custom-public .b-heading.h3 { font-size: clamp(18px, 2.4vw, 22px); }
+.proto-custom-public .b-heading-sub {
+  text-align: center; color: var(--fg-muted);
+  font-size: 15px; margin: 6px 0 0; line-height: 1.55;
+}
+
+.proto-custom-public .b-image {
+  display: block; margin: 0 auto;
+  max-width: 100%; border-radius: 14px;
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.proto-custom-public .b-image .ph {
+  width: 100%; aspect-ratio: 4 / 3;
+  background:
+    radial-gradient(180px 160px at 50% 40%, rgba(255, 255, 255, 0.55), transparent 60%),
+    linear-gradient(135deg, #EF4444, #F59E0B, #FDE68A);
+  display: flex; align-items: flex-end; justify-content: center;
+  color: #7C2D12; font-family: var(--font-display); font-weight: 600;
+  font-size: 18px; padding: 16px; text-align: center;
+}
+
+.proto-custom-public .b-link {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; width: 100%;
+  padding: 16px 20px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow-sm);
+  color: var(--fg); text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  font-weight: 600; font-size: 15px;
+}
+.proto-custom-public .b-link:hover {
+  transform: translateY(-2px); border-color: var(--brand-primary); box-shadow: var(--shadow);
+}
+.proto-custom-public .b-link .b-link-meta {
+  font-size: 11.5px; color: var(--fg-muted); font-weight: 500;
+}
+.proto-custom-public .b-link.is-warm {
+  background: var(--brand-warm); color: #1F2937; border-color: var(--brand-warm);
+  justify-content: center; padding: 18px 24px; font-size: 16px;
+}
+.proto-custom-public .b-link.is-warm:hover {
+  background: var(--brand-warm-dark); color: #fff; border-color: var(--brand-warm-dark);
+}
+
+.proto-custom-public .b-divider {
+  border: 0; border-top: 1px solid var(--border); margin: 6px 0; width: 100%;
+}
+
+/* Accordion */
+.proto-custom-public .b-accordion {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+.proto-custom-public .b-acc-item { border-bottom: 1px solid var(--border); }
+.proto-custom-public .b-acc-item:last-child { border-bottom: 0; }
+.proto-custom-public .b-acc-summary {
+  width: 100%; background: transparent; border: 0; cursor: pointer;
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  font-weight: 600; font-size: 15px; color: var(--fg); text-align: left;
+}
+.proto-custom-public .b-acc-mark {
+  margin-left: auto; font-size: 20px; line-height: 1; color: var(--fg-subtle);
+}
+.proto-custom-public .b-acc-body {
+  padding: 0 20px 18px;
+  color: var(--fg-muted);
+  font-size: 14.5px; line-height: 1.65;
+  font-family: var(--font-display);
+}
+
+/* Newsletter block */
+.proto-custom-public .b-newsletter {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.proto-custom-public .b-newsletter h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 22px; margin: 0;
+}
+.proto-custom-public .b-newsletter p { color: var(--fg-muted); margin: 8px 0 16px; font-size: 13.5px; }
+.proto-custom-public .b-newsletter form {
+  display: flex; gap: 8px; max-width: 460px; margin: 0 auto; flex-wrap: wrap;
+}
+.proto-custom-public .b-newsletter input[type="email"] {
+  flex: 1; min-width: 200px;
+  padding: 11px 14px; border: 1px solid var(--border-strong); border-radius: 99px;
+  font: inherit; font-size: 14px; outline: 0;
+  background: var(--bg); color: var(--fg);
+}
+.proto-custom-public .b-newsletter input[type="email"]:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+.proto-custom-public .b-newsletter button {
+  padding: 11px 20px; border-radius: 99px;
+  background: var(--brand-primary); color: #fff;
+  border: 0; font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.proto-custom-public .b-newsletter button:hover { background: var(--brand-primary-hover); }
+.proto-custom-public .b-nl-trust { margin-top: 10px; font-size: 11.5px; color: var(--fg-subtle); }
+
+/* Sub-view: Password gate */
+.proto-custom-public .lock-screen {
+  min-height: 60vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; padding: 60px 24px;
+  max-width: 460px; margin: 0 auto; text-align: center;
+}
+.proto-custom-public .lock-emoji {
+  width: 76px; height: 76px; border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 14%, transparent), color-mix(in srgb, var(--brand-warm) 10%, transparent));
+  box-shadow: var(--shadow); font-size: 36px;
+}
+.proto-custom-public .lock-screen h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 28px; margin: 0;
+}
+.proto-custom-public .lock-screen p {
+  color: var(--fg-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 380px;
+}
+.proto-custom-public .lock-form {
+  width: 100%; max-width: 360px;
+  display: flex; flex-direction: column; gap: 10px; margin-top: 8px;
+}
+.proto-custom-public .lock-form input {
+  width: 100%;
+  padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 12px;
+  background: var(--bg-elevated); color: var(--fg);
+  font: inherit; font-size: 15px; outline: 0;
+  text-align: center; letter-spacing: 0.05em;
+}
+.proto-custom-public .lock-form input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+.proto-custom-public .lock-form input.is-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 18%, transparent);
+}
+.proto-custom-public .lock-form button {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--brand-primary); color: #fff;
+  border: 0; font-weight: 600; font-size: 14.5px; cursor: pointer;
+}
+.proto-custom-public .lock-form button:hover { background: var(--brand-primary-hover); }
+.proto-custom-public .lock-error { color: var(--danger); font-size: 12.5px; margin-top: -6px; }
+.proto-custom-public .lock-link { color: var(--fg-muted); font-size: 12.5px; }
+.proto-custom-public .lock-link a { color: var(--brand-primary); font-weight: 600; }
+.proto-custom-public .lock-hint { font-size: 11px; color: var(--fg-subtle); opacity: 0.75; }
+.proto-custom-public .lock-hint b { color: var(--fg-muted); }
+
+/* Sub-view: Empty page placeholder */
+.proto-custom-public .empty-screen {
+  min-height: 56vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 60px 24px;
+  max-width: 540px; margin: 0 auto; text-align: center;
+}
+.proto-custom-public .empty-emoji {
+  width: 84px; height: 84px; border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 14%, transparent), color-mix(in srgb, var(--brand-warm) 10%, transparent));
+  font-size: 40px;
+}
+.proto-custom-public .empty-screen h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 28px; margin: 0;
+}
+.proto-custom-public .empty-screen p { color: var(--fg-muted); font-size: 14.5px; line-height: 1.6; margin: 0; }
+.proto-custom-public .es-other-pages {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px;
+}
+.proto-custom-public .es-other-pages a {
+  padding: 8px 14px; border-radius: 99px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-size: 13px; color: var(--fg);
+  transition: border-color 140ms, transform 140ms;
+}
+.proto-custom-public .es-other-pages a:hover { border-color: var(--brand-primary); transform: translateY(-1px); }
+
+/* Mockup-only in-view state switcher */
+.proto-custom-public .state-strip {
+  max-width: 720px; margin: 30px auto 0;
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12px; color: var(--fg-muted);
+  border-top: 1px dashed var(--border-strong);
+}
+.proto-custom-public .state-strip button {
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-weight: 600; color: var(--fg-muted); cursor: pointer;
+}
+.proto-custom-public .state-strip button:hover,
+.proto-custom-public .state-strip button.is-active {
+  color: var(--brand-primary); border-color: var(--brand-primary);
+}
+.proto-custom-public .state-strip .ss-note { opacity: 0.6; margin-left: auto; }
+
+@media (max-width: 600px) {
+  .proto-custom-public .b-link { padding: 14px 16px; font-size: 14px; }
+  .proto-custom-public .blocks { gap: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proto-custom-public .b-link,
+  .proto-custom-public .es-other-pages a { transition: none !important; }
+}

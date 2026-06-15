@@ -16,6 +16,16 @@ import { CreatorPublicScreen } from "./screens/creator-public/CreatorPublicScree
 import { CreatorAboutPublicScreen } from "./screens/creator-about-public/CreatorAboutPublicScreen";
 import { CreatorBlogPublicScreen } from "./screens/creator-blog-public/CreatorBlogPublicScreen";
 import { CreatorPortfolioPublicScreen } from "./screens/creator-portfolio-public/CreatorPortfolioPublicScreen";
+import { CreatorContactPublicScreen } from "./screens/creator-contact-public/CreatorContactPublicScreen";
+import { CreatorFaqPublicScreen } from "./screens/creator-faq-public/CreatorFaqPublicScreen";
+import { CreatorSchedulePublicScreen } from "./screens/creator-schedule-public/CreatorSchedulePublicScreen";
+import { CreatorCustomPublicScreen } from "./screens/creator-custom-public/CreatorCustomPublicScreen";
+import { CreatorLinksArchivePublicScreen } from "./screens/creator-links-archive-public/CreatorLinksArchivePublicScreen";
+import { CreatorNewsletterSignupPublicScreen } from "./screens/creator-newsletter-signup-public/CreatorNewsletterSignupPublicScreen";
+import { CreatorLegalPublicScreen } from "./screens/creator-legal-public/CreatorLegalPublicScreen";
+import { CreatorPaidArticlesPublicScreen } from "./screens/creator-paid-articles-public/CreatorPaidArticlesPublicScreen";
+import { CreatorPaidArticlePublicScreen } from "./screens/creator-paid-article-public/CreatorPaidArticlePublicScreen";
+import { ProductPublicScreen } from "./screens/product-public/ProductPublicScreen";
 import { BlockPickerScreen } from "./screens/block-picker/BlockPickerScreen";
 import { BlockEditorScreen } from "./screens/block-editor/BlockEditorScreen";
 import { AboutEditorScreen } from "./screens/page-editors/AboutEditorScreen";
@@ -48,6 +58,16 @@ const SCREENS: Screen[] = [
   { segment: "creator-about-public", label: "Public creator — About", status: "ready", batch: "P1 · Public pages" },
   { segment: "creator-blog-public", label: "Public creator — Blog", status: "ready", batch: "P1 · Public pages" },
   { segment: "creator-portfolio-public", label: "Public creator — Portfolio", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-contact-public", label: "Public creator — Contact", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-faq-public", label: "Public creator — FAQ", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-schedule-public", label: "Public creator — Schedule", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-custom-public", label: "Public creator — Custom page", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-links-archive-public", label: "Public creator — Links archive", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-newsletter-signup-public", label: "Public creator — Newsletter signup", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-legal-public", label: "Public creator — Legal", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-paid-articles-public", label: "Public creator — Paid articles", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-paid-article-public", label: "Public creator — Paid article", status: "ready", batch: "P1 · Public pages" },
+  { segment: "product-public", label: "Public — Product", status: "ready", batch: "P1 · Public pages" },
   { segment: "block-picker", label: "Block picker modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "block-editor", label: "Block editor modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "settings", label: "Settings (account, billing, security, …)", status: "ready", batch: "P3 · Settings" },
@@ -131,6 +151,26 @@ export default function ProtoDevHost() {
       return <CreatorBlogPublicScreen />;
     case "creator-portfolio-public":
       return <CreatorPortfolioPublicScreen />;
+    case "creator-contact-public":
+      return <CreatorContactPublicScreen />;
+    case "creator-faq-public":
+      return <CreatorFaqPublicScreen />;
+    case "creator-schedule-public":
+      return <CreatorSchedulePublicScreen />;
+    case "creator-custom-public":
+      return <CreatorCustomPublicScreen />;
+    case "creator-links-archive-public":
+      return <CreatorLinksArchivePublicScreen />;
+    case "creator-newsletter-signup-public":
+      return <CreatorNewsletterSignupPublicScreen />;
+    case "creator-legal-public":
+      return <CreatorLegalPublicScreen />;
+    case "creator-paid-articles-public":
+      return <CreatorPaidArticlesPublicScreen />;
+    case "creator-paid-article-public":
+      return <CreatorPaidArticlePublicScreen />;
+    case "product-public":
+      return <ProductPublicScreen />;
     case "block-picker":
       return <BlockPickerScreen />;
     case "block-editor":
