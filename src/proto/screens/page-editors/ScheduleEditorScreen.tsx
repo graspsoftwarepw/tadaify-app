@@ -23,6 +23,7 @@
 import { useState } from "react";
 import {
   EditorShell,
+  useEscapeKey,
   EditorIcon as S,
   Field,
   FieldRow,
@@ -70,6 +71,8 @@ export function ScheduleEditorScreen() {
   const [free, setFree] = useState(false);
   const [typeModal, setTypeModal] = useState<null | "new" | "edit">(null);
 
+  useEscapeKey(() => { setTypeModal(null); });
+
   const dirty = () => setSaveState("dirty");
   const toggleDay = (day: string) => { setHours((hs) => hs.map((r) => (r.day === day ? { ...r, on: !r.on } : r))); dirty(); };
   const toggleRule = (id: string) => { setRules((rs) => rs.map((r) => (r.id === id ? { ...r, on: !r.on } : r))); dirty(); };
@@ -99,10 +102,10 @@ export function ScheduleEditorScreen() {
       onSave={() => setSaveState("saved")}
       onDiscard={() => setSaveState("saved")}
       headerActions={
-        <a className="btn btn-ghost btn-sm" href="/__proto/creator-public" target="_blank" rel="noopener">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => alert("Mockup — opens the public page in a new tab")}>
           <S w={13}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></S>
           Preview
-        </a>
+        </button>
       }
     >
       {/* ── Admin callout ── */}

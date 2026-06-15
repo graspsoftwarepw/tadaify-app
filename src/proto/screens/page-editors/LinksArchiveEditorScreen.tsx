@@ -16,6 +16,7 @@
 import { useMemo, useState } from "react";
 import {
   EditorShell,
+  useEscapeKey,
   EditorIcon as S,
   Field,
   FieldRow,
@@ -61,6 +62,8 @@ export function LinksArchiveEditorScreen() {
   const [editingManual, setEditingManual] = useState<string | null>(null);
   const [excluded, setExcluded] = useState<ExcludedLink[]>(fx.excluded);
   const [reasonFor, setReasonFor] = useState<ExcludedLink | null>(null);
+
+  useEscapeKey(() => { setReasonFor(null); setEditingManual(null); });
 
   const dirty = () => setSaveState("dirty");
 
@@ -111,10 +114,10 @@ export function LinksArchiveEditorScreen() {
       onSave={() => setSaveState("saved")}
       onDiscard={() => setSaveState("saved")}
       headerActions={
-        <a className="btn btn-ghost btn-sm" href="/__proto/creator-public" target="_blank" rel="noopener">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => alert("Mockup — opens the public page in a new tab")}>
           <S w={13}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></S>
           Preview
-        </a>
+        </button>
       }
       headerExtra={
         <div className="pe-quick-titles">

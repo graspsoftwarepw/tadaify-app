@@ -15,6 +15,7 @@
 import { useState } from "react";
 import {
   EditorShell,
+  useEscapeKey,
   EditorIcon as S,
   Field,
   FieldRow,
@@ -67,6 +68,8 @@ export function AboutEditorScreen() {
   });
   const [picker, setPicker] = useState(false);
 
+  useEscapeKey(() => { setPicker(false); });
+
   const dirty = () => setSaveState("dirty");
   const toggleCard = (id: CardId) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
 
@@ -86,10 +89,10 @@ export function AboutEditorScreen() {
       onSave={() => setSaveState("saved")}
       onDiscard={() => setSaveState("saved")}
       headerActions={
-        <a className="btn btn-ghost btn-sm" href="/__proto/creator-about-public" target="_blank" rel="noopener">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => alert("Mockup — opens the public page in a new tab")}>
           <S w={13}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></S>
           Preview
-        </a>
+        </button>
       }
     >
       {/* ── Section 1: Page settings ── */}

@@ -19,7 +19,7 @@
  * @implements fr-page-editor-about
  * @implements fr-page-editor-links-archive
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import "./page-editors-proto.css";
 import { DashboardChrome, ChromeIcon as S, type PageSubItem } from "../dashboard/DashboardChrome";
 import type { DashboardProfile } from "../dashboard/dashboardFixture";
@@ -312,3 +312,15 @@ export function TierHint({ pro = false, children }: { pro?: boolean; children: R
 
 /* Re-export the chrome icon so editors share one icon style. */
 export { S as EditorIcon };
+
+/* ============================================================
+   useEscapeKey — close open modals on Escape
+   ============================================================ */
+
+export function useEscapeKey(onEscape: () => void) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onEscape(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  });
+}

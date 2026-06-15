@@ -17,6 +17,7 @@
 import { useState } from "react";
 import {
   EditorShell,
+  useEscapeKey,
   EditorIcon as S,
   Field,
   FieldRow,
@@ -71,6 +72,8 @@ export function FaqEditorScreen() {
   const [qaModal, setQaModal] = useState<null | "new" | "edit">(null);
   const [csvModal, setCsvModal] = useState(false);
 
+  useEscapeKey(() => { setAddSection(false); setQaModal(null); setCsvModal(false); });
+
   const dirty = () => setSaveState("dirty");
   const toggleSection = (id: string) => {
     setSections((ss) => ss.map((s) => (s.id === id ? { ...s, collapsed: !s.collapsed } : s)));
@@ -98,10 +101,10 @@ export function FaqEditorScreen() {
         </div>
       }
       headerActions={
-        <a className="btn btn-ghost btn-sm" href="/__proto/creator-faq-public" target="_blank" rel="noopener">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => alert("Mockup — opens the public page in a new tab")}>
           <S w={13}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></S>
           Preview
-        </a>
+        </button>
       }
     >
       {/* ── Page settings ── */}
