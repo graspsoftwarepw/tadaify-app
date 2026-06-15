@@ -1,0 +1,65 @@
+/* AuthChrome — shared minimal auth top-bar, ported from the `.auth-bar` header
+   in mockups/tadaify-mvp/login.html (and the identical one in register.html).
+   Token-driven; re-themes in dark automatically. Shared infra — carries NO
+   per-page @implements and is not listed in any FR's related_files. */
+
+.proto-auth {
+  box-sizing: border-box;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+}
+.proto-auth *,
+.proto-auth *::before,
+.proto-auth *::after {
+  box-sizing: border-box;
+}
+
+.proto-auth .auth-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+  min-height: 54px;
+}
+.proto-auth .auth-bar .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+.proto-auth .auth-bar .spacer {
+  flex: 1;
+}
+.proto-auth .auth-bar .bar-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  min-width: 0;
+}
+.proto-auth .auth-bar .bar-link a {
+  text-decoration: none;
+}
+.proto-auth .auth-bar .bar-link strong {
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+.proto-auth .auth-bar .bar-link a:hover strong {
+  color: var(--brand-primary-hover);
+}
+
+@media (max-width: 480px) {
+  .proto-auth .auth-bar .bar-link {
+    font-size: 12px;
+    white-space: normal;
+  }
+}

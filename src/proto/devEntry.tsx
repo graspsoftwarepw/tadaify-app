@@ -52,6 +52,17 @@ import { AffiliateScreen } from "./screens/affiliate/AffiliateScreen";
 import { InsightsScreen } from "./screens/insights/InsightsScreen";
 import { FeedbackScreen } from "./screens/feedback/FeedbackScreen";
 import { AdminPanelScreen } from "./screens/admin-panel/AdminPanelScreen";
+import { ErrorPagesScreen } from "./screens/error-pages/ErrorPagesScreen";
+import { WelcomeScreen } from "./screens/onboarding/WelcomeScreen";
+import { SocialScreen } from "./screens/onboarding/SocialScreen";
+import { ProfileScreen } from "./screens/onboarding/ProfileScreen";
+import { TemplateScreen } from "./screens/onboarding/TemplateScreen";
+import { TierScreen } from "./screens/onboarding/TierScreen";
+import { CompleteScreen } from "./screens/onboarding/CompleteScreen";
+import { LandingScreen } from "./screens/marketing/LandingScreen";
+import { PricingScreen } from "./screens/marketing/PricingScreen";
+import { LoginScreen } from "./screens/auth/LoginScreen";
+import { RegisterScreen } from "./screens/auth/RegisterScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -106,7 +117,17 @@ const SCREENS: Screen[] = [
   { segment: "insights", label: "Insights", status: "ready", batch: "P4 · Administration" },
   { segment: "feedback", label: "Feedback", status: "ready", batch: "P4 · Administration" },
   { segment: "admin-panel", label: "Platform admin — super-admin panel", status: "ready", batch: "P4 · Platform admin" },
-  { segment: "onboarding", label: "Onboarding + auth", status: "planned", batch: "P5 · Onboarding/auth" },
+  { segment: "landing", label: "Marketing — Landing", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "pricing", label: "Marketing — Pricing", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "login", label: "Auth — Log in", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "register", label: "Auth — Claim your handle", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "onboarding-welcome", label: "Onboarding 1/5 — Welcome", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "onboarding-social", label: "Onboarding 2/5 — Your socials", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "onboarding-profile", label: "Onboarding 3/5 — Make it yours", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "onboarding-template", label: "Onboarding 4/5 — Template", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "onboarding-tier", label: "Onboarding 5/5 — Compare plans", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "onboarding-complete", label: "Onboarding — You're live!", status: "ready", batch: "P5 · Onboarding/auth" },
+  { segment: "error-pages", label: "Error pages — 10 states", status: "ready", batch: "P5 · Onboarding/auth" },
 ];
 
 function ProtoIndex() {
@@ -247,6 +268,28 @@ export default function ProtoDevHost() {
       return <FeedbackScreen />;
     case "admin-panel":
       return <AdminPanelScreen />;
+    case "landing":
+      return <LandingScreen />;
+    case "pricing":
+      return <PricingScreen />;
+    case "login":
+      return <LoginScreen />;
+    case "register":
+      return <RegisterScreen />;
+    case "error-pages":
+      return <ErrorPagesScreen />;
+    case "onboarding-welcome":
+      return <WelcomeScreen />;
+    case "onboarding-social":
+      return <SocialScreen />;
+    case "onboarding-profile":
+      return <ProfileScreen />;
+    case "onboarding-template":
+      return <TemplateScreen />;
+    case "onboarding-tier":
+      return <TierScreen />;
+    case "onboarding-complete":
+      return <CompleteScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:
