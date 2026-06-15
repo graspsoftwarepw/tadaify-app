@@ -10,7 +10,7 @@
  *         + acceptance criteria S1..S4 from issue tadaify-app#176.
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) — Mailpit at http://localhost:44214
+ *   - `supabase start` (port-band 44210-44219) — Mailpit at http://localhost:44214
  *   - `.dev.vars` configured with Workers env bindings
  *   - `npm run dev` (App: http://localhost:44200)
  *

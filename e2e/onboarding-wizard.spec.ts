@@ -9,7 +9,7 @@
  * Covers: BR-Slice-C / BR-ONBOARDING-001..006 / DEC-310=B / DEC-311=A / DEC-332=D
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with env-setup reliability fix (#168)
+ *   - `supabase start` (port-band 44210-44219) with env-setup reliability fix (#168)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
  *   - `npm run dev` (App: http://localhost:44200)
  *

@@ -9,7 +9,7 @@
  * Covers: BR-Slice-B (OTP-only register), BUG-149-{1,2,3,4,6}, ECN-149-{01,04,05,09,10,12}
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with Bug 2 + Bug 3 fix in config.toml
+ *   - `supabase start` (port-band 44210-44219) with Bug 2 + Bug 3 fix in config.toml
  *   - `.dev.vars` configured with correct Workers env bindings (Bug 4 fix)
  *   - `npm run dev` (App: http://localhost:44200)
  *   - Mailpit accessible at http://localhost:44214 (Supabase local SMTP catcher)

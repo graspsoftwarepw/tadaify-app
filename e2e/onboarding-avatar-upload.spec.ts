@@ -10,7 +10,7 @@
  *
  * Prerequisites:
  *   - `./bin/worktree-env-init.sh` (populates .dev.vars from supabase status)
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `npm run dev` (starts dev server — @cloudflare/vite-plugin auto-emulates
  *     AVATARS_R2 via miniflare; no MOCK_R2 env var needed)
  *

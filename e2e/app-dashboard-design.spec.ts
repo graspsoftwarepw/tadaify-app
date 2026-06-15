@@ -11,7 +11,7 @@
  * Default sub-tab: background (NOT theme — per mockup + issue refinement)
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
+ *   - `supabase start` (port-band 44210-44219) with `./bin/worktree-env-init.sh`
  *   - `npm run dev` (App: http://localhost:44200)
  *   - Mailpit accessible at http://localhost:44214
  *

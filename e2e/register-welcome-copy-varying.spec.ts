@@ -15,7 +15,7 @@
  *   C (post-signup)        → "Welcome @{handle}!"
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with Mailpit on :44214
+ *   - `supabase start` (port-band 44210-44219) with Mailpit on :44214
  *   - `npm run dev` (App: http://localhost:44200)
  *
  * Run: npx playwright test e2e/register-welcome-copy-varying.spec.ts

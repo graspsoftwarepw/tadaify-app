@@ -15,7 +15,7 @@
  * Locked rules: feedback_bug_fix_must_have_tests.md, DEC-323, DEC-325
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
  *   - `npm run dev` (App: http://localhost:44200)
  *   - Mailpit accessible at http://localhost:44214
@@ -36,7 +36,7 @@ const __dirname = dirname(__filename);
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Supabase local API (port-band 5435X for tadaify) */
+/** Supabase local API (port-band 44210-44219 for tadaify) */
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
 
 /** Service role key — read from .dev.vars if not in env */

@@ -12,7 +12,7 @@
  * DEC-332=D: complete step has handle-claim composition (no preview pane).
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
  *   - `npm run dev` (App: http://localhost:44200)
  *

@@ -12,7 +12,7 @@ None. The landing page is fully unauthenticated. All scenarios work with an anon
 
 ## Preconditions
 
-- `supabase start` is running locally (port-band 5435X)
+- `supabase start` is running locally (port-band 44210-44219)
 - `npm run dev` serves the app on `http://localhost:44200`
 - `handle_reservations` table exists (migration `20260429000001_handle_reservations.sql` applied)
 - No pre-existing reservations in `handle_reservations` (reset via `supabase db reset` or manual DELETE)

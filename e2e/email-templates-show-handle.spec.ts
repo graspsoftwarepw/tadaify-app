@@ -19,7 +19,7 @@
  *   - Identity-linked email: "Hey @<handle>" (manual verification — OAuth trigger)
  *
  * Prerequisites:
- *   - `supabase start` (Mailpit at http://localhost:44214 — local port-band 5435X)
+ *   - `supabase start` (Mailpit at http://localhost:44214 — local port-band 44210-44219)
  *   - `.dev.vars` configured with Workers env bindings
  *   - `npm run dev` (App: http://localhost:44200)
  *

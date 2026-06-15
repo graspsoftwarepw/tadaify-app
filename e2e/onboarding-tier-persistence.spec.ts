@@ -16,7 +16,7 @@
  * S5 — GDPR export includes tier_slug in JSON payload — ECN-139-07
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with env-setup reliability fix (#168)
+ *   - `supabase start` (port-band 44210-44219) with env-setup reliability fix (#168)
  *   - `.dev.vars` populated via `./bin/worktree-env-init.sh`
  *   - `npm run dev` (App: http://localhost:44200)
  *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY exported in env

@@ -10,7 +10,7 @@
  * Covers: BR-BLOCK-CRUD-001, AC#6, ECN-CRUD-12
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X) with `./bin/worktree-env-init.sh`
+ *   - `supabase start` (port-band 44210-44219) with `./bin/worktree-env-init.sh`
  *   - `npm run dev` (App: http://localhost:44200)
  *   - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY exported
  *

@@ -10,7 +10,7 @@ Tadaify — link-in-bio + creator commerce SaaS (React Router 7 / Remix on Cloud
 # 1. Install
 npm install
 
-# 2. Start Supabase local (port-band 5435X) and generate local env files
+# 2. Start Supabase local (port-band 44210-44219) and generate local env files
 npm run test:local:prepare
 # Inbucket UI: http://127.0.0.1:44214
 

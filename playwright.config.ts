@@ -11,7 +11,7 @@ const isLocalE2E = e2eEnv === "local";
  * (Playwright is excluded from CI per feedback_no_ci_tests.md).
  *
  * Prerequisites:
- *   - `supabase start` (port-band 5435X)
+ *   - `supabase start` (port-band 44210-44219)
  *   - `.dev.vars` configured with Workers env bindings
  *   - `npm run dev` started (or let webServer block start it)
  */
@@ -29,7 +29,7 @@ export default defineConfig({
 
   use: {
     // Allow overriding via TEST_BASE_URL env var — used when running against
-    // a worktree dev server on a non-standard port (e.g. 5175 during PR validation).
+    // a worktree dev server on a non-standard port (e.g. 44221 during PR validation).
     baseURL,
     trace: "on-first-retry",
   },

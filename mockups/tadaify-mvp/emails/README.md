@@ -134,7 +134,7 @@ Resend itself does **not** substitute placeholders — the curly-brace tokens he
 
 ### Supabase Auth (local Inbucket)
 
-When you run `supabase start`, an Inbucket inbox spins up at `http://127.0.0.1:54324`. All Auth emails land there with the templates already rendered. Iterate on the HTML, run `supabase stop && supabase start` (config reloads on start), trigger an auth flow, refresh Inbucket.
+When you run `supabase start`, an Inbucket inbox spins up at `http://127.0.0.1:44214`. All Auth emails land there with the templates already rendered. Iterate on the HTML, run `supabase stop && supabase start` (config reloads on start), trigger an auth flow, refresh Inbucket.
 
 ### Resend (delivered@resend.dev)
 
