@@ -10,9 +10,11 @@
 import { useState } from "react";
 import { OnboardingShell } from "./OnboardingShell";
 import { welcomeFixture } from "./welcomeFixture";
+import { readHandleParam, withHandle } from "./handleParam";
 
 export function WelcomeScreen() {
-  const { handle, platforms } = welcomeFixture();
+  const { handle: fallbackHandle, platforms } = welcomeFixture();
+  const handle = readHandleParam(fallbackHandle);
   const [selected, setSelected] = useState<string[]>([]);
 
   function toggle(id: string) {
@@ -34,7 +36,7 @@ export function WelcomeScreen() {
       stepLabel="Step 1 of 5 · Welcome"
       fillPct={20}
       backHref="/__proto"
-      continueHref="/__proto/onboarding-social"
+      continueHref={withHandle("/__proto/onboarding-social", handle)}
       continueLabel={selected.length > 0 ? `Continue (${selected.length})` : "Continue"}
       hint={hint}
       microcopy="You can add more anytime from settings."

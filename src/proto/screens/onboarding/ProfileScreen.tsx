@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { OnboardingShell } from "./OnboardingShell";
 import { profileFixture } from "./profileFixture";
+import { readHandleParam, withHandle } from "./handleParam";
 
 function initialsFor(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -24,6 +25,7 @@ function initialsFor(name: string): string {
 export function ProfileScreen() {
   const { displayNamePlaceholder, bioPlaceholder, bioMaxLength, avatarOptions } =
     profileFixture();
+  const handle = readHandleParam("yourname");
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [bioActive, setBioActive] = useState(false);
@@ -139,15 +141,15 @@ export function ProfileScreen() {
 
           {/* Actions */}
           <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
-            <a href="/__proto/onboarding-social" className="ob-btn ob-btn-secondary">
+            <a href={withHandle("/__proto/onboarding-social", handle)} className="ob-btn ob-btn-secondary">
               ← Back
             </a>
-            <a href="/__proto/onboarding-template" className="ob-btn ob-btn-primary ob-btn-lg" style={{ flex: 1 }}>
+            <a href={withHandle("/__proto/onboarding-template", handle)} className="ob-btn ob-btn-primary ob-btn-lg" style={{ flex: 1 }}>
               Continue →
             </a>
           </div>
 
-          <a href="/__proto/onboarding-template" className="skip-link-text">
+          <a href={withHandle("/__proto/onboarding-template", handle)} className="skip-link-text">
             Skip for now — set up later
           </a>
 

@@ -13,9 +13,11 @@
 import { useState } from "react";
 import { OnboardingShell } from "./OnboardingShell";
 import { templateFixture } from "./templateFixture";
+import { readHandleParam, withHandle } from "./handleParam";
 
 export function TemplateScreen() {
   const { templates } = templateFixture();
+  const handle = readHandleParam("yourname");
   const [selected, setSelected] = useState(
     templates.find((t) => t.isDefault)?.id ?? templates[0].id,
   );
@@ -73,10 +75,10 @@ export function TemplateScreen() {
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 48, flexWrap: "wrap", gap: 16 }}>
-        <a href="/__proto/onboarding-profile" className="ob-btn ob-btn-ghost">
+        <a href={withHandle("/__proto/onboarding-profile", handle)} className="ob-btn ob-btn-ghost">
           ← Back
         </a>
-        <a href="/__proto/onboarding-tier" className="ob-btn ob-btn-primary ob-btn-lg">
+        <a href={withHandle("/__proto/onboarding-tier", handle)} className="ob-btn ob-btn-primary ob-btn-lg">
           Continue with {selectedName} →
         </a>
       </div>

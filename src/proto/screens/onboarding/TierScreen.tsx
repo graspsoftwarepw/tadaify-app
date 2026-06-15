@@ -11,9 +11,11 @@
  */
 import { OnboardingShell } from "./OnboardingShell";
 import { tierFixture } from "./tierFixture";
+import { readHandleParam, withHandle } from "./handleParam";
 
 export function TierScreen() {
   const { plans } = tierFixture();
+  const handle = readHandleParam("yourname");
 
   return (
     <OnboardingShell
@@ -90,7 +92,7 @@ export function TierScreen() {
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 40, flexWrap: "wrap", justifyContent: "center" }}>
-        <a href="/__proto/onboarding-complete" className="ob-btn ob-btn-primary ob-btn-lg">
+        <a href={withHandle("/__proto/onboarding-complete", handle)} className="ob-btn ob-btn-primary ob-btn-lg">
           Take me to my page →
         </a>
       </div>
@@ -104,7 +106,7 @@ export function TierScreen() {
       </p>
 
       <p style={{ textAlign: "center", marginTop: 24 }}>
-        <a href="/__proto/onboarding-template" className="ob-back-hub">
+        <a href={withHandle("/__proto/onboarding-template", handle)} className="ob-back-hub">
           ← back
         </a>
       </p>

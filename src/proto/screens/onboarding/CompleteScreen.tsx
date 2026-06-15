@@ -13,9 +13,11 @@
 import { useState } from "react";
 import { OnboardingShell } from "./OnboardingShell";
 import { completeFixture } from "./completeFixture";
+import { readHandleParam } from "./handleParam";
 
 export function CompleteScreen() {
-  const { handle, heading, lede, nextSteps, affiliate } = completeFixture();
+  const { handle: fallbackHandle, heading, lede, nextSteps, affiliate } = completeFixture();
+  const handle = readHandleParam(fallbackHandle);
   const [copied, setCopied] = useState(false);
   const [affClosed, setAffClosed] = useState(false);
 

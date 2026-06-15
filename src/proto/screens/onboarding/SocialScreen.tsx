@@ -14,9 +14,11 @@
 import { useState } from "react";
 import { OnboardingShell } from "./OnboardingShell";
 import { socialFixture } from "./socialFixture";
+import { readHandleParam, withHandle } from "./handleParam";
 
 export function SocialScreen() {
-  const { handle, defaultPlatformIds, platforms } = socialFixture();
+  const { handle: fallbackHandle, defaultPlatformIds, platforms } = socialFixture();
+  const handle = readHandleParam(fallbackHandle);
   const shown = platforms.filter((p) => defaultPlatformIds.includes(p.id));
 
   const [handles, setHandles] = useState<Record<string, string>>(
@@ -104,13 +106,13 @@ export function SocialScreen() {
           </div>
 
           <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", alignItems: "center" }}>
-            <a href="/__proto/onboarding-welcome" className="ob-btn ob-btn-secondary">
+            <a href={withHandle("/__proto/onboarding-welcome", handle)} className="ob-btn ob-btn-secondary">
               ← Back
             </a>
-            <a href="/__proto/onboarding-profile" className="ob-btn ob-btn-secondary">
+            <a href={withHandle("/__proto/onboarding-profile", handle)} className="ob-btn ob-btn-secondary">
               Skip socials
             </a>
-            <a href="/__proto/onboarding-profile" className="ob-btn ob-btn-primary ob-btn-lg" style={{ flex: 1 }}>
+            <a href={withHandle("/__proto/onboarding-profile", handle)} className="ob-btn ob-btn-primary ob-btn-lg" style={{ flex: 1 }}>
               Continue →
             </a>
           </div>

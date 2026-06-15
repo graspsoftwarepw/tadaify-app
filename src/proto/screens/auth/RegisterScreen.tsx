@@ -16,6 +16,7 @@ import {
   makeRegisterContent,
   type RegisterProvider,
 } from "./registerFixture";
+import { readHandleParam, withHandle } from "../onboarding/handleParam";
 import "./register-proto.css";
 
 const ONBOARDING_ROUTE = "/__proto/onboarding-welcome";
@@ -57,7 +58,7 @@ export function RegisterScreen() {
   const c = makeRegisterContent();
   const rules = c.handle;
 
-  const [handle, setHandle] = useState(rules.defaultValue);
+  const [handle, setHandle] = useState(() => readHandleParam(rules.defaultValue));
   const [revealed, setRevealed] = useState<Set<SectionId>>(new Set(["a"]));
   const [tos, setTos] = useState(true);
   const [email, setEmail] = useState("");
@@ -115,7 +116,7 @@ export function RegisterScreen() {
   }, [onSuccess, countdown]);
 
   function goToOnboarding() {
-    window.location.href = `${ONBOARDING_ROUTE}?handle=${encodeURIComponent(cleanHandle)}`;
+    window.location.href = withHandle(ONBOARDING_ROUTE, cleanHandle);
   }
 
   function ensureTos(): boolean {
