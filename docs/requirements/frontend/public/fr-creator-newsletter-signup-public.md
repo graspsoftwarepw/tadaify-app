@@ -36,10 +36,11 @@ Hero + trust:
 
 Signup form:
 
-- The page shall render three signup form layouts (one-line, two-line, centred card), each with an email
-  input and a consent checkbox; the mockup shows all three for comparison with a note that production
-  renders only the creator's chosen layout.
-- Submitting any layout's form shall show a submitting state that auto-advances to a success state. The
+- The page shall render exactly ONE signup form in the layout the creator selected in their dashboard
+  editor (one-line, two-line, or centred card — sourced from the fixture's `chosenLayout`), with an
+  email input and a consent checkbox. The layout choice belongs to the editor; the public page never
+  shows a layout comparison. The prototype's chosen layout is the centred card.
+- Submitting the form shall show a submitting state that auto-advances to a success state. The
   page shall also offer an "already subscribed" state and an error state with a retry and a direct email
   fallback.
 - A mockup-only state strip shall let a reviewer switch between the default landing and every confirmation

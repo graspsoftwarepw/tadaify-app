@@ -6,12 +6,12 @@
  * Substack/Beehiiv landing tradition. Presentational + local React state only;
  * data from a typed fixture.
  *
- * The mockup rendered all three form layouts in-page (so reviewers compare
- * them) and demoed five confirmation states via hash routing. Here the layouts
- * are all shown on the default landing, and the states become local state with
- * an in-view "Mockup states" strip. Submitting any layout's form auto-advances
- * to success (1.5s), mirroring the mockup. "Subscribe" isn't a canonical nav
- * section, so no nav item is forced active.
+ * The form layout is a creator setting chosen in the dashboard editor, so the
+ * public page renders exactly ONE layout — the creator's chosen one
+ * (`fixture.chosenLayout`); it is not a layout comparison. The five confirmation
+ * states (the mockup demoed them via hash routing) become local state with an
+ * in-view "Mockup states" strip; submitting auto-advances to success (1.5s).
+ * "Subscribe" isn't a canonical nav section, so no nav item is forced active.
  *
  * @implements fr-creator-newsletter-signup-public
  */
@@ -30,8 +30,8 @@ export function CreatorNewsletterSignupPublicScreen() {
   const c = newsletterSignupContentFixture();
   const [state, setState] = useState<SignupState>("default");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const onelineInput = useRef<HTMLInputElement | null>(null);
-  const onelineSection = useRef<HTMLElement | null>(null);
+  const formInput = useRef<HTMLInputElement | null>(null);
+  const formSection = useRef<HTMLElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Submitting auto-advances to success, mirroring the mockup's 1.5s timeout.
@@ -49,9 +49,9 @@ export function CreatorNewsletterSignupPublicScreen() {
     setState("submitting");
   }
 
-  function focusOneline() {
-    onelineSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    onelineInput.current?.focus();
+  function focusForm() {
+    formSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    formInput.current?.focus();
   }
 
   return (
@@ -78,69 +78,59 @@ export function CreatorNewsletterSignupPublicScreen() {
             </span>
           </div>
 
-          {/* All three form layouts (mockup renders them for comparison). */}
-          {c.layouts.map((layout, i) => (
-            <section
-              className="form-section"
-              key={layout.id}
-              ref={layout.id === "oneline" ? onelineSection : undefined}
-            >
-              <h2>
-                <span className="form-section-num">{layout.num}</span> {layout.label}
-              </h2>
-              <div className={`form-card${layout.id === "card" ? " form-cardlayout" : ""}`}>
-                {layout.id === "card" && (
-                  <>
-                    <div className="fc-icon" aria-hidden="true">{layout.cardIcon}</div>
-                    <p className="fc-prompt">{layout.cardPrompt}</p>
-                  </>
-                )}
-                <form
-                  className={layout.id === "oneline" ? "form-oneline" : "form-twoline"}
-                  onSubmit={onSubmit}
-                >
-                  <input
-                    className="form-input"
-                    type="email"
-                    placeholder="you@email.com"
-                    required
-                    ref={layout.id === "oneline" ? onelineInput : undefined}
-                    aria-label="Email address"
-                  />
-                  <button className="form-btn" type="submit">
-                    {layout.id === "oneline" && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <line x1="22" y1="2" x2="11" y2="13" />
-                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                      </svg>
-                    )}
-                    {layout.button}
-                  </button>
-                </form>
-                <div className={`consent${layout.id === "card" ? " is-center" : ""}`}>
-                  <input type="checkbox" id={`nl-consent-${layout.id}`} defaultChecked />
-                  <label htmlFor={`nl-consent-${layout.id}`}>
-                    I agree to receive emails from Alexandra and accept the{" "}
-                    <button
-                      type="button"
-                      className="link-btn"
-                      onClick={() => window.alert("Mockup — opens the privacy policy")}
-                    >
-                      privacy policy
+          {/* The creator's chosen signup layout (picked in the dashboard editor) —
+              the public page renders exactly this one, never a comparison. */}
+          {(() => {
+            const layout = c.chosenLayout;
+            return (
+              <section className="form-section" ref={formSection}>
+                <div className={`form-card${layout.id === "card" ? " form-cardlayout" : ""}`}>
+                  {layout.id === "card" && (
+                    <>
+                      <div className="fc-icon" aria-hidden="true">{layout.cardIcon}</div>
+                      <p className="fc-prompt">{layout.cardPrompt}</p>
+                    </>
+                  )}
+                  <form
+                    className={layout.id === "oneline" ? "form-oneline" : "form-twoline"}
+                    onSubmit={onSubmit}
+                  >
+                    <input
+                      className="form-input"
+                      type="email"
+                      placeholder="you@email.com"
+                      required
+                      ref={formInput}
+                      aria-label="Email address"
+                    />
+                    <button className="form-btn" type="submit">
+                      {layout.id === "oneline" && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <line x1="22" y1="2" x2="11" y2="13" />
+                          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                      )}
+                      {layout.button}
                     </button>
-                    .
-                  </label>
+                  </form>
+                  <div className={`consent${layout.id === "card" ? " is-center" : ""}`}>
+                    <input type="checkbox" id={`nl-consent-${layout.id}`} defaultChecked />
+                    <label htmlFor={`nl-consent-${layout.id}`}>
+                      I agree to receive emails from Alexandra and accept the{" "}
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => window.alert("Mockup — opens the privacy policy")}
+                      >
+                        privacy policy
+                      </button>
+                      .
+                    </label>
+                  </div>
                 </div>
-              </div>
-
-              {/* Layout-switcher note shown after the first layout. */}
-              {i === 0 && (
-                <div className="layout-note">
-                  In production, only the layout chosen by the creator renders.
-                </div>
-              )}
-            </section>
-          ))}
+              </section>
+            );
+          })()}
 
           {/* Social proof */}
           <section className="proof-strip">
@@ -221,7 +211,7 @@ export function CreatorNewsletterSignupPublicScreen() {
           {/* Footer CTA */}
           <section className="closer">
             <h2>{c.closer.heading}</h2>
-            <button className="closer-btn" type="button" onClick={focusOneline}>
+            <button className="closer-btn" type="button" onClick={focusForm}>
               {c.closer.button}
             </button>
             <div className="fallback">

@@ -37,7 +37,9 @@ export type NewsletterContent = {
   creator: PublicCreator;
   hero: { cover: string; heading: string; lede: string };
   trust: string;
-  layouts: NewsletterLayout[];
+  /** The single form layout the creator chose in their editor — the public page
+      renders only this one (the layout picker lives in the dashboard editor). */
+  chosenLayout: NewsletterLayout;
   consentLabel: string;
   proofCount: { lead: string; count: string; tail: string };
   proofQuotes: ProofQuote[];
@@ -61,18 +63,14 @@ export function newsletterSignupContentFixture(): NewsletterContent {
       lede: "One short, honest email every Tuesday. Drills, mindset shifts, recovery tactics — no spam, no fluff.",
     },
     trust: "Powered by Kit · GDPR-friendly · 1-click unsubscribe",
-    layouts: [
-      { id: "oneline", num: 1, label: "One-line layout", button: "Subscribe" },
-      { id: "twoline", num: 2, label: "Two-line layout", button: "Subscribe to the newsletter" },
-      {
-        id: "card",
-        num: 3,
-        label: "Centered card layout",
-        button: "Count me in",
-        cardIcon: "✉️",
-        cardPrompt: "Join 24,512 creators training smarter",
-      },
-    ],
+    chosenLayout: {
+      id: "card",
+      num: 3,
+      label: "Centered card layout",
+      button: "Count me in",
+      cardIcon: "✉️",
+      cardPrompt: "Join 24,512 creators training smarter",
+    },
     consentLabel: "I agree to receive emails from Alexandra and accept the privacy policy.",
     proofCount: { lead: "Join ", count: "24,512", tail: " creators learning to train smarter" },
     proofQuotes: [
