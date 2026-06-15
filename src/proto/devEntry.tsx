@@ -15,6 +15,7 @@ import { DashboardScreen } from "./screens/dashboard/DashboardScreen";
 import { CreatorPublicScreen } from "./screens/creator-public/CreatorPublicScreen";
 import { CreatorAboutPublicScreen } from "./screens/creator-about-public/CreatorAboutPublicScreen";
 import { CreatorBlogPublicScreen } from "./screens/creator-blog-public/CreatorBlogPublicScreen";
+import { CreatorPortfolioPublicScreen } from "./screens/creator-portfolio-public/CreatorPortfolioPublicScreen";
 import { BlockPickerScreen } from "./screens/block-picker/BlockPickerScreen";
 import { BlockEditorScreen } from "./screens/block-editor/BlockEditorScreen";
 import { Wordmark } from "./lib/Wordmark";
@@ -34,6 +35,7 @@ const SCREENS: Screen[] = [
   { segment: "creator-public", label: "Public creator page", status: "ready", batch: "P1 · Public pages" },
   { segment: "creator-about-public", label: "Public creator — About", status: "ready", batch: "P1 · Public pages" },
   { segment: "creator-blog-public", label: "Public creator — Blog", status: "ready", batch: "P1 · Public pages" },
+  { segment: "creator-portfolio-public", label: "Public creator — Portfolio", status: "ready", batch: "P1 · Public pages" },
   { segment: "block-picker", label: "Block picker modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "block-editor", label: "Block editor modal", status: "ready", batch: "P2 · Dashboard modals" },
   { segment: "settings", label: "Settings (8 tabs)", status: "planned", batch: "P3 · Settings" },
@@ -105,6 +107,8 @@ export default function ProtoDevHost() {
       return <CreatorAboutPublicScreen />;
     case "creator-blog-public":
       return <CreatorBlogPublicScreen />;
+    case "creator-portfolio-public":
+      return <CreatorPortfolioPublicScreen />;
     case "block-picker":
       return <BlockPickerScreen />;
     case "block-editor":
