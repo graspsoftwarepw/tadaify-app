@@ -7,6 +7,7 @@ modules: [GLOBALUI]
 routes: [/__proto/dashboard]
 related_files:
   - src/proto/screens/dashboard/DashboardScreen.tsx
+  - src/proto/screens/dashboard/DashboardChrome.tsx
   - src/proto/StyleGuide.tsx
 devices: all
 related_requirements: [fr-globalui-theme-and-colours]
