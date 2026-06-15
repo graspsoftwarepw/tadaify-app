@@ -1,0 +1,283 @@
+/* Shared marketing chrome — sticky top nav + dark footer for the public
+   marketing pages (landing, pricing). Faithfully ported from the `.nav` and
+   footer in mockups/tadaify-mvp/landing.html. Scoped under `.proto-marketing`
+   so it never collides with other prototype screens. Token-driven so it
+   re-themes light/dark automatically; the footer keeps its locked dark canvas
+   by design (decorative), with foreground tokens overridden inside it.
+
+   MarketingChrome is shared infrastructure and carries no requirement marker. */
+
+.proto-marketing {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+.proto-marketing *,
+.proto-marketing *::before,
+.proto-marketing *::after {
+  box-sizing: border-box;
+}
+
+.proto-marketing .mk-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-width: 0;
+}
+
+/* ── Brand wordmark (variant F lockup) ── */
+.proto-marketing .mk-wm {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  font-size: 22px;
+}
+.proto-marketing .mk-wm .ta {
+  color: var(--brand-primary);
+}
+.proto-marketing .mk-wm .da {
+  color: var(--brand-warm);
+}
+.proto-marketing .mk-wm .ify {
+  color: var(--fg);
+}
+
+/* ── Sticky top nav ── */
+.proto-marketing .mk-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.proto-marketing .mk-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  gap: 24px;
+  min-width: 0;
+}
+.proto-marketing .mk-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.proto-marketing .mk-nav-links {
+  display: none;
+  gap: 6px;
+}
+.proto-marketing .mk-nav-links a,
+.proto-marketing .mk-nav-links button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.proto-marketing .mk-nav-links a:hover,
+.proto-marketing .mk-nav-links button:hover {
+  color: var(--fg);
+  background: var(--bg-muted);
+}
+
+.proto-marketing .mk-nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.proto-marketing .mk-nav-mobile-toggle {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--fg);
+}
+.proto-marketing .mk-nav-mobile-toggle:hover {
+  background: var(--bg-muted);
+}
+.proto-marketing .mk-nav-mobile-toggle svg {
+  width: 22px;
+  height: 22px;
+}
+
+@media (min-width: 1024px) {
+  .proto-marketing .mk-nav-links {
+    display: flex;
+  }
+  .proto-marketing .mk-nav-mobile-toggle {
+    display: none;
+  }
+}
+
+/* Hide the "Login" ghost link on the narrowest screens to keep the bar tidy;
+   it remains reachable from the drawer. */
+@media (max-width: 480px) {
+  .proto-marketing .mk-nav-cta .btn-ghost {
+    display: none;
+  }
+}
+
+/* ── Mobile nav drawer ── */
+.proto-marketing .mk-nav-drawer {
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.proto-marketing .mk-nav-drawer a,
+.proto-marketing .mk-nav-drawer button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 0;
+  font-size: 16px;
+  color: var(--fg);
+  text-decoration: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.proto-marketing .mk-nav-drawer a:last-child,
+.proto-marketing .mk-nav-drawer button:last-child {
+  border-bottom: none;
+}
+@media (min-width: 1024px) {
+  .proto-marketing .mk-nav-drawer {
+    display: none;
+  }
+}
+
+/* ── Footer (locked dark canvas) ── */
+.proto-marketing .mk-footer {
+  background: #0b0f1e;
+  color: #e5e7eb;
+  padding: 64px 0 36px;
+}
+.proto-marketing .mk-footer a,
+.proto-marketing .mk-footer button {
+  color: #e5e7eb;
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+.proto-marketing .mk-footer a:hover,
+.proto-marketing .mk-footer button:hover {
+  color: #fff;
+}
+.proto-marketing .mk-foot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 640px) {
+  .proto-marketing .mk-foot-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .proto-marketing .mk-foot-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.proto-marketing .mk-foot-col h4 {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin: 0 0 14px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+.proto-marketing .mk-foot-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.proto-marketing .mk-foot-col li {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.proto-marketing .mk-ask-ai {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+  font-size: 13px;
+}
+.proto-marketing .mk-ask-ai .mk-label {
+  font-weight: 600;
+  color: #e5e7eb;
+}
+.proto-marketing .mk-ai-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.proto-marketing .mk-ai-links button {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.proto-marketing .mk-ai-links button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.proto-marketing .mk-foot-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding-top: 22px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.proto-marketing .mk-foot-bottom .mk-wm {
+  font-size: 14px;
+}
+/* Footer is a locked dark canvas — wordmark uses its on-dark colours. */
+.proto-marketing .mk-foot-bottom .mk-wm .ta {
+  color: var(--brand-primary);
+}
+.proto-marketing .mk-foot-bottom .mk-wm .ify {
+  color: #f9fafb;
+}
+.proto-marketing .mk-foot-legal button {
+  font-size: 12px;
+}
