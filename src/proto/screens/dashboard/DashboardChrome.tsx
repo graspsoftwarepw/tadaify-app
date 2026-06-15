@@ -90,6 +90,21 @@ export type DashboardChromeProps = {
   pageSubItems?: PageSubItem[];
   /** Which page row is the current one (defaults to "home"). */
   activePage?: string;
+  /**
+   * Marks a secondary nav entry (Insights / Affiliate / the Administration
+   * sub-items / Domain / Feedback) as the current screen, so the active nav
+   * never contradicts the rendered page.
+   */
+  activeNav?:
+    | "insights"
+    | "affiliate"
+    | "feedback"
+    | "domain"
+    | "admin-blog"
+    | "admin-store"
+    | "admin-schedule"
+    | "admin-portfolio"
+    | "admin-paid-articles";
   children: ReactNode;
 };
 
@@ -103,9 +118,12 @@ export function DashboardChrome({
   activeTab = "page",
   pageSubItems = [],
   activePage = "home",
+  activeNav,
   children,
 }: DashboardChromeProps) {
   const pages = [HOME_SUBITEM, ...pageSubItems];
+  const navCls = (key: NonNullable<DashboardChromeProps["activeNav"]>, base = "nav-item") =>
+    `${base}${activeNav === key ? " active is-current" : ""}`;
 
   return (
     <div className="app-dashboard-root" data-state="ready">
@@ -170,7 +188,7 @@ export function DashboardChrome({
           {/* Pages */}
           <div className="nav-group">
             <button
-              className="nav-item nav-pages-parent active"
+              className={`nav-item nav-pages-parent${activeNav ? "" : " active"}`}
               aria-expanded="true"
               aria-label="Pages"
               type="button"
@@ -182,7 +200,7 @@ export function DashboardChrome({
             </button>
             <div className="nav-sub-list" data-expanded="true" role="group" aria-label="Pages list">
               {pages.map((p) => {
-                const isActive = p.id === activePage;
+                const isActive = !activeNav && p.id === activePage;
                 const cls = `nav-sub-item${isActive ? " active is-current" : ""}`;
                 return p.href ? (
                   <a className={cls} href={p.href} key={p.id}>
@@ -222,12 +240,23 @@ export function DashboardChrome({
                 ["Colors", <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a5 5 0 0 0 5-5c0-4.9-4.5-9-10-9z" /></>],
                 ["Footer", <><line x1="12" y1="2" x2="12" y2="22" /><line x1="2" y1="12" x2="22" y2="12" /></>],
                 ["Domain", <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>],
-              ].map(([label, paths]) => (
-                <button className="nav-sub-item" type="button" key={label as string}>
-                  <S>{paths as ReactNode}</S>
-                  <span>{label as string}</span>
-                </button>
-              ))}
+              ].map(([label, paths]) =>
+                label === "Domain" ? (
+                  <a
+                    className={navCls("domain", "nav-sub-item")}
+                    href="/__proto/domain"
+                    key={label as string}
+                  >
+                    <S>{paths as ReactNode}</S>
+                    <span>{label as string}</span>
+                  </a>
+                ) : (
+                  <button className="nav-sub-item" type="button" key={label as string}>
+                    <S>{paths as ReactNode}</S>
+                    <span>{label as string}</span>
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -235,11 +264,11 @@ export function DashboardChrome({
 
           {/* Insights + Affiliate */}
           <div className="nav-group" style={{ paddingTop: 0 }}>
-            <a href="/__proto/insights" className="nav-item">
+            <a href="/__proto/insights" className={navCls("insights")}>
               <S><path d="M3 3v18h18" /><path d="M7 14l4-4 4 4 5-7" /></S>
               <span className="label">Insights</span>
             </a>
-            <a href="/__proto/affiliate" className="nav-item">
+            <a href="/__proto/affiliate" className={navCls("affiliate")}>
               <S><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></S>
               <span className="label">Affiliate</span>
             </a>
@@ -255,24 +284,24 @@ export function DashboardChrome({
               <S><polyline points="9 18 15 12 9 6" /></S>
             </button>
             <div className="nav-sub-list" data-expanded="true" role="group" aria-label="Administration sub-sections">
-              <a href="/__proto/admin-blog" className="nav-sub-item">
+              <a href="/__proto/admin-blog" className={navCls("admin-blog", "nav-sub-item")}>
                 <S><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></S>
                 <span>Blog</span>
               </a>
-              <a href="/__proto/admin-store" className="nav-sub-item">
+              <a href="/__proto/admin-store" className={navCls("admin-store", "nav-sub-item")}>
                 <S><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></S>
                 <span>Store</span>
                 <span className="nav-pill nav-pill-soon" style={{ marginLeft: "auto" }}>v2</span>
               </a>
-              <a href="/__proto/admin-schedule" className="nav-sub-item">
+              <a href="/__proto/admin-schedule" className={navCls("admin-schedule", "nav-sub-item")}>
                 <S><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></S>
                 <span>Schedule</span>
               </a>
-              <a href="/__proto/admin-portfolio" className="nav-sub-item">
+              <a href="/__proto/admin-portfolio" className={navCls("admin-portfolio", "nav-sub-item")}>
                 <S><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><line x1="4.93" y1="4.93" x2="9.17" y2="9.17" /><line x1="14.83" y1="14.83" x2="19.07" y2="19.07" /></S>
                 <span>Portfolio</span>
               </a>
-              <a href="/__proto/admin-paid-articles" className="nav-sub-item">
+              <a href="/__proto/admin-paid-articles" className={navCls("admin-paid-articles", "nav-sub-item")}>
                 <S><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></S>
                 <span>Paid articles</span>
               </a>
@@ -291,7 +320,7 @@ export function DashboardChrome({
               <S><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 3-3 3M12 17h.01" /></S>
               <span className="label">Help &amp; docs</span>
             </button>
-            <a href="/__proto/feedback" className="nav-item">
+            <a href="/__proto/feedback" className={navCls("feedback")}>
               <S><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></S>
               <span className="label">Feedback</span>
             </a>

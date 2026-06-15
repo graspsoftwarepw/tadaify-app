@@ -1,0 +1,656 @@
+/* Administration → Blog publishing screen.
+   Ported from mockups/tadaify-mvp/app-admin-blog.html. Everything screen-specific
+   is scoped under `.proto-admin-blog` (modal lives at the document root under
+   `.ab-modal-backdrop`). The appbar + sidebar chrome is NOT styled here — it
+   reuses app/styles/app-dashboard.css under `.app-dashboard-root`, which also
+   redefines the colour tokens for dark mode, so every value below derives from a
+   `var(--token)` and light/dark stays auditable.
+
+   Atoms reused from the global dashboard CSS: `.btn`, `.btn-primary`,
+   `.btn-ghost`, `.btn-warm`, `.btn-sm`, `.btn-xs`, `.btn-danger-ghost`,
+   `.iconbtn`, `.chip`, `.chip.live`. Screen-specific rules below add the
+   posts list, tabs, pagination, comments, empty states and the composer modal.
+
+   @implements fr-admin-blog
+   @implements fr-globalui-view-layout */
+
+.proto-admin-blog {
+  max-width: 1080px;
+}
+.proto-admin-blog *,
+.ab-modal-backdrop * {
+  box-sizing: border-box;
+}
+
+/* ── Breadcrumb ── */
+.proto-admin-blog .ab-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.proto-admin-blog .ab-crumb a {
+  color: var(--fg-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+.proto-admin-blog .ab-crumb a:hover {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+.proto-admin-blog .ab-crumb .sep {
+  color: var(--fg-subtle);
+}
+.proto-admin-blog .ab-crumb .here {
+  color: var(--fg);
+  font-weight: 600;
+  padding: 2px 6px;
+}
+
+/* ── Page header ── */
+.proto-admin-blog .ab-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.proto-admin-blog .ab-page-head h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 30px;
+  margin: 0;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.proto-admin-blog .ab-page-head .ph-emoji {
+  font-size: 26px;
+}
+.proto-admin-blog .ab-page-head .sub {
+  color: var(--fg-muted);
+  font-size: 13.5px;
+  margin-top: 6px;
+  max-width: 540px;
+}
+.proto-admin-blog .ab-link {
+  color: var(--brand-primary);
+  text-decoration: underline;
+}
+.proto-admin-blog .ab-page-head .actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Demo state switcher (prototype only) ── */
+.proto-admin-blog .ab-demo-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.proto-admin-blog .ab-demo-label {
+  font-size: 12px;
+  color: var(--fg-subtle);
+}
+
+/* ── Chip variants not present in the global atoms ── */
+.proto-admin-blog .chip.draft,
+.ab-modal-backdrop .chip.draft {
+  background: var(--bg-muted);
+  color: var(--fg-muted);
+}
+.proto-admin-blog .chip.scheduled {
+  background: color-mix(in srgb, var(--brand-warm) 16%, transparent);
+  color: var(--brand-warm-dark);
+}
+.proto-admin-blog .chip.tier,
+.ab-modal-backdrop .chip.tier {
+  background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+  color: var(--brand-primary);
+}
+
+/* ── Section card ── */
+.proto-admin-blog .ab-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.proto-admin-blog .ab-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.proto-admin-blog .ab-section-head h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  margin: 0;
+}
+.proto-admin-blog .ab-section-head .sub {
+  color: var(--fg-muted);
+  font-size: 12.5px;
+}
+.proto-admin-blog .ab-section-head .head-spacer {
+  flex: 1;
+}
+.proto-admin-blog .ab-section-body {
+  padding: 18px;
+}
+
+/* ── Posts toolbar ── */
+.proto-admin-blog .ab-posts-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.proto-admin-blog .ab-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-muted);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+.proto-admin-blog .ab-tab {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.proto-admin-blog .ab-tab.is-active {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+.proto-admin-blog .ab-tab-count {
+  margin-left: 6px;
+  font-size: 11px;
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+.proto-admin-blog .ab-tab.is-active .ab-tab-count {
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  color: var(--brand-primary);
+}
+
+.proto-admin-blog .ab-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+}
+.proto-admin-blog .ab-search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--fg-subtle);
+  pointer-events: none;
+}
+.proto-admin-blog .ab-search-wrap input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  outline: 0;
+}
+.proto-admin-blog .ab-search-wrap input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+
+/* ── Posts list ── */
+.proto-admin-blog .ab-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.proto-admin-blog .ab-post-row {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+.proto-admin-blog .ab-post-row:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+.proto-admin-blog .ab-pr-thumb {
+  width: 96px;
+  height: 64px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  background: linear-gradient(135deg, var(--brand-warm-soft), var(--brand-warm));
+}
+.proto-admin-blog .ab-pr-thumb.t-indigo {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+}
+.proto-admin-blog .ab-pr-thumb.t-rose {
+  background: linear-gradient(135deg, #FB7185, #BE185D);
+}
+.proto-admin-blog .ab-pr-thumb.t-emerald {
+  background: linear-gradient(135deg, #34D399, #047857);
+}
+.proto-admin-blog .ab-pr-thumb.t-slate {
+  background: linear-gradient(135deg, #475569, #0F172A);
+}
+.proto-admin-blog .ab-pr-thumb.t-warm {
+  background: linear-gradient(135deg, var(--brand-warm), var(--brand-warm-dark));
+}
+.proto-admin-blog .ab-pr-meta {
+  min-width: 0;
+}
+.proto-admin-blog .ab-pr-title {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--fg);
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proto-admin-blog .ab-pr-sub {
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.proto-admin-blog .ab-pr-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.proto-admin-blog .ab-no-results {
+  font-size: 13px;
+  color: var(--fg-muted);
+  padding: 8px 2px;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .proto-admin-blog .ab-post-row {
+    grid-template-columns: 64px 1fr auto;
+    gap: 10px;
+    padding: 10px;
+  }
+  .proto-admin-blog .ab-pr-thumb {
+    width: 64px;
+    height: 48px;
+    font-size: 14px;
+  }
+}
+
+/* ── Pagination ── */
+.proto-admin-blog .ab-pagination {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.proto-admin-blog .ab-page-btn {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.proto-admin-blog .ab-page-btn.is-current {
+  background: var(--brand-primary);
+  color: #fff;
+  border-color: var(--brand-primary);
+}
+.proto-admin-blog .ab-page-btn:hover:not(.is-current) {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+
+/* ── Comments admin ── */
+.proto-admin-blog .ab-comments > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.proto-admin-blog .ab-comments > summary::-webkit-details-marker {
+  display: none;
+}
+.proto-admin-blog .ab-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.proto-admin-blog .ab-comment {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 12px;
+}
+.proto-admin-blog .ab-av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+.proto-admin-blog .ab-c-body {
+  min-width: 0;
+}
+.proto-admin-blog .ab-c-author {
+  font-weight: 600;
+  font-size: 13px;
+}
+.proto-admin-blog .ab-c-meta {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
+}
+.proto-admin-blog .ab-c-text {
+  font-size: 13.5px;
+  color: var(--fg);
+  line-height: 1.5;
+}
+.proto-admin-blog .ab-c-actions {
+  display: inline-flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+/* ── Empty states ── */
+.proto-admin-blog .ab-empty {
+  text-align: center;
+  padding: 56px 24px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.proto-admin-blog .ab-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--brand-warm-soft), var(--brand-warm));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  margin-bottom: 18px;
+}
+.proto-admin-blog .ab-empty h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+.proto-admin-blog .ab-empty p {
+  color: var(--fg-muted);
+  font-size: 14px;
+  max-width: 460px;
+  margin: 0 auto 18px;
+  line-height: 1.55;
+}
+.proto-admin-blog .ab-empty code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--bg-muted);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+.proto-admin-blog .ab-empty-actions {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.proto-admin-blog .ab-explainer {
+  margin-top: 28px;
+}
+.proto-admin-blog .ab-explainer summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  font-weight: 600;
+  font-size: 13.5px;
+  display: inline-block;
+}
+.proto-admin-blog .ab-explainer summary::-webkit-details-marker {
+  display: none;
+}
+.proto-admin-blog .ab-explainer .ex-body {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+.proto-admin-blog .ab-explainer .ex-body ul {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+.proto-admin-blog .ab-explainer .ex-body li {
+  margin-bottom: 6px;
+}
+
+/* ==================================================================
+   Post composer modal — centred, never a drawer. Lives at the document
+   root (outside .proto-admin-blog) so it overlays the whole viewport, but
+   inside .app-dashboard-root so the dark-mode tokens still apply.
+   ================================================================== */
+.ab-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-dark) 55%, transparent);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ab-modal {
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--bg-dark) 25%, transparent);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ab-modal-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ab-modal-head h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  margin: 0;
+}
+.ab-modal-head .head-spacer {
+  flex: 1;
+}
+.ab-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.ab-modal-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ab-modal-foot .foot-spacer {
+  flex: 1;
+}
+
+/* Compose form */
+.ab-modal .ab-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  min-width: 0;
+}
+.ab-modal .ab-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ab-modal .ab-field-input,
+.ab-modal .ab-field-area,
+.ab-modal .ab-field-select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  outline: 0;
+}
+.ab-modal .ab-field-area {
+  min-height: 200px;
+  resize: vertical;
+  line-height: 1.55;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.ab-modal .ab-field-input:focus,
+.ab-modal .ab-field-area:focus,
+.ab-modal .ab-field-select:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+
+.ab-modal .ab-cover-uploader {
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.ab-modal .ab-cover-uploader:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+.ab-modal .ab-cover-uploader .cu-emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.ab-modal .ab-cover-uploader .cu-hint {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.ab-modal .ab-field-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) {
+  .ab-modal .ab-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ab-modal .ab-toolbar-rich {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-strong);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  flex-wrap: wrap;
+}
+.ab-modal .ab-toolbar-rich .iconbtn {
+  width: 28px;
+  height: 28px;
+}
+.ab-modal .ab-field-area.with-toolbar {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  min-height: 240px;
+}

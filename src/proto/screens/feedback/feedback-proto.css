@@ -1,0 +1,176 @@
+/**
+ * Scoped styles for the creator Feedback screen (FeedbackScreen.tsx).
+ * Faithful port of mockups/tadaify-mvp/app-feedback.html. Everything is scoped
+ * under `.proto-feedback`; the appbar/sidebar chrome and the global `.page-head`
+ * / `.btn` classes are reused from app-dashboard.css. Tokens + color-mix only,
+ * no raw hex, so light and dark themes both work.
+ */
+
+.proto-feedback,
+.proto-feedback * {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.proto-feedback .fb-sub {
+  color: var(--fg-muted);
+  font-size: 14px;
+  max-width: 60ch;
+  margin: 6px 0 0;
+}
+
+/* ── Quick-pick cards ── */
+.proto-feedback .fb-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 22px;
+  max-width: 920px;
+}
+
+@media (min-width: 760px) {
+  .proto-feedback .fb-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.proto-feedback .fb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  text-align: left;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s, box-shadow 0.12s;
+}
+
+.proto-feedback .fb-card:hover {
+  border-color: var(--brand-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+
+.proto-feedback .fb-card:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.proto-feedback .fb-card-ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 20px;
+  background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+}
+
+.proto-feedback .fb-card-warm .fb-card-ic {
+  background: color-mix(in srgb, var(--brand-warm) 16%, transparent);
+}
+
+.proto-feedback .fb-card-green .fb-card-ic {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+}
+
+.proto-feedback .fb-card-ttl {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.proto-feedback .fb-card-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+/* ── Feedback form ── */
+.proto-feedback .fb-form-card {
+  max-width: 720px;
+  margin-top: 30px;
+  padding: 24px;
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+}
+
+.proto-feedback .fb-form-ttl {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+
+.proto-feedback .fb-form-sub {
+  color: var(--fg-muted);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+
+.proto-feedback .fb-link {
+  color: var(--brand-primary);
+  font-weight: 500;
+}
+
+.proto-feedback .fb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.proto-feedback .fb-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.proto-feedback .fb-control {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg);
+  outline: none;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.proto-feedback .fb-control:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+
+.proto-feedback .fb-area {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.proto-feedback .fb-field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.proto-feedback .fb-contact-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.proto-feedback .fb-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
