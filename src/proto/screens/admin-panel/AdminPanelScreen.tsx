@@ -9,7 +9,6 @@
  * persona. Presentational, local-state only; data from typed section fixtures.
  *
  * @implements fr-admin-panel
- * @implements fr-globalui-view-layout
  */
 import { useState, type ReactNode } from "react";
 import "./admin-panel-proto.css";

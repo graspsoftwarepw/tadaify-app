@@ -11,7 +11,6 @@
  * AdminPanelScreen.
  *
  * @implements fr-admin-panel
- * @implements fr-globalui-view-layout
  */
 import type { ReactNode } from "react";
 import { toggleTheme } from "../../lib/theme";
