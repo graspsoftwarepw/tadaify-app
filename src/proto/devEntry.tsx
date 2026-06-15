@@ -51,6 +51,7 @@ import { DomainScreen } from "./screens/domain/DomainScreen";
 import { AffiliateScreen } from "./screens/affiliate/AffiliateScreen";
 import { InsightsScreen } from "./screens/insights/InsightsScreen";
 import { FeedbackScreen } from "./screens/feedback/FeedbackScreen";
+import { AdminPanelScreen } from "./screens/admin-panel/AdminPanelScreen";
 import { Wordmark } from "./lib/Wordmark";
 import { ThemeToggle } from "./lib/ThemeToggle";
 
@@ -104,6 +105,7 @@ const SCREENS: Screen[] = [
   { segment: "affiliate", label: "Affiliate program", status: "ready", batch: "P4 · Administration" },
   { segment: "insights", label: "Insights", status: "ready", batch: "P4 · Administration" },
   { segment: "feedback", label: "Feedback", status: "ready", batch: "P4 · Administration" },
+  { segment: "admin-panel", label: "Platform admin — super-admin panel", status: "ready", batch: "P4 · Platform admin" },
   { segment: "onboarding", label: "Onboarding + auth", status: "planned", batch: "P5 · Onboarding/auth" },
 ];
 
@@ -243,6 +245,8 @@ export default function ProtoDevHost() {
       return <InsightsScreen />;
     case "feedback":
       return <FeedbackScreen />;
+    case "admin-panel":
+      return <AdminPanelScreen />;
     case "style-guide":
       return <StyleGuide />;
     default:
