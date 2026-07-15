@@ -2,13 +2,8 @@
 
 A creator link-in-bio platform: public creator pages at `/<handle>` and an authenticated creator dashboard at `/app`. React Router 7 runs on Cloudflare Workers with Supabase-backed auth and data.
 
-## Identity
-
-- Default Grasp GitHub App identity for Codex in this repo: `grasp-green-goblin` (Junior Developer).
-
 ## Local Workflow
 
-- Use the global Codex instructions from `~/.codex/AGENTS.md`.
 - Keep this file repo-specific. Do not duplicate global Grasp GitHub, worktree, language, or review rules here.
 - Load only the local docs needed for the task.
 
