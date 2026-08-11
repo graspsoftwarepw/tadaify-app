@@ -1,0 +1,435 @@
+#!/usr/bin/env python3
+"""Run tadaify Playwright against one admitted, worktree-owned Supabase stack."""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.request
+from pathlib import Path
+
+
+REPO = Path(__file__).resolve().parent.parent
+EPH_ROOT = Path(os.environ.get("TADAIFY_E2E_EPH_ROOT", "/tmp/tadaify-eph"))
+RUNTIME_SKILL = Path(
+    os.environ.get(
+        "GRASP_LOCAL_RUNTIME_SKILL_DIR",
+        str(Path.home() / ".claude" / "skills" / "grasp-running-local-apps"),
+    )
+)
+PORT_BANDS = RUNTIME_SKILL / "scripts" / "port-bands"
+RUNTIME_SLOTS = RUNTIME_SKILL / "scripts" / "runtime-slots"
+RUNTIME_LEASES = RUNTIME_SKILL / "scripts" / "runtime-leases"
+PURPOSE = "e2e-stack"
+APP_OFFSET = 6
+PORTS = {
+    ("api", "port"): 1,
+    ("db", "port"): 2,
+    ("db", "shadow_port"): 0,
+    ("db.pooler", "port"): 9,
+    ("studio", "port"): 3,
+    ("inbucket", "port"): 4,
+    ("edge_runtime", "inspector_port"): 5,
+    ("analytics", "port"): 7,
+}
+EXCLUDED_SERVICES = "imgproxy,vector,supavisor,postgres-meta"
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"e2e-ephemeral-stack: {message}")
+
+
+def require_helper(path: Path) -> None:
+    if not path.is_file():
+        fail(f"managed runtime helper is unavailable at {path}")
+
+
+def hook_secret() -> str:
+    return f"v1,whsec_{base64.b64encode(os.urandom(32)).decode('ascii')}"
+
+
+def worktree_key() -> str:
+    canonical = Path(
+        subprocess.check_output(
+            ["git", "-C", str(REPO), "rev-parse", "--show-toplevel"], text=True
+        ).strip()
+    ).resolve()
+    digest = subprocess.run(
+        ["git", "hash-object", "--stdin"],
+        input=str(canonical),
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", digest):
+        fail("git hash-object returned an invalid worktree key")
+    return digest[:10]
+
+
+def project_slug() -> str:
+    branch = subprocess.check_output(
+        ["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"], text=True
+    ).strip()
+    label = re.sub(r"[^a-z0-9-]", "-", branch.lower().replace("/", "-")).strip("-")
+    label = label or "e2e"
+    label_hash = hashlib.sha256(label.encode()).hexdigest()[:8]
+    return f"{label[:18].rstrip('-')}-{label_hash}-{worktree_key()}"
+
+
+def reserved_base() -> int:
+    require_helper(PORT_BANDS)
+    found = subprocess.run(
+        [
+            sys.executable,
+            str(PORT_BANDS),
+            "base",
+            "--worktree",
+            str(REPO),
+            "--purpose",
+            PURPOSE,
+        ],
+        text=True,
+        capture_output=True,
+    )
+    if found.returncode != 0:
+        fail((found.stderr or found.stdout).strip() or "worktree has no reserved port band")
+    try:
+        return int(found.stdout.strip())
+    except ValueError:
+        fail(f"reserved port band is invalid: {found.stdout.strip()}")
+
+
+def require_own_band(base: int) -> None:
+    require_helper(PORT_BANDS)
+    checked = subprocess.run(
+        [
+            sys.executable,
+            str(PORT_BANDS),
+            "owner",
+            "--worktree",
+            str(REPO),
+            "--base",
+            str(base),
+        ],
+        text=True,
+        capture_output=True,
+    )
+    if checked.returncode != 0:
+        fail((checked.stderr or checked.stdout).strip() or f"band {base} is not owned here")
+
+
+def render_config(source: str, slug: str, base: int) -> str:
+    output: list[str] = []
+    section = ""
+    for line in source.splitlines():
+        header = re.match(r"^\[([a-z0-9_.]+)\]\s*$", line)
+        if header:
+            section = header.group(1)
+            output.append(line)
+            continue
+        if not section and re.match(r"^\s*project_id\s*=", line):
+            output.append(f'project_id = "{slug}"')
+            continue
+        if section == "auth" and re.match(r"^\s*site_url\s*=", line):
+            output.append(f'site_url = "http://127.0.0.1:{base + APP_OFFSET}"')
+            continue
+        if section == "auth" and re.match(r"^\s*additional_redirect_urls\s*=", line):
+            output.append(
+                f'additional_redirect_urls = ["http://127.0.0.1:{base + APP_OFFSET}"]'
+            )
+            continue
+        if section == "auth.hook.before_user_created" and re.match(r"^\s*uri\s*=", line):
+            output.append(
+                f'uri = "http://host.docker.internal:{base + PORTS[("api", "port")]}'
+                '/functions/v1/before-user-created"'
+            )
+            continue
+        port = re.match(r"^(\s*)(port|shadow_port|inspector_port)(\s*=\s*)\d+(.*)$", line)
+        if port and (section, port.group(2)) in PORTS:
+            value = base + PORTS[(section, port.group(2))]
+            output.append(f"{port.group(1)}{port.group(2)}{port.group(3)}{value}{port.group(4)}")
+            continue
+        enabled = re.match(r"^(\s*)enabled(\s*=\s*)true(.*)$", line)
+        if enabled and section in {"studio", "analytics"}:
+            output.append(f"{enabled.group(1)}enabled{enabled.group(2)}false{enabled.group(3)}")
+            continue
+        output.append(line)
+    return "\n".join(output) + "\n"
+
+
+def supabase_command() -> list[str]:
+    override = os.environ.get("SUPABASE_BIN", "")
+    if override:
+        return [override]
+    binary = shutil.which("supabase")
+    if binary:
+        return [binary]
+    if shutil.which("npx"):
+        return ["npx", "supabase"]
+    fail("Supabase CLI is unavailable")
+
+
+def prepare_workdir(slug: str, base: int) -> Path:
+    workdir = EPH_ROOT / slug
+    supabase = workdir / "supabase"
+    if workdir.exists():
+        fail(f"stale ephemeral workdir exists at {workdir}; clean it with the owning run")
+    supabase.mkdir(parents=True)
+    (supabase / "config.toml").write_text(
+        render_config((REPO / "supabase" / "config.toml").read_text(), slug, base),
+        encoding="utf-8",
+    )
+    for name in ("migrations", "functions", "templates", "seed.sql"):
+        source = REPO / "supabase" / name
+        if source.exists():
+            (supabase / name).symlink_to(source)
+    (workdir / "band").write_text(str(base), encoding="utf-8")
+    return workdir
+
+
+def parse_status(output: str, base: int) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for line in output.splitlines():
+        match = re.match(r'^(\w+)="?(.*?)"?$', line.strip())
+        if match:
+            values[match.group(1)] = match.group(2)
+    api = values.get("API_URL") or values.get("SUPABASE_URL") or ""
+    anon = values.get("ANON_KEY") or values.get("SUPABASE_ANON_KEY") or ""
+    service = values.get("SERVICE_ROLE_KEY") or values.get("SUPABASE_SERVICE_ROLE_KEY") or ""
+    if not api or not anon or not service:
+        fail("Supabase status omitted required local URL or keys")
+    app = f"http://127.0.0.1:{base + APP_OFFSET}"
+    return {
+        "E2E_ENV": "local",
+        "E2E_ISOLATED_STACK": "1",
+        "PLAYWRIGHT_BASE_URL": app,
+        "TEST_BASE_URL": app,
+        "APP_URL": app,
+        "SUPABASE_URL": api,
+        "SUPABASE_ANON_KEY": anon,
+        "SUPABASE_SERVICE_ROLE_KEY": service,
+        "VITE_SUPABASE_URL": api,
+        "VITE_SUPABASE_ANON_KEY": anon,
+        "INBUCKET_URL": values.get("INBUCKET_URL", f"http://127.0.0.1:{base + 4}"),
+        "HANDLE_RESERVATION_TTL_SECONDS": "600",
+    }
+
+
+def wait_ready(url: str, seconds: int = 90) -> None:
+    deadline = time.monotonic() + seconds
+    last = ""
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(f"{url}/auth/v1/health", timeout=3) as response:
+                if response.status == 200:
+                    return
+                last = f"HTTP {response.status}"
+        except Exception as error:  # noqa: BLE001 - readiness retries every transport failure
+            last = str(error)
+        time.sleep(1)
+    fail(f"Supabase Auth did not become ready: {last}")
+
+
+def container_ids(slug: str) -> list[str]:
+    found = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "--no-trunc",
+            "--filter",
+            f"label=com.supabase.cli.project={slug}",
+            "--format",
+            "{{.ID}}",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    ids = [line.strip() for line in found.stdout.splitlines() if line.strip()]
+    if found.returncode != 0 or not ids or any(not re.fullmatch(r"[0-9a-f]{64}", item) for item in ids):
+        fail((found.stderr or found.stdout).strip() or "exact Supabase containers were not found")
+    return ids
+
+
+def lease(action: str, owner_pid: int | None = None, containers: list[str] | None = None) -> subprocess.CompletedProcess[str]:
+    require_helper(RUNTIME_LEASES)
+    command = [
+        sys.executable,
+        str(RUNTIME_LEASES),
+        action,
+        "--worktree",
+        str(REPO),
+        "--purpose",
+        PURPOSE,
+    ]
+    if owner_pid is not None:
+        command.extend(["--owner-pid", str(owner_pid)])
+    for container in containers or []:
+        command.extend(["--container", container])
+    return subprocess.run(command, text=True, capture_output=True)
+
+
+class Heartbeat:
+    def __init__(self, owner_pid: int) -> None:
+        self.owner_pid = owner_pid
+        self.stop_event = threading.Event()
+        self.thread = threading.Thread(target=self.run, daemon=True)
+
+    def run(self) -> None:
+        while not self.stop_event.wait(60):
+            renewed = lease("heartbeat", owner_pid=self.owner_pid)
+            if renewed.returncode != 0:
+                return
+
+    def start(self) -> None:
+        self.thread.start()
+
+    def stop(self) -> None:
+        self.stop_event.set()
+        self.thread.join(timeout=5)
+
+
+def require_active_slot() -> None:
+    require_helper(RUNTIME_SLOTS)
+    token = os.environ.get("GRASP_RUNTIME_SLOT_TOKEN", "")
+    if not re.fullmatch(r"[0-9a-f]{32}", token):
+        fail("inner E2E lifecycle has no admitted runtime slot")
+    result = subprocess.run(
+        [str(RUNTIME_SLOTS), "probe", "--token", token], text=True, capture_output=True
+    )
+    if result.returncode != 0:
+        fail((result.stderr or result.stdout).strip() or "runtime slot is not active")
+
+
+def run_inner(slug: str, playwright_args: list[str]) -> int:
+    require_active_slot()
+    base = reserved_base()
+    require_own_band(base)
+    supabase = supabase_command()
+    workdir = prepare_workdir(slug, base)
+    owner_pid = os.getpid()
+    heartbeat: Heartbeat | None = None
+    registered = False
+    started = False
+    result = 1
+    environment = dict(os.environ)
+    environment.setdefault("BEFORE_USER_CREATED_HOOK_SECRET", hook_secret())
+    try:
+        subprocess.run(
+            [*supabase, "start", "--workdir", str(workdir), "-x", EXCLUDED_SERVICES],
+            cwd=REPO,
+            env=environment,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        started = True
+        status = subprocess.check_output(
+            [*supabase, "status", "--workdir", str(workdir), "-o", "env"],
+            cwd=REPO,
+            env=environment,
+            text=True,
+        )
+        browser_env = parse_status(status, base)
+        wait_ready(browser_env["SUPABASE_URL"])
+        registered_result = lease("register", owner_pid=owner_pid, containers=container_ids(slug))
+        if registered_result.returncode != 0:
+            fail(
+                (registered_result.stderr or registered_result.stdout).strip()
+                or "runtime lease registration failed"
+            )
+        registered = True
+        heartbeat = Heartbeat(owner_pid)
+        heartbeat.start()
+        completed = subprocess.run(
+            ["npx", "playwright", "test", *playwright_args],
+            cwd=REPO,
+            env={**environment, **browser_env},
+        )
+        result = completed.returncode
+    finally:
+        require_own_band(base)
+        stopped = subprocess.run(
+            [
+                *supabase,
+                "stop",
+                "--project-id",
+                slug,
+                "--workdir",
+                str(workdir),
+                "--no-backup",
+                "--yes",
+            ],
+            cwd=REPO,
+            env=environment,
+        )
+        if heartbeat:
+            heartbeat.stop()
+        if stopped.returncode == 0:
+            if registered:
+                released = lease("release")
+                if released.returncode != 0:
+                    fail(
+                        (released.stderr or released.stdout).strip()
+                        or "runtime lease release failed"
+                    )
+            shutil.rmtree(workdir)
+        else:
+            fail(f"Supabase stop failed with exit {stopped.returncode}; preserved {workdir}")
+        if not started and result == 1:
+            result = stopped.returncode or 1
+    return result
+
+
+def run_admitted(playwright_args: list[str]) -> int:
+    require_helper(RUNTIME_SLOTS)
+    slug = project_slug()
+    command = [
+        str(RUNTIME_SLOTS),
+        "run",
+        "--repo",
+        str(REPO),
+        "--purpose",
+        PURPOSE,
+        "--mode",
+        "test",
+        "--",
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "_run-inner",
+        "--slug",
+        slug,
+    ]
+    if playwright_args:
+        command.extend(["--", *playwright_args])
+    return subprocess.run(command, cwd=REPO).returncode
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    commands = parser.add_subparsers(dest="command", required=True)
+    run_parser = commands.add_parser("run")
+    run_parser.add_argument("playwright_args", nargs=argparse.REMAINDER)
+    inner_parser = commands.add_parser("_run-inner")
+    inner_parser.add_argument("--slug", required=True)
+    inner_parser.add_argument("playwright_args", nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+    if args.playwright_args[:1] == ["--"]:
+        args.playwright_args = args.playwright_args[1:]
+    if args.command == "run":
+        return run_admitted(args.playwright_args)
+    if not re.fullmatch(r"[a-z0-9-]+", args.slug) or not args.slug.endswith(
+        f"-{worktree_key()}"
+    ):
+        parser.error("_run-inner requires a worktree-owned --slug")
+    return run_inner(args.slug, args.playwright_args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

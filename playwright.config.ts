@@ -1,8 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? "http://127.0.0.1:44200";
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL ??
+  process.env.TEST_BASE_URL ??
+  "http://127.0.0.1:44200";
 const e2eEnv = process.env.E2E_ENV ?? "shared";
 const isLocalE2E = e2eEnv === "local";
+const appPort = new URL(baseURL).port || "80";
 
 /**
  * Playwright configuration for tadaify-app E2E tests.
@@ -12,7 +16,7 @@ const isLocalE2E = e2eEnv === "local";
  *
  * Prerequisites:
  *   - `supabase start` (port-band 44210-44219)
- *   - `.dev.vars` configured with Workers env bindings
+ *   - local runner-provided Workers env bindings (or `.dev.vars` for a manual stack)
  *   - `npm run dev` started (or let webServer block start it)
  */
 
@@ -46,7 +50,7 @@ export default defineConfig({
   // Start dev server before running tests. Local E2E must not reuse an
   // already-running server because it may be bound to hosted Supabase values.
   webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 44200",
+    command: `npm run dev -- --host 127.0.0.1 --port ${appPort} --strictPort`,
     url: baseURL,
     reuseExistingServer: !isLocalE2E,
     timeout: 120_000,
@@ -55,7 +59,8 @@ export default defineConfig({
       // Pass through env vars needed by Workers dev server
       // These must be set in the shell or .dev.vars for tests to work
       ...(process.env.HANDLE_RESERVATION_TTL_SECONDS && {
-        HANDLE_RESERVATION_TTL_SECONDS: process.env.HANDLE_RESERVATION_TTL_SECONDS,
+        HANDLE_RESERVATION_TTL_SECONDS:
+          process.env.HANDLE_RESERVATION_TTL_SECONDS,
       }),
       ...(process.env.SUPABASE_URL && {
         SUPABASE_URL: process.env.SUPABASE_URL,
@@ -67,7 +72,8 @@ export default defineConfig({
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
       }),
       ...(process.env.BEFORE_USER_CREATED_HOOK_SECRET && {
-        BEFORE_USER_CREATED_HOOK_SECRET: process.env.BEFORE_USER_CREATED_HOOK_SECRET,
+        BEFORE_USER_CREATED_HOOK_SECRET:
+          process.env.BEFORE_USER_CREATED_HOOK_SECRET,
       }),
     },
   },

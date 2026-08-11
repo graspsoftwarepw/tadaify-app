@@ -19,10 +19,10 @@
 
 import { test, expect } from "@playwright/test";
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? "";
-const APP_URL = "http://localhost:44200";
+const APP_URL = (process.env.PLAYWRIGHT_BASE_URL ?? process.env.TEST_BASE_URL ?? process.env.APP_URL)!;
 const TEST_PASSWORD = "TestPass123!";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

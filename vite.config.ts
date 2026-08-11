@@ -3,28 +3,51 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import { realpathSync } from "node:fs";
-import { resolve } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
 
 // When this repo is checked out as a git worktree under
 // `<repo>/.claude/worktrees/<branch>`, `node_modules` is a symlink to the
 // parent checkout's directory. Vite's default `server.fs.strict` blocks
 // `@fs` requests outside the project root, which makes the client never
 // hydrate (every dynamic import returns 403) and breaks Playwright. We
-// resolve the real `node_modules` path and add it to `server.fs.allow` so
-// the worktree dev server (and the parent's) can both serve the symlinked
-// dependency tree.
-const NODE_MODULES_REAL = (() => {
-  try {
-    return realpathSync(resolve(__dirname, "node_modules"));
-  } catch {
-    return null;
-  }
-})();
+// resolve both the checkout-local path and the path that Node actually used
+// for Vite. The latter also covers managed worktrees that intentionally reuse
+// the canonical checkout's dependencies without a node_modules symlink.
+const require = createRequire(import.meta.url);
+const serverFileSystemAllow = new Set([__dirname]);
+const localWorkerBindingNames = [
+  "SUPABASE_URL",
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "HANDLE_RESERVATION_TTL_SECONDS",
+] as const;
+try {
+  serverFileSystemAllow.add(realpathSync(resolve(__dirname, "node_modules")));
+} catch {
+  // A fresh worktree may have no checkout-local dependency directory.
+}
+try {
+  const vitePackage = realpathSync(require.resolve("vite/package.json"));
+  serverFileSystemAllow.add(resolve(dirname(vitePackage), ".."));
+} catch {
+  // Vite will report the missing dependency itself if resolution is broken.
+}
 
 export default defineConfig({
   plugins: [
     cloudflare({
       viteEnvironment: { name: "ssr" },
+      config: (config) => {
+        if (process.env.E2E_ISOLATED_STACK !== "1") return;
+        const bindings = Object.fromEntries(
+          localWorkerBindingNames.flatMap((name) =>
+            process.env[name] ? [[name, process.env[name]]] : [],
+          ),
+        );
+        if (Object.keys(bindings).length === 0) return;
+        return { vars: { ...config.vars, ...bindings } };
+      },
       // Uses the default wrangler.jsonc (single config for local + prod per DEC-367=C).
       // miniflare auto-emulates AVATARS_R2 r2_buckets locally via filesystem-backed storage.
     }),
@@ -45,11 +68,9 @@ export default defineConfig({
   optimizeDeps: {
     include: ["lucide-react", "react", "react-dom"],
   },
-  server: NODE_MODULES_REAL
-    ? {
-        fs: {
-          allow: [__dirname, NODE_MODULES_REAL],
-        },
-      }
-    : undefined,
+  server: {
+    fs: {
+      allow: [...serverFileSystemAllow],
+    },
+  },
 });

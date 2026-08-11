@@ -25,9 +25,9 @@ import { test, expect } from "@playwright/test";
 // Constants
 // ---------------------------------------------------------------------------
 
-const MAILPIT_URL = "http://localhost:44214";
+const MAILPIT_URL = process.env.INBUCKET_URL!;
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)!;
 const SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ??
   // local-dev demo JWT (safe — local only)
