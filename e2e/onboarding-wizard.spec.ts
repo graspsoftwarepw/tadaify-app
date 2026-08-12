@@ -27,7 +27,7 @@ import { test, expect } from "@playwright/test";
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 /** Handle prefix — all t165* rows cleaned up in afterAll */

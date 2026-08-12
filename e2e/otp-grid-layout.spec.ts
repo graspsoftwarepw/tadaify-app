@@ -37,7 +37,7 @@ const __dirname = dirname(__filename);
 // ---------------------------------------------------------------------------
 
 /** Supabase local API (port-band 44210-44219 for tadaify) */
-const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:44210";
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL)!;
 
 /** Service role key — read from .dev.vars if not in env */
 const SERVICE_ROLE_KEY = (() => {
@@ -59,7 +59,7 @@ const SERVICE_ROLE_KEY = (() => {
   return "";
 })();
 
-const MAILPIT_URL = "http://localhost:44214";
+const MAILPIT_URL = process.env.INBUCKET_URL!;
 
 /** Handle prefix — all t178* rows cleaned up in afterAll */
 const HANDLE_PREFIX = "t178";
