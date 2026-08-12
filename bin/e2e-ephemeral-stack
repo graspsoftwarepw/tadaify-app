@@ -308,7 +308,13 @@ def require_active_slot() -> None:
         fail((result.stderr or result.stdout).strip() or "runtime slot is not active")
 
 
-def run_inner(slug: str, playwright_args: list[str]) -> int:
+def require_playwright_command(command: list[str]) -> None:
+    if command[:3] != ["npx", "playwright", "test"]:
+        fail("run requires the explicit command boundary: npx playwright test")
+
+
+def run_inner(slug: str, command: list[str]) -> int:
+    require_playwright_command(command)
     require_active_slot()
     base = reserved_base()
     require_own_band(base)
@@ -348,7 +354,7 @@ def run_inner(slug: str, playwright_args: list[str]) -> int:
         heartbeat = Heartbeat(owner_pid)
         heartbeat.start()
         completed = subprocess.run(
-            ["npx", "playwright", "test", *playwright_args],
+            command,
             cwd=REPO,
             env={**environment, **browser_env},
         )
@@ -387,8 +393,9 @@ def run_inner(slug: str, playwright_args: list[str]) -> int:
     return result
 
 
-def run_admitted(playwright_args: list[str]) -> int:
+def run_admitted(command_args: list[str]) -> int:
     require_helper(RUNTIME_SLOTS)
+    require_playwright_command(command_args)
     slug = project_slug()
     command = [
         str(RUNTIME_SLOTS),
@@ -406,8 +413,7 @@ def run_admitted(playwright_args: list[str]) -> int:
         "--slug",
         slug,
     ]
-    if playwright_args:
-        command.extend(["--", *playwright_args])
+    command.extend(["--", *command_args])
     return subprocess.run(command, cwd=REPO).returncode
 
 
@@ -415,20 +421,20 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest="command", required=True)
     run_parser = commands.add_parser("run")
-    run_parser.add_argument("playwright_args", nargs=argparse.REMAINDER)
+    run_parser.add_argument("command_args", nargs=argparse.REMAINDER)
     inner_parser = commands.add_parser("_run-inner")
     inner_parser.add_argument("--slug", required=True)
-    inner_parser.add_argument("playwright_args", nargs=argparse.REMAINDER)
+    inner_parser.add_argument("command_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
-    if args.playwright_args[:1] == ["--"]:
-        args.playwright_args = args.playwright_args[1:]
+    if args.command_args[:1] == ["--"]:
+        args.command_args = args.command_args[1:]
     if args.command == "run":
-        return run_admitted(args.playwright_args)
+        return run_admitted(args.command_args)
     if not re.fullmatch(r"[a-z0-9-]+", args.slug) or not args.slug.endswith(
         f"-{worktree_key()}"
     ):
         parser.error("_run-inner requires a worktree-owned --slug")
-    return run_inner(args.slug, args.playwright_args)
+    return run_inner(args.slug, args.command_args)
 
 
 if __name__ == "__main__":

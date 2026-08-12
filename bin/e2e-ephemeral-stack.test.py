@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import importlib.util
+import json
 from importlib.machinery import SourceFileLoader
 import os
 import re
@@ -92,7 +93,9 @@ port = 44217
                 mock.patch.object(MODULE, "project_slug", return_value="owned-0123456789"),
                 mock.patch.object(MODULE.subprocess, "run", return_value=completed) as run,
             ):
-                self.assertEqual(MODULE.run_admitted(["focused.spec.ts"]), 17)
+                self.assertEqual(
+                    MODULE.run_admitted(["npx", "playwright", "test", "focused.spec.ts"]), 17
+                )
         command = run.call_args.args[0]
         self.assertEqual(
             command[:9],
@@ -108,14 +111,22 @@ port = 44217
                 "--",
             ],
         )
-        self.assertEqual(command[-2:], ["--", "focused.spec.ts"])
+        self.assertEqual(
+            command[-5:], ["--", "npx", "playwright", "test", "focused.spec.ts"]
+        )
         self.assertLess(command.index("run"), command.index("_run-inner"))
 
     def test_public_cli_forwards_no_args_spec_and_playwright_flags(self) -> None:
         cases = [
-            ([], []),
-            (["e2e/focused.spec.ts"], ["e2e/focused.spec.ts"]),
-            (["--ui", "--project=desktop"], ["--ui", "--project=desktop"]),
+            (["npx", "playwright", "test"], ["npx", "playwright", "test"]),
+            (
+                ["npx", "playwright", "test", "e2e/focused.spec.ts"],
+                ["npx", "playwright", "test", "e2e/focused.spec.ts"],
+            ),
+            (
+                ["npx", "playwright", "test", "--ui", "--project=desktop"],
+                ["npx", "playwright", "test", "--ui", "--project=desktop"],
+            ),
         ]
         with tempfile.TemporaryDirectory() as directory:
             skill = Path(directory)
@@ -141,6 +152,27 @@ port = 44217
                 if inner_args[:1] == ["--"]:
                     inner_args = inner_args[1:]
                 self.assertEqual(inner_args, expected)
+
+    def test_public_cli_rejects_an_implicit_or_non_playwright_command(self) -> None:
+        for supplied in ([], ["focused.spec.ts"], ["true"]):
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "run", "--", *supplied],
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("explicit command boundary", completed.stderr)
+
+    def test_local_package_scripts_publish_the_explicit_playwright_boundary(self) -> None:
+        package = json.loads((MODULE.REPO / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            package["scripts"]["test:e2e:local"],
+            "bin/e2e-ephemeral-stack run -- npx playwright test",
+        )
+        self.assertEqual(
+            package["scripts"]["test:e2e:ui:local"],
+            "bin/e2e-ephemeral-stack run -- npx playwright test --ui",
+        )
 
     def test_executable_e2e_code_has_no_fixed_main_stack_urls(self) -> None:
         fixed = re.compile(r"https?://(?:localhost|127\.0\.0\.1):442(?:00|10|14)")
