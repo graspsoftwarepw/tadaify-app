@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-// bin/maps-gen — generate docs/maps/{views,modules,e2e}.md (grasp-app-structure, #308).
+// bin/maps-gen — generate .metadata/maps/{views,modules,e2e}.md (grasp-app-structure, #308).
 //
 // Parses the RR7 route registry (app/routes.ts), joins the P3 BR records and the P4
 // module registry + module annotations, and emits the three Pillar-0 maps, each with a
-// digest header computed over the *inputs*. The maps are NEVER hand-edited.
+// digest header computed over the *inputs*. The ignored cache is NEVER hand-edited.
 //
 // Contract: bin/lib/maps-lib.mjs
-// Usage: bin/maps-gen            (writes docs/maps/*.md)
+// Usage: bin/maps-gen            (writes .metadata/maps/*.md)
 //        bin/maps-gen --check    (alias of bin/maps-check; non-writing freshness check)
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import {
-  repoRoot, buildModel, computeDigest, renderViews, renderModules, renderE2e, MAP_FILES,
+  repoRoot, buildModel, computeDigest, renderViews, renderModules, renderE2e, MAP_FILES, MAPS_DIR,
 } from "./lib/maps-lib.mjs";
 
 const root = repoRoot();
@@ -32,8 +32,8 @@ const out = {
   "e2e.md": renderE2e(model, sha),
 };
 
-mkdirSync(join(root, "docs/maps"), { recursive: true });
+mkdirSync(join(root, MAPS_DIR), { recursive: true });
 for (const f of MAP_FILES) {
-  writeFileSync(join(root, "docs/maps", f), out[f], "utf8");
-  process.stderr.write(`wrote docs/maps/${f} (sha=${sha})\n`);
+  writeFileSync(join(root, MAPS_DIR, f), out[f], "utf8");
+  process.stderr.write(`wrote ${MAPS_DIR}/${f} (sha=${sha})\n`);
 }

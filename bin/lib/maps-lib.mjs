@@ -1,6 +1,6 @@
 // bin/lib/maps-lib.mjs
 //
-// Shared library for the Pillar-0 generated maps (grasp-app-structure, tadaify-app#308).
+// Shared library for the Pillar-0 generated map cache (grasp-app-structure, tadaify-app#308).
 //
 // Single source of the input model that `bin/maps-gen` renders, `bin/maps-check`
 // hashes, and `bin/req` reads. Nothing here parses application code at query time:
@@ -13,15 +13,15 @@
 //
 // IMPORTANT (validator interplay): the rendered map text must NEVER contain the literal
 // words "STALE" / "regenerate" / "<!-- stale -->" — validate_structure.py check 10 treats
-// any of those tokens in docs/maps/*.md as a committed staleness signal and FAILs. The
-// staleness *runtime* signalling therefore lives only in bin/maps-check stderr, not in the
-// committed files.
+// any of those tokens in a map as a staleness signal and FAILs. The staleness *runtime*
+// signalling therefore lives only in bin/maps-check stderr, not in the generated files.
 
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 
 export const MAP_FILES = ["views.md", "modules.md", "e2e.md"];
+export const MAPS_DIR = ".metadata/maps";
 export const DIGEST_RE = /<!--\s*generated:\s*bin\/maps-gen\s+sha=([0-9a-f]+)\s+DO NOT EDIT\s*-->/;
 
 // A feature id: F-<WORD>(-<WORD>)*-<NNN>[slice], i.e. UPPERCASE/digit words ending in a
@@ -172,7 +172,7 @@ function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// ── e2e spec index (e2e/*.spec.ts) ───────────────────────────────────────────
+// ── e2e spec index (e2e/**/*.spec.ts) ────────────────────────────────────────
 //
 // Each Playwright spec header carries the F-… feature id(s) it exercises
 // (e.g. "App Dashboard (F-APP-DASHBOARD-001a, #171)"). We index spec → features
@@ -182,8 +182,18 @@ export function indexE2eSpecs(root) {
   const dir = join(root, "e2e");
   const specs = [];
   if (!existsSync(dir)) return specs;
-  for (const f of readdirSync(dir)) {
-    if (!f.endsWith(".spec.ts")) continue;
+
+  const files = [];
+  const visit = (current, prefix = "") => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) visit(join(current, entry.name), relative);
+      else if (entry.name.endsWith(".spec.ts")) files.push(relative);
+    }
+  };
+  visit(dir);
+
+  for (const f of files.sort()) {
     const head = readFileSync(join(dir, f), "utf8").split("\n").slice(0, 25).join("\n");
     const features = [...new Set([...head.matchAll(FEATURE_RE_G)].map((m) => m[1]))];
     const covers = [...new Set([...head.matchAll(/\b(BR-[A-Za-z0-9-]+|TR-[A-Za-z0-9-]+)\b/g)].map((m) => m[1]))];
@@ -429,12 +439,11 @@ export function buildModel(root) {
   // Playwright e2e specs, joined by feature id back to the views they exercise
   for (const s of e2eSpecs) {
     const owning = views.filter((v) => v.e2e.includes(`e2e/${s.spec}`));
-    if (!owning.length) continue;
     e2eRows.push({
       spec: `e2e/${s.spec}`,
       views: owning.map((v) => v.id),
-      governs: dedupe(owning.flatMap((v) => v.governs)),
-      module: owning[0].module,
+      governs: dedupe([...owning.flatMap((v) => v.governs), ...s.features, ...s.covers]),
+      module: owning[0]?.module || "—",
     });
   }
   e2eRows.sort((a, b) => a.spec.localeCompare(b.spec));
@@ -485,7 +494,7 @@ export function computeDigest(root) {
     panels: PANELS.map((p) => [p.id, p.url, p.kind, p.module, p.feature]),
     brRoutes: model.brRecords.map((r) => [r.id, [...r.routes].sort()]),
     annotations: collectAnnotations(root, model),
-    e2e: model.e2eSpecs.map((s) => [s.spec, [...s.features].sort()]),
+    e2e: model.e2eSpecs.map((s) => [s.spec, [...s.features].sort(), [...s.covers].sort()]),
     // The // req: annotation convention does not exist in tadaify yet → hashes empty.
     reqAnnotations: [],
   };
@@ -545,7 +554,7 @@ function renderTable(sha, cols, rows) {
 }
 
 export function readMapDigest(root, file) {
-  const abs = join(root, "docs/maps", file);
+  const abs = join(root, MAPS_DIR, file);
   if (!existsSync(abs)) return null;
   const m = readFileSync(abs, "utf8").match(DIGEST_RE);
   return m ? m[1] : null;
