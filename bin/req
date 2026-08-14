@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-// bin/req — bidirectional reader over docs/maps/* (grasp-app-structure, #308).
+// bin/req — bidirectional reader over .metadata/maps/* (grasp-app-structure, #308).
 //
-// A PURE reader: it parses the three committed maps and never touches application code.
-// It calls bin/maps-check first and FAILS CLOSED (exit 2, "stale map") on a digest
-// mismatch, so a query can never answer against drifted maps.
+// It parses the three ignored cached maps. Missing or stale maps are regenerated from the
+// tracked application and requirement sources, then checked again before a query runs.
 //
 //   bin/req find <ID>                 forward: ID (view | module path | BR/TR/F id) → subgraph
 //   bin/req who-governs <path|route>  reverse: URL / file path → governing ids + owning view
@@ -15,26 +14,36 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { repoRoot, MAP_FILES, DIGEST_RE, normalizeUrl } from "./lib/maps-lib.mjs";
+import { repoRoot, MAP_FILES, MAPS_DIR, DIGEST_RE, normalizeUrl } from "./lib/maps-lib.mjs";
 
 const root = repoRoot();
 
 // ── fail closed on stale digest ──────────────────────────────────────────────
 function ensureFresh() {
-  const r = spawnSync(join(root, "bin/maps-check"), { encoding: "utf8" });
-  if (r.status !== 0) {
-    process.stderr.write("stale map: refusing to read drifted maps (run bin/maps-gen)\n");
-    if (r.stderr) process.stderr.write(r.stderr);
+  let check = spawnSync(join(root, "bin/maps-check"), { encoding: "utf8" });
+  if (check.status === 0) return;
+
+  const generated = spawnSync(join(root, "bin/maps-gen"), { encoding: "utf8" });
+  if (generated.status !== 0) {
+    process.stderr.write(`map cache regeneration failed for ${MAPS_DIR}\n`);
+    if (generated.stderr) process.stderr.write(generated.stderr);
     process.exit(2);
   }
+  check = spawnSync(join(root, "bin/maps-check"), { encoding: "utf8" });
+  if (check.status !== 0) {
+    process.stderr.write(`stale map: ${MAPS_DIR} stayed stale after regeneration\n`);
+    if (check.stderr) process.stderr.write(check.stderr);
+    process.exit(2);
+  }
+  process.stderr.write(`regenerated ${MAPS_DIR}\n`);
 }
 
 // ── map table parsing (reader only) ──────────────────────────────────────────
 function parseMap(file) {
-  const abs = join(root, "docs/maps", file);
-  if (!existsSync(abs)) { process.stderr.write(`missing map: docs/maps/${file}\n`); process.exit(2); }
+  const abs = join(root, MAPS_DIR, file);
+  if (!existsSync(abs)) { process.stderr.write(`missing map: ${MAPS_DIR}/${file}\n`); process.exit(2); }
   const text = readFileSync(abs, "utf8");
-  if (!DIGEST_RE.test(text)) { process.stderr.write(`no digest header in docs/maps/${file}\n`); process.exit(2); }
+  if (!DIGEST_RE.test(text)) { process.stderr.write(`no digest header in ${MAPS_DIR}/${file}\n`); process.exit(2); }
   const lines = text.split("\n").filter((l) => l.startsWith("|"));
   if (lines.length < 2) return { cols: [], rows: [] };
   const cols = splitRow(lines[0]);
@@ -151,6 +160,11 @@ function orphans(db) {
   process.stdout.write("# views with empty tests\n");
   for (const v of db.views) {
     if (list(v.tests).length === 0) { process.stdout.write(`  ${v.id} ${v.url}\n`); any = true; }
+  }
+
+  process.stdout.write("# e2e specs with empty governs\n");
+  for (const row of db.e2e) {
+    if (list(row.governs).length === 0) { process.stdout.write(`  ${row.spec}\n`); any = true; }
   }
 
   process.stdout.write("# panel views with no parent (host)\n");
