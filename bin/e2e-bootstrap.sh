@@ -57,26 +57,16 @@ check_node() {
 
 check_supabase_cli() {
   log "==> Supabase CLI"
-  if command -v supabase >/dev/null 2>&1; then
-    ok "supabase $(supabase --version 2>/dev/null | head -n1)."
-    return 0
+  local version
+  if ! version="$("$ROOT/bin/supabase-cli" --version 2>/dev/null | head -n1)"; then
+    die "Pinned Supabase CLI verification failed. Run 'npm ci' and retry."
   fi
-
-  if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
-    info "Supabase CLI missing. Installing via Homebrew: supabase/tap/supabase"
-    if brew install supabase/tap/supabase; then
-      ok "supabase $(supabase --version 2>/dev/null | head -n1)."
-      return 0
-    fi
-    warn "Homebrew install failed."
-  fi
-
-  die "Supabase CLI not found and could not auto-install. Install manually: https://supabase.com/docs/guides/cli/getting-started"
+  ok "supabase ${version} (root package-lock authority)."
 }
 
 check_npm_deps() {
   log "==> npm dependencies"
-  if [[ -x "node_modules/.bin/playwright" ]]; then
+  if [[ -x "node_modules/.bin/playwright" && -x "node_modules/.bin/supabase" ]]; then
     ok "node_modules already populated."
     return 0
   fi

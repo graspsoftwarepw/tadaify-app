@@ -9,8 +9,11 @@ A creator link-in-bio platform: public creator pages at `/<handle>` and an authe
 
 ## Project Context
 
-- `npm run setup` bootstraps the local stack.
-- `npm run dev` runs the app.
+- `npm run setup` validates and prepares the local environment, then removes its exact temporary
+  main stack before returning.
+- `npm run dev:local` owns the fixed-port Supabase stack and app for one foreground process. Its
+  normal exit, catchable signals, and detached keeper after `SIGKILL` remove that exact stack.
+- `npm run dev` runs only the app and assumes its backend is managed elsewhere.
 - `npm run test` runs Vitest.
 - `bin/req` queries the requirement maps and regenerates their ignored `.metadata/maps/` cache
   whenever it is missing or stale. The tracked requirements, module registry, route registry, and

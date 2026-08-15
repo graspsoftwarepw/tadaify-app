@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -14,6 +15,7 @@ import sys
 import threading
 import time
 import urllib.request
+import uuid
 from pathlib import Path
 
 
@@ -28,6 +30,7 @@ RUNTIME_SKILL = Path(
 PORT_BANDS = RUNTIME_SKILL / "scripts" / "port-bands"
 RUNTIME_SLOTS = RUNTIME_SKILL / "scripts" / "runtime-slots"
 RUNTIME_LEASES = RUNTIME_SKILL / "scripts" / "runtime-leases"
+CLEANUP_KEEPER = REPO / "bin" / "e2e-runtime-keeper"
 PURPOSE = "e2e-stack"
 APP_OFFSET = 6
 PORTS = {
@@ -169,12 +172,7 @@ def supabase_command() -> list[str]:
     override = os.environ.get("SUPABASE_BIN", "")
     if override:
         return [override]
-    binary = shutil.which("supabase")
-    if binary:
-        return [binary]
-    if shutil.which("npx"):
-        return ["npx", "supabase"]
-    fail("Supabase CLI is unavailable")
+    return [str(REPO / "bin" / "supabase-cli")]
 
 
 def prepare_workdir(slug: str, base: int) -> Path:
@@ -258,6 +256,27 @@ def container_ids(slug: str) -> list[str]:
     return ids
 
 
+def owned_container_ids(slug: str) -> list[str] | None:
+    found = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "--all",
+            "--no-trunc",
+            "--filter",
+            f"label=com.supabase.cli.project={slug}",
+            "--format",
+            "{{.ID}}",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    ids = [line.strip() for line in found.stdout.splitlines() if line.strip()]
+    if found.returncode != 0 or any(not re.fullmatch(r"[0-9a-f]{64}", item) for item in ids):
+        return None
+    return ids
+
+
 def lease(action: str, owner_pid: int | None = None, containers: list[str] | None = None) -> subprocess.CompletedProcess[str]:
     require_helper(RUNTIME_LEASES)
     command = [
@@ -296,6 +315,75 @@ class Heartbeat:
         self.thread.join(timeout=5)
 
 
+def process_identity(pid: int) -> str:
+    found = subprocess.run(
+        ["ps", "-o", "lstart=", "-p", str(pid)],
+        capture_output=True,
+        text=True,
+    )
+    identity = " ".join(found.stdout.split())
+    if found.returncode != 0 or not identity:
+        fail("cannot prove the bounded E2E owner identity")
+    return identity
+
+
+def start_cleanup_keeper(
+    workdir: Path,
+    slug: str,
+    supabase: list[str],
+) -> tuple[subprocess.Popen[str], Path, str]:
+    require_helper(CLEANUP_KEEPER)
+    token = uuid.uuid4().hex
+    marker = workdir / "bounded-owner"
+    marker.write_text(f"{token}\nstarting\n", encoding="utf-8")
+    log_path = workdir / "bounded-owner.log"
+    with log_path.open("a", encoding="utf-8") as log:
+        keeper = subprocess.Popen(
+            [
+                sys.executable,
+                str(CLEANUP_KEEPER),
+                "--owner-pid",
+                str(os.getpid()),
+                "--owner-started",
+                process_identity(os.getpid()),
+                "--marker",
+                str(marker),
+                "--token",
+                token,
+                "--supabase-command-json",
+                json.dumps(supabase),
+                "--workdir",
+                str(workdir),
+                "--repo",
+                str(REPO),
+                "--project-id",
+                slug,
+                "--runtime-leases",
+                str(RUNTIME_LEASES),
+                "--release-lease",
+                "--remove-workdir",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            text=True,
+            start_new_session=True,
+        )
+    return keeper, marker, token
+
+
+def stop_cleanup_keeper(keeper: subprocess.Popen[str], marker: Path) -> None:
+    try:
+        marker.unlink()
+    except FileNotFoundError:
+        pass
+    try:
+        keeper.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        keeper.terminate()
+        keeper.wait(timeout=5)
+
+
 def require_active_slot() -> None:
     require_helper(RUNTIME_SLOTS)
     token = os.environ.get("GRASP_RUNTIME_SLOT_TOKEN", "")
@@ -320,7 +408,8 @@ def run_inner(slug: str, command: list[str]) -> int:
     require_own_band(base)
     supabase = supabase_command()
     workdir = prepare_workdir(slug, base)
-    owner_pid = os.getpid()
+    keeper, owner_marker, owner_token = start_cleanup_keeper(workdir, slug, supabase)
+    owner_pid = keeper.pid
     heartbeat: Heartbeat | None = None
     registered = False
     started = False
@@ -351,6 +440,7 @@ def run_inner(slug: str, command: list[str]) -> int:
                 or "runtime lease registration failed"
             )
         registered = True
+        owner_marker.write_text(f"{owner_token}\nrunning\n", encoding="utf-8")
         heartbeat = Heartbeat(owner_pid)
         heartbeat.start()
         completed = subprocess.run(
@@ -377,7 +467,8 @@ def run_inner(slug: str, command: list[str]) -> int:
         )
         if heartbeat:
             heartbeat.stop()
-        if stopped.returncode == 0:
+        remaining = owned_container_ids(slug)
+        if stopped.returncode == 0 and remaining == []:
             if registered:
                 released = lease("release")
                 if released.returncode != 0:
@@ -386,8 +477,12 @@ def run_inner(slug: str, command: list[str]) -> int:
                         or "runtime lease release failed"
                     )
             shutil.rmtree(workdir)
+            stop_cleanup_keeper(keeper, owner_marker)
         else:
-            fail(f"Supabase stop failed with exit {stopped.returncode}; preserved {workdir}")
+            fail(
+                f"Supabase cleanup was incomplete (stop exit {stopped.returncode}, "
+                f"remaining={remaining}); preserved {workdir} for the detached keeper"
+            )
         if not started and result == 1:
             result = stopped.returncode or 1
     return result

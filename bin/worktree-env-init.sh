@@ -102,7 +102,7 @@ if is_placeholder "$ANON_VALUE"; then
   # Try to get real values from supabase status
   if ! supabase status >/dev/null 2>&1; then
     log "  ⚠ .dev.vars: Supabase is not running — keys left as placeholders."
-    log "    Run \`supabase start\` then re-run this script to fill them in."
+    log "    Run \`npm run dev:local\`; it generates the managed local values before starting the app."
     SUPABASE_AVAILABLE=0
   else
     SUPABASE_AVAILABLE=1
@@ -163,7 +163,7 @@ fi
 log ""
 log "Done. .env is ready."
 if is_placeholder "$(grep '^SUPABASE_ANON_KEY=' "$DEV_VARS_FILE" 2>/dev/null | cut -d= -f2-)"; then
-  log ".dev.vars still has placeholder keys — run \`supabase start\` then re-run this script."
+  log ".dev.vars still has placeholder keys — run \`npm run dev:local\` to generate them."
 else
   log ".dev.vars is ready."
 fi

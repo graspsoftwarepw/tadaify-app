@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Clean one exact Tadaify Supabase stack when its bounded run owner disappears."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import time
+from pathlib import Path
+
+
+def process_identity(pid: int) -> str | None:
+    found = subprocess.run(
+        ["ps", "-o", "lstart=", "-p", str(pid)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    identity = " ".join(found.stdout.split())
+    return identity if found.returncode == 0 and identity else None
+
+
+def marker_state(path: Path, token: str) -> str | None:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    if len(lines) != 2 or lines[0] != token or lines[1] not in {"starting", "running"}:
+        return None
+    return lines[1]
+
+
+def owned_container_ids(project_id: str) -> list[str] | None:
+    found = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "--all",
+            "--no-trunc",
+            "--filter",
+            f"label=com.supabase.cli.project={project_id}",
+            "--format",
+            "{{.ID}}",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if found.returncode != 0:
+        return None
+    ids = [line.strip() for line in found.stdout.splitlines() if line.strip()]
+    if any(re.fullmatch(r"[0-9a-f]{64}", item) is None for item in ids):
+        return None
+    return ids
+
+
+def cleanup(
+    supabase: list[str],
+    workdir: Path,
+    repo: Path,
+    project_id: str,
+    runtime_leases: Path,
+    timeout_seconds: int,
+    release_lease: bool,
+    remove_workdir: bool,
+) -> int:
+    deadline = time.monotonic() + timeout_seconds
+    empty_checks = 0
+    while time.monotonic() < deadline:
+        subprocess.run(
+            [
+                *supabase,
+                "stop",
+                "--project-id",
+                project_id,
+                "--workdir",
+                str(workdir),
+                "--no-backup",
+                "--yes",
+            ],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        containers = owned_container_ids(project_id)
+        if containers == []:
+            empty_checks += 1
+            if empty_checks >= 5:
+                if release_lease:
+                    released = subprocess.run(
+                        [
+                            os.sys.executable,
+                            str(runtime_leases),
+                            "release",
+                            "--worktree",
+                            str(repo),
+                            "--purpose",
+                            "e2e-stack",
+                        ],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if released.returncode not in {0, 3}:
+                        return released.returncode
+                if remove_workdir:
+                    shutil.rmtree(workdir, ignore_errors=True)
+                return 0
+        else:
+            empty_checks = 0
+        time.sleep(1)
+    return 2
+
+
+def run_keeper(args: argparse.Namespace) -> int:
+    while True:
+        state = marker_state(args.marker, args.token)
+        if state is None:
+            return 0
+        if process_identity(args.owner_pid) != args.owner_started:
+            break
+        time.sleep(1)
+    if state == "starting":
+        deadline = time.monotonic() + args.start_grace_seconds
+        while time.monotonic() < deadline and marker_state(args.marker, args.token) is not None:
+            time.sleep(1)
+    result = cleanup(
+        json.loads(args.supabase_command_json),
+        args.workdir,
+        args.repo,
+        args.project_id,
+        args.runtime_leases,
+        args.cleanup_timeout_seconds,
+        args.release_lease,
+        args.remove_workdir,
+    )
+    if result == 0:
+        try:
+            args.marker.unlink()
+        except FileNotFoundError:
+            pass
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--owner-pid", type=int, required=True)
+    parser.add_argument("--owner-started", required=True)
+    parser.add_argument("--marker", type=Path, required=True)
+    parser.add_argument("--token", required=True)
+    parser.add_argument("--supabase-command-json", required=True)
+    parser.add_argument("--workdir", type=Path, required=True)
+    parser.add_argument("--repo", type=Path, required=True)
+    parser.add_argument("--project-id", required=True)
+    parser.add_argument("--runtime-leases", type=Path, required=True)
+    parser.add_argument("--release-lease", action="store_true")
+    parser.add_argument("--remove-workdir", action="store_true")
+    parser.add_argument("--start-grace-seconds", type=int, default=90)
+    parser.add_argument("--cleanup-timeout-seconds", type=int, default=180)
+    args = parser.parse_args()
+    if args.owner_pid < 1 or not re.fullmatch(r"[0-9a-f]{32}", args.token):
+        parser.error("invalid owner or token identity")
+    command = json.loads(args.supabase_command_json)
+    if not isinstance(command, list) or not command or not all(isinstance(item, str) for item in command):
+        parser.error("invalid Supabase command")
+    return run_keeper(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

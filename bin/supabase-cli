@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PACKAGE_JSON="$ROOT/package.json"
+INSTALLED_PACKAGE_JSON="$ROOT/node_modules/supabase/package.json"
+LOCAL_BIN="$ROOT/node_modules/.bin/supabase"
+
+die() {
+  printf 'supabase-cli: %s\n' "$*" >&2
+  exit 1
+}
+
+read_package_version() {
+  node -e '
+    const fs = require("node:fs");
+    const parsed = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const value = process.argv[2] === "declared"
+      ? parsed.devDependencies?.supabase
+      : parsed.version;
+    if (typeof value === "string") process.stdout.write(value);
+  ' "$1" "$2"
+}
+
+declared_version="$(read_package_version "$PACKAGE_JSON" declared)"
+[[ "$declared_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+  die "package.json must declare one exact devDependencies.supabase version; got '${declared_version:-missing}'"
+[[ -x "$LOCAL_BIN" && -f "$INSTALLED_PACKAGE_JSON" ]] || \
+  die "the pinned Supabase CLI is not installed; run 'npm ci' in $ROOT"
+
+installed_version="$(read_package_version "$INSTALLED_PACKAGE_JSON" installed)"
+[[ "$installed_version" == "$declared_version" ]] || \
+  die "installed package version $installed_version does not match declared $declared_version; run 'npm ci'"
+binary_version="$($LOCAL_BIN --version 2>/dev/null | head -n 1)" || \
+  die "the installed Supabase CLI could not report its version"
+binary_version="${binary_version#v}"
+[[ "$binary_version" == "$declared_version" ]] || \
+  die "installed binary reports $binary_version but package.json declares $declared_version; run 'npm ci'"
+
+exec "$LOCAL_BIN" "$@"
