@@ -65,25 +65,12 @@ need_cmd() {
 }
 
 supabase_cmd() {
-  if command -v supabase >/dev/null 2>&1; then
-    supabase "$@"
-  elif command -v npx >/dev/null 2>&1; then
-    npx supabase "$@"
-  else
-    echo "Missing Supabase CLI. Install it or make npx available." >&2
-    exit 127
-  fi
+  "${SUPABASE_BIN:-$ROOT/bin/supabase-cli}" "$@"
 }
 
 supabase_command_json() {
-  if command -v supabase >/dev/null 2>&1; then
-    python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "$(command -v supabase)"
-  elif command -v npx >/dev/null 2>&1; then
-    python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "$(command -v npx)" supabase
-  else
-    echo "Missing Supabase CLI. Install it or make npx available." >&2
-    return 127
-  fi
+  python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' \
+    "${SUPABASE_BIN:-$ROOT/bin/supabase-cli}"
 }
 
 start_runtime_keeper() {

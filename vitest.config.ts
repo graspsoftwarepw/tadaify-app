@@ -4,7 +4,13 @@ import { resolve } from "path";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["app/**/*.test.ts", "app/**/*.test.tsx", "supabase/functions/**/*.test.ts", "workers/**/*.test.ts"],
+    include: [
+      "app/**/*.test.ts",
+      "app/**/*.test.tsx",
+      "bin/**/*.test.mjs",
+      "supabase/functions/**/*.test.ts",
+      "workers/**/*.test.ts",
+    ],
   },
   resolve: {
     alias: {

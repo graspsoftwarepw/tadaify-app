@@ -172,12 +172,7 @@ def supabase_command() -> list[str]:
     override = os.environ.get("SUPABASE_BIN", "")
     if override:
         return [override]
-    binary = shutil.which("supabase")
-    if binary:
-        return [binary]
-    if shutil.which("npx"):
-        return ["npx", "supabase"]
-    fail("Supabase CLI is unavailable")
+    return [str(REPO / "bin" / "supabase-cli")]
 
 
 def prepare_workdir(slug: str, base: int) -> Path:
