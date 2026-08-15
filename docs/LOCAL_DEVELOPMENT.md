@@ -32,15 +32,23 @@ npm run setup
 3. Verifies or installs the Supabase CLI where safe.
 4. Runs `npm install` if `node_modules` is not populated.
 5. Installs the Playwright Chromium browser if missing.
-6. Starts Supabase Local, resets the DB with `supabase/seed.sql`, and writes
-   `.env.local` plus `.dev.vars`.
+6. Starts Supabase Local, resets the DB with `supabase/seed.sql`, writes
+   `.env.local` plus `.dev.vars`, and removes the exact stack before returning.
 
-Use `bash bin/e2e-bootstrap.sh --no-reset` to keep the existing local DB volume.
+Use `bash bin/e2e-bootstrap.sh --no-reset` to skip the reset. Cleanup still removes the exact local
+stack and its volume before the script returns.
 
 If you only need to refresh Supabase Local and env files:
 
 ```bash
 npm run test:local:prepare
+```
+
+That preparation command also removes its exact stack before returning. For an interactive app
+session, keep the bounded launcher running instead:
+
+```bash
+npm run dev:local
 ```
 
 ### Running Playwright locally
@@ -56,10 +64,9 @@ Local mode uses:
 - Inbucket UI: `http://127.0.0.1:44214`
 - App URL: `http://127.0.0.1:44200`
 
-For the interactive Playwright UI after local env preparation:
+For the interactive Playwright UI with its own isolated bounded stack:
 
 ```bash
-npm run test:local:prepare
 npm run test:e2e:ui:local -- e2e/register-cascade.spec.ts
 ```
 

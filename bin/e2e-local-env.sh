@@ -3,16 +3,29 @@ set -euo pipefail
 
 RESET_DB=0
 QUIET=0
+FOREGROUND_COMMAND_COUNT=0
+ORIGINAL_ARGUMENT_COUNT="$#"
+if [[ "${ORIGINAL_ARGUMENT_COUNT}" -gt 0 ]]; then
+  ORIGINAL_ARGUMENTS=("$@")
+fi
 
-for arg in "$@"; do
-  case "$arg" in
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
     --reset) RESET_DB=1 ;;
     --quiet) QUIET=1 ;;
+    --)
+      shift
+      [[ "$#" -gt 0 ]] || { echo "A foreground command must follow --." >&2; exit 2; }
+      FOREGROUND_COMMAND=("$@")
+      FOREGROUND_COMMAND_COUNT="$#"
+      break
+      ;;
     *)
-      echo "Unknown argument: $arg" >&2
+      echo "Unknown argument: $1" >&2
       exit 2
       ;;
   esac
+  shift
 done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,6 +33,13 @@ cd "$ROOT"
 
 PROJECT_ID="$(awk -F= '/^[[:space:]]*project_id[[:space:]]*=/{gsub(/[[:space:]"]/, "", $2); print $2; exit}' supabase/config.toml)"
 PROJECT_ID="${PROJECT_ID:-tadaify}"
+RUNTIME_SKILL="${GRASP_LOCAL_RUNTIME_SKILL_DIR:-${HOME}/.claude/skills/grasp-running-local-apps}"
+RUNTIME_SLOTS="${RUNTIME_SKILL}/scripts/runtime-slots"
+RUNTIME_LEASES="${RUNTIME_SKILL}/scripts/runtime-leases"
+RUNTIME_KEEPER="${ROOT}/bin/e2e-runtime-keeper"
+LOCAL_RUNTIME_ACTIVE=0
+LOCAL_RUNTIME_MARKER=""
+LOCAL_RUNTIME_KEEPER_PID=""
 
 # The reserved Supabase ports this project owns on every developer machine — the
 # "second ten" of its 44200-44229 band. Source of truth: ports.yaml (grasp-running-local-apps);
@@ -53,6 +73,64 @@ supabase_cmd() {
     echo "Missing Supabase CLI. Install it or make npx available." >&2
     exit 127
   fi
+}
+
+supabase_command_json() {
+  if command -v supabase >/dev/null 2>&1; then
+    python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "$(command -v supabase)"
+  elif command -v npx >/dev/null 2>&1; then
+    python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' "$(command -v npx)" supabase
+  else
+    echo "Missing Supabase CLI. Install it or make npx available." >&2
+    return 127
+  fi
+}
+
+start_runtime_keeper() {
+  local owner_started token keeper_log command_json
+  owner_started="$(ps -o lstart= -p $$ | awk '{$1=$1; print}')"
+  [[ -n "${owner_started}" ]] || { echo "Cannot prove the local runtime owner identity." >&2; return 2; }
+  token="$(openssl rand -hex 16)"
+  command_json="$(supabase_command_json)" || return $?
+  LOCAL_RUNTIME_MARKER="${TMPDIR:-/tmp}/tadaify-main-${PROJECT_ID}-${token}.owner"
+  keeper_log="${LOCAL_RUNTIME_MARKER%.owner}.log"
+  printf '%s\n%s\n' "${token}" starting >"${LOCAL_RUNTIME_MARKER}"
+  python3 "${RUNTIME_KEEPER}" \
+    --owner-pid "$$" --owner-started "${owner_started}" \
+    --marker "${LOCAL_RUNTIME_MARKER}" --token "${token}" \
+    --supabase-command-json "${command_json}" --workdir "${ROOT}" --repo "${ROOT}" \
+    --project-id "${PROJECT_ID}" --runtime-leases "${RUNTIME_LEASES}" \
+    >>"${keeper_log}" 2>&1 &
+  LOCAL_RUNTIME_KEEPER_PID=$!
+}
+
+mark_runtime_running() {
+  local token
+  token="$(sed -n '1p' "${LOCAL_RUNTIME_MARKER}")"
+  printf '%s\n%s\n' "${token}" running >"${LOCAL_RUNTIME_MARKER}"
+}
+
+cleanup_runtime() {
+  local original_status="${1:-0}" cleanup_status
+  trap - EXIT INT TERM HUP
+  set +e
+  if [[ "${LOCAL_RUNTIME_ACTIVE}" -eq 1 ]]; then
+    supabase_cmd stop --project-id "${PROJECT_ID}" --workdir "${ROOT}" --no-backup --yes
+    cleanup_status=$?
+    if [[ "${cleanup_status}" -eq 0 && -n "$(docker ps --all --quiet --filter "label=com.supabase.cli.project=${PROJECT_ID}")" ]]; then
+      cleanup_status=2
+    fi
+  else
+    cleanup_status=0
+  fi
+  if [[ "${cleanup_status}" -eq 0 ]]; then
+    rm -f "${LOCAL_RUNTIME_MARKER}"
+    wait "${LOCAL_RUNTIME_KEEPER_PID}" 2>/dev/null || true
+  else
+    echo "e2e-local-env: cleanup failed; the detached keeper will retry it." >&2
+  fi
+  if [[ "${original_status}" -eq 0 && "${cleanup_status}" -ne 0 ]]; then exit "${cleanup_status}"; fi
+  exit "${original_status}"
 }
 
 ensure_hook_secret() {
@@ -242,6 +320,7 @@ EOF
 }
 
 need_cmd docker
+need_cmd python3
 docker info >/dev/null 2>&1 || {
   echo "Docker is not running or is not reachable." >&2
   exit 1
@@ -250,7 +329,32 @@ need_cmd curl
 need_cmd lsof
 need_cmd openssl
 
+[[ -x "${RUNTIME_SLOTS}" ]] || { echo "Missing runtime slots helper: ${RUNTIME_SLOTS}" >&2; exit 2; }
+[[ -f "${RUNTIME_LEASES}" && -x "${RUNTIME_KEEPER}" ]] || {
+  echo "Managed local runtime cleanup helpers are unavailable." >&2
+  exit 2
+}
+if [[ "${TADAIFY_LOCAL_ENV_RUNTIME_INNER:-0}" != "1" ]]; then
+  if [[ "${ORIGINAL_ARGUMENT_COUNT}" -gt 0 ]]; then
+    exec "${RUNTIME_SLOTS}" run --repo "${ROOT}" --purpose e2e-stack --mode test -- \
+      env TADAIFY_LOCAL_ENV_RUNTIME_INNER=1 bash "${ROOT}/bin/e2e-local-env.sh" "${ORIGINAL_ARGUMENTS[@]}"
+  fi
+  exec "${RUNTIME_SLOTS}" run --repo "${ROOT}" --purpose e2e-stack --mode test -- \
+    env TADAIFY_LOCAL_ENV_RUNTIME_INNER=1 bash "${ROOT}/bin/e2e-local-env.sh"
+fi
+[[ "${GRASP_RUNTIME_SLOT_TOKEN:-}" =~ ^[0-9a-f]{32}$ ]] || {
+  echo "Missing runtime slot token." >&2
+  exit 2
+}
+"${RUNTIME_SLOTS}" probe --token "${GRASP_RUNTIME_SLOT_TOKEN}" >/dev/null
+
 ensure_hook_secret
+start_runtime_keeper
+LOCAL_RUNTIME_ACTIVE=1
+trap 'cleanup_runtime $?' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 own_already_running="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -E "_${PROJECT_ID}\$" | head -n1 || true)"
 if [[ -z "$own_already_running" ]]; then
@@ -272,6 +376,8 @@ if ! ensure_supabase_healthy; then
   }
 fi
 
+mark_runtime_running
+
 if [[ "$RESET_DB" == "1" ]]; then
   log "Resetting Supabase Local database with seed.sql..."
   supabase_cmd db reset
@@ -292,3 +398,7 @@ log "Local E2E environment ready."
 log "Supabase API: $API_URL"
 log "Supabase Studio: http://127.0.0.1:44213"
 log "Inbucket UI: http://127.0.0.1:44214"
+
+if [[ "${FOREGROUND_COMMAND_COUNT}" -gt 0 ]]; then
+  "${FOREGROUND_COMMAND[@]}"
+fi
